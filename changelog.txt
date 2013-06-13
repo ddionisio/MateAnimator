@@ -1,0 +1,147 @@
+v1.53.1
+- Unity 4.0 Support
+- New Skin: Dark
+- New Feature: Show Frames for Collapsed Tracks
+- Misc. improvement: Added ability to select track ranges when holding shift
+- Misc. improvement: The QuickAdd feature now supports dragging multiple GameObjects onto the timeline
+- Misc. improvement: Options window has been redesigned
+- Misc. improvement: A track type's icon will now be shown for collapsed tracks
+- Misc. improvement: Improved editor aesthetics
+- Fix: The Resources directory will now automatically be re-created when deleted
+- Fix: Fixed bug when dragging groups outside other groups
+- Fix: Auto-key will now refrain from adding keys while scrubbing through the timeline
+
+Important: The Animator class has been renamed to AnimatorTimeline
+
+v1.52
+- New Transition: Wedge Wipe
+- New Feature: Multi-Track Selection
+- Fix: Fixed bug with integers in the Property Track
+- Fix: Fixed bug when shifting frames
+- Fix: Fixed bug when number of frames is set to a small number
+
+v1.51
+- New Transition: Radial Wipe
+- New Feature: Hide Timeline Actions
+- Improvement: Increased timeline performance
+- Misc. improvement: Added ability to paste multiple times after copying frames
+- Misc. improvement: Track list will now scroll when dragging along the edges
+- Misc. improvement: Improved Timeline Action tooltips
+- Misc. improvement: Increased Code View performance
+- Fix: Animation and Audio tracks will now resize correctly when dragging action anchors
+- Fix: Group names will now be auto-highlighted when renaming
+
+v1.50
+- New Feature: Camera Switcher Track
+- New Feature: Mega-Fiers Support
+- New Feature: Export to JSON
+- New Feature: Play From Frame / Time
+- Misc. improvement: Added Track Selection to Code View
+- Misc. improvement: Dragging from outside the editor window is now possible
+- Misc. improvement: Improved Export Take window and increased performance
+- Misc. improvement: Increased Import Take window performance
+- Misc. improvement: Property Track will no longer execute unnecessary actions when values are unchanged
+- Misc. imrpovement: Increased timeline performance
+- Fix: Animator.takeName correctly renamed to Animator.nowPlayingTake
+- Fix: Fixed bug that sometimes occurs when pasting keys
+- Fix: Fixed issue when using Javascript in v1.27
+- Fix: Fixed bug when setting Play On Start from options
+- Fix: Fixed issue when playing a take after Play On Start is used
+- Fix: Fixed Code View bug with Event Track array parameters
+- Fix: Improved Event Track handling of arrays
+
+v1.27
+- Misc. improvement: New Animator class properties, isPlaying and nowPlayingTake
+- Fix: Fixed bug where Animation Tracks do not play their correct clips on resume
+- Fix: Fixed bug when importing takes with Orientation Tracks
+
+v1.26.1
+- Misc. improvement: Subfolder Support. The extension can now be placed in Subfolders
+- Fix: Removed errors when resolving duplicates with null values
+- Fix: Resolved duplicates will now function correctly in play mode
+- Fix: All windows will now behave correctly on undo / redo
+- Hotfix: Re-uploaded correct files
+
+Note: To keep options from v1.25 and below, file 'options' must be renamed to 'am_options' and be moved to the 'Animator/Resources' directory
+
+v1.25
+- New Feature: Import / Export Takes
+- New Feature: Resolve Duplicates on Import
+- New Feature: Animation Crossfade Time
+- Misc. improvement: Takes will be given unique names when renamed
+- Misc. improvement: Added Import Options button
+- Fix: Ease Picker curve will now update when applying category filters
+- Fix: Changing ease on a translation key with smooth interpolation will now update the curve's ease
+- Fix: Fixed error when opening inspector on startup with no track selected
+- Fix: Quick Add Combinations will no longer be lost when modifying class files
+- Fix: Misc. graphical polish and fixes
+
+v1.24
+- New Feature: Custom Easing
+- New Feature: Play On Start
+- Misc. documentation improvements
+
+v1.23
+- New Feature: Orientation Track
+- New Feature: Ease Picker
+- New Feature: Custom Quick Add Combinations
+- New Feature: Export Options to File
+- Misc. improvement: An example scene is now provided
+- Misc. improvement: Improved aesthetics on scrollbar
+- Fix: Copy/cut problems in v1.22 have been resolved
+
+v1.22
+- New Feature: Unlimited Zoom
+- New Feature: Zoom Tool
+- New Feature: Hand Tool
+- New Feature: Scrubby Zoom
+- New Feature: Resize View
+- Misc. improvement: Keyframe positions will be previewed when moving a selection
+- Misc. improvement: Greatly improved performance of Timeline and Animator class
+- Fix: Stopping and resuming a looping take will no longer cause problems
+- Fix: The timeline will no longer be scrubbed when dragging across a Timeline Action
+- Fix: Timeline Action anchors will no longer appear when cut off
+
+v1.21
+- New Feature: Quick Add
+- New Feature: Resize Timeline Action
+- New Feature: Frame Control
+- New Feature: Timeline Scrubbing
+- The timeline can now show time instead of frame numbers. This can be changed from the Options
+- Misc. improvement: Dragging across the timeline's edges will now scroll the timeline when selecting or moving frames
+- Misc. improvement: Hidden tracks and groups beyond the track width will be shown
+- Fix: SendMessage now works as intended when passing arrays
+- Fix: The playback controls no longer interfere with the timeline, scrolling is now smoother
+- Fix: Dragging the cursor outside the window will no longer cause problems
+
+v1.20
+- New Feature: Groups
+- Added ability to loop, pause and resume takes with the Animator Class
+- Major design improvements
+- Fix: Code View will now refresh correctly after an undo/redo
+- Fix: Takes will now loop correctly when previewed in the scene-view
+- Fix: Number of frames and frame rate will no longer accept invalid values
+- General stability improvements
+
+IMPORTANT: v1.20 and above are not compatible with data from v1.19 and lower.
+
+v1.19
+- Fix: Removed faulty "punch" easing
+- Fix: Keyframes in context selection no longer overwrite each other when moved
+- Misc. style improvements: Zoom slider is more polished; HelpBox is used to display messages
+- Misc. documentation improvements
+
+v1.18
+- New Feature: Context Selection
+- New Feature: Time Control
+- The timeline indicator now updates when playing in the scene-view
+- Misc. style improvements: Text color now matches Unity's default color scheme
+
+v1.17
+- New Feature: Auto-Key
+- Added support for indie light skin
+- Added support for boolean parameters in the Event Track
+- Misc. documentation improvements
+
+v1.12
+- Initial release

@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: b493185794d068b4a99cfa7a950bc58e
+MonoImporter:
+  serializedVersion: 2
+  defaultReferences:
+  - blankTexture: {fileID: 2800000, guid: ce48b53df499f6a419a0254746784a46, type: 3}
+  - matIris: {fileID: 2100000, guid: 5feb2f81425a9684f8a14256d36a6d93, type: 2}
+  - tex2d: {instanceID: 0}
+  - _tex: {instanceID: 0}
+  - renderTextureCamera: {instanceID: 0}
+  - irisShape: {instanceID: 0}
+  - background: {instanceID: 0}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
