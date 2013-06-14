@@ -40,7 +40,6 @@ public class AMTrack : ScriptableObject {
 
     // update cache
     public virtual void updateCache() {
-        AMCameraFade.doShouldUpdateStill();
     }
 
     public virtual AnimatorTimeline.JSONInit getJSONInit() {

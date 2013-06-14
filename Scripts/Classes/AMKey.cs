@@ -6,7 +6,7 @@ using System.Collections.Generic;
 public class AMKey : ScriptableObject {
 
 	public int frame;
-	public int easeType = (int)AMTween.EaseType.linear; 			// ease type, AMTween.EaseType enum
+	public int easeType = (int)0;//AMTween.EaseType.linear; 			// ease type, AMTween.EaseType enum
 	public List<float> customEase = new List<float>();
 	private AnimationCurve _cachedEaseCurve;
 	public AnimationCurve easeCurve {

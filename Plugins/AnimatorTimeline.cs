@@ -39,8 +39,6 @@ public class AnimatorTimeline {
 	private static Dictionary<string,MethodInfo> dictMethodInfos;
 	private static Dictionary<string,FieldInfo> dictFieldInfos;
 	private static Dictionary<string,PropertyInfo> dictPropertyInfos;
-	private static Camera[] allCameras;
-	//private static Texture[] allTextures;
 	
 	public class JSONTake {
 		public string takeName;
@@ -368,10 +366,6 @@ public class AnimatorTimeline {
 			if(init.position == null || init.go == null) return false;	
 			getGO(init.go).transform.LookAt(init.position.toVector3());
 			break;
-		case "propertymorph":
-			if(init.go == null || init.floats == null) return false;
-			AMTween.SetMorph(getCMP(init.go, "MegaMorph"), getMethodInfo(init.go,"MegaMorph","SetPercent",new string[]{"System.Int32","System.Single"}), init.floats);
-			break;
 		case "propertyint":
 			if(!setInitialValueForProperty(init,init._int)) return false;
 			break;
@@ -401,30 +395,6 @@ public class AnimatorTimeline {
 			if(init._rect == null) return false;
 			if(!setInitialValueForProperty(init,init._rect.toRect())) return false;
 			break;
-		case "cameraswitcher":
-			// setup all cameras
-			if(init.strings != null && init.strings.Length > 0) {
-				allCameras = new Camera[init.strings.Length];
-				for(int i=0;i<init.strings.Length;i++) {
-					allCameras[i] = getGO(init.strings[i]).camera;
-				}
-			}
-			// setup all textures
-			/*if(init.stringsExtra != null && init.stringsExtra.Length > 0) {
-				allTextures = new Texture[init.stringsExtra.Length];
-				for(int i=0;i<init.stringsExtra.Length;i++) {
-					allTextures[i] = AMTween.LoadTexture2D(init.stringsExtra[i]);
-				}
-			}*/
-			// set top camera
-			if(init.typeExtra == "camera") {
-				if(init.go == null) return false;
-				AMTween.SetTopCamera(getGO(init.go).camera,allCameras);
-			} else {
-				if(init._color == null) return false;
-				AMTween.ShowColor(init._color.toColor());
-			}
-			break;
 		default:
 			Debug.LogWarning("Animator: Error parsing initial value type '"+init.type+"'");
 			return false;
@@ -446,8 +416,6 @@ public class AnimatorTimeline {
 		dictMethodInfos = new Dictionary<string, MethodInfo>();
 		dictFieldInfos = new Dictionary<string, FieldInfo>();
 		dictPropertyInfos = new Dictionary<string, PropertyInfo>();
-		allCameras = null;
-		//allTextures = null;
 		bool errorOccured = false;
 		// set initial values
 		if(j.inits != null) {
@@ -487,9 +455,6 @@ public class AnimatorTimeline {
 				case "invokemethod":
 					if(!parseInvokeMethod(a)) errorOccured = true;
 					break;
-				case "camerafade":
-					if(!parseCameraFade(a)) errorOccured = true;
-					break;
 				default:
 					Debug.LogWarning("Animator: Error parsing method '"+a.method+"'");
 					errorOccured = true;
@@ -497,37 +462,8 @@ public class AnimatorTimeline {
 				}
 			}
 		}
-		AMTween.StartDisabled();	// enable all tweens at once
+		//AMTween.StartDisabled();	// enable all tweens at once
 		return !errorOccured;
-	}
-	
-	private static bool parseCameraFade(JSONAction a) {
-		if(a.ints == null || a.ints.Length < 3) {
-			Debug.LogWarning("Animator: CameraFade missing fade type, start or end targets.");
-			return false;
-		}
-		if(a.strings == null || a.strings.Length < 2 || a.colors == null || a.colors.Length < 2) {
-			Debug.LogWarning("Animator: CameraFade missing start or end targets.");
-			return false;
-		}
-		Hashtable hash = new Hashtable();
-		hash.Add("time",a.time);
-		hash.Add("delay",a.delay);
-		setupHashEase(hash, a);
-		if(a.bools != null && a.bools.Length > 0) hash.Add("reversed",a.bools[0]);
-		if(a.ints[1] == 0 || a.ints[2] == 0) hash.Add("allcameras",allCameras);
-		if(a.stringsExtra != null && a.stringsExtra.Length > 0) hash.Add("texture",AMTween.LoadTexture2D(a.stringsExtra[0]));
-		if(a.ints[1] == 0) hash.Add("camera1",getGO(a.strings[0]).camera);
-		else hash.Add("color1",a.colors[0].toColor());
-		if(a.ints[2] == 0) hash.Add("camera2",getGO(a.strings[1]).camera);
-		else hash.Add("color2",a.colors[1].toColor());
-		
-		float[] parameters = a.floats;
-		if(parameters == null) parameters = new float[]{};
-		
-		AMTween.CameraFade(a.ints[0],(a.bools == null || a.bools.Length < 2 ? false : a.bools[1]),parameters,hash);
-		return true;
-		
 	}
 	
 	private static bool parseInvokeMethod(JSONAction a) {
@@ -548,7 +484,7 @@ public class AnimatorTimeline {
 			if(arrParams.Length<=0) arrParams = null;
 			hash.Add("parameters",arrParams);
 		}
-		AMTween.InvokeMethod(getCMP(a.go,a.strings[0]),hash);
+		//AMTween.InvokeMethod(getCMP(a.go,a.strings[0]),hash);
 		return true;
 	}
 	
@@ -565,7 +501,7 @@ public class AnimatorTimeline {
 		if(a.eventParams != null && a.eventParams.Length > 0) {
 			hash.Add("parameter",a.eventParams[0].toObject());
 		}
-		AMTween.SendMessage(getGO(a.go),hash);
+		//AMTween.SendMessage(getGO(a.go),hash);
 		return true;
 	}
 	
@@ -649,7 +585,7 @@ public class AnimatorTimeline {
 			Debug.LogWarning("Animator: PropertyTo missing 'to' or 'from' targets.");
 			return false;
 		}
-		AMTween.PropertyTo(getCMP(a.go,componentName),hash);
+		//AMTween.PropertyTo(getCMP(a.go,componentName),hash);
 		//AMTween.PlayAudio((AudioSource)getCMP(a.go,"AudioSource"), hash);
 		return true;
 	}
@@ -686,7 +622,7 @@ public class AnimatorTimeline {
 			Debug.LogWarning("Animator: PlayAudio missing 'loop'.");
 			return false;	
 		}
-		AMTween.PlayAudio((AudioSource)getCMP(a.go,"AudioSource"), hash);
+		//AMTween.PlayAudio((AudioSource)getCMP(a.go,"AudioSource"), hash);
 		return true;
 	}
 	
@@ -712,7 +648,7 @@ public class AnimatorTimeline {
 			Debug.LogWarning("Animator: PlayAnimation missing 'crossfade'.");
 			return false;	
 		}
-		AMTween.PlayAnimation(getGO(a.go), hash);
+		//AMTween.PlayAnimation(getGO(a.go), hash);
 		return true;
 	}
 	
@@ -730,7 +666,7 @@ public class AnimatorTimeline {
 		if(a.path != null && a.path.Length >=1) {
 			hash.Add("endposition",a.path[0].toVector3());
 		}
-		AMTween.LookToFollow(getGO(a.go), hash);
+		//AMTween.LookToFollow(getGO(a.go), hash);
 		return true;
 	}
 	
@@ -745,7 +681,7 @@ public class AnimatorTimeline {
 			Debug.LogWarning("Animator: LookFollow missing 'looktarget'.");
 			return false;	
 		}
-		AMTween.LookFollow(getGO(a.go), hash);
+		//AMTween.LookFollow(getGO(a.go), hash);
 		return true;
 	}
 	
@@ -761,7 +697,7 @@ public class AnimatorTimeline {
 			Debug.LogWarning("Animator: MoveTo missing 'position' or 'path'.");
 			return false;	
 		}
-		AMTween.MoveTo(getGO(a.go), hash);
+		//AMTween.MoveTo(getGO(a.go), hash);
 		return true;
 	}
 	
@@ -776,17 +712,18 @@ public class AnimatorTimeline {
 			Debug.LogWarning("Animator: RotateTo missing 'rotation'.");
 			return false;	
 		}
-		AMTween.RotateTo(getGO(a.go), hash);
+		//AMTween.RotateTo(getGO(a.go), hash);
 		return true;
 	}
 	
 	private static void setupHashEase(Hashtable hashTable, AnimatorTimeline.JSONAction a) {
-		if(a.customEase.Length > 0) {
+		/*if(a.customEase.Length > 0) {
 			AnimationCurve easeCurve = AMTween.GenerateCurve(a.customEase);
 			hashTable.Add("easecurve",easeCurve);
 		} else {
 			hashTable.Add("easetype",(AMTween.EaseType)a.easeType);	
-		}
+		}*/
+        Debug.LogError("implement me");
 	}
 	
 	private static GameObject getGO(string name) {

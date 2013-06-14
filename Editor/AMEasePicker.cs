@@ -3,6 +3,8 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEditor;
 
+using Holoville.HOTween;
+
 public class AMEasePicker : EditorWindow {
 	
 	public static AMEasePicker window = null;
@@ -122,16 +124,13 @@ public class AMEasePicker : EditorWindow {
 		float x_pos_end = position.width-50f-80f-200f;
 		
 		if(percent <= 1f) {
-			AMTween.EasingFunction ease;
-			AnimationCurve _curve = null; 
 			if(isCustomEase) {
-				_curve = curve;
-				ease = AMTween.customEase;
+                x_pos = AMUtil.EaseCustom(x_pos_start, x_pos_end - x_pos_start, percent < 0f ? 0f : percent, curve);
 			} else {
-				ease = AMTween.GetEasingFunction((AMTween.EaseType)getSelectedEaseIndex(category,selectedIndex));
+                Holoville.HOTween.Core.TweenDelegate.EaseFunc ease;
+				ease = AMUtil.GetEasingFunction((EaseType)getSelectedEaseIndex(category,selectedIndex));
+                x_pos = ease(percent < 0f ? 0f : percent, x_pos_start, x_pos_end - x_pos_start, 1.0f, 0.0f, 0.0f);
 			}
-			x_pos = ease(x_pos_start,x_pos_end,(percent < 0f ? 0f : percent), _curve);
-			
 		}
 		this.Repaint();
 	}
@@ -253,7 +252,7 @@ public class AMEasePicker : EditorWindow {
 				} else if(category == "Other") {
 					if(!used.Contains(ease))
 						temp.Add(ease);
-				} else if(ease.Contains(category)) {
+				} else if(ease.ToLower().Contains(category)) {
 					temp.Add(ease);
 					used.Add(ease);
 				}	
@@ -295,14 +294,14 @@ public class AMEasePicker : EditorWindow {
 	public void setEasingCurve() {
 		if(getSelectedEaseName(category,selectedIndex) == "Custom") {
 			if(curve.length <= 0) {
-				curve = getCurve(AMTween.EaseType.linear);
+				curve = getCurve(EaseType.Linear);
 				this.Repaint();
 			}
 			return;
 		}
 		curve = new AnimationCurve();
-		curve = getCurve((AMTween.EaseType)getSelectedEaseIndex(category,selectedIndex));
-		selectedCurve = getCurve((AMTween.EaseType)getSelectedEaseIndex(category,selectedIndex));
+		curve = getCurve((EaseType)getSelectedEaseIndex(category,selectedIndex));
+		selectedCurve = getCurve((EaseType)getSelectedEaseIndex(category,selectedIndex));
 		this.Repaint();
 	}
 	
@@ -315,70 +314,70 @@ public class AMEasePicker : EditorWindow {
 		}
 		return false;
 	}
-	public AnimationCurve getCurve(AMTween.EaseType easeType) {
+	public AnimationCurve getCurve(EaseType easeType) {
 		AnimationCurve _curve = new AnimationCurve();
 		switch(easeType)
 		{
-			case AMTween.EaseType.linear:
+			case EaseType.Linear:
 				_curve.AddKey(new Keyframe(0f,0f,1f,1f));
 				_curve.AddKey(new Keyframe(1f,1f,1f,1f));
 				break;
-			case AMTween.EaseType.easeInQuad:
+			case EaseType.EaseInQuad:
 				_curve.AddKey(new Keyframe(0f,0f,0f,0f));
 				_curve.AddKey(new Keyframe(1f,1f,2f,2f));
 				break;
-			case AMTween.EaseType.easeOutQuad:
+			case EaseType.EaseOutQuad:
 				_curve.AddKey(new Keyframe(0f,0f,2f,2f));
 				_curve.AddKey(new Keyframe(1f,1f,0f,0f));
 				break;
-			case AMTween.EaseType.easeInOutQuad:
+			case EaseType.EaseInOutQuad:
 				_curve.AddKey(new Keyframe(0f,0f,0f,0f));
 				_curve.AddKey(new Keyframe(0.5f,0.5f,2f,2f));
 				_curve.AddKey(new Keyframe(1f,1f,0f,0f));
 				break;
-			case AMTween.EaseType.easeInCubic:
+			case EaseType.EaseInCubic:
 				_curve.AddKey(new Keyframe(0f,0f,0f,0f));
 				_curve.AddKey(new Keyframe(1f,1f,3f,3f));
 				break;
-			case AMTween.EaseType.easeOutCubic:
+			case EaseType.EaseOutCubic:
 				_curve.AddKey(new Keyframe(0f,0f,3f,3f));
 				_curve.AddKey(new Keyframe(1f,1f,0f,0f));
 				break;
-			case AMTween.EaseType.easeInOutCubic:
+			case EaseType.EaseInOutCubic:
 				_curve.AddKey(new Keyframe(0f,0f,0f,0f));
 				_curve.AddKey(new Keyframe(0.5f,0.5f,3f,3f));
 				_curve.AddKey(new Keyframe(1f,1f,0f,0f));
 				break;
-			case AMTween.EaseType.easeInQuart:
+			case EaseType.EaseInQuart:
 				_curve.AddKey(new Keyframe(0f,0f,0f,0f));
 				_curve.AddKey(new Keyframe(0.5f,0.064f,0.5f,0.5f));
 				_curve.AddKey(new Keyframe(1f,1f,4f,4f));
 				break;
-			case AMTween.EaseType.easeOutQuart:
+			case EaseType.EaseOutQuart:
 				_curve.AddKey(new Keyframe(0f,0f,4f,4f));
 				_curve.AddKey(new Keyframe(0.5f,0.936f,0.5f,0.5f));
 				_curve.AddKey(new Keyframe(1f,1f,0f,0f));
 				break;
-			case AMTween.EaseType.easeInOutQuart:
+			case EaseType.EaseInOutQuart:
 				_curve.AddKey(new Keyframe(0f,0f,0f,0f));
 				_curve.AddKey(new Keyframe(0.25f,0.032f,0.5f,0.5f));
 				_curve.AddKey(new Keyframe(0.5f,0.5f,4f,4f));
 				_curve.AddKey(new Keyframe(0.75f,0.968f,0.5f,0.5f));
 				_curve.AddKey(new Keyframe(1f,1f,0f,0f));
 				break;
-			case AMTween.EaseType.easeInQuint:
+			case EaseType.EaseInQuint:
 				_curve.AddKey(new Keyframe(0f,0f,0f,0f));
 				_curve.AddKey(new Keyframe(0.2f,0f,0.033f,0.033f));
 				_curve.AddKey(new Keyframe(0.6f,0.077f,0.65f,0.65f));
 				_curve.AddKey(new Keyframe(1f,1f,5f,5f));
 				break;
-			case AMTween.EaseType.easeOutQuint:
+			case EaseType.EaseOutQuint:
 				_curve.AddKey(new Keyframe(0f,0f,5f,5f));
 				_curve.AddKey(new Keyframe(0.4f,0.92f,0.65f,0.65f));
 				_curve.AddKey(new Keyframe(0.8f,1f,0.033f,0.033f));
 				_curve.AddKey(new Keyframe(1f,1f,0f,0f));
 				break;
-			case AMTween.EaseType.easeInOutQuint:
+			case EaseType.EaseInOutQuint:
 				_curve.AddKey(new Keyframe(0f,0f,0f,0f));
 				_curve.AddKey(new Keyframe(0.1f,0f,0f,0f));
 				_curve.AddKey(new Keyframe(0.3f,0.04f,0.65f,0.65f));
@@ -387,36 +386,36 @@ public class AMEasePicker : EditorWindow {
 				_curve.AddKey(new Keyframe(0.9f,1f,0f,0f));
 				_curve.AddKey(new Keyframe(1f,1f,0f,0f));
 				break;
-			case AMTween.EaseType.easeInSine:
+			case EaseType.EaseInSine:
 				_curve.AddKey(new Keyframe(0f,0f,0f,0f));
 				_curve.AddKey(new Keyframe(0.5f,0.292f,1.11f,1.11f));
 				_curve.AddKey(new Keyframe(1f,1f,1.56f,1.56f));
 				break;
-			case AMTween.EaseType.easeOutSine:
+			case EaseType.EaseOutSine:
 				_curve.AddKey(new Keyframe(0f,0f,1.56f,1.56f));
 				_curve.AddKey(new Keyframe(0.5f,0.708f,1.11f,1.11f));
 				_curve.AddKey(new Keyframe(1f,1f,0f,0f));
 				break;
-			case AMTween.EaseType.easeInOutSine:
+			case EaseType.EaseInOutSine:
 				_curve.AddKey(new Keyframe(0f,0f,0f,0f));
 				_curve.AddKey(new Keyframe(0.25f,0.145f,1.1f,1.1f));
 				_curve.AddKey(new Keyframe(0.5f,0.5f,1.6f,1.6f));
 				_curve.AddKey(new Keyframe(0.75f,0.853f,1.1f,1.1f));
 				_curve.AddKey(new Keyframe(1f,1f,0f,0f));
 				break;
-			case AMTween.EaseType.easeInExpo:
+			case EaseType.EaseInExpo:
 				_curve.AddKey(new Keyframe(0f,0f,0.031f,0.031f));
 				_curve.AddKey(new Keyframe(0.5f,0.031f,0.214f,0.214f));
 				_curve.AddKey(new Keyframe(0.8f,0.249f,1.682f,1.682f));
 				_curve.AddKey(new Keyframe(1f,1f,6.8f,6.8f));
 				break;
-			case AMTween.EaseType.easeOutExpo:
+			case EaseType.EaseOutExpo:
 				_curve.AddKey(new Keyframe(0f,0f,6.8f,6.8f));
 				_curve.AddKey(new Keyframe(0.2f,0.751f,1.682f,1.682f));
 				_curve.AddKey(new Keyframe(0.5f,0.969f,0.214f,0.214f));
 				_curve.AddKey(new Keyframe(1f,1f,0.031f,0.031f));
 				break;
-			case AMTween.EaseType.easeInOutExpo:
+			case EaseType.EaseInOutExpo:
 				_curve.AddKey(new Keyframe(0f,0f,0f,0f));
 				_curve.AddKey(new Keyframe(0.25f,0.015f,0.181f,0.181f));
 				_curve.AddKey(new Keyframe(0.4f,0.125f,1.58f,1.58f));
@@ -425,21 +424,21 @@ public class AMEasePicker : EditorWindow {
 				_curve.AddKey(new Keyframe(0.75f,0.982f,0.21f,0.21f));
 				_curve.AddKey(new Keyframe(1f,1f,0f,0f));
 				break;
-			case AMTween.EaseType.easeInCirc:
+			case EaseType.EaseInCirc:
 				_curve.AddKey(new Keyframe(0f,0f,0.04f,0.04f));
 				_curve.AddKey(new Keyframe(0.6f,0.2f,0.76f,0.76f));
 				_curve.AddKey(new Keyframe(0.9f,0.562f,1.92f,1.92f));
 				_curve.AddKey(new Keyframe(0.975f,0.78f,4.2f,4.2f));
 				_curve.AddKey(new Keyframe(1f,1f,17.3f,17.3f));
 				break;
-			case AMTween.EaseType.easeOutCirc:
+			case EaseType.EaseOutCirc:
 				_curve.AddKey(new Keyframe(0f,0f,17.3f,17.3f));
 				_curve.AddKey(new Keyframe(0.025f,0.22f,4.2f,4.2f));
 				_curve.AddKey(new Keyframe(0.1f,0.438f,1.92f,1.92f));
 				_curve.AddKey(new Keyframe(0.4f,0.8f,0.76f,0.76f));
 				_curve.AddKey(new Keyframe(1f,1f,0.04f,0.04f));
 				break;
-			case AMTween.EaseType.easeInOutCirc:
+			case EaseType.EaseInOutCirc:
 				_curve.AddKey(new Keyframe(0f,0f,0f,0f));
 				_curve.AddKey(new Keyframe(0.3f,0.098f,0.75f,0.75f));
 				_curve.AddKey(new Keyframe(0.45f,0.281f,1.96f,1.96f));
@@ -450,21 +449,21 @@ public class AMEasePicker : EditorWindow {
 				_curve.AddKey(new Keyframe(0.7f,0.899f,0.74f,0.74f));
 				_curve.AddKey(new Keyframe(1f,1f,0f,0f));
 				break;
-			case AMTween.EaseType.easeInBounce:
+			case EaseType.EaseInBounce:
 				_curve.AddKey(new Keyframe(0f,0f,0.715f,0.715f));
 				_curve.AddKey(new Keyframe(0.091f,0f,-0.677f,1.365f));
 				_curve.AddKey(new Keyframe(0.272f,0f,-1.453f,2.716f));
 				_curve.AddKey(new Keyframe(0.636f,0f,-2.775f,5.517f));
 				_curve.AddKey(new Keyframe(1f,1f,-0.0023f,-0.0023f));
 				break;
-			case AMTween.EaseType.easeOutBounce:
+			case EaseType.EaseOutBounce:
 				_curve.AddKey(new Keyframe(0f,0f,-0.042f,-0.042f));
 				_curve.AddKey(new Keyframe(0.364f,1f,5.414f,-2.758f));
 				_curve.AddKey(new Keyframe(0.727f,1f,2.773f,-1.295f));
 				_curve.AddKey(new Keyframe(0.909f,1f,1.435f,-0.675f));
 				_curve.AddKey(new Keyframe(1f,1f,0.735f,0.735f));
 				break;
-			case AMTween.EaseType.easeInOutBounce:
+			case EaseType.EaseInOutBounce:
 				_curve.AddKey(new Keyframe(0f,0f,0.682f,0.682f));
 				_curve.AddKey(new Keyframe(0.046f,0f,-0.732f,1.316f));
 				_curve.AddKey(new Keyframe(0.136f,0f,-1.568f,2.608f));
@@ -475,20 +474,20 @@ public class AMEasePicker : EditorWindow {
 				_curve.AddKey(new Keyframe(0.955f,1f,1.488f,-0.634f));
 				_curve.AddKey(new Keyframe(1f,1f,0.804f,0.804f));
 				break;
-			case AMTween.EaseType.easeInBack:
+			case EaseType.EaseInBack:
 				_curve.AddKey(new Keyframe(0.00f,0.00f,0.00f,0.00f));
 				_curve.AddKey(new Keyframe(1.00f,1.00f,4.71f,4.71f));
 				break;
-			case AMTween.EaseType.easeOutBack:
+			case EaseType.EaseOutBack:
 				_curve.AddKey(new Keyframe(0.00f,0.00f,4.71f,4.71f));
 				_curve.AddKey(new Keyframe(1.00f,1.00f,0.00f,0.00f));
 				break;
-			case AMTween.EaseType.easeInOutBack:
+			case EaseType.EaseInOutBack:
 				_curve.AddKey(new Keyframe(0.00f,0.00f,0.00f,0.00f));
 				_curve.AddKey(new Keyframe(0.50f,0.50f,5.61f,5.61f));
 				_curve.AddKey(new Keyframe(1.00f,1.00f,0.00f,0.00f));
 				break;
-			case AMTween.EaseType.easeInElastic:
+			case EaseType.EaseInElastic:
 				_curve.AddKey(new Keyframe(0.00f,0.00f,0.00f,0.00f));
 				_curve.AddKey(new Keyframe(0.15f,0.00f,-0.04f,-0.04f));
 				_curve.AddKey(new Keyframe(0.30f,-0.005f,0.04f,0.04f));
@@ -500,7 +499,7 @@ public class AMEasePicker : EditorWindow {
 				_curve.AddKey(new Keyframe(0.92f,-0.05f,11.32f,11.32f));
 				_curve.AddKey(new Keyframe(1.00f,1.00f,7.50f,7.50f));
 				break;
-			case AMTween.EaseType.easeOutElastic:
+			case EaseType.EaseOutElastic:
 				_curve.AddKey(new Keyframe(0.000f,0.00f,6.56f,6.56f));
 				_curve.AddKey(new Keyframe(0.079f,1.06f,11.22f,11.22f));
 				_curve.AddKey(new Keyframe(0.134f,1.38f,0.03f,0.03f));
@@ -512,7 +511,7 @@ public class AMEasePicker : EditorWindow {
 				_curve.AddKey(new Keyframe(0.898f,1.00f,0.00f,0.00f));
 				_curve.AddKey(new Keyframe(1.000f,1.00f,0.00f,0.00f));
 				break;
-		case AMTween.EaseType.easeInOutElastic:
+		case EaseType.EaseInOutElastic:
 				_curve.AddKey(new Keyframe(0.000f,0.00f,0.00f,0.00f));
 				_curve.AddKey(new Keyframe(0.093f,0.00f,-0.05f,-0.05f));
 				_curve.AddKey(new Keyframe(0.149f,0.00f,0.06f,0.06f));
@@ -531,14 +530,6 @@ public class AMEasePicker : EditorWindow {
 				_curve.AddKey(new Keyframe(0.786f,0.99f,-0.04f,-0.04f));
 				_curve.AddKey(new Keyframe(0.848f,1.00f,0.04f,0.04f));
 				_curve.AddKey(new Keyframe(0.900f,1.00f,-0.01f,-0.01f));
-				_curve.AddKey(new Keyframe(1.000f,1.00f,0.00f,0.00f));
-			break;
-		case AMTween.EaseType.spring:
-				_curve.AddKey(new Keyframe(0.000f,0.00f,3.51f,3.51f));
-				_curve.AddKey(new Keyframe(0.367f,0.88f,1.79f,1.79f));
-				_curve.AddKey(new Keyframe(0.615f,1.08f,-0.28f,-0.28f));
-				_curve.AddKey(new Keyframe(0.795f,0.97f,0.03f,0.03f));
-				_curve.AddKey(new Keyframe(0.901f,1.01f,0.20f,0.20f));
 				_curve.AddKey(new Keyframe(1.000f,1.00f,0.00f,0.00f));
 			break;
 		}

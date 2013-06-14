@@ -177,13 +177,13 @@ public class AnimatorData : MonoBehaviour {
         if(nowPlayingTake == null) return;
         _isPaused = true;
         nowPlayingTake.stopAudio();
-        AMTween.Pause();
+        //AMTween.Pause();
 
     }
 
     public void Resume() {
         if(nowPlayingTake == null) return;
-        AMTween.Resume();
+        //AMTween.Resume();
         _isPaused = false;
     }
 
@@ -194,7 +194,7 @@ public class AnimatorData : MonoBehaviour {
         nowPlayingTake = null;
         isLooping = false;
         _isPaused = false;
-        AMTween.Stop();
+        //AMTween.Stop();
     }
 
     // play take by name from time
@@ -236,8 +236,8 @@ public class AnimatorData : MonoBehaviour {
     }
 
     void Execute(AMTake take, bool isFrame = true, float value = 0f /* frame or time */) {
-        if(nowPlayingTake != null)
-            AMTween.Stop();
+        //if(nowPlayingTake != null)
+            //AMTween.Stop();
         // delete AMCameraFade
         float startFrame = value;
         float startTime = value;
