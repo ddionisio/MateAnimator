@@ -81,7 +81,7 @@ public class AnimatorData : MonoBehaviour {
     // private
     private AMTake nowPlayingTake = null;
     private bool _isPaused = false;
-    private bool isLooping = false;
+    //private bool isLooping = false;
     //private float takeTime = 0f;
 
     public object Invoker(object[] args) {
@@ -223,7 +223,7 @@ public class AnimatorData : MonoBehaviour {
         }
 
         nowPlayingTake = null;
-        isLooping = false;
+        //isLooping = false;
         _isPaused = false;
         //AMTween.Stop();
     }
@@ -265,7 +265,7 @@ public class AnimatorData : MonoBehaviour {
                 nowPlayingTake.sequence.GoTo(startTime);
             }
 
-            isLooping = loop;
+            //isLooping = loop;
 
             //Execute(nowPlayingTake, isFrame, value);
         }

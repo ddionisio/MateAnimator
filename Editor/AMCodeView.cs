@@ -388,8 +388,8 @@ public class AMCodeView : EditorWindow {
         string s_init_suffix = "";
         string s = "";
         string objName = "track" + (track.id + 1) + "OBJ";
-        List<string> init_cameras = new List<string>();
-        List<string> init_textures = new List<string>();
+        //List<string> init_cameras = new List<string>();
+        //List<string> init_textures = new List<string>();
         code += "\n// " + track.name;
         #region translation
         if((track is AMTranslationTrack) && track.genericObj) {

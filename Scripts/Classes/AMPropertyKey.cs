@@ -10,26 +10,7 @@ public class AMPropertyKey : AMKey {
 	public Vector3 vect3;
 	public Color color;
 	public Rect rect;
-	public List<float> morph;
-	
-	public bool setValueMegaMorph(List<float> morph) {
-		bool shouldUpdate = false;
-		if(this.morph == null || this.morph.Count != morph.Count) shouldUpdate = true;
-		else {
-			for(int i=0;i<morph.Count;i++) {
-				if(this.morph[i] != morph[i]) {
-					shouldUpdate = true;
-					break;
-				}
-			}
-		}
-		if(shouldUpdate) {
-			this.morph = new List<float>(morph);	
-			return true;
-		}
-		return false;
-	}
-	
+
 	public bool setValue(float val) {
 		if(this.val != (double)val) {
 			this.val = (double)val;	
@@ -101,7 +82,6 @@ public class AMPropertyKey : AMKey {
 		a.vect3 = vect3;
 		a.color = color;
 		a.rect = rect;
-		if(morph != null) a.morph = new List<float>(morph);
 		a.easeType = easeType;
 		a.customEase = new List<float>(customEase);
 		

@@ -518,7 +518,7 @@ public class AnimatorTimeline {
 			return false;
 		}
 		
-		string componentName = a.strings[0];
+		//string componentName = a.strings[0];
 		bool missingTargets = false;
 		switch(a.strings[1]) {
 		case "morph":

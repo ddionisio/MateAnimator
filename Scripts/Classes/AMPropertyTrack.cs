@@ -4,6 +4,9 @@ using System.Collections.Generic;
 using System.Reflection;
 using System;
 
+using Holoville.HOTween.Core;
+using Holoville.HOTween;
+
 [System.Serializable]
 public class AMPropertyTrack : AMTrack {
     public enum ValueType {
@@ -15,7 +18,6 @@ public class AMPropertyTrack : AMTrack {
         Vector3 = 5,
         Color = 6,
         Rect = 7,
-        MorphChannels = 8,
         String = 9
     }
     public int valueType;
@@ -74,20 +76,11 @@ public class AMPropertyTrack : AMTrack {
             cachedMethodInfo = value;
         }
     }
-    private MethodInfo cachedMethodInfoMorphNames;
-    public MethodInfo methodInfoMorphNames {
-        get {
-            if(cachedMethodInfoMorphNames != null) return cachedMethodInfoMorphNames;
-            if(!obj || !component || valueType != (int)ValueType.MorphChannels) return null;
-            cachedMethodInfoMorphNames = component.GetType().GetMethod("GetChannelNames");
-            return cachedMethodInfo;
-        }
-    }
     public override string getTrackType() {
         if(fieldInfo != null) return fieldInfo.Name;
         if(propertyInfo != null) return propertyInfo.Name;
         if(methodInfo != null) {
-            if(valueType == (int)ValueType.MorphChannels) return "Morph";
+
         }
         return "Not Set";
     }
@@ -101,7 +94,6 @@ public class AMPropertyTrack : AMTrack {
         if(fieldInfo != null) return true;
         if(propertyInfo != null) return true;
         if(methodInfo != null) {
-            if(valueType == (int)ValueType.MorphChannels) return true;
         }
         return false;
     }
@@ -118,31 +110,8 @@ public class AMPropertyTrack : AMTrack {
             addKey(_frame, getPropertyValueColor());
         else if(valueType == (int)ValueType.Rect)
             addKey(_frame, getPropertyValueRect());
-        else if(valueType == (int)ValueType.MorphChannels)
-            addKeyMegaMorph(_frame, new List<float>());
         else
             Debug.LogError("Animator: Invalid ValueType " + valueType.ToString());
-    }
-    // add key mega morph
-    public void addKeyMegaMorph(int _frame, List<float> channels) {
-        foreach(AMPropertyKey key in keys) {
-            // if key exists on frame, update key
-            if(key.frame == _frame) {
-                key.setValueMegaMorph(channels);
-                // update cache
-                updateCache();
-                return;
-            }
-        }
-        AMPropertyKey a = ScriptableObject.CreateInstance<AMPropertyKey>();
-        a.frame = _frame;
-        a.setValueMegaMorph(channels);
-        // set default ease type to linear
-        a.easeType = (int)0;//AMTween.EaseType.easeInOutSine;
-        // add a new key
-        keys.Add(a);
-        // update cache
-        updateCache();
     }
     // add key numeric
     public void addKey(int _frame, double val) {
@@ -159,7 +128,7 @@ public class AMPropertyTrack : AMTrack {
         a.frame = _frame;
         a.setValue(val);
         // set default ease type to linear
-        a.easeType = (int)0;// AMTween.EaseType.linear;
+        a.easeType = (int)EaseType.Linear;
         // add a new key
         keys.Add(a);
         // update cache
@@ -180,7 +149,7 @@ public class AMPropertyTrack : AMTrack {
         a.frame = _frame;
         a.setValue(val);
         // set default ease type to linear
-        a.easeType = (int)0;// AMTween.EaseType.linear;
+        a.easeType = (int)EaseType.Linear;
         // add a new key
         keys.Add(a);
         // update cache
@@ -201,7 +170,7 @@ public class AMPropertyTrack : AMTrack {
         a.frame = _frame;
         a.setValue(val);
         // set default ease type to linear
-        a.easeType = (int)0;// AMTween.EaseType.linear;
+        a.easeType = (int)EaseType.Linear;
         // add a new key
         keys.Add(a);
         // update cache
@@ -222,7 +191,7 @@ public class AMPropertyTrack : AMTrack {
         a.frame = _frame;
         a.setValue(val);
         // set default ease type to linear
-        a.easeType = (int)0;// AMTween.EaseType.linear;
+        a.easeType = (int)EaseType.Linear;
         // add a new key
         keys.Add(a);
         // update cache
@@ -243,7 +212,7 @@ public class AMPropertyTrack : AMTrack {
         a.frame = _frame;
         a.setValue(val);
         // set default ease type to linear
-        a.easeType = (int)0;// AMTween.EaseType.linear;
+        a.easeType = (int)EaseType.Linear;
         // add a new key
         keys.Add(a);
         // update cache
@@ -320,7 +289,7 @@ public class AMPropertyTrack : AMTrack {
             a.valueType = valueType;
             Type _type = null;
             bool showError = true;
-            int methodInfoType = -1;
+            //int methodInfoType = -1;
             if(fieldInfo != null) {
                 a.fieldInfo = fieldInfo;
                 _type = fieldInfo.FieldType;
@@ -334,10 +303,6 @@ public class AMPropertyTrack : AMTrack {
             else if(methodInfo != null) {
                 a.methodInfo = methodInfo;
                 a.methodParameterTypes = methodParameterTypes;
-                if(valueType == (int)ValueType.MorphChannels) {
-                    methodInfoType = (int)ValueType.MorphChannels;
-                    showError = false;
-                }
             }
             if(showError) {
                 Debug.LogError("Animator: Fatal Error; fieldInfo, propertyInfo and methodInfo are unset for Value Type " + valueType);
@@ -345,11 +310,7 @@ public class AMPropertyTrack : AMTrack {
                 return;
             }
             // set value
-            if(methodInfoType == (int)ValueType.MorphChannels) {
-                a.start_morph = new List<float>((keys[i] as AMPropertyKey).morph);
-                if(a.endFrame != -1) a.end_morph = new List<float>((keys[i + 1] as AMPropertyKey).morph);
-            }
-            else if(isNumeric(_type)) {
+            if(isNumeric(_type)) {
                 a.start_val = (double)(keys[i] as AMPropertyKey).val;
                 if(a.endFrame != -1) a.end_val = (double)(keys[i + 1] as AMPropertyKey).val;
             }
@@ -477,231 +438,165 @@ public class AMPropertyTrack : AMTrack {
         }
         if(!component || !obj) return;
 
-        Debug.LogError("need implement");
+        // if before or equal to first frame, or is the only frame
+        if((frame <= (float)cache[0].startFrame) || ((cache[0] as AMPropertyAction).endFrame == -1)) {
+            //obj.rotation = (cache[0] as AMPropertyAction).getStartQuaternion();
+            if(fieldInfo != null) {
+                fieldInfo.SetValue(component, (cache[0] as AMPropertyAction).getStartValue());
+                refreshTransform();
+            }
+            else if(propertyInfo != null) {
+                propertyInfo.SetValue(component, (cache[0] as AMPropertyAction).getStartValue(), null);
+                refreshTransform();
+            }
+            else if(methodInfo != null) {
+            }
+            return;
+        }
+        // if beyond or equal to last frame
+        if(frame >= (float)(cache[cache.Count - 2] as AMPropertyAction).endFrame) {
+            if(fieldInfo != null) {
+                fieldInfo.SetValue(component, (cache[cache.Count - 2] as AMPropertyAction).getEndValue());
+                refreshTransform();
+            }
+            else if(propertyInfo != null) {
+                propertyInfo.SetValue(component, (cache[cache.Count - 2] as AMPropertyAction).getEndValue(), null);
+                refreshTransform();
+            }
+            else if(methodInfo != null) {
+            }
+            return;
+        }
+        // if lies on property action
+        foreach(AMPropertyAction action in cache) {
+            if((frame < (float)action.startFrame) || (frame > (float)action.endFrame)) continue;
+            if(quickPreview && !action.targetsAreEqual()) return;	// quick preview; if action will execute then skip
+            // if on startFrame
+            if(frame == (float)action.startFrame) {
+                if(fieldInfo != null) {
+                    fieldInfo.SetValue(component, action.getStartValue());
+                    refreshTransform();
+                }
+                else if(propertyInfo != null) {
+                    propertyInfo.SetValue(component, action.getStartValue(), null);
+                    refreshTransform();
+                }
+                else if(methodInfo != null) {
+                }
+                return;
+            }
+            // if on endFrame
+            if(frame == (float)action.endFrame) {
+                if(fieldInfo != null) {
+                    fieldInfo.SetValue(component, action.getEndValue());
+                    refreshTransform();
+                }
+                else if(propertyInfo != null) {
+                    propertyInfo.SetValue(component, action.getEndValue(), null);
+                    refreshTransform();
+                }
+                else if(methodInfo != null) {
+                }
+                return;
+            }
+            // else find value using easing function
 
-#if false
-		int morph_count = 0;
-		// if before or equal to first frame, or is the only frame
-		if((frame <= (float) cache[0].startFrame)||((cache[0] as AMPropertyAction).endFrame == -1)) {
-			//obj.rotation = (cache[0] as AMPropertyAction).getStartQuaternion();
-			if(fieldInfo != null) {
-				fieldInfo.SetValue(component,(cache[0] as AMPropertyAction).getStartValue());
-				refreshTransform();
-			} else if(propertyInfo != null) {
-				propertyInfo.SetValue(component,(cache[0] as AMPropertyAction).getStartValue(),null);
-				refreshTransform();
-			} else if(methodInfo != null) {
-				try {
-					string[] channelNames = getMorphNames();
-					morph_count = channelNames.Length;
-				} catch {
-					// do nothing
-				}
-				previewMorph((cache[0] as AMPropertyAction).start_morph,morph_count);
-			}
-			return;
-		}
-		// if beyond or equal to last frame
-		if(frame >= (float) (cache[cache.Count-2] as AMPropertyAction).endFrame) {
-			if(fieldInfo != null) {
-				fieldInfo.SetValue(component,(cache[cache.Count-2] as AMPropertyAction).getEndValue());
-				refreshTransform();
-			} else if(propertyInfo != null) {
-				propertyInfo.SetValue(component,(cache[cache.Count-2] as AMPropertyAction).getEndValue(),null);
-				refreshTransform();
-			} else if(methodInfo != null) {
-				string[] channelNames = getMorphNames();
-				morph_count = channelNames.Length;
-				previewMorph((cache[cache.Count-2] as AMPropertyAction).end_morph,morph_count);
-			}
-			return;
-		}
-		// if lies on property action
-		foreach(AMPropertyAction action in cache) {
-			if((frame<(float)action.startFrame)||(frame>(float)action.endFrame)) continue;
-			if(quickPreview && !action.targetsAreEqual()) return;	// quick preview; if action will execute then skip
-			// if on startFrame
-			if(frame == (float)action.startFrame) {
-				if(fieldInfo != null) {
-					fieldInfo.SetValue(component,action.getStartValue());
-					refreshTransform();
-				} else if(propertyInfo != null) {
-					propertyInfo.SetValue(component,action.getStartValue(),null);
-					refreshTransform();
-				} else if(methodInfo != null) {
-					string[] channelNames = getMorphNames();
-					morph_count = channelNames.Length;
-					previewMorph(action.start_morph,morph_count);
-				}
-				return;	
-			}
-			// if on endFrame
-			if(frame == (float)action.endFrame) {
-				if(fieldInfo != null) {
-					fieldInfo.SetValue(component,action.getEndValue());
-					refreshTransform();
-				} else if(propertyInfo != null) {
-					propertyInfo.SetValue(component,action.getEndValue(),null);
-					refreshTransform();
-				} else if(methodInfo != null) {
-					string[] channelNames = getMorphNames();
-					morph_count = channelNames.Length;
-					previewMorph(action.end_morph,morph_count);
-				}
-				return;	
-			}
-			// else find value using easing function
+            float framePositionInAction = frame - (float)action.startFrame;
+            if(framePositionInAction < 0f) framePositionInAction = 0f;
 
-			AMTween.EasingFunction ease;
-			AnimationCurve curve = null;
-			
-			if(action.hasCustomEase()) {
-				ease = AMTween.customEase;
-				curve = action.easeCurve;
-			} else {
-				ease = AMTween.GetEasingFunction((AMTween.EaseType)action.easeType);
-			}
-			
-			float framePositionInAction = frame-(float)action.startFrame;
-			if (framePositionInAction<0f) framePositionInAction = 0f;
-			float percentage = framePositionInAction/action.getNumberOfFrames();
-			
+            float t = 0.0f;
 
-			
-			//qCurrent.x = ease(qStart.x,qEnd.x,percentage);
-			if(action.valueType == (int)ValueType.MorphChannels) {
-				string[] channelNames = getMorphNames();
-				morph_count = channelNames.Length;
-				List<float> morphCurrent = new List<float>();
-				//bool isMorphValid = true;
-				for(int p=0;p<morph_count;p++) {
-					if(action.start_morph.Count<=p || action.end_morph.Count<=p) {
-						//isMorphValid = false;
-						//Debug.Log("p = "+p+"; invalid morph! start count: "+action.start_morph.Count+", end count: "+action.end_morph.Count);
-						break;
-					}
-					morphCurrent.Add(0f);
-					morphCurrent[p] = ease(action.start_morph[p],action.end_morph[p],percentage,curve);
-				}
-				/*if(isMorphValid)*/ previewMorph(morphCurrent,morph_count);
-			} else if(action.valueType == (int)ValueType.Integer) {
-				float vStartInteger = Convert.ToSingle(action.start_val);
-				float vEndInteger = Convert.ToSingle(action.end_val);
-				int vCurrentInteger = (int)ease(vStartInteger,vEndInteger,percentage,curve);
-				if(fieldInfo != null) fieldInfo.SetValue(component,vCurrentInteger);
-				else if(propertyInfo != null) propertyInfo.SetValue(component,vCurrentInteger,null);
-				refreshTransform();
-			} else if(action.valueType == (int)ValueType.Long) {
-				float vStartLong = Convert.ToSingle(action.start_val);
-				float vEndLong = Convert.ToSingle(action.end_val);
-				long vCurrentLong = (long)ease(vStartLong,vEndLong,percentage,curve);
-				if(fieldInfo != null) fieldInfo.SetValue(component,vCurrentLong);
-				else if(propertyInfo != null) propertyInfo.SetValue(component,vCurrentLong,null);
-				refreshTransform();
-			} else if(action.valueType == (int)ValueType.Float) {
-				float vStartFloat = Convert.ToSingle(action.start_val);
-				float vEndLong = Convert.ToSingle(action.end_val);
-				float vCurrentFloat = (float)ease(vStartFloat,vEndLong,percentage,curve);
-				if(fieldInfo != null) fieldInfo.SetValue(component,vCurrentFloat);
-				else if(propertyInfo != null) propertyInfo.SetValue(component,vCurrentFloat,null);
-				refreshTransform();
-			} else if(action.valueType == (int)ValueType.Double) {
-				float vStartDouble = Convert.ToSingle(action.start_val);
-				float vEndDouble = Convert.ToSingle(action.end_val);
-				double vCurrentDouble = (double)ease(vStartDouble,vEndDouble,percentage,curve);
-				if(fieldInfo != null) fieldInfo.SetValue(component,vCurrentDouble);
-				else if(propertyInfo != null) propertyInfo.SetValue(component,vCurrentDouble,null);
-				refreshTransform();
-			}else if(action.valueType == (int)ValueType.Vector2) {
-				Vector2 vStartVector2 = action.start_vect2;
-				Vector2 vEndVector2 = action.end_vect2;
-				Vector2 vCurrentVector2 = new Vector2();
-				vCurrentVector2.x = ease(vStartVector2.x,vEndVector2.x,percentage,curve);
-				vCurrentVector2.y = ease(vStartVector2.y,vEndVector2.y,percentage,curve);
-				if(fieldInfo != null) fieldInfo.SetValue(component,vCurrentVector2);
-				else if(propertyInfo != null) propertyInfo.SetValue(component,vCurrentVector2,null);
-				refreshTransform();
-			} else if(action.valueType == (int)ValueType.Vector3) {
-				Vector3 vStartVector3 = action.start_vect3;
-				Vector3 vEndVector3 = action.end_vect3;
-				Vector3 vCurrentVector3 = new Vector3();
-				vCurrentVector3.x = ease(vStartVector3.x,vEndVector3.x,percentage,curve);
-				vCurrentVector3.y = ease(vStartVector3.y,vEndVector3.y,percentage,curve);
-				vCurrentVector3.z = ease(vStartVector3.z,vEndVector3.z,percentage,curve);
-				if(fieldInfo != null) fieldInfo.SetValue(component,vCurrentVector3);
-				else if(propertyInfo != null) propertyInfo.SetValue(component,vCurrentVector3,null);
-				refreshTransform();
-			} else if(action.valueType == (int)ValueType.Color) {
-				Color vStartColor = action.start_color;
-				Color vEndColor = action.end_color;
-				Color vCurrentColor = new Color();
-				vCurrentColor.r = ease(vStartColor.r,vEndColor.r,percentage,curve);
-				vCurrentColor.g = ease(vStartColor.g,vEndColor.g,percentage,curve);
-				vCurrentColor.b = ease(vStartColor.b,vEndColor.b,percentage,curve);
-				vCurrentColor.a = ease(vStartColor.a,vEndColor.a,percentage,curve);
-				if(fieldInfo != null) fieldInfo.SetValue(component,vCurrentColor);
-				else if(propertyInfo != null) propertyInfo.SetValue(component,vCurrentColor,null);
-				refreshTransform();
-			}else if(action.valueType == (int)ValueType.Rect) {
-				Rect vStartRect = action.start_rect;
-				Rect vEndRect = action.end_rect;
-				Rect vCurrentRect = new Rect();
-				vCurrentRect.x = ease(vStartRect.x,vEndRect.x,percentage,curve);
-				vCurrentRect.y = ease(vStartRect.y,vEndRect.y,percentage,curve);
-				vCurrentRect.width = ease(vStartRect.width,vEndRect.width,percentage,curve);
-				vCurrentRect.height = ease(vStartRect.height,vEndRect.height,percentage,curve);	
-				if(fieldInfo != null) fieldInfo.SetValue(component,vCurrentRect);
-				else if(propertyInfo != null) propertyInfo.SetValue(component,vCurrentRect,null);
-				refreshTransform();
-			} else {
-				Debug.LogError("Animator: Invalid ValueType "+valueType.ToString());	
-			}
+            if(action.hasCustomEase()) {
+                t = AMUtil.EaseCustom(0.0f, 1.0f, framePositionInAction / action.getNumberOfFrames(), action.easeCurve);
+            }
+            else {
+                TweenDelegate.EaseFunc ease = AMUtil.GetEasingFunction((EaseType)action.easeType);
+                t = ease(framePositionInAction, 0.0f, 1.0f, action.getNumberOfFrames(), 0.0f, 0.0f);
+            }
 
-			return;
-		}
-#endif
+            //qCurrent.x = ease(qStart.x,qEnd.x,percentage);
+            if(action.valueType == (int)ValueType.Integer) {
+                float vStartInteger = Convert.ToSingle(action.start_val);
+                float vEndInteger = Convert.ToSingle(action.end_val);
+                int vCurrentInteger = Mathf.RoundToInt(Mathf.Lerp(vStartInteger, vEndInteger, t));
+                if(fieldInfo != null) fieldInfo.SetValue(component, vCurrentInteger);
+                else if(propertyInfo != null) propertyInfo.SetValue(component, vCurrentInteger, null);
+                refreshTransform();
+            }
+            else if(action.valueType == (int)ValueType.Long) {
+                float vStartLong = Convert.ToSingle(action.start_val);
+                float vEndLong = Convert.ToSingle(action.end_val);
+                long vCurrentLong = (long)Mathf.Lerp(vStartLong, vEndLong, t);
+                if(fieldInfo != null) fieldInfo.SetValue(component, vCurrentLong);
+                else if(propertyInfo != null) propertyInfo.SetValue(component, vCurrentLong, null);
+                refreshTransform();
+            }
+            else if(action.valueType == (int)ValueType.Float) {
+                float vStartFloat = Convert.ToSingle(action.start_val);
+                float vEndFloat = Convert.ToSingle(action.end_val);
+                float vCurrentFloat = Mathf.Lerp(vStartFloat, vEndFloat, t);
+                if(fieldInfo != null) fieldInfo.SetValue(component, vCurrentFloat);
+                else if(propertyInfo != null) propertyInfo.SetValue(component, vCurrentFloat, null);
+                refreshTransform();
+            }
+            else if(action.valueType == (int)ValueType.Double) {
+                double vCurrentDouble = action.start_val + ((double)t) * (action.end_val - action.start_val);
+                if(fieldInfo != null) fieldInfo.SetValue(component, vCurrentDouble);
+                else if(propertyInfo != null) propertyInfo.SetValue(component, vCurrentDouble, null);
+                refreshTransform();
+            }
+            else if(action.valueType == (int)ValueType.Vector2) {
+                Vector2 vCurrentVector2 = Vector2.Lerp(action.start_vect2, action.end_vect2, t);
+                if(fieldInfo != null) fieldInfo.SetValue(component, vCurrentVector2);
+                else if(propertyInfo != null) propertyInfo.SetValue(component, vCurrentVector2, null);
+                refreshTransform();
+            }
+            else if(action.valueType == (int)ValueType.Vector3) {
+                Vector3 vCurrentVector3 = Vector3.Lerp(action.start_vect3, action.end_vect3, t);
+                if(fieldInfo != null) fieldInfo.SetValue(component, vCurrentVector3);
+                else if(propertyInfo != null) propertyInfo.SetValue(component, vCurrentVector3, null);
+                refreshTransform();
+            }
+            else if(action.valueType == (int)ValueType.Color) {
+                Color vCurrentColor = Color.Lerp(action.start_color, action.end_color, t);
+                if(fieldInfo != null) fieldInfo.SetValue(component, vCurrentColor);
+                else if(propertyInfo != null) propertyInfo.SetValue(component, vCurrentColor, null);
+                refreshTransform();
+            }
+            else if(action.valueType == (int)ValueType.Rect) {
+                Rect vStartRect = action.start_rect;
+                Rect vEndRect = action.end_rect;
+                Rect vCurrentRect = new Rect();
+                vCurrentRect.x = Mathf.Lerp(vStartRect.x, vEndRect.x, t);
+                vCurrentRect.y = Mathf.Lerp(vStartRect.y, vEndRect.y, t);
+                vCurrentRect.width = Mathf.Lerp(vStartRect.width, vEndRect.width, t);
+                vCurrentRect.height = Mathf.Lerp(vStartRect.height, vEndRect.height, t);
+                if(fieldInfo != null) fieldInfo.SetValue(component, vCurrentRect);
+                else if(propertyInfo != null) propertyInfo.SetValue(component, vCurrentRect, null);
+                refreshTransform();
+            }
+            else {
+                Debug.LogError("Animator: Invalid ValueType " + valueType.ToString());
+            }
+
+            return;
+        }
     }
     public void refreshTransform() {
         if(Application.isPlaying || !obj) return;
         obj.transform.position = new Vector3(obj.transform.position.x, obj.transform.position.y, obj.transform.position.z);
     }
-    public void previewMorph(List<float> morph, int count) {
-        if(valueType == (int)ValueType.MorphChannels) {
-            /*for(int i=0;i<count;i++) {
-                if(i >= morph.Count) break;
-                if(morph[i] == 0f) continue;
-                methodInfo.Invoke(component, new object[]{i,morph[i]});
-            }*/
-            parentTake.addMorph(obj, methodInfo, component, morph);
-        }
-        // update transform to refresh scene
-        //if(Application.isEditor) obj.transform.position = new Vector3(obj.transform.position.x,obj.transform.position.y,obj.transform.position.z);
-    }
-    /*public void previewMorph(List<float> morph,int count) {
-        if(valueType == (int)ValueType.MorphChannels) {
-            for(int i=0;i<count;i++) {
-                if(i >= morph.Count) break;
-                //if(morph[i] == 0f) continue;	// test
-                methodInfo.Invoke(component, new object[]{i,morph[i]});
-            }
-        }
-        // update transform to refresh scene
-        //if(Application.isEditor) obj.transform.position = new Vector3(obj.transform.position.x,obj.transform.position.y,obj.transform.position.z);
-    }*/
+
     public string getComponentName() {
         if(fieldInfo != null) return fieldInfo.DeclaringType.Name;
         if(propertyInfo != null) return propertyInfo.DeclaringType.Name;
         if(methodInfo != null) {
-            if(valueType == (int)ValueType.MorphChannels) return "Morph";
         }
         return "Unknown";
     }
     public string getValueInitialization(int codeLanguage, string varName) {
         string s = "";
-        if(valueType == (int)ValueType.MorphChannels) {
-            s += "AMTween.SetMorph(" + varName + ", " + varName + "Property, " + (cache[0] as AMPropertyAction).getFloatArrayString(codeLanguage, (cache[0] as AMPropertyAction).start_morph) + ");";
-            return s;
-        }
+
         s += varName + "Property.";
         if(methodInfo != null) {
             s += "Invoke(" + varName + ", ";
@@ -776,11 +671,6 @@ public class AMPropertyTrack : AMTrack {
         return false;
     }
 
-    public string[] getMorphNames() {
-        if(!component || methodInfoMorphNames == null) return new string[] { };
-        return (string[])methodInfoMorphNames.Invoke(component, null);
-    }
-
     public override AnimatorTimeline.JSONInit getJSONInit() {
         if(!obj || keys.Count <= 0 || cache.Count <= 0) return null;
         AnimatorTimeline.JSONInit init = new AnimatorTimeline.JSONInit();
@@ -803,11 +693,7 @@ public class AMPropertyTrack : AMTrack {
                 strings.Add(s);
             }
         }
-        if(valueType == (int)ValueType.MorphChannels) {
-            init.type = "propertymorph";
-            init.floats = (cache[0] as AMPropertyAction).start_morph.ToArray();
-        }
-        else if(valueType == (int)ValueType.Integer) {
+        if(valueType == (int)ValueType.Integer) {
             init.type = "propertyint";
             init._int = Convert.ToInt32((cache[0] as AMPropertyAction).start_val);
         }

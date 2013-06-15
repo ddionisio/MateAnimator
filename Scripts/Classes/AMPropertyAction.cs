@@ -3,6 +3,10 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
 using System;
+
+using Holoville.HOTween;
+using Holoville.HOTween.Plugins;
+
 [System.Serializable]
 public class AMPropertyAction : AMAction {
 
@@ -71,9 +75,6 @@ public class AMPropertyAction : AMAction {
     public Color end_color;
     public Rect end_rect;
 
-    public List<float> start_morph;
-    public List<float> end_morph;
-
     public override string ToString(int codeLanguage, int frameRate) {
         /*if (endFrame == -1 || targetsAreEqual()) return null;
         string memberInfoType = "";
@@ -113,53 +114,69 @@ public class AMPropertyAction : AMAction {
     public float getTime(int frameRate) {
         return (float)getNumberOfFrames() / (float)frameRate;
     }
+    public override Tweener buildTweener(int frameRate) {
+        if(targetsAreEqual()) return null;
+        if((endFrame == -1) || !component || ((fieldInfo == null) && (propertyInfo == null) && (methodInfo == null))) return null;
+
+        string varName = null;
+
+        if(fieldInfo != null) {
+            varName = fieldName;
+        }
+        else if(propertyInfo != null) {
+            varName = propertyName;
+        }
+
+        if(varName != null) {
+            if(hasCustomEase()) {
+                switch((AMPropertyTrack.ValueType)valueType) {
+                    case AMPropertyTrack.ValueType.Integer:
+                        return HOTween.To(component, getTime(frameRate), new TweenParms().Prop(varName, Convert.ToInt32(end_val)).Ease(easeCurve));
+                    case AMPropertyTrack.ValueType.Float:
+                        return HOTween.To(component, getTime(frameRate), new TweenParms().Prop(varName, Convert.ToSingle(end_val)).Ease(easeCurve));
+                    case AMPropertyTrack.ValueType.Double:
+                        return HOTween.To(component, getTime(frameRate), new TweenParms().Prop(varName, new AMPlugDouble(end_val)).Ease(easeCurve));
+                    case AMPropertyTrack.ValueType.Long:
+                        return HOTween.To(component, getTime(frameRate), new TweenParms().Prop(varName, new AMPlugLong(Convert.ToInt64(end_val))).Ease(easeCurve));
+                    case AMPropertyTrack.ValueType.Vector2:
+                        return HOTween.To(component, getTime(frameRate), new TweenParms().Prop(varName, end_vect2).Ease(easeCurve));
+                    case AMPropertyTrack.ValueType.Vector3:
+                        return HOTween.To(component, getTime(frameRate), new TweenParms().Prop(varName, end_vect3).Ease(easeCurve));
+                    case AMPropertyTrack.ValueType.Color:
+                        return HOTween.To(component, getTime(frameRate), new TweenParms().Prop(varName, end_color).Ease(easeCurve));
+                    case AMPropertyTrack.ValueType.Rect:
+                        return HOTween.To(component, getTime(frameRate), new TweenParms().Prop(varName, end_rect).Ease(easeCurve));
+                }
+            }
+            else {
+                switch((AMPropertyTrack.ValueType)valueType) {
+                    case AMPropertyTrack.ValueType.Integer:
+                        return HOTween.To(component, getTime(frameRate), new TweenParms().Prop(varName, Convert.ToInt32(end_val)).Ease((EaseType)easeType));
+                    case AMPropertyTrack.ValueType.Float:
+                        return HOTween.To(component, getTime(frameRate), new TweenParms().Prop(varName, Convert.ToSingle(end_val)).Ease((EaseType)easeType));
+                    case AMPropertyTrack.ValueType.Double:
+                        return HOTween.To(component, getTime(frameRate), new TweenParms().Prop(varName, new AMPlugDouble(end_val)).Ease((EaseType)easeType));
+                    case AMPropertyTrack.ValueType.Long:
+                        return HOTween.To(component, getTime(frameRate), new TweenParms().Prop(varName, new AMPlugLong(Convert.ToInt64(end_val))).Ease((EaseType)easeType));
+                    case AMPropertyTrack.ValueType.Vector2:
+                        return HOTween.To(component, getTime(frameRate), new TweenParms().Prop(varName, end_vect2).Ease((EaseType)easeType));
+                    case AMPropertyTrack.ValueType.Vector3:
+                        return HOTween.To(component, getTime(frameRate), new TweenParms().Prop(varName, end_vect3).Ease((EaseType)easeType));
+                    case AMPropertyTrack.ValueType.Color:
+                        return HOTween.To(component, getTime(frameRate), new TweenParms().Prop(varName, end_color).Ease((EaseType)easeType));
+                    case AMPropertyTrack.ValueType.Rect:
+                        return HOTween.To(component, getTime(frameRate), new TweenParms().Prop(varName, end_rect).Ease((EaseType)easeType));
+                }
+            }
+        }
+
+        Debug.LogError("Animator: No FieldInfo or PropertyInfo set.");
+        return null;
+    }
     public override void execute(int frameRate, float delay) {
         if(targetsAreEqual()) return;
         if((endFrame == -1) || !component || ((fieldInfo == null) && (propertyInfo == null) && (methodInfo == null))) return;
-        /*if(fieldInfo != null) {
-            if(hasCustomEase()) {
-                if(AMPropertyTrack.isValueTypeNumeric(valueType)) AMTween.PropertyTo(component, AMTween.Hash("delay", getWaitTime(frameRate, delay), "time", getTime(frameRate), "fieldinfo", fieldInfo, "from", start_val, "to", end_val, "easecurve", easeCurve));
-                if(valueType == (int)AMPropertyTrack.ValueType.Vector2) AMTween.PropertyTo(component, AMTween.Hash("delay", getWaitTime(frameRate, delay), "time", getTime(frameRate), "fieldinfo", fieldInfo, "from", start_vect2, "to", end_vect2, "easecurve", easeCurve));
-                if(valueType == (int)AMPropertyTrack.ValueType.Vector3) AMTween.PropertyTo(component, AMTween.Hash("delay", getWaitTime(frameRate, delay), "time", getTime(frameRate), "fieldinfo", fieldInfo, "from", start_vect3, "to", end_vect3, "easecurve", easeCurve));
-                if(valueType == (int)AMPropertyTrack.ValueType.Color) AMTween.PropertyTo(component, AMTween.Hash("delay", getWaitTime(frameRate, delay), "time", getTime(frameRate), "fieldinfo", fieldInfo, "from", start_color, "to", end_color, "easecurve", easeCurve));
-                if(valueType == (int)AMPropertyTrack.ValueType.Rect) AMTween.PropertyTo(component, AMTween.Hash("delay", getWaitTime(frameRate, delay), "time", getTime(frameRate), "fieldinfo", fieldInfo, "from", start_vect2, "to", end_vect2, "easecurve", easeCurve));
-            }
-            else {
-                if(AMPropertyTrack.isValueTypeNumeric(valueType)) AMTween.PropertyTo(component, AMTween.Hash("delay", getWaitTime(frameRate, delay), "time", getTime(frameRate), "fieldinfo", fieldInfo, "from", start_val, "to", end_val, "easetype", (AMTween.EaseType)easeType));
-                if(valueType == (int)AMPropertyTrack.ValueType.Vector2) AMTween.PropertyTo(component, AMTween.Hash("delay", getWaitTime(frameRate, delay), "time", getTime(frameRate), "fieldinfo", fieldInfo, "from", start_vect2, "to", end_vect2, "easetype", (AMTween.EaseType)easeType));
-                if(valueType == (int)AMPropertyTrack.ValueType.Vector3) AMTween.PropertyTo(component, AMTween.Hash("delay", getWaitTime(frameRate, delay), "time", getTime(frameRate), "fieldinfo", fieldInfo, "from", start_vect3, "to", end_vect3, "easetype", (AMTween.EaseType)easeType));
-                if(valueType == (int)AMPropertyTrack.ValueType.Color) AMTween.PropertyTo(component, AMTween.Hash("delay", getWaitTime(frameRate, delay), "time", getTime(frameRate), "fieldinfo", fieldInfo, "from", start_color, "to", end_color, "easetype", (AMTween.EaseType)easeType));
-                if(valueType == (int)AMPropertyTrack.ValueType.Rect) AMTween.PropertyTo(component, AMTween.Hash("delay", getWaitTime(frameRate, delay), "time", getTime(frameRate), "fieldinfo", fieldInfo, "from", start_vect2, "to", end_vect2, "easetype", (AMTween.EaseType)easeType));
-            }
-        }
-        else if(propertyInfo != null) {
-            if(hasCustomEase()) {
-                if(AMPropertyTrack.isValueTypeNumeric(valueType)) AMTween.PropertyTo(component, AMTween.Hash("delay", getWaitTime(frameRate, delay), "time", getTime(frameRate), "propertyinfo", propertyInfo, "from", start_val, "to", end_val, "easecurve", easeCurve));
-                if(valueType == (int)AMPropertyTrack.ValueType.Vector2) AMTween.PropertyTo(component, AMTween.Hash("delay", getWaitTime(frameRate, delay), "time", getTime(frameRate), "propertyinfo", propertyInfo, "from", start_vect2, "to", end_vect2, "easecurve", easeCurve));
-                if(valueType == (int)AMPropertyTrack.ValueType.Vector3) AMTween.PropertyTo(component, AMTween.Hash("delay", getWaitTime(frameRate, delay), "time", getTime(frameRate), "propertyinfo", propertyInfo, "from", start_vect3, "to", end_vect3, "easecurve", easeCurve));
-                if(valueType == (int)AMPropertyTrack.ValueType.Color) AMTween.PropertyTo(component, AMTween.Hash("delay", getWaitTime(frameRate, delay), "time", getTime(frameRate), "propertyinfo", propertyInfo, "from", start_color, "to", end_color, "easecurve", easeCurve));
-                if(valueType == (int)AMPropertyTrack.ValueType.Rect) AMTween.PropertyTo(component, AMTween.Hash("delay", getWaitTime(frameRate, delay), "time", getTime(frameRate), "propertyinfo", propertyInfo, "from", start_vect2, "to", end_vect2, "easecurve", easeCurve));
-            }
-            else {
-                if(AMPropertyTrack.isValueTypeNumeric(valueType)) AMTween.PropertyTo(component, AMTween.Hash("delay", getWaitTime(frameRate, delay), "time", getTime(frameRate), "propertyinfo", propertyInfo, "from", start_val, "to", end_val, "easetype", (AMTween.EaseType)easeType));
-                if(valueType == (int)AMPropertyTrack.ValueType.Vector2) AMTween.PropertyTo(component, AMTween.Hash("delay", getWaitTime(frameRate, delay), "time", getTime(frameRate), "propertyinfo", propertyInfo, "from", start_vect2, "to", end_vect2, "easetype", (AMTween.EaseType)easeType));
-                if(valueType == (int)AMPropertyTrack.ValueType.Vector3) AMTween.PropertyTo(component, AMTween.Hash("delay", getWaitTime(frameRate, delay), "time", getTime(frameRate), "propertyinfo", propertyInfo, "from", start_vect3, "to", end_vect3, "easetype", (AMTween.EaseType)easeType));
-                if(valueType == (int)AMPropertyTrack.ValueType.Color) AMTween.PropertyTo(component, AMTween.Hash("delay", getWaitTime(frameRate, delay), "time", getTime(frameRate), "propertyinfo", propertyInfo, "from", start_color, "to", end_color, "easetype", (AMTween.EaseType)easeType));
-                if(valueType == (int)AMPropertyTrack.ValueType.Rect) AMTween.PropertyTo(component, AMTween.Hash("delay", getWaitTime(frameRate, delay), "time", getTime(frameRate), "propertyinfo", propertyInfo, "from", start_vect2, "to", end_vect2, "easetype", (AMTween.EaseType)easeType));
-            }
-
-        }
-        else if(methodInfo != null) {
-            if(hasCustomEase()) {
-                if(valueType == (int)AMPropertyTrack.ValueType.MorphChannels) AMTween.PropertyTo(component, AMTween.Hash("delay", getWaitTime(frameRate, delay), "time", getTime(frameRate), "methodtype", "morph", "methodinfo", methodInfo, "from", start_morph.ToArray(), "to", end_morph.ToArray(), "easecurve", easeCurve));
-            }
-            else {
-                if(valueType == (int)AMPropertyTrack.ValueType.MorphChannels) AMTween.PropertyTo(component, AMTween.Hash("delay", getWaitTime(frameRate, delay), "time", getTime(frameRate), "methodtype", "morph", "methodinfo", methodInfo, "from", start_morph.ToArray(), "to", end_morph.ToArray(), "easetype", (AMTween.EaseType)easeType));
-            }
-        }
-        else {
-            Debug.LogError("Animator: No FieldInfo or PropertyInfo set.");
-        }*/
+        
         Debug.LogError("need implement");
 
     }
@@ -168,7 +185,6 @@ public class AMPropertyAction : AMAction {
         if(fieldInfo != null) return fieldInfo.Name;
         else if(propertyInfo != null) return propertyInfo.Name;
         else if(methodInfo != null) {
-            if(valueType == (int)AMPropertyTrack.ValueType.MorphChannels) return "Morph";
         }
         return "Unknown";
     }
@@ -239,36 +255,6 @@ public class AMPropertyAction : AMAction {
         return input.ToString("N2");
     }
 
-    public int getStartMorphNameIndex(int numChannels) {
-        return getMorphNameIndex(start_morph, numChannels);
-    }
-
-    public int getEndMorphNameIndex(int numChannels) {
-        return getMorphNameIndex(end_morph, numChannels);
-    }
-
-    private int getMorphNameIndex(List<float> morph, int count) {
-        int index = -1;
-        bool allZeroes = true;
-        if(morph.Count < count) count = morph.Count;
-        for(int i = 0; i < count; i++) {
-            if(allZeroes && morph[i] != 0f) allZeroes = false;
-            if(morph[i] > 0f && morph[i] < 100f) {
-                index = -1;
-                break;
-            }
-            if(morph[i] == 100f) {
-                if(index != -1) {
-                    index = -1;
-                    break;
-                }
-                index = i;
-            }
-        }
-        if(allZeroes) index = -2;
-        return index;
-    }
-
     public bool targetsAreEqual() {
         if(valueType == (int)AMPropertyTrack.ValueType.Integer || valueType == (int)AMPropertyTrack.ValueType.Long || valueType == (int)AMPropertyTrack.ValueType.Float || valueType == (int)AMPropertyTrack.ValueType.Double)
             return start_val == end_val;
@@ -276,13 +262,7 @@ public class AMPropertyAction : AMAction {
         if(valueType == (int)AMPropertyTrack.ValueType.Vector3) return (start_vect3 == end_vect3);
         if(valueType == (int)AMPropertyTrack.ValueType.Color) return (start_color == end_color); //return start_color.ToString()+" -> "+end_color.ToString();
         if(valueType == (int)AMPropertyTrack.ValueType.Rect) return (start_rect == end_rect); //return start_rect.ToString()+" -> "+end_rect.ToString();
-        if(valueType == (int)AMPropertyTrack.ValueType.MorphChannels) {
-            if(start_morph == null || end_morph == null) return false;
-            for(int i = 0; i < start_morph.Count; i++) {
-                if(end_morph.Count <= i || start_morph[i] != end_morph[i]) return false;
-            }
-            return true;
-        }
+
         Debug.LogError("Animator: Invalid ValueType " + valueType);
         return false;
     }
@@ -375,13 +355,6 @@ public class AMPropertyAction : AMAction {
                 strings.Add(propertyInfo.Name);
             }
 
-        }
-        else if(methodInfo != null) {
-            if(valueType == (int)AMPropertyTrack.ValueType.MorphChannels) {
-                strings.Add("morph");
-                a.floats = start_morph.ToArray();
-                a.floatsExtra = end_morph.ToArray();
-            }
         }
         setupJSONActionEase(a);
         a.strings = strings.ToArray();

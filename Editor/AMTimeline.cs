@@ -2646,80 +2646,8 @@ public class AMTimeline : EditorWindow {
             // value
             string propertyLabel = (sTrack as AMPropertyTrack).getTrackType();
             Rect rectField = new Rect(0f, start_y, width_inspector - margin, 22f);
-            #region morph channels
-            if((sTrack as AMPropertyTrack).valueType == (int)AMPropertyTrack.ValueType.MorphChannels) {
-                Rect rectEasePicker = new Rect(0f, start_y, 0f, 0f);
-                // ease picker
-                if(pKey != (sTrack as AMPropertyTrack).keys[(sTrack as AMPropertyTrack).keys.Count - 1]) {
-                    rectEasePicker.width = width_inspector - margin;
-                    rectEasePicker.height = 22f;
-                    showEasePicker(sTrack, pKey, aData, rectEasePicker.x, rectEasePicker.y, rectEasePicker.width);
-                }
-                string[] channelNames = (sTrack as AMPropertyTrack).getMorphNames();
-                int numChannels = channelNames.Length;
-                float scrollview_y = rectEasePicker.y + rectEasePicker.height + height_inspector_space;
-                Rect rectMorphScrollView = new Rect(0f, scrollview_y, width_inspector - margin, rect.height - scrollview_y);
-                Rect rectMorphView = new Rect(0f, 0f, rectMorphScrollView.width - 20f, numChannels * 44f + (numChannels) * height_inspector_space);
-                inspectorScrollView = GUI.BeginScrollView(rectMorphScrollView, inspectorScrollView, rectMorphView);
-                List<float> megaMorphChannels = new List<float>(pKey.morph);
-                int indexChannel = -1;	// channel to set to 100, all others to 0
-                Rect rectMorphLabel = new Rect(0f, 0f, 100f, 22f);
-                Rect rectMorphSelectButton = new Rect(width_inspector - margin - 18f - (rectMorphView.height > rectMorphScrollView.height ? 20f : 0f), 0f, 18f, 16f);
-                Rect rectMorphFloatField = new Rect(rectMorphSelectButton.x - 50f - margin, 0f, 50f, 22f);
-                Rect rectMorphSlider = new Rect(0f, 0f, width_inspector - margin * 3f - rectMorphFloatField.width - rectMorphSelectButton.width - (rectMorphView.height > rectMorphScrollView.height ? 20f : 0f), 22f);
-                for(int k = 0; k < numChannels; k++) {
-                    if(megaMorphChannels.Count <= k) megaMorphChannels.Add(0f);
-                    // label
-                    if(k > 0) rectMorphLabel.y += 44f + height_inspector_space;
-                    GUI.Label(rectMorphLabel, k + " - " + channelNames[k]);
-                    // slider
-                    rectMorphSlider.y = rectMorphLabel.y + 22f;
-                    megaMorphChannels[k] = GUI.HorizontalSlider(rectMorphSlider, megaMorphChannels[k], 0f, 100f);
-                    // float field
-                    rectMorphFloatField.y = rectMorphSlider.y;
-                    megaMorphChannels[k] = EditorGUI.FloatField(rectMorphFloatField, "", megaMorphChannels[k]);
-                    megaMorphChannels[k] = Mathf.Clamp(megaMorphChannels[k], 0f, 100f);
-                    // select this button
-                    rectMorphSelectButton.y = rectMorphSlider.y;
-                    if(GUI.Button(rectMorphSelectButton, "")) indexChannel = k;
-                    Rect rectTextureSelectThis = new Rect(rectMorphSelectButton);
-                    rectTextureSelectThis.x += 3f;
-                    rectTextureSelectThis.width -= 5f;
-                    rectTextureSelectThis.y += 3f;
-                    rectTextureSelectThis.height -= 6f;
-                    GUI.DrawTexture(rectTextureSelectThis, getSkinTextureStyleState("select_this").background);
-                }
-                if(indexChannel != -1) {
-                    registerUndo("Set Morph");
-                    // set value
-                    if(megaMorphChannels[indexChannel] != 100f) {
-                        megaMorphChannels[indexChannel] = 100f;
-                    }
-                    else {
-                        // select exclusive
-                        for(int k = 0; k < numChannels; k++) {
-                            if(k != indexChannel) megaMorphChannels[k] = 0f;
-                        }
-                    }
-                }
-                megaMorphChannels = megaMorphChannels.GetRange(0, numChannels);
-                if(pKey.setValueMegaMorph(megaMorphChannels)) {
-                    // update cache when modifying varaibles
-                    sTrack.updateCache();
-                    AMCodeView.refresh();
-                    // preview new value
-                    aData.getCurrentTake().previewFrame(aData.getCurrentTake().selectedFrame);
-                    // save data
-                    setDirtyKeys(aData.getCurrentTake().getTrack(aData.getCurrentTake().selectedTrack));
-                    setDirtyCache(aData.getCurrentTake().getTrack(aData.getCurrentTake().selectedTrack));
-                    // refresh component
-                    refreshGizmos();
-                }
-                GUI.EndScrollView();
-            #endregion
-                // int value
-            }
-            else if(((sTrack as AMPropertyTrack).valueType == (int)AMPropertyTrack.ValueType.Integer) || ((sTrack as AMPropertyTrack).valueType == (int)AMPropertyTrack.ValueType.Long)) {
+
+            if(((sTrack as AMPropertyTrack).valueType == (int)AMPropertyTrack.ValueType.Integer) || ((sTrack as AMPropertyTrack).valueType == (int)AMPropertyTrack.ValueType.Long)) {
                 if(pKey.setValue(EditorGUI.IntField(rectField, propertyLabel, Convert.ToInt32(pKey.val)))) {
                     // update cache when modifying varaibles
                     sTrack.updateCache();
@@ -2808,7 +2736,7 @@ public class AMTimeline : EditorWindow {
                 }
             }
             // property ease, show if not last key (check for action; there is no rotation action for last key). do not show for morph channels, because it is shown before the parameters
-            if((sTrack as AMPropertyTrack).valueType != (int)AMPropertyTrack.ValueType.MorphChannels && pKey != (sTrack as AMPropertyTrack).keys[(sTrack as AMPropertyTrack).keys.Count - 1]) {
+            if(pKey != (sTrack as AMPropertyTrack).keys[(sTrack as AMPropertyTrack).keys.Count - 1]) {
                 Rect rectEasePicker = new Rect(0f, rectField.y + rectField.height + height_inspector_space, width_inspector - margin, 0f);
                 showEasePicker(sTrack, pKey, aData, rectEasePicker.x, rectEasePicker.y, rectEasePicker.width);
             }
@@ -4046,26 +3974,7 @@ public class AMTimeline : EditorWindow {
             if(!brief && (_action as AMPropertyAction).endFrame != -1) {
                 info += easeTypeNames[(_action as AMPropertyAction).easeType] + ": ";
             }
-            string detail;
-            if((_action as AMPropertyAction).valueType == (int)AMPropertyTrack.ValueType.MorphChannels) {
-                //(_track as AMPropertyTrack).methodInfoMorphNames
-                string[] channelNames = (_track as AMPropertyTrack).getMorphNames();
-                int startMorphNameIndex = (_action as AMPropertyAction).getStartMorphNameIndex(channelNames.Length);
-                string startMorphName;
-                if(startMorphNameIndex == -2) startMorphName = "None";
-                else startMorphName = (startMorphNameIndex < 0 || startMorphNameIndex >= channelNames.Length ? "Mixed" : channelNames[startMorphNameIndex]);
-                detail = startMorphName;
-                if(!brief && (_action as AMPropertyAction).endFrame != -1) {
-                    int endMorphNameIndex = (_action as AMPropertyAction).getEndMorphNameIndex(channelNames.Length);
-                    string endMorphName;
-                    if(endMorphNameIndex == -2) endMorphName = "None";
-                    else endMorphName = (endMorphNameIndex < 0 || endMorphNameIndex >= channelNames.Length ? "Mixed" : channelNames[endMorphNameIndex]);
-                    detail += " -> " + endMorphName;
-                }
-            }
-            else {
-                detail = (_action as AMPropertyAction).getValueString(brief);	// extra details such as integer values ex. 1 -> 12
-            }
+            string detail = (_action as AMPropertyAction).getValueString(brief);	// extra details such as integer values ex. 1 -> 12
             if(detail != null) info += detail;
             return info;
             #endregion
@@ -4473,7 +4382,7 @@ public class AMTimeline : EditorWindow {
         menu_drag.AddItem(new GUIContent("Property"), false, addTrackFromMenu, (int)Track.Property);
         // Event
         menu_drag.AddItem(new GUIContent("Event"), false, addTrackFromMenu, (int)Track.Event);
-        
+
         if(oData.quickAdd_Combos.Count > 0) {
             // multiple tracks
             menu_drag.AddSeparator("");
