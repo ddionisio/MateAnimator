@@ -112,11 +112,12 @@ public class AMTake : ScriptableObject {
     }
 
     // add rotation track
-    public void addRotationTrack(GameObject obj) {
+    public void addRotationTrack(GameObject obj, bool isLocal=false) {
         AMRotationTrack a = ScriptableObject.CreateInstance<AMRotationTrack>();
         a.setName(getTrackCount());
         a.id = getUniqueTrackID();
         if(obj) a.obj = obj.transform;
+        a.isLocal = isLocal;
         addTrack(a);
     }
 
@@ -1230,11 +1231,21 @@ public class AMTake : ScriptableObject {
             maintainCaches();
             previewFrame(0.0f, false, false, false, true);
 
+            int numTweensAdded = 0;
+
             foreach(AMTrack track in trackValues) {
                 foreach(AMAction action in track.cache) {
                     Tweener tween = action.buildTweener(frameRate);
-                    mSequence.Insert(action.getWaitTime(frameRate, 0.0f), tween);
+                    if(tween != null) {
+                        mSequence.Insert(action.getWaitTime(frameRate, 0.0f), tween);
+                        numTweensAdded++;
+                    }
                 }
+            }
+
+            if(numTweensAdded == 0) {
+                HOTween.Kill(mSequence);
+                mSequence = null;
             }
         }
     }

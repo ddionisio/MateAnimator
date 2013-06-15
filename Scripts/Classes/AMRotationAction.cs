@@ -1,12 +1,16 @@
 using UnityEngine;
 using System.Collections;
 
+using Holoville.HOTween;
+using Holoville.HOTween.Plugins;
+
 [System.Serializable]
 public class AMRotationAction : AMAction {
 
     //public int type = 0; // 0 = Rotate To, 1 = Look At
     public int endFrame;
     public Transform obj;
+    public bool isLocal;
     public Quaternion startRotation;
     public Quaternion endRotation;
 
@@ -33,6 +37,16 @@ public class AMRotationAction : AMAction {
     }
     public float getTime(int frameRate) {
         return (float)getNumberOfFrames() / (float)frameRate;
+    }
+    public override Tweener buildTweener(int frameRate) {
+        if(!obj) return null;
+        if(endFrame == -1) return null;
+        if(hasCustomEase()) {
+            return HOTween.To(obj, getTime(frameRate), new TweenParms().Prop(isLocal ? "localRotation" : "rotation", new AMPlugQuaternionSlerp(endRotation)).Ease(easeCurve));
+        }
+        else {
+            return HOTween.To(obj, getTime(frameRate), new TweenParms().Prop(isLocal ? "localRotation" : "rotation", new AMPlugQuaternionSlerp(endRotation)).Ease((EaseType)easeType));
+        }
     }
     public override void execute(int frameRate, float delay) {
         if(!obj) return;

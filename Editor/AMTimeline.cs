@@ -127,17 +127,19 @@ public class AMTimeline : EditorWindow {
         Translation = 0,
         LocalTranslation = 1,
         Rotation = 2,
-        Orientation = 3,
-        Animation = 4,
-        Audio = 5,
-        Property = 6,
-        Event = 7
+        LocalRotation = 3,
+        Orientation = 4,
+        Animation = 5,
+        Audio = 6,
+        Property = 7,
+        Event = 8
     }
 
     public static string[] TrackNames = new string[] {
 		"Translation",
         "L.Translation",
 		"Rotation",
+        "L.Rotation",
 		"Orientation",
 		"Animation",
 		"Audio",
@@ -220,7 +222,6 @@ public class AMTimeline : EditorWindow {
     private Texture texBoxPink;
     private Texture texBoxYellow;
     private Texture texBoxOrange;
-    private Texture texBoxPurple;
     private Texture texIconTranslation;
     private Texture texIconRotation;
     private Texture texIconAnimation;
@@ -228,7 +229,6 @@ public class AMTimeline : EditorWindow {
     private Texture texIconProperty;
     private Texture texIconEvent;
     private Texture texIconOrientation;
-    private Texture texIconCameraSwitcher;
     private bool texLoaded = false;
 
     // temporary variables
@@ -377,7 +377,6 @@ public class AMTimeline : EditorWindow {
             texBoxPink = AMEditorResource.LoadEditorTexture("am_box_pink");
             texBoxYellow = AMEditorResource.LoadEditorTexture("am_box_yellow");
             texBoxOrange = AMEditorResource.LoadEditorTexture("am_box_orange");
-            texBoxPurple = AMEditorResource.LoadEditorTexture("am_box_purple");
             texIconTranslation = AMEditorResource.LoadEditorTexture("am_icon_translation");
             texIconRotation = AMEditorResource.LoadEditorTexture("am_icon_rotation");
             texIconAnimation = AMEditorResource.LoadEditorTexture("am_icon_animation");
@@ -385,7 +384,6 @@ public class AMTimeline : EditorWindow {
             texIconProperty = AMEditorResource.LoadEditorTexture("am_icon_property");
             texIconEvent = AMEditorResource.LoadEditorTexture("am_icon_event");
             texIconOrientation = AMEditorResource.LoadEditorTexture("am_icon_orientation");
-            texIconCameraSwitcher = AMEditorResource.LoadEditorTexture("am_icon_cameraswitcher");
 
             texLoaded = true;
         }
@@ -3169,7 +3167,7 @@ public class AMTimeline : EditorWindow {
         }
         // rotation
         else if(amTrack is AMRotationTrack) {
-            (amTrack as AMRotationTrack).obj = (Transform)EditorGUI.ObjectField(rect, (amTrack as AMRotationTrack).obj, typeof(Transform), true);
+            (amTrack as AMRotationTrack).obj = (Transform)EditorGUI.ObjectField(rect, amTrack.genericObj, typeof(Transform), true);
         }
         // rotation
         else if(amTrack is AMOrientationTrack) {
@@ -3928,7 +3926,7 @@ public class AMTimeline : EditorWindow {
             Selection.activeObject = track.genericObj;
         // rotation obj
         else if(track.GetType() == typeof(AMRotationTrack))
-            Selection.activeObject = (track as AMRotationTrack).obj;
+            Selection.activeObject = track.genericObj;
         else if(track.GetType() == typeof(AMAnimationTrack))
             Selection.activeObject = (track as AMAnimationTrack).obj;
     }
@@ -4217,6 +4215,9 @@ public class AMTimeline : EditorWindow {
             case (int)Track.Rotation:
                 aData.getCurrentTake().addRotationTrack(object_window);
                 break;
+            case (int)Track.LocalRotation:
+                aData.getCurrentTake().addRotationTrack(object_window, true);
+                break;
             case (int)Track.Orientation:
                 aData.getCurrentTake().addOrientationTrack(object_window);
                 break;
@@ -4293,12 +4294,12 @@ public class AMTimeline : EditorWindow {
             // rotation
 
             // if missing object, return
-            if(!(amTrack as AMRotationTrack).obj) {
+            if(!amTrack.genericObj) {
                 showAlertMissingObjectType("Transform");
                 return;
             }
             // add key to rotation track
-            (amTrack as AMRotationTrack).addKey(_frame, (amTrack as AMRotationTrack).obj.rotation);
+            (amTrack as AMRotationTrack).addKey(_frame, (amTrack as AMRotationTrack).rotation);
         }
         else if(amTrack is AMOrientationTrack) {
             // orientation
@@ -4420,6 +4421,7 @@ public class AMTimeline : EditorWindow {
         menu.AddItem(new GUIContent("Translation"), false, addTrackFromMenu, (int)Track.Translation);
         menu.AddItem(new GUIContent("Local Translation"), false, addTrackFromMenu, (int)Track.LocalTranslation);
         menu.AddItem(new GUIContent("Rotation"), false, addTrackFromMenu, (int)Track.Rotation);
+        menu.AddItem(new GUIContent("Local Rotation"), false, addTrackFromMenu, (int)Track.LocalRotation);
         menu.AddItem(new GUIContent("Orientation"), false, addTrackFromMenu, (int)Track.Orientation);
         menu.AddItem(new GUIContent("Animation"), false, addTrackFromMenu, (int)Track.Animation);
         menu.AddItem(new GUIContent("Audio"), false, addTrackFromMenu, (int)Track.Audio);
@@ -4456,8 +4458,8 @@ public class AMTimeline : EditorWindow {
         if(hasTransform) { menu_drag.AddItem(new GUIContent("Translation"), false, addTrackFromMenu, (int)Track.Translation); menu_drag.AddItem(new GUIContent("Local Translation"), false, addTrackFromMenu, (int)Track.LocalTranslation); }
         else { menu_drag.AddDisabledItem(new GUIContent("Translation")); menu_drag.AddDisabledItem(new GUIContent("Local Translation")); }
         // Rotation
-        if(hasTransform) menu_drag.AddItem(new GUIContent("Rotation"), false, addTrackFromMenu, (int)Track.Rotation);
-        else menu_drag.AddDisabledItem(new GUIContent("Rotation"));
+        if(hasTransform) { menu_drag.AddItem(new GUIContent("Rotation"), false, addTrackFromMenu, (int)Track.Rotation); menu_drag.AddItem(new GUIContent("Local Rotation"), false, addTrackFromMenu, (int)Track.LocalRotation); }
+        else { menu_drag.AddDisabledItem(new GUIContent("Rotation")); menu_drag.AddDisabledItem(new GUIContent("Local Rotation")); }
         // Orientation
         if(hasTransform) menu_drag.AddItem(new GUIContent("Orientation"), false, addTrackFromMenu, (int)Track.Orientation);
         else menu_drag.AddDisabledItem(new GUIContent("Orientation"));
@@ -4490,7 +4492,7 @@ public class AMTimeline : EditorWindow {
     }
     bool canQuickAddCombo(List<int> combo, bool hasTransform, bool hasAnimation, bool hasAudioSource, bool hasCamera) {
         foreach(int _track in combo) {
-            if(!hasTransform && (_track == (int)Track.Translation || _track == (int)Track.LocalTranslation || _track == (int)Track.Rotation || _track == (int)Track.Orientation))
+            if(!hasTransform && (_track == (int)Track.Translation || _track == (int)Track.LocalTranslation || _track == (int)Track.Rotation || _track == (int)Track.LocalRotation || _track == (int)Track.Orientation))
                 return false;
             else if(!hasAnimation && _track == (int)Track.Animation)
                 return false;

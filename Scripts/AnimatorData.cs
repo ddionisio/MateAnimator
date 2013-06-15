@@ -38,7 +38,7 @@ public class AnimatorData : MonoBehaviour {
         get {
             if(takeName == null) return 0f;
             else {
-                if(nowPlayingTake != null)
+                if(nowPlayingTake != null && nowPlayingTake.sequence != null)
                     return nowPlayingTake.sequence.elapsed;
                 else
                     return 0.0f;
@@ -196,14 +196,19 @@ public class AnimatorData : MonoBehaviour {
         _isPaused = true;
         nowPlayingTake.stopAudio();
         //AMTween.Pause();
-        nowPlayingTake.sequence.Pause();
+
+        if(nowPlayingTake.sequence != null)
+            nowPlayingTake.sequence.Pause();
 
     }
 
     public void Resume() {
         if(nowPlayingTake == null) return;
         //AMTween.Resume();
-        nowPlayingTake.sequence.Play();
+
+        if(nowPlayingTake.sequence != null)
+            nowPlayingTake.sequence.Play();
+
         _isPaused = false;
     }
 
@@ -212,8 +217,10 @@ public class AnimatorData : MonoBehaviour {
         nowPlayingTake.stopAudio();
         nowPlayingTake.stopAnimations();
 
-        nowPlayingTake.sequence.Pause();
-        nowPlayingTake.sequence.GoTo(0.0f);
+        if(nowPlayingTake.sequence != null) {
+            nowPlayingTake.sequence.Pause();
+            nowPlayingTake.sequence.GoTo(0.0f);
+        }
 
         nowPlayingTake = null;
         isLooping = false;
@@ -247,14 +254,16 @@ public class AnimatorData : MonoBehaviour {
             if(nowPlayingTake.sequence == null)
                 nowPlayingTake.BuildSequence(gameObject.name);
 
-            nowPlayingTake.sequence.loops = loop ? -1 : 1;
-            nowPlayingTake.sequence.loopType = LoopType.Restart;
+            if(nowPlayingTake.sequence != null) {
+                nowPlayingTake.sequence.loops = loop ? -1 : 1;
+                nowPlayingTake.sequence.loopType = LoopType.Restart;
 
-            float startTime = value;
-            if(isFrame) startTime /= nowPlayingTake.frameRate;
-                        
-            nowPlayingTake.sequence.GoTo(startTime);
-            nowPlayingTake.sequence.Play();
+                float startTime = value;
+                if(isFrame) startTime /= nowPlayingTake.frameRate;
+
+                nowPlayingTake.sequence.Play();
+                nowPlayingTake.sequence.GoTo(startTime);
+            }
 
             isLooping = loop;
 

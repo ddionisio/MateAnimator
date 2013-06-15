@@ -402,11 +402,11 @@ public class AMCodeView : EditorWindow {
         #endregion
             #region rotation
         }
-        else if((track is AMRotationTrack) && (track as AMRotationTrack).obj) {
+        else if((track is AMRotationTrack) && (track as AMRotationTrack).genericObj) {
             code += " (Rotation)\n";
             if(track.cache.Count <= 0) return;
             // initialize object
-            code += getObjectInitialization("GameObject", objName, (track as AMRotationTrack).obj.name, aData.codeLanguage, null, null);
+            code += getObjectInitialization("GameObject", objName, track.genericObj.name, aData.codeLanguage, null, null);
             // set initial rotation
             code += getInitialPropertiesFor(aData.codeLanguage, track, objName);
             #endregion

@@ -67,18 +67,18 @@ public class AMTranslationAction : AMAction {
     }
 
     public override Tweener buildTweener(int frameRate) {
+        if(!obj) return null;
+        if(path.Length <= 1) return null;
+        if(getNumberOfFrames() <= 0) return null;
+
         if(hasCustomEase()) {
-            if(path.Length == 1)
-                return HOTween.To(obj, getTime(frameRate), new TweenParms().Prop(isLocal ? "localPosition" : "position", path[0]).Ease(easeCurve));
-            else if(path.Length == 2)
+            if(path.Length == 2)
                 return HOTween.To(obj, getTime(frameRate), new TweenParms().Prop(isLocal ? "localPosition" : "position", new PlugVector3Path(path, false, PathType.Linear)).Ease(easeCurve));
             else
                 return HOTween.To(obj, getTime(frameRate), new TweenParms().Prop(isLocal ? "localPosition" : "position", new PlugVector3Path(path, false)).Ease(easeCurve));
         }
         else {
-            if(path.Length == 1)
-                return HOTween.To(obj, getTime(frameRate), new TweenParms().Prop(isLocal ? "localPosition" : "position", path[0]).Ease((EaseType)easeType));
-            else if(path.Length == 2)
+            if(path.Length == 2)
                 return HOTween.To(obj, getTime(frameRate), new TweenParms().Prop(isLocal ? "localPosition" : "position", new PlugVector3Path(path, false, PathType.Linear)).Ease((EaseType)easeType));
             else
                 return HOTween.To(obj, getTime(frameRate), new TweenParms().Prop(isLocal ? "localPosition" : "position", new PlugVector3Path(path, false)).Ease((EaseType)easeType));
