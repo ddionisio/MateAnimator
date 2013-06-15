@@ -118,6 +118,10 @@ public struct AMUtil {
         int currPt = Mathf.Min(Mathf.FloorToInt(t * (float)numSections), numSections - 1);
         float u = t * (float)numSections - (float)currPt;
 
+        /*if(currPt < 0 || currPt >= pts.Length) {
+            Debug.Log("WTF: " + currPt + " t: "+t+" len: "+pts.Length);
+        }*/
+
         Vector3 a = pts[currPt];
         Vector3 b = pts[currPt + 1];
         Vector3 c = pts[currPt + 2];

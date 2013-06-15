@@ -2,6 +2,9 @@ using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 
+using Holoville.HOTween;
+using Holoville.HOTween.Plugins;
+
 [System.Serializable]
 public class AMTranslationAction : AMAction {
 
@@ -61,6 +64,25 @@ public class AMTranslationAction : AMAction {
 
     public float getTime(int frameRate) {
         return (float)getNumberOfFrames() / (float)frameRate;
+    }
+
+    public override Tweener buildTweener(int frameRate) {
+        if(hasCustomEase()) {
+            if(path.Length == 1)
+                return HOTween.To(obj, getTime(frameRate), new TweenParms().Prop(isLocal ? "localPosition" : "position", path[0]).Ease(easeCurve));
+            else if(path.Length == 2)
+                return HOTween.To(obj, getTime(frameRate), new TweenParms().Prop(isLocal ? "localPosition" : "position", new PlugVector3Path(path, false, PathType.Linear)).Ease(easeCurve));
+            else
+                return HOTween.To(obj, getTime(frameRate), new TweenParms().Prop(isLocal ? "localPosition" : "position", new PlugVector3Path(path, false)).Ease(easeCurve));
+        }
+        else {
+            if(path.Length == 1)
+                return HOTween.To(obj, getTime(frameRate), new TweenParms().Prop(isLocal ? "localPosition" : "position", path[0]).Ease((EaseType)easeType));
+            else if(path.Length == 2)
+                return HOTween.To(obj, getTime(frameRate), new TweenParms().Prop(isLocal ? "localPosition" : "position", new PlugVector3Path(path, false, PathType.Linear)).Ease((EaseType)easeType));
+            else
+                return HOTween.To(obj, getTime(frameRate), new TweenParms().Prop(isLocal ? "localPosition" : "position", new PlugVector3Path(path, false)).Ease((EaseType)easeType));
+        }
     }
 
     public override void execute(int frameRate, float delay) {

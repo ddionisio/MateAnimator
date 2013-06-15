@@ -25,6 +25,11 @@ public class AMAction : ScriptableObject {
         Debug.LogError("Animator: No override for execute.");
     }
 
+    public virtual Tweener buildTweener(int frameRate) {
+        Debug.LogError("Animator: No override for buildTweener.");
+        return null;
+    }
+
     public float getWaitTime(int frameRate, float delay) {
         return ((float)startFrame - 1f) / (float)frameRate - delay;
     }

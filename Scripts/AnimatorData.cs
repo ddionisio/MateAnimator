@@ -4,6 +4,8 @@ using System.Collections.Generic;
 using System.Reflection;
 using System.Linq;
 
+using Holoville.HOTween;
+
 [ExecuteInEditMode]
 public class AnimatorData : MonoBehaviour {
     // show
@@ -35,7 +37,12 @@ public class AnimatorData : MonoBehaviour {
     public float runningTime {
         get {
             if(takeName == null) return 0f;
-            else return elapsedTime;
+            else {
+                if(nowPlayingTake != null)
+                    return nowPlayingTake.sequence.elapsed;
+                else
+                    return 0.0f;
+            }
         }
     }
     public float totalTime {
@@ -69,13 +76,13 @@ public class AnimatorData : MonoBehaviour {
     //[HideInInspector] public FieldInfo fieldInfo;
     [HideInInspector]
     public bool autoKey = false;
-    [HideInInspector]
-    public float elapsedTime = 0f;
+    //[HideInInspector]
+    //public float elapsedTime = 0f;
     // private
     private AMTake nowPlayingTake = null;
     private bool _isPaused = false;
     private bool isLooping = false;
-    private float takeTime = 0f;
+    //private float takeTime = 0f;
 
     public object Invoker(object[] args) {
         switch((int)args[0]) {
@@ -119,8 +126,7 @@ public class AnimatorData : MonoBehaviour {
                 break;
             // running time
             case 10:
-                if(takeName == null) return 0f;
-                else return elapsedTime;
+                return runningTime;
             // total time
             case 11:
                 if(takeName == null) return 0f;
@@ -142,6 +148,18 @@ public class AnimatorData : MonoBehaviour {
         takes.Clear();
     }
 
+    void Awake() {
+        if(!Application.isPlaying)
+            return;
+
+        //build the sequences for each take
+        /*if(takes != null) {
+            foreach(AMTake take in takes) {
+                take.BuildSequence();
+            }
+        }*/
+    }
+
     void Start() {
         if(!Application.isPlaying)
             return;
@@ -157,7 +175,7 @@ public class AnimatorData : MonoBehaviour {
         takes[currentTake].drawGizmos(gizmo_size, inPlayMode);
     }
 
-    void Update() {
+    /*void Update() {
         if(_isPaused || nowPlayingTake == null) return;
         elapsedTime += Time.deltaTime;
         if(elapsedTime >= takeTime) {
@@ -165,9 +183,9 @@ public class AnimatorData : MonoBehaviour {
             if(isLooping) Execute(nowPlayingTake);
             else nowPlayingTake = null;
         }
-    }
+    }*/
 
-    
+
     // play take by name
     public void Play(string takeName, bool loop = false) {
         Play(takeName, true, 0f, loop);
@@ -178,12 +196,14 @@ public class AnimatorData : MonoBehaviour {
         _isPaused = true;
         nowPlayingTake.stopAudio();
         //AMTween.Pause();
+        nowPlayingTake.sequence.Pause();
 
     }
 
     public void Resume() {
         if(nowPlayingTake == null) return;
         //AMTween.Resume();
+        nowPlayingTake.sequence.Play();
         _isPaused = false;
     }
 
@@ -191,6 +211,10 @@ public class AnimatorData : MonoBehaviour {
         if(nowPlayingTake == null) return;
         nowPlayingTake.stopAudio();
         nowPlayingTake.stopAnimations();
+
+        nowPlayingTake.sequence.Pause();
+        nowPlayingTake.sequence.GoTo(0.0f);
+
         nowPlayingTake = null;
         isLooping = false;
         _isPaused = false;
@@ -220,8 +244,21 @@ public class AnimatorData : MonoBehaviour {
     void Play(string take_name, bool isFrame, float value, bool loop) {
         nowPlayingTake = getTake(take_name);
         if(nowPlayingTake) {
+            if(nowPlayingTake.sequence == null)
+                nowPlayingTake.BuildSequence(gameObject.name);
+
+            nowPlayingTake.sequence.loops = loop ? -1 : 1;
+            nowPlayingTake.sequence.loopType = LoopType.Restart;
+
+            float startTime = value;
+            if(isFrame) startTime /= nowPlayingTake.frameRate;
+                        
+            nowPlayingTake.sequence.GoTo(startTime);
+            nowPlayingTake.sequence.Play();
+
             isLooping = loop;
-            Execute(nowPlayingTake, isFrame, value);
+
+            //Execute(nowPlayingTake, isFrame, value);
         }
     }
 
@@ -237,15 +274,15 @@ public class AnimatorData : MonoBehaviour {
 
     void Execute(AMTake take, bool isFrame = true, float value = 0f /* frame or time */) {
         //if(nowPlayingTake != null)
-            //AMTween.Stop();
+        //AMTween.Stop();
         // delete AMCameraFade
         float startFrame = value;
         float startTime = value;
         if(!isFrame) startFrame *= take.frameRate;	// convert time to frame
         if(isFrame) startTime /= take.frameRate;	// convert frame to time
         take.executeActions(startFrame);
-        elapsedTime = startTime;
-        takeTime = (float)take.numFrames / (float)take.frameRate;
+        //elapsedTime = startTime;
+        //takeTime = (float)take.numFrames / (float)take.frameRate;
         nowPlayingTake = take;
 
     }
@@ -270,6 +307,7 @@ public class AnimatorData : MonoBehaviour {
     }
 
     public AMTake getCurrentTake() {
+        if(takes == null || currentTake >= takes.Count) return null;
         return takes[currentTake];
     }
 

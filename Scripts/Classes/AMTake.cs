@@ -5,6 +5,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 
+using Holoville.HOTween;
+
 [System.Serializable]
 
 public class AMTake : ScriptableObject {
@@ -37,6 +39,10 @@ public class AMTake : ScriptableObject {
     public List<AMGroup> groupValues = new List<AMGroup>();
 
     public static bool isProLicense = true;
+
+    private Sequence mSequence;
+
+    public Sequence sequence { get { return mSequence; } }
 
     #endregion
 
@@ -1215,6 +1221,24 @@ public class AMTake : ScriptableObject {
     /*public void executeActionsFromTime(float time) {
         executeActions(time * frameRate);	
     }*/
+
+    public void BuildSequence(string goName) {
+        if(mSequence == null) {
+            mSequence = new Sequence(new SequenceParms().Id(string.Format("{0}:{1}", goName, name)));
+            mSequence.autoKillOnComplete = false;
+
+            maintainCaches();
+            previewFrame(0.0f, false, false, false, true);
+
+            foreach(AMTrack track in trackValues) {
+                foreach(AMAction action in track.cache) {
+                    Tweener tween = action.buildTweener(frameRate);
+                    mSequence.Insert(action.getWaitTime(frameRate, 0.0f), tween);
+                }
+            }
+        }
+    }
+
     public void executeActions(float fromFrame = 0f) {
         float delay = fromFrame / (float)frameRate;
         maintainCaches();
@@ -1312,6 +1336,13 @@ public class AMTake : ScriptableObject {
         rootGroup.destroy();
         foreach(AMGroup grp in groupValues) {
             grp.destroy();
+        }
+
+        if(Application.isPlaying) {
+            if(mSequence != null) {
+                HOTween.Kill(mSequence);
+                mSequence = null;
+            }
         }
 
         DestroyImmediate(this);

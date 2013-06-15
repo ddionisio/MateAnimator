@@ -156,6 +156,9 @@ public class AMTranslationTrack : AMTrack {
             else {
                 TweenDelegate.EaseFunc ease = AMUtil.GetEasingFunction((EaseType)action.easeType);
                 _value = ease(framePositionInPath, 0.0f, 1.0f, action.getNumberOfFrames(), 0.0f, 0.0f);
+                if(float.IsNaN(_value)) { //this really shouldn't happen...
+                    return;
+                }
             }
 
             AMUtil.PutOnPath(_obj, action.path, Mathf.Clamp(_value, 0f, 1f), _isLocal);

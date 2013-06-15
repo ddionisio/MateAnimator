@@ -427,7 +427,7 @@ public class AMTimeline : EditorWindow {
     }
     void OnDisable() {
         window = null;
-        if(aData) {
+        if(aData && aData.getCurrentTake() != null) {
             // preview first frame
             aData.getCurrentTake().previewFrame(1f);
             // tell component that animator has been closed
@@ -591,6 +591,10 @@ public class AMTimeline : EditorWindow {
         if(!oData) {
             oData = AMOptionsFile.loadFile();
         }
+
+        if(aData.getCurrentTake() == null) //TODO: figure out something about this
+            return;
+
         #endregion
         #region window resize
         if(!oData.ignoreMinSize && (position.width < width_window_minimum)) {
