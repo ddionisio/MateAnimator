@@ -95,11 +95,12 @@ public class AMTake : ScriptableObject {
     }
 
     // add translation track
-    public void addTranslationTrack(GameObject obj) {
+    public void addTranslationTrack(GameObject obj, bool isLocal=false) {
         AMTranslationTrack a = ScriptableObject.CreateInstance<AMTranslationTrack>();
         a.setName(getTrackCount());
         a.id = getUniqueTrackID();
         if(obj) a.obj = obj.transform;
+        a.isLocal = isLocal;
         addTrack(a);
 
     }
@@ -788,7 +789,7 @@ public class AMTake : ScriptableObject {
     public AMTranslationTrack getTranslationTrackForTransform(Transform obj) {
         if(!obj) return null;
         foreach(AMTrack track in trackValues) {
-            if((track is AMTranslationTrack) && (track as AMTranslationTrack).obj == obj)
+            if((track is AMTranslationTrack) && (track as AMTranslationTrack).isObjectEqual(obj))
                 return track as AMTranslationTrack;
         }
         return null;

@@ -252,7 +252,7 @@ public class AMEasePicker : EditorWindow {
 				} else if(category == "Other") {
 					if(!used.Contains(ease))
 						temp.Add(ease);
-				} else if(ease.ToLower().Contains(category)) {
+				} else if(ease.Contains(category)) {
 					temp.Add(ease);
 					used.Add(ease);
 				}	

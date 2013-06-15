@@ -81,4 +81,181 @@ public struct AMUtil {
 
         return null;
     }
+
+    public static Vector3[] PathControlPointGenerator(Vector3[] path) {
+        Vector3[] suppliedPath;
+        Vector3[] vector3s;
+
+        //create and store path points:
+        suppliedPath = path;
+
+        //populate calculate path;
+        int offset = 2;
+        vector3s = new Vector3[suppliedPath.Length + offset];
+        System.Array.Copy(suppliedPath, 0, vector3s, 1, suppliedPath.Length);
+
+        //populate start and end control points:
+        //vector3s[0] = vector3s[1] - vector3s[2];
+        vector3s[0] = vector3s[1] + (vector3s[1] - vector3s[2]);
+        vector3s[vector3s.Length - 1] = vector3s[vector3s.Length - 2] + (vector3s[vector3s.Length - 2] - vector3s[vector3s.Length - 3]);
+
+        //is this a closed, continuous loop? yes? well then so let's make a continuous Catmull-Rom spline!
+        if(vector3s[1] == vector3s[vector3s.Length - 2]) {
+            Vector3[] tmpLoopSpline = new Vector3[vector3s.Length];
+            System.Array.Copy(vector3s, tmpLoopSpline, vector3s.Length);
+            tmpLoopSpline[0] = tmpLoopSpline[tmpLoopSpline.Length - 3];
+            tmpLoopSpline[tmpLoopSpline.Length - 1] = tmpLoopSpline[2];
+            vector3s = new Vector3[tmpLoopSpline.Length];
+            System.Array.Copy(tmpLoopSpline, vector3s, tmpLoopSpline.Length);
+        }
+
+        return (vector3s);
+    }
+
+    //andeeee from the Unity forum's steller Catmull-Rom class ( http://forum.unity3d.com/viewtopic.php?p=218400#218400 ):
+    public static Vector3 Interp(Vector3[] pts, float t) {
+        int numSections = pts.Length - 3;
+        int currPt = Mathf.Min(Mathf.FloorToInt(t * (float)numSections), numSections - 1);
+        float u = t * (float)numSections - (float)currPt;
+
+        Vector3 a = pts[currPt];
+        Vector3 b = pts[currPt + 1];
+        Vector3 c = pts[currPt + 2];
+        Vector3 d = pts[currPt + 3];
+
+        return .5f * (
+            (-a + 3f * b - 3f * c + d) * (u * u * u)
+            + (2f * a - 5f * b + 4f * c - d) * (u * u)
+            + (-a + c) * u
+            + 2f * b
+        );
+    }
+
+    /// <summary>
+    /// Puts a GameObject on a path at the provided percentage 
+    /// </summary>
+    /// <param name="target">
+    /// A <see cref="GameObject"/>
+    /// </param>
+    /// <param name="path">
+    /// A <see cref="Vector3[]"/>
+    /// </param>
+    /// <param name="percent">
+    /// A <see cref="System.Single"/>
+    /// </param>
+    public static void PutOnPath(GameObject target, Vector3[] path, float percent, bool local) {
+        if(local)
+            target.transform.localPosition = Interp(PathControlPointGenerator(path), percent);
+        else
+            target.transform.position = Interp(PathControlPointGenerator(path), percent);
+    }
+
+    /// <summary>
+    /// Puts a GameObject on a path at the provided percentage 
+    /// </summary>
+    /// <param name="target">
+    /// A <see cref="Transform"/>
+    /// </param>
+    /// <param name="path">
+    /// A <see cref="Vector3[]"/>
+    /// </param>
+    /// <param name="percent">
+    /// A <see cref="System.Single"/>
+    /// </param>
+    public static void PutOnPath(Transform target, Vector3[] path, float percent, bool local) {
+        if(local)
+            target.localPosition = Interp(PathControlPointGenerator(path), percent);
+        else
+            target.position = Interp(PathControlPointGenerator(path), percent);
+    }
+    // get position on path
+    public static Vector3 PositionOnPath(Vector3[] path, float percent) {
+        return Interp(PathControlPointGenerator(path), percent);
+    }
+    /// <summary>
+    /// Puts a GameObject on a path at the provided percentage 
+    /// </summary>
+    /// <param name="target">
+    /// A <see cref="GameObject"/>
+    /// </param>
+    /// <param name="path">
+    /// A <see cref="Transform[]"/>
+    /// </param>
+    /// <param name="percent">
+    /// A <see cref="System.Single"/>
+    /// </param>
+    public static void PutOnPath(GameObject target, Transform[] path, float percent, bool pathLocal, bool local) {
+        //create and store path points:
+        Vector3[] suppliedPath = new Vector3[path.Length];
+        for(int i = 0; i < path.Length; i++) {
+            suppliedPath[i] = pathLocal ? path[i].localPosition : path[i].position;
+        }
+
+        if(local)
+            target.transform.position = Interp(PathControlPointGenerator(suppliedPath), percent);
+        else
+            target.transform.localPosition = Interp(PathControlPointGenerator(suppliedPath), percent);
+    }
+
+    /// <summary>
+    /// Puts a GameObject on a path at the provided percentage 
+    /// </summary>
+    /// <param name="target">
+    /// A <see cref="Transform"/>
+    /// </param>
+    /// <param name="path">
+    /// A <see cref="Transform[]"/>
+    /// </param>
+    /// <param name="percent">
+    /// A <see cref="System.Single"/>
+    /// </param>
+    public static void PutOnPath(Transform target, Transform[] path, float percent, bool pathLocal, bool local) {
+        //create and store path points:
+        Vector3[] suppliedPath = new Vector3[path.Length];
+        for(int i = 0; i < path.Length; i++) {
+            suppliedPath[i] = pathLocal ? path[i].localPosition : path[i].position;
+        }
+
+        if(local)
+            target.localPosition = Interp(PathControlPointGenerator(suppliedPath), percent);
+        else
+            target.position = Interp(PathControlPointGenerator(suppliedPath), percent);
+    }
+
+    /// <summary>
+    /// Returns a Vector3 position on a path at the provided percentage  
+    /// </summary>
+    /// <param name="path">
+    /// A <see cref="Transform[]"/>
+    /// </param>
+    /// <param name="percent">
+    /// A <see cref="System.Single"/>
+    /// </param>
+    /// <returns>
+    /// A <see cref="Vector3"/>
+    /// </returns>
+    public static Vector3 PointOnPath(Transform[] path, float percent, bool local) {
+        //create and store path points:
+        Vector3[] suppliedPath = new Vector3[path.Length];
+        for(int i = 0; i < path.Length; i++) {
+            suppliedPath[i] = local ? path[i].localPosition : path[i].position;
+        }
+        return (Interp(PathControlPointGenerator(suppliedPath), percent));
+    }
+
+    /// <summary>
+    /// Returns a Vector3 position on a path at the provided percentage  
+    /// </summary>
+    /// <param name="path">
+    /// A <see cref="Vector3[]"/>
+    /// </param>
+    /// <param name="percent">
+    /// A <see cref="System.Single"/>
+    /// </param>
+    /// <returns>
+    /// A <see cref="Vector3"/>
+    /// </returns>
+    public static Vector3 PointOnPath(Vector3[] path, float percent) {
+        return (Interp(PathControlPointGenerator(path), percent));
+    }
 }

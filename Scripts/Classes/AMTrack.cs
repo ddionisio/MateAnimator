@@ -14,6 +14,10 @@ public class AMTrack : ScriptableObject {
 
     public AMTake parentTake;
 
+    public virtual UnityEngine.Object genericObj {
+        get { return null; }
+    }
+
     // set name based on index
     public void setName(int index) {
         name = "Track" + (index + 1);

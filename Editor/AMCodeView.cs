@@ -392,11 +392,11 @@ public class AMCodeView : EditorWindow {
         List<string> init_textures = new List<string>();
         code += "\n// " + track.name;
         #region translation
-        if((track is AMTranslationTrack) && (track as AMTranslationTrack).obj) {
+        if((track is AMTranslationTrack) && track.genericObj) {
             code += " (Translation)\n";
             if(track.cache.Count <= 0) return;
             // initialize object
-            code += getObjectInitialization("GameObject", objName, (track as AMTranslationTrack).obj.name, aData.codeLanguage, null, null);
+            code += getObjectInitialization("GameObject", objName, track.genericObj.name, aData.codeLanguage, null, null);
             // set initial position
             code += getInitialPropertiesFor(aData.codeLanguage, track, objName);
         #endregion

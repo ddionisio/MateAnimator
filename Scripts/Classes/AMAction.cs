@@ -2,11 +2,13 @@ using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 
+using Holoville.HOTween;
+
 // holds an action to be parsed in game view
 [System.Serializable]
 public class AMAction : ScriptableObject {
     public int startFrame;
-    public int easeType = (int)0;//AMTween.EaseType.linear; 			// ease type, AMTween.EaseType enum
+    public int easeType = (int)EaseType.Linear;//AMTween.EaseType.linear; 			// ease type, AMTween.EaseType enum
     public List<float> customEase = new List<float>();
     private AnimationCurve _cachedEaseCurve;
     public AnimationCurve easeCurve {
@@ -65,7 +67,7 @@ public class AMAction : ScriptableObject {
     }
 
     public bool hasCustomEase() {
-        if(easeType == 32) return true;
+        if(easeType == (int)EaseType.AnimationCurve) return true;
         return false;
     }
 

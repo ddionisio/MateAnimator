@@ -7,6 +7,7 @@ public class AMTranslationAction : AMAction {
 
     public int endFrame;
     public Transform obj;
+    public bool isLocal;
     public Vector3[] path;
 
     public override string ToString(int codeLanguage, int frameRate) {
