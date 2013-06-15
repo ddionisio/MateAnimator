@@ -25,7 +25,10 @@ public class AMAction : ScriptableObject {
         Debug.LogError("Animator: No override for execute.");
     }
 
-    public virtual Tweener buildTweener(int frameRate) {
+    /// <summary>
+    /// Use sequence to insert callbacks, or some other crap, just don't insert the tweener you are returning!
+    /// </summary>
+    public virtual Tweener buildTweener(Sequence sequence, int frameRate) {
         Debug.LogError("Animator: No override for buildTweener.");
         return null;
     }

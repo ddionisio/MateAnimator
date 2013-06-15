@@ -114,7 +114,7 @@ public class AMPropertyAction : AMAction {
     public float getTime(int frameRate) {
         return (float)getNumberOfFrames() / (float)frameRate;
     }
-    public override Tweener buildTweener(int frameRate) {
+    public override Tweener buildTweener(Sequence sequence, int frameRate) {
         if(targetsAreEqual()) return null;
         if((endFrame == -1) || !component || ((fieldInfo == null) && (propertyInfo == null) && (methodInfo == null))) return null;
 

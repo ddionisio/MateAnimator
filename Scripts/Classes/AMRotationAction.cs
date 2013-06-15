@@ -38,7 +38,7 @@ public class AMRotationAction : AMAction {
     public float getTime(int frameRate) {
         return (float)getNumberOfFrames() / (float)frameRate;
     }
-    public override Tweener buildTweener(int frameRate) {
+    public override Tweener buildTweener(Sequence sequence, int frameRate) {
         if(!obj) return null;
         if(endFrame == -1) return null;
         if(hasCustomEase()) {

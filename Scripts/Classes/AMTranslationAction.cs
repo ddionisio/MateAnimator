@@ -66,7 +66,7 @@ public class AMTranslationAction : AMAction {
         return (float)getNumberOfFrames() / (float)frameRate;
     }
 
-    public override Tweener buildTweener(int frameRate) {
+    public override Tweener buildTweener(Sequence sequence, int frameRate) {
         if(!obj) return null;
         if(path.Length <= 1) return null;
         if(getNumberOfFrames() <= 0) return null;

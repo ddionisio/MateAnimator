@@ -4,6 +4,9 @@ using System.Collections.Generic;
 using System.Reflection;
 using System;
 
+using Holoville.HOTween;
+using Holoville.HOTween.Core;
+
 [System.Serializable]
 public class AMEventAction : AMAction {
     public Component component;
@@ -26,6 +29,45 @@ public class AMEventAction : AMAction {
 
         }
     }
+
+    public override Tweener buildTweener(Sequence sequence, int frameRate) {
+        if(useSendMessage) {
+            if(component == null || methodName == null) return null;
+            if(parameters == null || parameters.Count <= 0)
+                sequence.InsertCallback(getWaitTime(frameRate, 0.0f), component.gameObject, methodName, null, SendMessageOptions.DontRequireReceiver);
+            else
+                sequence.InsertCallback(getWaitTime(frameRate, 0.0f), component.gameObject, methodName, parameters[0].toObject(), SendMessageOptions.DontRequireReceiver);
+        }
+        else {
+            if(component == null || methodInfo == null) return null;
+            object[] arrParams = new object[parameters.Count];
+            for(int i = 0; i < parameters.Count; i++) {
+                if(parameters[i].isArray()) {
+                    setObjectInArray(ref arrParams[i], parameters[i].lsArray);
+                }
+                else {
+                    arrParams[i] = parameters[i].toObject();
+                }
+            }
+            if(arrParams.Length <= 0) arrParams = null;
+
+            if(arrParams != null)
+                sequence.InsertCallback(getWaitTime(frameRate, 0.0f), OnMethodCallbackParams, arrParams);
+            else
+                sequence.InsertCallback(getWaitTime(frameRate, 0.0f), OnMethodCallbackNoParams);
+        }
+
+        return null;
+    }
+
+    void OnMethodCallbackNoParams() {
+        methodInfo.Invoke(component, null);
+    }
+
+    void OnMethodCallbackParams(TweenEvent dat) {
+        methodInfo.Invoke(component, dat.parms);
+    }
+
     public override void execute(int frameRate, float delay) {
         /*if(useSendMessage) {
             if(component == null || methodName == null) return;

@@ -1235,14 +1235,14 @@ public class AMTake : ScriptableObject {
 
             foreach(AMTrack track in trackValues) {
                 foreach(AMAction action in track.cache) {
-                    Tweener tween = action.buildTweener(frameRate);
+                    Tweener tween = action.buildTweener(mSequence, frameRate);
                     if(tween != null) {
                         mSequence.Insert(action.getWaitTime(frameRate, 0.0f), tween);
                         numTweensAdded++;
                     }
                 }
             }
-
+                        
             if(numTweensAdded == 0) {
                 HOTween.Kill(mSequence);
                 mSequence = null;
