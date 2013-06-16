@@ -23,6 +23,8 @@ public class AMEventParameter : ScriptableObject {
         Boolean = 13
     }
 
+    public string paramName;
+
     public bool val_bool;
     public int valueType;
     public int val_int;
@@ -109,10 +111,25 @@ public class AMEventParameter : ScriptableObject {
         }
         return false;
     }
+    public bool checkArrayIntegrity() {
+        if(valueType == (int)ValueType.Array) {
+            if(lsArray != null && lsArray.Count > 0) {
+                int valElem = lsArray[0].valueType;
+                foreach(AMEventParameter elem in lsArray) {
+                    if(elem.valueType != valElem)
+                        return false;
+                }
+            }
+        }
+
+        return true;
+    }
     public Type getParamType() {
         if(valueType == (int)ValueType.Boolean) return typeof(bool);
-        if(valueType == (int)ValueType.Integer || valueType == (int)ValueType.Long) return typeof(int);
-        if(valueType == (int)ValueType.Float || valueType == (int)ValueType.Double) return typeof(float);
+        if(valueType == (int)ValueType.Integer) return typeof(int);
+        if(valueType == (int)ValueType.Long) return typeof(long);
+        if(valueType == (int)ValueType.Float) return typeof(float);
+        if(valueType == (int)ValueType.Double) return typeof(double);
         if(valueType == (int)ValueType.Vector2) return typeof(Vector2);
         if(valueType == (int)ValueType.Vector3) return typeof(Vector3);
         if(valueType == (int)ValueType.Vector4) return typeof(Vector4);
@@ -121,7 +138,39 @@ public class AMEventParameter : ScriptableObject {
         if(valueType == (int)ValueType.Object) return typeof(UnityEngine.Object);
         if(valueType == (int)ValueType.Array) {
             if(lsArray.Count <= 0) return typeof(object[]);
-            else return lsArray[0].getParamType();
+            else {
+                switch((ValueType)lsArray[0].valueType) {
+                    case ValueType.Integer:
+                        return typeof(int[]);
+                    case ValueType.Long:
+                        return typeof(long[]);
+                    case ValueType.Float:
+                        return typeof(float[]);
+                    case ValueType.Double:
+                        return typeof(double[]);
+                    case ValueType.Vector2:
+                        return typeof(Vector2[]);
+                    case ValueType.Vector3:
+                        return typeof(Vector3[]);
+                    case ValueType.Vector4:
+                        return typeof(Vector4[]);
+                    case ValueType.Color:
+                        return typeof(Color[]);
+                    case ValueType.Rect:
+                        return typeof(Rect[]);
+                    case ValueType.String:
+                        return typeof(string[]);
+                    case ValueType.Char:
+                        return typeof(char[]);
+                    case ValueType.Object:
+                        return typeof(UnityEngine.Object[]);
+                    case ValueType.Array:
+                        return typeof(System.Array[]);
+                    case ValueType.Boolean:
+                        return typeof(bool[]);
+                }
+            }
+            //else return lsArray[0].getParamType();
         }
         if(valueType == (int)ValueType.String) return typeof(string);
         if(valueType == (int)ValueType.Char) return typeof(char);
@@ -175,6 +224,64 @@ public class AMEventParameter : ScriptableObject {
         else if(t.BaseType.BaseType == typeof(UnityEngine.Object)) valueType = (int)ValueType.Object;
         else {
             valueType = (int)ValueType.Object;
+        }
+    }
+
+    public void fromObject(object dat) {
+        switch((ValueType)valueType) {
+            case ValueType.Integer:
+            case ValueType.Long:
+                val_int = Convert.ToInt32(dat);
+                break;
+            case ValueType.Float:
+            case ValueType.Double:
+                val_float = Convert.ToSingle(dat);
+                break;
+            case ValueType.Vector2:
+                val_vect2 = (Vector2)dat;
+                break;
+            case ValueType.Vector3:
+                val_vect3 = (Vector3)dat;
+                break;
+            case ValueType.Vector4:
+                val_vect4 = (Vector4)dat;
+                break;
+            case ValueType.Color:
+                val_color = (Color)dat;
+                break;
+            case ValueType.Rect:
+                val_rect = (Rect)dat;
+                break;
+            case ValueType.String:
+                val_string = Convert.ToString(dat);
+                break;
+            case ValueType.Char:
+                val_string = new string(Convert.ToChar(dat), 1);
+                break;
+            case ValueType.Object:
+                val_obj = (UnityEngine.Object)dat;
+                break;
+            case ValueType.Array:
+                if(lsArray != null) {
+                    foreach(AMEventParameter param in lsArray)
+                        param.destroy();
+                }
+
+                System.Array arr = (System.Array)dat;
+                lsArray = new List<AMEventParameter>(arr.Length);
+                for(int i = 0; i < arr.Length; i++) {
+                    object arrElem = arr.GetValue(i);
+                    if(arrElem != null) {
+                        AMEventParameter a = CreateInstance<AMEventParameter>();
+                        a.setValueType(arrElem.GetType());
+                        a.fromObject(arrElem);
+                        lsArray.Add(a);
+                    }
+                }
+                break;
+            case ValueType.Boolean:
+                val_bool = Convert.ToBoolean(dat);
+                break;
         }
     }
 

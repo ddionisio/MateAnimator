@@ -90,6 +90,7 @@ public class AMEventAction : AMAction {
         AMTween.InvokeMethod(component,AMTween.Hash ("delay",getWaitTime(frameRate,delay),"methodinfo",methodInfo,"parameters",arrParams));*/
         Debug.LogError("need implement");
     }
+
     public void setObjectInArray(ref object obj, List<AMEventParameter> lsArray) {
         if(lsArray.Count <= 0) return;
         int valueType = lsArray[0].valueType;

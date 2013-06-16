@@ -2759,9 +2759,11 @@ public class AMTimeline : EditorWindow {
             Rect rectPopup = new Rect(0f, start_y, width_inspector - margin, 22f);
             indexMethodInfo = EditorGUI.Popup(rectPopup, indexMethodInfo, getMethodNames());
             // if index out of range
-            if((indexMethodInfo < cachedMethodInfo.Count)) {
+            bool paramMatched = eKey.isMatch(cachedParameterInfos);
+            if((indexMethodInfo < cachedMethodInfo.Count) || !paramMatched) {
                 // process change
-                if(eKey.setMethodInfo(cachedMethodInfoComponents[indexMethodInfo], cachedMethodInfo[indexMethodInfo], cachedParameterInfos)) {						// update cache when modifying varaibles
+                // update cache when modifying varaibles
+                if(eKey.setMethodInfo(cachedMethodInfoComponents[indexMethodInfo], cachedMethodInfo[indexMethodInfo], cachedParameterInfos, !paramMatched)) {						
                     sTrack.updateCache();
                     AMCodeView.refresh();
                     // save data

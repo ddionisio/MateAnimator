@@ -7,6 +7,11 @@ using System.Linq;
 [System.Serializable]
 public class AMEventKey : AMKey {
 
+    private struct ParamKeep {
+        public System.Type type;
+        public object val;
+    }
+
     public Component component;
     public bool useSendMessage = true;
     public List<AMEventParameter> parameters = new List<AMEventParameter>();
@@ -28,19 +33,59 @@ public class AMEventKey : AMKey {
         }
     }
 
-    public bool setMethodInfo(Component component, MethodInfo methodInfo, ParameterInfo[] cachedParameterInfos) {
+    public bool isMatch(ParameterInfo[] cachedParameterInfos) {
+        if(cachedParameterInfos.Length == parameters.Count) {
+            for(int i = 0; i < cachedParameterInfos.Length; i++) {
+                if(parameters[i].valueType == (int)AMEventParameter.ValueType.Array) {
+                    if(!parameters[i].checkArrayIntegrity() || cachedParameterInfos[i].ParameterType != parameters[i].getParamType())
+                        return false;
+                }
+                else if(cachedParameterInfos[i].ParameterType != parameters[i].getParamType())
+                    return false;
+            }
+        }
+        else
+            return false;
+
+        return true;
+    }
+
+    public bool setMethodInfo(Component component, MethodInfo methodInfo, ParameterInfo[] cachedParameterInfos, bool restoreValues) {
         // if different component or methodinfo
-        if((this.methodInfo != methodInfo) || (this.component != component)) {
+        if((this.methodInfo != methodInfo) || (this.component != component) || !isMatch(cachedParameterInfos)) {
             this.component = component;
             this.methodInfo = methodInfo;
             //this.parameters = new object[numParameters];
+
+            Dictionary<string, ParamKeep> oldParams = null;
+            if(restoreValues && parameters != null && parameters.Count > 0) {
+                Debug.Log("Parameters have been changed, from code? Attempting to restore data.");
+                oldParams = new Dictionary<string, ParamKeep>(parameters.Count);
+                for(int i = 0; i < parameters.Count; i++) {
+                    if(!string.IsNullOrEmpty(parameters[i].paramName) && (parameters[i].valueType != (int)AMEventParameter.ValueType.Array || parameters[i].checkArrayIntegrity())) {
+                        oldParams.Add(parameters[i].paramName,
+                            new ParamKeep() { type = parameters[i].getParamType(), val = parameters[i].toObject() });
+                    }
+                }
+            }
+            
+
             destroyParameters();
             this.parameters = new List<AMEventParameter>();
 
             // add parameters
             for(int i = 0; i < cachedParameterInfos.Length; i++) {
                 AMEventParameter a = CreateInstance<AMEventParameter>();
+                a.paramName = cachedParameterInfos[i].Name;
                 a.setValueType(cachedParameterInfos[i].ParameterType);
+
+                //see if we can restore value from previous
+                if(oldParams != null && oldParams.ContainsKey(a.paramName)) {
+                    ParamKeep keep = oldParams[a.paramName];
+                    if(keep.type == cachedParameterInfos[i].ParameterType)
+                        a.fromObject(keep.val);
+                }
+
                 this.parameters.Add(a);
             }
 

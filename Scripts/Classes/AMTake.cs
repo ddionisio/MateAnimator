@@ -1242,7 +1242,7 @@ public class AMTake : ScriptableObject {
                     }
                 }
             }
-                        
+
             if(numTweensAdded == 0) {
                 HOTween.Kill(mSequence);
                 mSequence = null;
