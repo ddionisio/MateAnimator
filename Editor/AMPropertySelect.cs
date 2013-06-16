@@ -7,10 +7,22 @@ using System;
 
 public class AMPropertySelect : EditorWindow {
     public AMOptionsFile oData;
-    public AnimatorData aData;
+
+    private AnimatorData __aData;
+
+    public AnimatorData aData {
+        get {
+            if(AMTimeline.window != null && AMTimeline.window.aData != __aData) {
+                track = null;
+                reloadAnimatorData();
+            }
+
+            return __aData;
+        }
+    }
 
     public static AMPropertySelect window = null;
-    public static AMPropertyTrack track = null;
+    private static AMPropertyTrack track = null;
 
     private int selectionIndex = -1;
     private Component[] arrComponents;
@@ -35,18 +47,18 @@ public class AMPropertySelect : EditorWindow {
     }
     void OnDisable() {
         window = null;
+        track = null;
     }
     void OnHierarchyChange() {
         if(!aData) reloadAnimatorData();
     }
     public void reloadAnimatorData() {
-        aData = null;
+        __aData = null;
         loadAnimatorData();
     }
     void loadAnimatorData() {
-        GameObject go = GameObject.Find("AnimatorData");
-        if(go) {
-            aData = (AnimatorData)go.GetComponent("AnimatorData");
+        if(AMTimeline.window) {
+            __aData = AMTimeline.window.aData;
             if(track) {
                 _go = track.obj;
                 // refresh	
@@ -104,11 +116,6 @@ public class AMPropertySelect : EditorWindow {
                 if(selectionIndex == i) {
                     //scrollViewComponent = GUILayout.BeginScrollView(scrollViewComponent);
                     int numberOfProperties = 0;
-                    // check for special properties
-                    if(componentName == "MegaMorph") {
-                        processMegaMorph(myComponent);
-                        numberOfProperties++;
-                    }
                     FieldInfo[] fields = myComponent.GetType().GetFields();
                     // loop through all fields sfields
                     foreach(FieldInfo fieldInfo in fields) {
@@ -164,46 +171,6 @@ public class AMPropertySelect : EditorWindow {
             }
         }
         GUILayout.EndScrollView();
-    }
-    void processMegaMorph(Component myComponent) {
-        // special property
-        GUILayout.BeginHorizontal();
-        // property button
-        Type typeMegaMorph = myComponent.GetType();
-        try {
-            MethodInfo methodGetChannelNames = typeMegaMorph.GetMethod("GetChannelNames");
-            MethodInfo methodGetPercentAtIndex = typeMegaMorph.GetMethod("GetPercent", new Type[] { typeof(int) });	// takes index
-            MethodInfo methodSetPercentAtIndex = typeMegaMorph.GetMethod("SetPercent", new Type[] { typeof(int), typeof(float) });	// takes index and float
-            //Type.GetType("System.Int32") +" "+ 
-            //Debug.Log(Type.GetType("System.Single"));
-            string[] arrChannelNames = (string[])methodGetChannelNames.Invoke(myComponent, null);
-
-            if(GUILayout.Button("Morph Channels", GUILayout.Width(150f))) {
-                // send over component
-                // send over method get channel names and set / get percent at index
-                processSelectProperty(myComponent, null, null, methodSetPercentAtIndex);
-                // old
-                // select the field
-                //aData.fieldInfo = fieldInfo;
-                //aData.propertyInfo = null;
-                //aData.propertyComponent = myComponent;
-                // exit by setting aData to null
-                //aData.didSelectProperty = true;
-            }
-            string channelNames = "";
-            for(int j = 0; j < arrChannelNames.Length; j++) {
-                channelNames += arrChannelNames[j] + ": ";
-                channelNames += (float)methodGetPercentAtIndex.Invoke(myComponent, new object[] { j });
-                if(j < arrChannelNames.Length - 1) channelNames += ", ";
-                // temp set value, this is how to set the percent
-                //methodSetPercentAtIndex.Invoke(myComponent, new object[]{j,0});
-            }
-            GUILayout.Label(channelNames);
-        }
-        catch {
-            GUILayout.Label("Error: There was a problem loading morphs.");
-        }
-        GUILayout.EndHorizontal();
     }
     bool shouldIgnoreProperty(string propertyName) {
         foreach(string s in ignoreProperties) {

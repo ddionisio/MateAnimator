@@ -6,7 +6,6 @@ using System.Linq;
 
 using Holoville.HOTween;
 
-[ExecuteInEditMode]
 public class AnimatorData : MonoBehaviour {
     // show
     public List<AMTake> takes = new List<AMTake>();
@@ -149,9 +148,6 @@ public class AnimatorData : MonoBehaviour {
     }
 
     void Awake() {
-        if(!Application.isPlaying)
-            return;
-
         //build the sequences for each take
         /*if(takes != null) {
             foreach(AMTake take in takes) {
@@ -161,9 +157,6 @@ public class AnimatorData : MonoBehaviour {
     }
 
     void Start() {
-        if(!Application.isPlaying)
-            return;
-
         if(playOnStart) {
             Play(playOnStart.name, true, 0f, false);
             playOnStart = null;

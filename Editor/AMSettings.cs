@@ -6,7 +6,18 @@ public class AMSettings : EditorWindow {
 	public static AMSettings window = null;
 	
 	public AMOptionsFile oData;
-	public AnimatorData aData;	
+
+	private AnimatorData __aData;
+
+    public AnimatorData aData {
+        get {
+            if(AMTimeline.window.aData != __aData) {
+                reloadAnimatorData();
+            }
+
+            return __aData;
+        }
+    }
 	
 	private int numFrames;
 	private int frameRate;
@@ -88,16 +99,15 @@ public class AMSettings : EditorWindow {
 		if(!aData) loadAnimatorData();
 	}
 	public void reloadAnimatorData() {
-		aData = null;
+		__aData = null;
 		loadAnimatorData();
 	}
 	void loadAnimatorData()
 	{
-		GameObject go = GameObject.Find ("AnimatorData");
-		if(go) {
-			aData = (AnimatorData) go.GetComponent ("AnimatorData");
-			numFrames = aData.getCurrentTake().numFrames;
-			frameRate = aData.getCurrentTake().frameRate;
+        if(AMTimeline.window) {
+            __aData = AMTimeline.window.aData;
+			numFrames = __aData.getCurrentTake().numFrames;
+			frameRate = __aData.getCurrentTake().frameRate;
 		}
 	}
 }

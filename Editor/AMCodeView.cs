@@ -75,9 +75,8 @@ public class AMCodeView : EditorWindow {
         loadAnimatorData();
     }
     void loadAnimatorData() {
-        GameObject go = GameObject.Find("AnimatorData");
-        if(go) {
-            aData = (AnimatorData)go.GetComponent("AnimatorData");
+        if(AMTimeline.window != null) {
+            aData = AMTimeline.window.aData;
         }
     }
     void Update() {

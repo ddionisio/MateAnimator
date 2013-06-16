@@ -117,9 +117,8 @@ public class AMTakeImport : EditorWindow {
 	}
 	
 	void saveChanges() {
-		GameObject go = GameObject.Find ("AnimatorData");
-		if(!go) return;
-		AnimatorData aData = (AnimatorData) go.GetComponent ("AnimatorData");
+		if(!AMTimeline.window) return;
+        AnimatorData aData = AMTimeline.window.aData;
 		if(!aData) return;
 		
 		List<GameObject> keepReferences = new List<GameObject>();
@@ -242,8 +241,6 @@ public class AMTakeImport : EditorWindow {
 	}
 	
 	public static AnimatorData getAnimatorData(GameObject go) {
-		if(go.name != "AnimatorData") return null;
-		AnimatorData __aData = (AnimatorData)go.GetComponent("AnimatorData");
-		return __aData;
+        return go.GetComponent<AnimatorData>();
 	}
 }

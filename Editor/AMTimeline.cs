@@ -25,8 +25,44 @@ public class AMTimeline : EditorWindow {
             return _aData;
         }
         set {
-            _aData = value;
-            indexMethodInfo = -1;	// re-check for methodinfo
+            if(_aData != value) {
+                if(_aData != null) {
+                    Debug.Log("previous data: " + _aData.name + " hash: " + _aData.GetHashCode());
+
+                    _aData.isAnimatorOpen = false;
+                    EditorUtility.SetDirty(_aData);
+                }
+
+                _aData = value;
+
+                if(_aData) {
+                    if(window != null) {
+                        _aData.isAnimatorOpen = true;
+                    }
+
+                    if(_aData.takes == null || _aData.takes.Count == 0) {
+                        //this is a newly created data
+
+                        // add take
+                        _aData.addTake();
+                        // save data
+                        setDirtyTakes(_aData.takes);
+                    }
+                    else {
+                        _aData.getCurrentTake().maintainTake();	// upgrade take to current version if necessary
+                        // save data
+                        EditorUtility.SetDirty(_aData);
+                        // preview last selected frame
+                        if(!isPlayMode && _aData.getCurrentTake()) _aData.getCurrentTake().previewFrame((float)_aData.getCurrentTake().selectedFrame);
+                    }
+
+                    indexMethodInfo = -1;	// re-check for methodinfo
+
+                    Debug.Log("new data: " + _aData.name + " hash: " + _aData.GetHashCode());
+                }
+                else
+                    Debug.Log("no data");
+            }
         }
     }// AnimatorData component, holds all data
     public AMOptionsFile oData;
@@ -393,18 +429,13 @@ public class AMTimeline : EditorWindow {
         window = this;
         //this.wantsMouseMove = true;
         // find component
-        GameObject go = GameObject.Find("AnimatorData");
-        if(go) {
-            aData = (AnimatorData)go.GetComponent("AnimatorData");
-            if(aData) {
-                aData.isAnimatorOpen = true;
-                aData.getCurrentTake().maintainTake();	// upgrade take to current version if necessary
-                // save data
-                EditorUtility.SetDirty(aData);
-                // preview last selected frame
-                if(!isPlayMode) aData.getCurrentTake().previewFrame((float)aData.getCurrentTake().selectedFrame);
+        if(!aData && !EditorApplication.isPlayingOrWillChangePlaymode) {
+            GameObject go = Selection.activeGameObject;
+            if(go) {
+                aData = go.GetComponent<AnimatorData>();
             }
         }
+
         oData = AMOptionsFile.loadFile();
         // set default current dimensions of frames
         //current_width_frame = width_frame;
@@ -543,6 +574,10 @@ public class AMTimeline : EditorWindow {
             this.ShowNotification(new GUIContent("Play Mode"));
             return;
         }
+        if(EditorApplication.isCompiling) {
+            this.ShowNotification(new GUIContent("Code Compiling"));
+            return;
+        }
 
         if(tickerSpeed <= 0) tickerSpeed = 1;
         ticker = (ticker + 1) % tickerSpeed;
@@ -563,24 +598,22 @@ public class AMTimeline : EditorWindow {
         #region no data component
         if(!aData) {
             // recheck for component
-            GameObject go = GameObject.Find("AnimatorData");
+            GameObject go = Selection.activeGameObject;
             if(go) {
-                aData = (AnimatorData)go.GetComponent("AnimatorData");
+                aData = go.GetComponent<AnimatorData>();
             }
             if(!aData) {
                 // no data component message
-                MessageBox("Animator requires an AnimatorData component in your scene.", MessageBoxType.Info);
-                if(GUILayout.Button("Add Component")) {
+                if(go)
+                    MessageBox("Animator requires an AnimatorData component in your game object.", MessageBoxType.Info);
+                else
+                    MessageBox("Animator requires an AnimatorData in scene.", MessageBoxType.Info);
+
+                if(GUILayout.Button(go ? "Add Component" : "Create AnimatorData")) {
                     // create component
                     if(!go) go = new GameObject("AnimatorData");
-                    go.AddComponent("AnimatorData");
-                    aData = (AnimatorData)go.GetComponent("AnimatorData");
-                    aData.isAnimatorOpen = true;
-                    // add take
-                    aData.addTake();
-                    // save data
-                    setDirtyTakes(aData.takes);
-
+                    aData = go.AddComponent<AnimatorData>();
+                    
                     oData = AMOptionsFile.loadFile();
                 }
                 return;
@@ -735,8 +768,18 @@ public class AMTimeline : EditorWindow {
         //GUI.color = new Color(190f/255f,190f/255f,190f/255f,1f);
         GUI.DrawTexture(new Rect(0f, 0f, position.width, height_menu_bar - 2f), EditorStyles.toolbar.normal.background);
         //GUI.color = Color.white;
+        #region select name
+        GUIContent selectLabel = new GUIContent(aData.gameObject.name);
+        Vector2 selectLabelSize = EditorStyles.toolbarButton.CalcSize(selectLabel);
+        Rect rectSelectLabel = new Rect(margin, 0f, selectLabelSize.x, height_button_delete);
+
+        if(GUI.Button(rectSelectLabel, selectLabel, EditorStyles.toolbarButton)) {
+            EditorGUIUtility.PingObject(aData.gameObject);
+        }
+        #endregion
+
         #region options button
-        Rect rectBtnOptions = new Rect(margin, 0f, 60f, height_button_delete);
+        Rect rectBtnOptions = new Rect(rectSelectLabel.x + rectSelectLabel.width + margin, 0f, 60f, height_button_delete);
         if(GUI.Button(rectBtnOptions, "Options", EditorStyles.toolbarButton)) {
             EditorWindow windowOptions = ScriptableObject.CreateInstance<AMOptions>();
             //windowOptions.Show();
@@ -1533,26 +1576,31 @@ public class AMTimeline : EditorWindow {
                 aData.inPlayMode = true;
                 EditorUtility.SetDirty(aData);
             }
-            aData = null;
+            //aData = null; //?????
             //repaintBuffer = 0;	// used to repaint after user exits play mode
             if(dragType == (int)DragType.TimeScrub || dragType == (int)DragType.FrameScrub) dragType = (int)DragType.None;
 
             // exit playmode
         }
         else if(!EditorApplication.isPlayingOrWillChangePlaymode) {
-            // recheck for component
-            GameObject go = GameObject.Find("AnimatorData");
-            if(go) {
-                aData = (AnimatorData)go.GetComponent("AnimatorData");
+            if(aData) {
                 aData.inPlayMode = false;
-                //maintainCachesIn = 10;
+
+                //this.Repaint();
+                //repaintBuffer = repaintRefreshRate;
+                // reset inspector selected methodinfo
+                indexMethodInfo = -1;
+                // preview selected frame
+                if(aData.getCurrentTake()) aData.getCurrentTake().previewFrame(aData.getCurrentTake().selectedFrame);
             }
-            //this.Repaint();
-            //repaintBuffer = repaintRefreshRate;
-            // reset inspector selected methodinfo
-            indexMethodInfo = -1;
-            // preview selected frame
-            if(aData) aData.getCurrentTake().previewFrame(aData.getCurrentTake().selectedFrame);
+            else {
+                GameObject go = Selection.activeGameObject;
+                if(go) {
+                    aData = go.GetComponent<AnimatorData>();
+                    //maintainCachesIn = 10;
+                }
+            }
+                        
             // check for pro license
             AMTake.isProLicense = PlayerSettings.advancedLicense;
         }
@@ -3576,7 +3624,7 @@ public class AMTimeline : EditorWindow {
     void processUpdateMethodInfoCache(bool now = false) {
         if(now) updateMethodInfoCacheBuffer = 0;
         // update methodinfo cache if necessary
-        if(!aData) return;
+        if(!aData || !aData.getCurrentTake()) return;
         if(aData.getCurrentTake().getTrackCount() <= 0) return;
         if(aData.getCurrentTake().selectedTrack <= -1) return;
         if(updateMethodInfoCacheBuffer > 0) updateMethodInfoCacheBuffer--;
