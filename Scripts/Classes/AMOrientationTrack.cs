@@ -69,9 +69,9 @@ public class AMOrientationTrack : AMTrack {
             a.customEase = new List<float>(keys[i].customEase);
             if(translationTrack != null && !a.isLookFollow()) {
                 a.isSetStartPosition = true;
-                a.startPosition = translationTrack.getPositionAtFrame(a.startFrame);
+                a.startPosition = translationTrack.getPositionAtFrame(a.startFrame, true);
                 a.isSetEndPosition = true;
-                a.endPosition = translationTrack.getPositionAtFrame(a.endFrame);
+                a.endPosition = translationTrack.getPositionAtFrame(a.endFrame, true);
             }
 
             // add to cache
@@ -96,7 +96,7 @@ public class AMOrientationTrack : AMTrack {
                 if(!(cache[i] as AMOrientationAction).startTarget) return;
                 Vector3 startPos;
                 if(cachedTranslationTrackStartTarget == null) startPos = (cache[i] as AMOrientationAction).startTarget.position;
-                else startPos = (cachedTranslationTrackStartTarget as AMTranslationTrack).getPositionAtFrame((cache[i] as AMOrientationAction).startFrame);
+                else startPos = (cachedTranslationTrackStartTarget as AMTranslationTrack).getPositionAtFrame((cache[i] as AMOrientationAction).startFrame, true);
                 obj.LookAt(startPos);
                 return;
                 // between first and last frame
@@ -108,8 +108,8 @@ public class AMOrientationTrack : AMTrack {
                 float percentage = framePositionInPath / cache[i].getNumberOfFrames();
                 if((cache[i] as AMOrientationAction).isLookFollow()) obj.rotation = (cache[i] as AMOrientationAction).getQuaternionAtPercent(percentage);
                 else {
-                    Vector3? startPos = (cachedTranslationTrackStartTarget == null ? null : (Vector3?)(cachedTranslationTrackStartTarget as AMTranslationTrack).getPositionAtFrame((cache[i] as AMOrientationAction).startFrame));
-                    Vector3? endPos = (cachedTranslationTrackEndTarget == null ? null : (Vector3?)(cachedTranslationTrackEndTarget as AMTranslationTrack).getPositionAtFrame((cache[i] as AMOrientationAction).endFrame));
+                    Vector3? startPos = (cachedTranslationTrackStartTarget == null ? null : (Vector3?)(cachedTranslationTrackStartTarget as AMTranslationTrack).getPositionAtFrame((cache[i] as AMOrientationAction).startFrame, true));
+                    Vector3? endPos = (cachedTranslationTrackEndTarget == null ? null : (Vector3?)(cachedTranslationTrackEndTarget as AMTranslationTrack).getPositionAtFrame((cache[i] as AMOrientationAction).endFrame, true));
                     obj.rotation = (cache[i] as AMOrientationAction).getQuaternionAtPercent(percentage, startPos, endPos);
                 }
                 return;
@@ -119,7 +119,7 @@ public class AMOrientationTrack : AMTrack {
                 if(!(cache[i] as AMOrientationAction).endTarget) return;
                 Vector3 endPos;
                 if(cachedTranslationTrackEndTarget == null) endPos = (cache[i] as AMOrientationAction).endTarget.position;
-                else endPos = (cachedTranslationTrackEndTarget as AMTranslationTrack).getPositionAtFrame((cache[i] as AMOrientationAction).endFrame);
+                else endPos = (cachedTranslationTrackEndTarget as AMTranslationTrack).getPositionAtFrame((cache[i] as AMOrientationAction).endFrame, true);
                 obj.LookAt(endPos);
                 return;
             }
@@ -200,7 +200,7 @@ public class AMOrientationTrack : AMTrack {
         AMTrack _translation_track = null;
         if(start_frame > 0) _translation_track = parentTake.getTranslationTrackForTransform(_target);
         Vector3 _lookv3 = _target.transform.position;
-        if(_translation_track) _lookv3 = (_translation_track as AMTranslationTrack).getPositionAtFrame(start_frame);
+        if(_translation_track) _lookv3 = (_translation_track as AMTranslationTrack).getPositionAtFrame(start_frame, true);
         AnimatorTimeline.JSONVector3 v = new AnimatorTimeline.JSONVector3();
         v.setValue(_lookv3);
         init.position = v;

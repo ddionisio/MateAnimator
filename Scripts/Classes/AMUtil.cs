@@ -11,6 +11,24 @@ public struct AMUtil {
         return 1 + (Mathf.Log(value - start) / (10 * Mathf.Log(2)));
     }
 
+    public static float clerp(float start, float end, float value) {
+        float min = 0.0f;
+        float max = 360.0f;
+        float half = Mathf.Abs((max - min) / 2.0f);
+        float retval = 0.0f;
+        float diff = 0.0f;
+        if((end - start) < -half) {
+            diff = ((max - start) + end) * value;
+            retval = start + diff;
+        }
+        else if((end - start) > half) {
+            diff = -((max - end) + start) * value;
+            retval = start + diff;
+        }
+        else retval = start + (end - start) * value;
+        return retval;
+    }
+
     public static Holoville.HOTween.Core.TweenDelegate.EaseFunc GetEasingFunction(Holoville.HOTween.EaseType type) {
         switch(type) {
             case Holoville.HOTween.EaseType.Linear:

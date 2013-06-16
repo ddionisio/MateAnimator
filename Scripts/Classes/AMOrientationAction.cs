@@ -2,6 +2,9 @@ using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 
+using Holoville.HOTween;
+using Holoville.HOTween.Core;
+
 [System.Serializable]
 public class AMOrientationAction : AMAction {
 
@@ -53,7 +56,27 @@ public class AMOrientationAction : AMAction {
         Debug.LogError("need implement");
         return s;
     }
-
+    public override Tweener buildTweener(Sequence sequence, int frameRate) {
+        if(!obj) return null;
+        if(endFrame == -1) return null;
+        if(isLookFollow()) {
+            return HOTween.To(obj, getTime(frameRate), new TweenParms().Prop("position", new AMPlugLookFollowTarget(startTarget)));
+        }
+        else {
+            if(hasCustomEase()) {
+                if(isSetEndPosition)
+                    return HOTween.To(obj, getTime(frameRate), new TweenParms().Prop("position", new AMPlugLookToFollowTarget(endTarget, endPosition)).Ease(easeCurve));
+                else
+                    return HOTween.To(obj, getTime(frameRate), new TweenParms().Prop("position", new AMPlugLookToFollowTarget(endTarget)).Ease(easeCurve));
+            }
+            else {
+                if(isSetEndPosition)
+                    return HOTween.To(obj, getTime(frameRate), new TweenParms().Prop("position", new AMPlugLookToFollowTarget(endTarget, endPosition)).Ease((EaseType)easeType));
+                else
+                    return HOTween.To(obj, getTime(frameRate), new TweenParms().Prop("position", new AMPlugLookToFollowTarget(endTarget)).Ease((EaseType)easeType));
+            }
+        }
+    }
     public override void execute(int frameRate, float delay) {
         if(!obj) return;
         if(endFrame == -1) return;
@@ -87,7 +110,7 @@ public class AMOrientationAction : AMAction {
             return obj.rotation;
         }
 
-        /*Vector3 _temp = obj.position;
+        Vector3 _temp = obj.position;
         if(isSetStartPosition) obj.position = (Vector3)startPosition;
         obj.LookAt(startVector ?? startTarget.position);
         Vector3 eStart = obj.eulerAngles;
@@ -95,28 +118,23 @@ public class AMOrientationAction : AMAction {
         obj.LookAt(endVector ?? endTarget.position);
         Vector3 eEnd = obj.eulerAngles;
         obj.position = _temp;
-        eEnd = new Vector3(AMTween.clerp(eStart.x, eEnd.x, 1), AMTween.clerp(eStart.y, eEnd.y, 1), AMTween.clerp(eStart.z, eEnd.z, 1));
+        eEnd = new Vector3(AMUtil.clerp(eStart.x, eEnd.x, 1), AMUtil.clerp(eStart.y, eEnd.y, 1), AMUtil.clerp(eStart.z, eEnd.z, 1));
 
         Vector3 eCurrent = new Vector3();
 
-        AMTween.EasingFunction ease;
-        AnimationCurve curve = null;
         if(hasCustomEase()) {
-            curve = easeCurve;
-            ease = AMTween.customEase;
+            eCurrent.x = AMUtil.EaseCustom(eStart.x, eEnd.x - eStart.x, percentage, easeCurve);
+            eCurrent.y = AMUtil.EaseCustom(eStart.y, eEnd.y - eStart.y, percentage, easeCurve);
+            eCurrent.z = AMUtil.EaseCustom(eStart.z, eEnd.z - eStart.z, percentage, easeCurve);
         }
         else {
-            ease = AMTween.GetEasingFunction((AMTween.EaseType)easeType);
+            TweenDelegate.EaseFunc ease = AMUtil.GetEasingFunction((EaseType)easeType);
+            eCurrent.x = ease(percentage, eStart.x, eEnd.x - eStart.x, 1.0f, 0.0f, 0.0f);
+            eCurrent.y = ease(percentage, eStart.y, eEnd.y - eStart.y, 1.0f, 0.0f, 0.0f);
+            eCurrent.z = ease(percentage, eStart.z, eEnd.z - eStart.z, 1.0f, 0.0f, 0.0f);
         }
 
-        eCurrent.x = ease(eStart.x, eEnd.x, percentage, curve);
-        eCurrent.y = ease(eStart.y, eEnd.y, percentage, curve);
-        eCurrent.z = ease(eStart.z, eEnd.z, percentage, curve);
-
-
-        return Quaternion.Euler(eCurrent);*/
-        Debug.LogError("need implement");
-        return Quaternion.identity;
+        return Quaternion.Euler(eCurrent);
     }
 
     public override AnimatorTimeline.JSONAction getJSONAction(int frameRate) {

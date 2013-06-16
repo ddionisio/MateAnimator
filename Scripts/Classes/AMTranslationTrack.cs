@@ -179,7 +179,7 @@ public class AMTranslationTrack : AMTrack {
             }
             return false;
         }
-        Vector3 oldPos = getPositionAtFrame((float)frame);
+        Vector3 oldPos = getPositionAtFrame((float)frame, false);
         if(position != oldPos) {
             // if updated position, addkey
             addKey(frame, position);
@@ -187,37 +187,54 @@ public class AMTranslationTrack : AMTrack {
         }
         return false;
     }
-    public Vector3 getPositionAtFrame(float frame) {
-        if(cache.Count <= 0) return position;
+    public Vector3 getPositionAtFrame(float frame, bool forceWorld) {
+        Vector3 ret = Vector3.zero;
+
+        if(cache.Count <= 0) ret = position;
         // if before first frame
-        if(frame <= (float)cache[0].startFrame) {
-            return (cache[0] as AMTranslationAction).path[0];
+        else if(frame <= (float)cache[0].startFrame) {
+            ret = (cache[0] as AMTranslationAction).path[0];
         }
         // if beyond last frame
-        if(frame >= (float)(cache[cache.Count - 1] as AMTranslationAction).endFrame) {
-            return (cache[cache.Count - 1] as AMTranslationAction).path[(cache[cache.Count - 1] as AMTranslationAction).path.Length - 1];
+        else if(frame >= (float)(cache[cache.Count - 1] as AMTranslationAction).endFrame) {
+            ret = (cache[cache.Count - 1] as AMTranslationAction).path[(cache[cache.Count - 1] as AMTranslationAction).path.Length - 1];
         }
-        // if lies on curve
-        foreach(AMTranslationAction action in cache) {
-            if(((int)frame < action.startFrame) || ((int)frame > action.endFrame)) continue;
-            if(action.path.Length == 1) {
-                return action.path[0];
+        else {
+            bool retFound = false;
+            // if lies on curve
+            foreach(AMTranslationAction action in cache) {
+                if(((int)frame < action.startFrame) || ((int)frame > action.endFrame)) continue;
+                if(action.path.Length == 1) {
+                    ret = action.path[0];
+                    retFound = true;
+                    break;
+                }
+
+                float framePositionInPath = frame - (float)action.startFrame;
+                if(framePositionInPath < 0f) framePositionInPath = 0f;
+
+                // ease
+                if(action.hasCustomEase()) {
+                    ret = AMUtil.PointOnPath(action.path, Mathf.Clamp(AMUtil.EaseCustom(0.0f, 1.0f, framePositionInPath / action.getNumberOfFrames(), action.easeCurve), 0.0f, 1.0f));
+                    retFound = true;
+                    break;
+                }
+                else {
+                    TweenDelegate.EaseFunc ease = AMUtil.GetEasingFunction((EaseType)action.easeType);
+                    ret = AMUtil.PointOnPath(action.path, Mathf.Clamp(ease(framePositionInPath, 0.0f, 1.0f, action.getNumberOfFrames(), 0.0f, 0.0f), 0.0f, 1.0f));
+                    retFound = true;
+                    break;
+                }
             }
 
-            float framePositionInPath = frame - (float)action.startFrame;
-            if(framePositionInPath < 0f) framePositionInPath = 0f;
-
-            // ease
-            if(action.hasCustomEase()) {
-                return AMUtil.PointOnPath(action.path, Mathf.Clamp(AMUtil.EaseCustom(0.0f, 1.0f, framePositionInPath / action.getNumberOfFrames(), action.easeCurve), 0.0f, 1.0f));
-            }
-            else {
-                TweenDelegate.EaseFunc ease = AMUtil.GetEasingFunction((EaseType)action.easeType);
-                return AMUtil.PointOnPath(action.path, Mathf.Clamp(ease(framePositionInPath, 0.0f, 1.0f, action.getNumberOfFrames(), 0.0f, 0.0f), 0.0f, 1.0f));
-            }
+            if(!retFound)
+                Debug.LogError("Animator: Could not get " + _obj.name + " position at frame '" + frame + "'");
         }
-        Debug.LogError("Animator: Could not get " + _obj.name + " position at frame '" + frame + "'");
-        return new Vector3(0f, 0f, 0f);
+
+        if(forceWorld && _isLocal && _obj != null && _obj.parent != null)
+            ret = _obj.parent.localToWorldMatrix.MultiplyPoint(ret);
+
+        return ret;
     }
     // draw gizmos
     public override void drawGizmos(float gizmo_size) {
