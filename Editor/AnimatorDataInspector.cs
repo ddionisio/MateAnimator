@@ -34,6 +34,7 @@ public class AnimatorDataInspector : Editor {
 
         dat.sequenceLoadAll = GUILayout.Toggle(dat.sequenceLoadAll, "Build All Sequence On Start");
         dat.sequenceKillWhenDone = GUILayout.Toggle(dat.sequenceKillWhenDone, "Kill Sequence When Done");
+        dat.playOnEnable = GUILayout.Toggle(dat.playOnEnable, "Play On Enable");
         
         if(GUILayout.Button("Edit Timeline")) {
             AMTimeline timeline = AMTimeline.window;

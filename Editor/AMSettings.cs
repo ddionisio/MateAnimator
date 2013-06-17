@@ -25,6 +25,7 @@ public class AMSettings : EditorWindow {
 	private int frameRate;
     private int loopCount = 1;
     private LoopType loopMode = LoopType.Restart;
+    private int loopBackFrame = -1;
 	private bool saveChanges = false;
 	// skins
 	private GUISkin skin = null;
@@ -33,7 +34,7 @@ public class AMSettings : EditorWindow {
 	void OnEnable() {
 		window = this;
 		this.title = "Settings";
-		this.minSize = new Vector2(280f,150f);
+		this.minSize = new Vector2(280f,190f);
 		//this.maxSize = this.minSize;
 		
 		oData = AMOptionsFile.loadFile();
@@ -65,6 +66,7 @@ public class AMSettings : EditorWindow {
             //save other data
             aData.getCurrentTake().numLoop = loopCount;
             aData.getCurrentTake().loopMode = loopMode;
+            aData.getCurrentTake().loopBackToFrame = loopBackFrame;
 
             // save data
             EditorUtility.SetDirty(aData.getCurrentTake());
@@ -95,6 +97,9 @@ public class AMSettings : EditorWindow {
         loopMode = (LoopType)EditorGUILayout.EnumPopup("Mode", loopMode);
         EditorGUIUtility.LookLikeControls();
         GUILayout.EndHorizontal();
+        GUILayout.Space(4f);
+        loopBackFrame = EditorGUILayout.IntSlider("Loop Back To Frame", loopBackFrame, -1, numFrames);
+        GUILayout.Space(6f);
 		GUILayout.Label("Number of Frames");
 		GUILayout.Space(2f);
 		numFrames = EditorGUILayout.IntField(numFrames,GUI.skin.textField,GUILayout.Width(position.width-10f-12f));
@@ -134,6 +139,7 @@ public class AMSettings : EditorWindow {
 			frameRate = __aData.getCurrentTake().frameRate;
             loopCount = __aData.getCurrentTake().numLoop;
             loopMode = __aData.getCurrentTake().loopMode;
+            loopBackFrame = __aData.getCurrentTake().loopBackToFrame;
 		}
 	}
 }

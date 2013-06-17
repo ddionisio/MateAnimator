@@ -196,8 +196,7 @@ public class AMPlugQuaternionSlerp : ABSTweenPlugin {
     /// Returns the speed-based duration based on the given speed x second.
     /// </summary>
     protected override float GetSpeedBasedDuration(float p_speed) {
-        //TODO: not quite sure
-        float speedDur = changeVal.eulerAngles.magnitude / (p_speed * 360);
+        float speedDur = typedEndVal.eulerAngles.magnitude / (p_speed * 360);
         if(speedDur < 0) {
             speedDur = -speedDur;
         }
@@ -208,8 +207,6 @@ public class AMPlugQuaternionSlerp : ABSTweenPlugin {
     /// Sets the typed changeVal based on the current startVal and endVal.
     /// </summary>
     protected override void SetChangeVal() {
-        //TODO: not quite sure
-        changeVal = typedEndVal;
     }
 
     /// <summary>
