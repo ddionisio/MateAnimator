@@ -22,8 +22,8 @@ public class AMCodeView : EditorWindow {
     private GUISkin skin = null;
     private string cachedSkinName = null;
 
-    private Texture texRightArrow = (Texture)Resources.Load("am_nav_right");// inspector right arrow
-    private Texture texLeftArrow = (Texture)Resources.Load("am_nav_left");	// inspector left arrow
+    private Texture texRightArrow;// inspector right arrow
+    private Texture texLeftArrow;	// inspector left arrow
     private Vector2 scrollPos;
     private static Dictionary<int, bool> dictTracks = new Dictionary<int, bool>();
     private static Dictionary<int, bool> dictGroups = new Dictionary<int, bool>();
@@ -55,6 +55,9 @@ public class AMCodeView : EditorWindow {
     private bool cachedIsDragging = false;
 
     void OnEnable() {
+        texRightArrow = AMEditorResource.LoadEditorTexture("am_nav_right");// inspector right arrow
+        texLeftArrow = AMEditorResource.LoadEditorTexture("am_nav_left");	// inspector left arrow
+
         window = this;
         this.title = "Code View";
         this.minSize = new Vector2(/*380f*/width_code_min + width_inspector_open_min, 102f);
