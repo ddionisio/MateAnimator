@@ -33,7 +33,7 @@ public class AMSettings : EditorWindow {
 	void OnEnable() {
 		window = this;
 		this.title = "Settings";
-		this.minSize = new Vector2(250f,150f);
+		this.minSize = new Vector2(280f,150f);
 		//this.maxSize = this.minSize;
 		
 		oData = AMOptionsFile.loadFile();
@@ -65,12 +65,12 @@ public class AMSettings : EditorWindow {
             //save other data
             aData.getCurrentTake().numLoop = loopCount;
             aData.getCurrentTake().loopMode = loopMode;
+
+            // save data
+            EditorUtility.SetDirty(aData.getCurrentTake());
+            EditorUtility.SetDirty(aData);
             
 			EditorWindow.GetWindow (typeof (AMTimeline)).Repaint();
-
-			// save data
-            EditorUtility.SetDirty(aData.getCurrentTake());
-			EditorUtility.SetDirty(aData);
 		}
 	}
 	void OnGUI() {		
@@ -79,9 +79,13 @@ public class AMSettings : EditorWindow {
 			AMTimeline.MessageBox("Animator requires an AnimatorData component in your scene. Launch Animator to add the component.",AMTimeline.MessageBoxType.Warning);
 			return;
 		}
+
+        //AMTake curTake = aData.getCurrentTake();
+
 		GUIStyle styleArea = new GUIStyle(GUI.skin.scrollView);
 		styleArea.padding = new RectOffset(4,4,4,4);
 		GUILayout.BeginArea(new Rect(0f,0f,position.width,position.height),styleArea);
+        //GUILayout.Label("Take: " + curTake.name + " of "+aData.gameObject.name + " "+curTake.GetHashCode());
         GUILayout.Label("Loop");
         GUILayout.Space(2f);
         GUILayout.BeginHorizontal(GUI.skin.box);

@@ -35,16 +35,13 @@ public class AMTimeline : EditorWindow {
                         foreach(AMTake take in aData.takes) {
                             take.cleanRemovedKeys();
                             take.maintainCaches();
-                        }
 
-                        if(aData.getCurrentTake()) {
-                            AMTrack track = aData.getCurrentTake().getTrack(aData.getCurrentTake().selectedTrack);
-                            if(track) {
-                                setDirtyKeys(track);
+                            foreach(AMTrack track in take.trackValues) {
                                 setDirtyCache(track);
+                                EditorUtility.SetDirty(track);
                             }
-                            setDirtyTracks(aData.getCurrentTake());
-                            setDirtyTakes(aData.takes);
+
+                            EditorUtility.SetDirty(take);
                         }
                     }
 
@@ -77,6 +74,8 @@ public class AMTimeline : EditorWindow {
                     indexMethodInfo = -1;	// re-check for methodinfo
 
                     //Debug.Log("new data: " + _aData.name + " hash: " + _aData.GetHashCode());
+
+                    ReloadOtherWindows();
                 }
                 //else
                     //Debug.Log("no data");
@@ -1578,6 +1577,15 @@ public class AMTimeline : EditorWindow {
         e.Use();
 
     }
+    void ReloadOtherWindows() {
+        if(AMOptions.window) AMOptions.window.reloadAnimatorData();
+        if(AMSettings.window) AMSettings.window.reloadAnimatorData();
+        if(AMCodeView.window) AMCodeView.window.reloadAnimatorData();
+        if(AMEasePicker.window) AMEasePicker.window.reloadAnimatorData();
+        if(AMPropertySelect.window) AMPropertySelect.window.reloadAnimatorData();
+        if(AMTakeExport.window) AMTakeExport.window.reloadAnimatorData();
+    }
+
     void OnUndoRedo() {
         if(isPlaying) isPlaying = false;
         // recheck for component
@@ -1593,26 +1601,27 @@ public class AMTimeline : EditorWindow {
         //repaintBuffer = repaintRefreshRate;
 
         // reload AnimatorData for other windows
-        if(AMOptions.window) AMOptions.window.reloadAnimatorData();
-        if(AMSettings.window) AMSettings.window.reloadAnimatorData();
-        if(AMCodeView.window) AMCodeView.window.reloadAnimatorData();
-        if(AMEasePicker.window) AMEasePicker.window.reloadAnimatorData();
-        if(AMPropertySelect.window) AMPropertySelect.window.reloadAnimatorData();
-        if(AMTakeExport.window) AMTakeExport.window.reloadAnimatorData();
+        ReloadOtherWindows();
 
     }
-
-    AnimatorData _playModeDataHolder = null;
 
     void OnPlayMode() {
         bool justHitPlay = EditorApplication.isPlayingOrWillChangePlaymode && !EditorApplication.isPlaying;
         // entered playmode
         if(justHitPlay) {
+            Selection.activeGameObject = null;
+            aData = null;
+            if(dragType == (int)DragType.TimeScrub || dragType == (int)DragType.FrameScrub) dragType = (int)DragType.None;
+        }
+
+        /*bool justHitPlay = EditorApplication.isPlayingOrWillChangePlaymode && !EditorApplication.isPlaying;
+        // entered playmode
+        if(justHitPlay) {
             if(aData) {
-                aData.inPlayMode = true;
-                EditorUtility.SetDirty(aData);
-                _playModeDataHolder = aData;
+                AnimatorData _playModeDataHolder = aData;
                 aData = null;
+                aData = _playModeDataHolder;
+                aData.inPlayMode = true;
             }
             //aData = null; //?????
             //repaintBuffer = 0;	// used to repaint after user exits play mode
@@ -1621,8 +1630,7 @@ public class AMTimeline : EditorWindow {
             // exit playmode
         }
         else if(!EditorApplication.isPlayingOrWillChangePlaymode) {
-            if(_playModeDataHolder) {
-                aData = _playModeDataHolder;
+            if(aData) {
                 aData.inPlayMode = false;
 
                 //this.Repaint();
@@ -1639,10 +1647,12 @@ public class AMTimeline : EditorWindow {
                     //maintainCachesIn = 10;
                 }
             }
+
+            ReloadOtherWindows();
                         
             // check for pro license
             AMTake.isProLicense = PlayerSettings.advancedLicense;
-        }
+        }*/
     }
 
     #endregion

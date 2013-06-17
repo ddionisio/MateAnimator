@@ -9,7 +9,7 @@ public class AnimatorDataInspector : Editor {
 
         GUILayout.BeginVertical();
 
-        string[] takeNames = dat.GenerateTakeNames();
+        /*string[] takeNames = dat.GenerateTakeNames();
         int[] takeInds = new int[takeNames.Length];
         for(int i = 0; i < takeNames.Length; i++)
             takeInds[i] = i;
@@ -23,7 +23,14 @@ public class AnimatorDataInspector : Editor {
         if(playOnStartInd == 0)
             dat.playOnStart = null;
         else
-            dat.playOnStart = dat.takes[playOnStartInd - 1];
+            dat.playOnStart = dat.takes[playOnStartInd - 1];*/
+
+        if(dat.playOnStart) {
+            GUILayout.Label("Play On Start: " + dat.playOnStart.name);
+        }
+        else {
+            GUILayout.Label("Play On Start: None");
+        }
 
         dat.sequenceLoadAll = GUILayout.Toggle(dat.sequenceLoadAll, "Build All Sequence On Start");
         dat.sequenceKillWhenDone = GUILayout.Toggle(dat.sequenceKillWhenDone, "Kill Sequence When Done");
@@ -39,6 +46,9 @@ public class AnimatorDataInspector : Editor {
                 EditorWindow.GetWindow(typeof(AMTimeline));
             }
         }
+
+        if(GUI.changed)
+            EditorUtility.SetDirty(dat);
 
         GUILayout.EndVertical();
     }
