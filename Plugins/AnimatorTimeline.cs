@@ -5,18 +5,6 @@ using System.Reflection;
 using System;
 
 public class AnimatorTimeline {
-	private static AnimatorData _aData;
-    public static AnimatorData aData {
-		get 
-		{
-			if(_aData != null) return _aData;
-			GameObject go = GameObject.Find ("AnimatorData");
-            if(go) _aData = go.GetComponent < AnimatorData>();
-			if(!_aData) Debug.LogWarning("Animator: Could not find AnimatorData component.");
-			return _aData;
-		}
-	}
-	
 	#region JSON parser
 	public static void ParseJSON(string textAssetName) {
 		TextAsset t = (TextAsset) Resources.Load(textAssetName);

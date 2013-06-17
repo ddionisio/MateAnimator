@@ -6,6 +6,7 @@ using System.Linq;
 
 using Holoville.HOTween;
 
+[AddComponentMenu("M8/Animator")]
 public class AnimatorData : MonoBehaviour {
     // show
     public List<AMTake> takes = new List<AMTake>();
@@ -18,15 +19,17 @@ public class AnimatorData : MonoBehaviour {
 
     public bool isPlaying {
         get {
-            if(nowPlayingTake != null && !_isPaused) return true;
-            return false;
+            if(nowPlayingTake == null) return false;
+
+            Sequence seq = nowPlayingTake.sequence;
+                        
+            return seq != null && !(seq.isPaused || seq.isComplete);
         }
     }
 
     public bool isPaused {
         get {
-            if(takeName == null) return false;
-            return _isPaused;
+            return nowPlayingTake != null && nowPlayingTake.sequence != null && nowPlayingTake.sequence.isPaused;
         }
     }
 
@@ -83,10 +86,11 @@ public class AnimatorData : MonoBehaviour {
     //public float elapsedTime = 0f;
     // private
     private AMTake nowPlayingTake = null;
-    private bool _isPaused = false;
     //private bool isLooping = false;
     //private float takeTime = 0f;
     private bool mStarted = false;
+
+    public AMTake currentPlayingTake { get { return nowPlayingTake; } }
 
     public object Invoker(object[] args) {
         switch((int)args[0]) {
@@ -136,8 +140,7 @@ public class AnimatorData : MonoBehaviour {
                 if(takeName == null) return 0f;
                 else return (float)nowPlayingTake.numFrames / (float)nowPlayingTake.frameRate;
             case 12:
-                if(takeName == null) return false;
-                return _isPaused;
+                return isPaused;
             default:
                 break;
         }
@@ -226,7 +229,6 @@ public class AnimatorData : MonoBehaviour {
 
     public void Pause() {
         if(nowPlayingTake == null) return;
-        _isPaused = true;
         nowPlayingTake.stopAudio();
         //AMTween.Pause();
 
@@ -241,8 +243,6 @@ public class AnimatorData : MonoBehaviour {
 
         if(nowPlayingTake.sequence != null)
             nowPlayingTake.sequence.Play();
-
-        _isPaused = false;
     }
 
     public void Stop() {
@@ -256,9 +256,6 @@ public class AnimatorData : MonoBehaviour {
         }
 
         nowPlayingTake = null;
-        //isLooping = false;
-        _isPaused = false;
-        //AMTween.Stop();
     }
 
     // play take by name from time
@@ -290,11 +287,9 @@ public class AnimatorData : MonoBehaviour {
             if(nowPlayingTake.sequence != null) {
                 if(loop) {
                     nowPlayingTake.sequence.loops = -1;
-                    nowPlayingTake.sequence.loopType = LoopType.Restart;
                 }
                 else {
                     nowPlayingTake.sequence.loops = nowPlayingTake.numLoop;
-                    nowPlayingTake.sequence.loopType = nowPlayingTake.loopMode;
                 }
 
                 float startTime = value;

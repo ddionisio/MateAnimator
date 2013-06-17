@@ -11,6 +11,8 @@ using Holoville.HOTween;
 
 public class AMTake : ScriptableObject {
 
+    public delegate void OnSequenceDone(AMTake take);
+
     #region Declarations
 
     public new string name;					// take name
@@ -40,12 +42,13 @@ public class AMTake : ScriptableObject {
     public AMGroup rootGroup;
     public List<int> groupKeys = new List<int>();
     public List<AMGroup> groupValues = new List<AMGroup>();
-
+        
     public static bool isProLicense = true;
 
     private Sequence mSequence;
 
     public Sequence sequence { get { return mSequence; } }
+    public event OnSequenceDone sequenceCompleteCallback;
 
     #endregion
 
@@ -1269,6 +1272,10 @@ public class AMTake : ScriptableObject {
 
         if(dat.tween.autoKillOnComplete)
             mSequence = null;
+
+        if(sequenceCompleteCallback != null) {
+            sequenceCompleteCallback(this);
+        }
     }
 
     public void executeActions(float fromFrame = 0f) {
@@ -1376,6 +1383,8 @@ public class AMTake : ScriptableObject {
                 mSequence = null;
             }
         }
+
+        sequenceCompleteCallback = null;
 
         DestroyImmediate(this);
     }
