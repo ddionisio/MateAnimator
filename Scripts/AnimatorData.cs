@@ -182,7 +182,7 @@ public class AnimatorData : MonoBehaviour {
         }
 
         if(playOnStart) {
-            Play(playOnStart.name, true, 0f, false);
+            Play(playOnStart.name, true, 0.0f, false);
         }
     }
 
@@ -299,9 +299,9 @@ public class AnimatorData : MonoBehaviour {
 
                 float startTime = value;
                 if(isFrame) startTime /= nowPlayingTake.frameRate;
-
-                nowPlayingTake.sequence.GoTo(startTime);
+                                
                 nowPlayingTake.sequence.Play();
+                nowPlayingTake.sequence.GoTo(startTime);
             }
 
             //isLooping = loop;

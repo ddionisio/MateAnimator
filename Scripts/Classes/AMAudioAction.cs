@@ -1,6 +1,9 @@
 using UnityEngine;
 using System.Collections;
 
+using Holoville.HOTween;
+using Holoville.HOTween.Core;
+
 [System.Serializable]
 public class AMAudioAction : AMAction {
 
@@ -12,6 +15,38 @@ public class AMAudioAction : AMAction {
         if(!audioSource || !audioClip) return;
         Debug.LogError("need implement");
         //AMTween.PlayAudio(audioSource, AMTween.Hash ("delay", getWaitTime(frameRate,delay), "audioclip", audioClip, "loop", loop));
+    }
+
+    void OnMethodCallbackParams(TweenEvent dat) {
+        if(audioSource) {
+            float elapsed = dat.tween.elapsed;
+            float frameRate = (float)dat.parms[0];
+            float curFrame = frameRate * elapsed;
+            float endFrame = startFrame + getNumberOfFrames(Mathf.RoundToInt(frameRate));
+
+            //Debug.Log("audio t: "+elapsed+" play: " + curFrame + " end: " + endFrame);
+
+            if(!loop && curFrame > endFrame) return;
+            if(loop && audioSource.isPlaying && audioSource.clip == audioClip) return;
+
+            audioSource.loop = loop;
+
+            if(!dat.tween.isReversed)
+                audioSource.time = (curFrame - ((float)startFrame)) / frameRate;
+            else //TODO: not possible when we are playing the sequence in reverse, so whatever
+                audioSource.time = 0.0f;
+
+            audioSource.clip = audioClip;
+            audioSource.pitch = 1.0f;
+
+            audioSource.Play();
+        }
+    }
+
+    public override Tweener buildTweener(Sequence sequence, int frameRate) {
+        sequence.InsertCallback(getWaitTime(frameRate, 0.0f), OnMethodCallbackParams, (float)frameRate);
+
+        return null;
     }
 
     public string ToString(int codeLanguage, int frameRate, string audioClipVarName) {

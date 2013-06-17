@@ -10,6 +10,7 @@ using Holoville.HOTween.Core;
 [System.Serializable]
 public class AMEventAction : AMAction {
     public Component component;
+    public bool frameLimit = true; //if true, this means event is called only when elapse crosses this key. false means sequencer will call this anytime elapse is beyond its key.
     public bool useSendMessage;
     public List<AMEventParameter> parameters;
     public string methodName;
@@ -30,42 +31,91 @@ public class AMEventAction : AMAction {
         }
     }
 
+    object[] buildParams() {
+        object[] arrParams = new object[parameters.Count];
+        for(int i = 0; i < parameters.Count; i++) {
+            if(parameters[i].isArray()) {
+                setObjectInArray(ref arrParams[i], parameters[i].lsArray);
+            }
+            else {
+                arrParams[i] = parameters[i].toObject();
+            }
+        }
+        if(arrParams.Length <= 0) arrParams = null;
+
+        return arrParams;
+    }
+
     public override Tweener buildTweener(Sequence sequence, int frameRate) {
-        if(useSendMessage) {
-            if(component == null || methodName == null) return null;
+        if(component == null || methodName == null) return null;
+
+        if(frameLimit) {
+            float fr = frameRate;
+
             if(parameters == null || parameters.Count <= 0)
-                sequence.InsertCallback(getWaitTime(frameRate, 0.0f), component.gameObject, methodName, null, SendMessageOptions.DontRequireReceiver);
-            else
-                sequence.InsertCallback(getWaitTime(frameRate, 0.0f), component.gameObject, methodName, parameters[0].toObject(), SendMessageOptions.DontRequireReceiver);
+                sequence.InsertCallback(getWaitTime(frameRate, 0.0f), OnMethodCallbackLimitFrame, fr);
+            else {
+                object[] arrParams = buildParams();
+
+                if(arrParams != null)
+                    sequence.InsertCallback(getWaitTime(frameRate, 0.0f), OnMethodCallbackLimitFrame, fr, (object)arrParams);
+                else
+                    sequence.InsertCallback(getWaitTime(frameRate, 0.0f), OnMethodCallbackLimitFrame, fr);
+            }
         }
         else {
-            if(component == null || methodInfo == null) return null;
-            object[] arrParams = new object[parameters.Count];
-            for(int i = 0; i < parameters.Count; i++) {
-                if(parameters[i].isArray()) {
-                    setObjectInArray(ref arrParams[i], parameters[i].lsArray);
-                }
-                else {
-                    arrParams[i] = parameters[i].toObject();
-                }
+            if(useSendMessage) {
+                if(parameters == null || parameters.Count <= 0)
+                    sequence.InsertCallback(getWaitTime(frameRate, 0.0f), component.gameObject, methodName, null, SendMessageOptions.DontRequireReceiver);
+                else
+                    sequence.InsertCallback(getWaitTime(frameRate, 0.0f), component.gameObject, methodName, parameters[0].toObject(), SendMessageOptions.DontRequireReceiver);
             }
-            if(arrParams.Length <= 0) arrParams = null;
+            else {
+                object[] arrParams = buildParams();
 
-            if(arrParams != null)
-                sequence.InsertCallback(getWaitTime(frameRate, 0.0f), OnMethodCallbackParams, arrParams);
-            else
-                sequence.InsertCallback(getWaitTime(frameRate, 0.0f), OnMethodCallbackNoParams);
+                if(arrParams != null)
+                    sequence.InsertCallback(getWaitTime(frameRate, 0.0f), OnMethodCallbackParams, arrParams);
+                else
+                    sequence.InsertCallback(getWaitTime(frameRate, 0.0f), OnMethodCallbackNoParams);
+            }
         }
 
         return null;
     }
 
     void OnMethodCallbackNoParams() {
+        if(component == null) return;
+
         methodInfo.Invoke(component, null);
     }
 
     void OnMethodCallbackParams(TweenEvent dat) {
+        if(component == null) return;
+
         methodInfo.Invoke(component, dat.parms);
+    }
+
+    //only call method if elapse is within frame
+    void OnMethodCallbackLimitFrame(TweenEvent dat) {
+        if(component == null) return;
+
+        float elapsed = dat.tween.elapsed;
+        float frameRate = (float)dat.parms[0];
+        float curFrame = frameRate * elapsed;
+
+        if(curFrame > startFrame + getNumberOfFrames()) return;
+
+        object[] parms = dat.parms.Length > 1 ? (object[])dat.parms[1] : null;
+
+        if(useSendMessage) {
+            if(parms == null || parms.Length == 0)
+                component.gameObject.SendMessage(methodName, null, SendMessageOptions.DontRequireReceiver);
+            else
+                component.gameObject.SendMessage(methodName, parms[0], SendMessageOptions.DontRequireReceiver);
+        }
+        else {
+            methodInfo.Invoke(component, parms);
+        }
     }
 
     public override void execute(int frameRate, float delay) {

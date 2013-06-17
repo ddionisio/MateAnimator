@@ -38,8 +38,11 @@ public class AMTimeline : EditorWindow {
                         }
 
                         if(aData.getCurrentTake()) {
-                            setDirtyKeys(aData.getCurrentTake().getTrack(aData.getCurrentTake().selectedTrack));
-                            setDirtyCache(aData.getCurrentTake().getTrack(aData.getCurrentTake().selectedTrack));
+                            AMTrack track = aData.getCurrentTake().getTrack(aData.getCurrentTake().selectedTrack);
+                            if(track) {
+                                setDirtyKeys(track);
+                                setDirtyCache(track);
+                            }
                             setDirtyTracks(aData.getCurrentTake());
                             setDirtyTakes(aData.takes);
                         }
@@ -1506,8 +1509,10 @@ public class AMTimeline : EditorWindow {
             }
             else if(draggingGroupElementType == (int)ElementType.Track) {
                 AMTrack dragTrack = aData.getCurrentTake().getTrack((int)draggingGroupElement.y);
-                dragElementName = dragTrack.name;
-                dragElementIcon = getTrackIconTexture(dragTrack);
+                if(dragTrack) {
+                    dragElementName = dragTrack.name;
+                    dragElementIcon = getTrackIconTexture(dragTrack);
+                }
             }
             GUI.DrawTexture(rectDragElement, GUI.skin.GetStyle("GroupElementActive").normal.background);
             dragElementName = trimString(dragElementName, 8);
@@ -2296,7 +2301,7 @@ public class AMTimeline : EditorWindow {
                 int clamped = 0; // 0 = no clamp, -1 = backwards clamp, 1 = forwards clamp
                 if(_track.cache[i] == null) {
                     // if cache is null, recheck for component and update caches
-                    aData = (AnimatorData)GameObject.Find("AnimatorData").GetComponent("AnimatorData");
+                    //aData = (AnimatorData)GameObject.Find("AnimatorData").GetComponent("AnimatorData");
                     aData.getCurrentTake().maintainCaches();
                 }
                 if((_track is AMAudioTrack) && ((_track.cache[i] as AMAudioAction).getNumberOfFrames(aData.getCurrentTake().frameRate)) > -1 && (_track.cache[i].startFrame + (_track.cache[i] as AMAudioAction).getNumberOfFrames(aData.getCurrentTake().frameRate) <= aData.getCurrentTake().numFrames)) {
@@ -2854,6 +2859,7 @@ public class AMTimeline : EditorWindow {
                 }
                 return;
             }
+            bool sendMessageToggleEnabled = true;
             Rect rectPopup = new Rect(0f, start_y, width_inspector - margin, 22f);
             indexMethodInfo = EditorGUI.Popup(rectPopup, indexMethodInfo, getMethodNames());
             // if index out of range
@@ -2880,7 +2886,7 @@ public class AMTimeline : EditorWindow {
                     setDirtyKeys(aData.getCurrentTake().getTrack(aData.getCurrentTake().selectedTrack));
                     setDirtyCache(aData.getCurrentTake().getTrack(aData.getCurrentTake().selectedTrack));
                 }
-                GUI.enabled = false;	// disable sendmessage toggle
+                sendMessageToggleEnabled = false;	// disable sendmessage toggle
             }
             bool showObjectMessage = false;
             Type showObjectType = null;
@@ -2904,7 +2910,20 @@ public class AMTimeline : EditorWindow {
                 }
 
             }
-            Rect rectLabelSendMessage = new Rect(0f, rectLabelObjectMessage.y + rectLabelObjectMessage.height + height_inspector_space, 150f, 20f);
+            //
+            Rect rectLabelFrameLimit = new Rect(0f, rectLabelObjectMessage.y + rectLabelObjectMessage.height + height_inspector_space, 150f, 20f);
+            GUI.Label(rectLabelFrameLimit, "Frame Limit");
+            Rect rectToggleFrameLimit = new Rect(rectLabelFrameLimit.x + rectLabelFrameLimit.width + margin, rectLabelFrameLimit.y, 20f, 20f);
+            if(eKey.setFrameLimit(GUI.Toggle(rectToggleFrameLimit, eKey.frameLimit, ""))) {
+                sTrack.updateCache();
+                AMCodeView.refresh();
+                // save data
+                setDirtyKeys(aData.getCurrentTake().getTrack(aData.getCurrentTake().selectedTrack));
+                setDirtyCache(aData.getCurrentTake().getTrack(aData.getCurrentTake().selectedTrack));
+            }
+            //
+            GUI.enabled = sendMessageToggleEnabled;
+            Rect rectLabelSendMessage = new Rect(0f, rectLabelFrameLimit.y + rectLabelFrameLimit.height + height_inspector_space, 150f, 20f);
             GUI.Label(rectLabelSendMessage, "Use SendMessage");
             Rect rectToggleSendMessage = new Rect(rectLabelSendMessage.x + rectLabelSendMessage.width + margin, rectLabelSendMessage.y, 20f, 20f);
             if(eKey.setUseSendMessage(GUI.Toggle(rectToggleSendMessage, eKey.useSendMessage, ""))) {

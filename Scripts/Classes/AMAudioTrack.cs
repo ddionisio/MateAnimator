@@ -106,7 +106,7 @@ public class AMAudioTrack : AMTrack {
 	}	
 	public void stopAudio() {
 		if(!audioSource) return;
-		if(audioSource.isPlaying) audioSource.Stop();
+		if(audioSource.loop && audioSource.isPlaying) audioSource.Stop();
 	}
 	
 	public ulong getTimeInSamples(int frequency, float time) {

@@ -399,7 +399,7 @@ public class AMTake : ScriptableObject {
 
         if(index == -1 || index >= trackValues.Count) {
             Debug.LogError("Animator: Track id " + id + " not found.");
-            return new AMTrack();
+            return null;
         }
         return trackValues[index];
     }
@@ -1264,6 +1264,9 @@ public class AMTake : ScriptableObject {
     }
 
     void OnSequenceComplete(TweenEvent dat) {
+        stopAudio();
+        stopAnimations();
+
         if(dat.tween.autoKillOnComplete)
             mSequence = null;
     }

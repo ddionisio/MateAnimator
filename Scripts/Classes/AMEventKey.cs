@@ -13,6 +13,7 @@ public class AMEventKey : AMKey {
     }
 
     public Component component;
+    public bool frameLimit = true;
     public bool useSendMessage = true;
     public List<AMEventParameter> parameters = new List<AMEventParameter>();
     public string methodName;
@@ -68,7 +69,7 @@ public class AMEventKey : AMKey {
                     }
                 }
             }
-            
+
 
             destroyParameters();
             this.parameters = new List<AMEventParameter>();
@@ -89,6 +90,14 @@ public class AMEventKey : AMKey {
                 this.parameters.Add(a);
             }
 
+            return true;
+        }
+        return false;
+    }
+
+    public bool setFrameLimit(bool frameLimit) {
+        if(this.frameLimit != frameLimit) {
+            this.frameLimit = frameLimit;
             return true;
         }
         return false;
@@ -125,6 +134,7 @@ public class AMEventKey : AMKey {
         a.frame = frame;
         a.component = component;
         a.useSendMessage = useSendMessage;
+        a.frameLimit = frameLimit;
         // parameters
         a.methodName = methodName;
         a.methodInfo = methodInfo;

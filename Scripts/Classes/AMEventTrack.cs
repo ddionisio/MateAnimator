@@ -27,6 +27,7 @@ public class AMEventTrack : AMTrack {
             a.methodInfo = (keys[i] as AMEventKey).methodInfo;
             a.parameters = (keys[i] as AMEventKey).parameters;
             a.useSendMessage = (keys[i] as AMEventKey).useSendMessage;
+            a.frameLimit = (keys[i] as AMEventKey).frameLimit;
             cache.Add(a);
         }
         base.updateCache();
