@@ -9,8 +9,25 @@ public class AnimatorDataInspector : Editor {
 
         GUILayout.BeginVertical();
 
-        GUILayout.Label("Play On Start: " + (dat.playOnStart != null ? dat.playOnStart.name : "none"));
+        string[] takeNames = dat.GenerateTakeNames();
+        int[] takeInds = new int[takeNames.Length];
+        for(int i = 0; i < takeNames.Length; i++)
+            takeInds[i] = i;
 
+        int playOnStartInd = dat.playOnStart != null ? System.Array.IndexOf(takeNames, dat.playOnStart.name) : 0;
+        if(playOnStartInd == -1)
+            playOnStartInd = 0;
+
+        playOnStartInd = EditorGUILayout.IntPopup("Play On Start", playOnStartInd, takeNames, takeInds);
+
+        if(playOnStartInd == 0)
+            dat.playOnStart = null;
+        else
+            dat.playOnStart = dat.takes[playOnStartInd - 1];
+
+        dat.sequenceLoadAll = GUILayout.Toggle(dat.sequenceLoadAll, "Build All Sequence On Start");
+        dat.sequenceKillWhenDone = GUILayout.Toggle(dat.sequenceKillWhenDone, "Kill Sequence When Done");
+        
         if(GUILayout.Button("Edit Timeline")) {
             AMTimeline timeline = AMTimeline.window;
 

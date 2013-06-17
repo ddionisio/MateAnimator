@@ -31,9 +31,27 @@ public class AMTrack : ScriptableObject {
     // does track have key on frame
     public bool hasKeyOnFrame(int _frame) {
         foreach(AMKey key in keys) {
-            if(key.frame == _frame) return true;
+            if(key && key.frame == _frame) return true;
         }
         return false;
+    }
+
+    public bool checkKeyIntegrity() {
+        foreach(AMKey key in keys) {
+            if(key == null) return false;
+        }
+
+        return true;
+    }
+
+    public void removeNullKeys() {
+        List<AMKey> newKeys = new List<AMKey>(keys.Count);
+        foreach(AMKey key in keys) {
+            if(key != null)
+                newKeys.Add(key);
+        }
+
+        keys = newKeys;
     }
 
     // draw track gizmos
@@ -41,6 +59,19 @@ public class AMTrack : ScriptableObject {
 
     // preview frame
     public virtual void previewFrame(float frame, AMTrack extraTrack = null) { }
+
+    public bool checkCacheIntegrity() {
+        if(cache != null) {
+            foreach(AMAction act in cache) {
+                if(act == null)
+                    return false;
+            }
+        }
+        else
+            return false;
+
+        return true;
+    }
 
     // update cache
     public virtual void updateCache() {
@@ -117,7 +148,8 @@ public class AMTrack : ScriptableObject {
     public void destroy() {
         // destroy keys
         foreach(AMKey key in keys) {
-            key.destroy();
+            if(key)
+                key.destroy();
         }
 
         keys.Clear();

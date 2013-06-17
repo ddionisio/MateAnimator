@@ -27,9 +27,24 @@ public class AMTimeline : EditorWindow {
         set {
             if(_aData != value) {
                 if(_aData != null) {
-                    Debug.Log("previous data: " + _aData.name + " hash: " + _aData.GetHashCode());
+                    //Debug.Log("previous data: " + _aData.name + " hash: " + _aData.GetHashCode());
 
                     _aData.isAnimatorOpen = false;
+                                        
+                    if(aData.takes != null) {
+                        foreach(AMTake take in aData.takes) {
+                            take.cleanRemovedKeys();
+                            take.maintainCaches();
+                        }
+
+                        if(aData.getCurrentTake()) {
+                            setDirtyKeys(aData.getCurrentTake().getTrack(aData.getCurrentTake().selectedTrack));
+                            setDirtyCache(aData.getCurrentTake().getTrack(aData.getCurrentTake().selectedTrack));
+                            setDirtyTracks(aData.getCurrentTake());
+                            setDirtyTakes(aData.takes);
+                        }
+                    }
+
                     EditorUtility.SetDirty(_aData);
                 }
 
@@ -58,10 +73,10 @@ public class AMTimeline : EditorWindow {
 
                     indexMethodInfo = -1;	// re-check for methodinfo
 
-                    Debug.Log("new data: " + _aData.name + " hash: " + _aData.GetHashCode());
+                    //Debug.Log("new data: " + _aData.name + " hash: " + _aData.GetHashCode());
                 }
-                else
-                    Debug.Log("no data");
+                //else
+                    //Debug.Log("no data");
             }
         }
     }// AnimatorData component, holds all data
@@ -447,26 +462,31 @@ public class AMTimeline : EditorWindow {
         buildAddTrackMenu();
         // undo callback
         undoCallback = typeof(EditorApplication).GetField("undoRedoPerformed", BindingFlags.NonPublic | BindingFlags.Static);
-        undoCallback.SetValue(null, (EditorApplication.CallbackFunction)OnUndoRedo);
+        EditorApplication.CallbackFunction undoCBVal = (EditorApplication.CallbackFunction)undoCallback.GetValue(null);
+        undoCBVal += OnUndoRedo;
         // playmode callback
-        EditorApplication.playmodeStateChanged = OnPlayMode;
+        EditorApplication.playmodeStateChanged += OnPlayMode;
 
         // check for pro license
         AMTake.isProLicense = PlayerSettings.advancedLicense;
     }
     void OnDisable() {
+        undoCallback = typeof(EditorApplication).GetField("undoRedoPerformed", BindingFlags.NonPublic | BindingFlags.Static);
+        EditorApplication.CallbackFunction undoCBVal = (EditorApplication.CallbackFunction)undoCallback.GetValue(null);
+        undoCBVal -= OnUndoRedo;
+
+        EditorApplication.playmodeStateChanged -= OnPlayMode;
+
         window = null;
         if(aData && aData.getCurrentTake() != null) {
-            // preview first frame
-            aData.getCurrentTake().previewFrame(1f);
-            // tell component that animator has been closed
-            aData.isAnimatorOpen = false;
-            // save data
-            EditorUtility.SetDirty(aData);
-            // refresh component
-            refreshGizmos();
             // stop audio if it's playing
             aData.getCurrentTake().stopAudio();
+
+            // preview first frame
+            aData.getCurrentTake().previewFrame(1f);
+                        
+            aData = null;
+
             // reset property select track
             //aData.propertySelectTrack = null;
         }
@@ -566,6 +586,14 @@ public class AMTimeline : EditorWindow {
             //processSelectProperty();
             // update methodinfo cache if necessary, used for event track inspector
             processUpdateMethodInfoCache();
+        }
+    }
+    void OnSelectionChange() {
+        if(!aData) {
+            if(Selection.activeGameObject) {
+                aData = Selection.activeGameObject.GetComponent<AnimatorData>();
+                Repaint();
+            }
         }
     }
     void OnGUI() {
@@ -1548,13 +1576,13 @@ public class AMTimeline : EditorWindow {
     void OnUndoRedo() {
         if(isPlaying) isPlaying = false;
         // recheck for component
-        GameObject go = GameObject.Find("AnimatorData");
+        /*GameObject go = GameObject.Find("AnimatorData");
         if(go) {
             aData = (AnimatorData)go.GetComponent("AnimatorData");
         }
         else {
             aData = null;
-        }
+        }*/
         // repaint
         //this.Repaint();
         //repaintBuffer = repaintRefreshRate;
@@ -1568,6 +1596,9 @@ public class AMTimeline : EditorWindow {
         if(AMTakeExport.window) AMTakeExport.window.reloadAnimatorData();
 
     }
+
+    AnimatorData _playModeDataHolder = null;
+
     void OnPlayMode() {
         bool justHitPlay = EditorApplication.isPlayingOrWillChangePlaymode && !EditorApplication.isPlaying;
         // entered playmode
@@ -1575,6 +1606,8 @@ public class AMTimeline : EditorWindow {
             if(aData) {
                 aData.inPlayMode = true;
                 EditorUtility.SetDirty(aData);
+                _playModeDataHolder = aData;
+                aData = null;
             }
             //aData = null; //?????
             //repaintBuffer = 0;	// used to repaint after user exits play mode
@@ -1583,7 +1616,8 @@ public class AMTimeline : EditorWindow {
             // exit playmode
         }
         else if(!EditorApplication.isPlayingOrWillChangePlaymode) {
-            if(aData) {
+            if(_playModeDataHolder) {
+                aData = _playModeDataHolder;
                 aData.inPlayMode = false;
 
                 //this.Repaint();
@@ -2078,8 +2112,12 @@ public class AMTimeline : EditorWindow {
         List<int> birdseyeKeyFrames = new List<int>();
         List<Rect> birdseyeKeyRects = new List<Rect>();
         if(birdseye) {
+            bool rebuildKeys = false;
+
             // draw birds eye keyframe textures, prepare button rects
             foreach(AMKey key in _track.keys) {
+                if(!key) { rebuildKeys = true; continue; }
+
                 selected = ((isTrackSelected) && aData.getCurrentTake().isFrameSelected(key.frame));
                 //_track.sortKeys();
                 if(key.frame < aData.getCurrentTake().startFrame) continue;
@@ -2091,6 +2129,10 @@ public class AMTimeline : EditorWindow {
                 birdseyeKeyFrames.Add(key.frame);
                 birdseyeKeyRects.Add(rectKeyBirdsEye);
             }
+
+            if(rebuildKeys)
+                _track.removeNullKeys();
+
             // birds eye buttons
             if(birdseyeKeyFrames.Count > 0) {
                 for(int i = birdseyeKeyFrames.Count - 1; i >= 0; i--) {
@@ -2105,15 +2147,20 @@ public class AMTimeline : EditorWindow {
             }
         }
         else {
+            bool rebuildKeys = false;
+
             selected = (isTrackSelected);
             foreach(AMKey key in _track.keys) {
-                if(!key) continue;
+                if(!key) { rebuildKeys = true; continue; }
                 //_track.sortKeys();
                 if(key.frame < aData.getCurrentTake().startFrame) continue;
                 if(key.frame > aData.getCurrentTake().endFrame) break;
                 Rect rectFrame = new Rect(current_width_frame * (key.frame - aData.getCurrentTake().startFrame), 0f, current_width_frame, _current_height_frame);
                 GUI.DrawTexture(new Rect(rectFrame.x + 2f, rectFrame.y + rectFrame.height - (rectFrame.width - 4f) - 2f, rectFrame.width - 4f, rectFrame.width - 4f), texFrKey);
             }
+
+            if(rebuildKeys)
+                _track.removeNullKeys();
         }
         // click on empty frames
         if(GUI.Button(rectFramesBirdsEye, "", "label") && dragType == (int)DragType.None) {
@@ -2184,6 +2231,9 @@ public class AMTimeline : EditorWindow {
             #region group textures / buttons (performance increase)
             Rect rectTimelineActions = new Rect(0f, _current_height_frame, 0f, height_track - current_height_frame);	// used to group textures into one draw call
             if(!drawEachAction) {
+                if(!_track.checkCacheIntegrity())
+                    _track.updateCache();
+
                 if(_track.cache.Count > 0) {
                     if(_track is AMTranslationTrack && _track.cache.Count > 1) {
                         // translation track, from first action frame to end action frame
@@ -4327,6 +4377,7 @@ public class AMTimeline : EditorWindow {
             // add key to event track
             (amTrack as AMEventTrack).addKey(_frame);
         }
+
         AMCodeView.refresh();
     }
     void deleteKeyFromSelectedFrame() {

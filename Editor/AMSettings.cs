@@ -2,6 +2,8 @@ using UnityEngine;
 using UnityEditor;
 using System.Collections;
 
+using Holoville.HOTween;
+
 public class AMSettings : EditorWindow {
 	public static AMSettings window = null;
 	
@@ -21,6 +23,8 @@ public class AMSettings : EditorWindow {
 	
 	private int numFrames;
 	private int frameRate;
+    private int loopCount = 1;
+    private LoopType loopMode = LoopType.Restart;
 	private bool saveChanges = false;
 	// skins
 	private GUISkin skin = null;
@@ -29,8 +33,8 @@ public class AMSettings : EditorWindow {
 	void OnEnable() {
 		window = this;
 		this.title = "Settings";
-		this.minSize = new Vector2(125f,115f);
-		this.maxSize = this.minSize;
+		this.minSize = new Vector2(250f,150f);
+		//this.maxSize = this.minSize;
 		
 		oData = AMOptionsFile.loadFile();
 		loadAnimatorData();
@@ -57,8 +61,15 @@ public class AMSettings : EditorWindow {
 			}
 			// save frameRate
 			aData.getCurrentTake().frameRate = frameRate;
+
+            //save other data
+            aData.getCurrentTake().numLoop = loopCount;
+            aData.getCurrentTake().loopMode = loopMode;
+            
 			EditorWindow.GetWindow (typeof (AMTimeline)).Repaint();
+
 			// save data
+            EditorUtility.SetDirty(aData.getCurrentTake());
 			EditorUtility.SetDirty(aData);
 		}
 	}
@@ -71,6 +82,15 @@ public class AMSettings : EditorWindow {
 		GUIStyle styleArea = new GUIStyle(GUI.skin.scrollView);
 		styleArea.padding = new RectOffset(4,4,4,4);
 		GUILayout.BeginArea(new Rect(0f,0f,position.width,position.height),styleArea);
+        GUILayout.Label("Loop");
+        GUILayout.Space(2f);
+        GUILayout.BeginHorizontal(GUI.skin.box);
+        EditorGUIUtility.LookLikeControls(50.0f, 100.0f);
+        loopCount = EditorGUILayout.IntField("Count", loopCount);
+        if(loopCount < 0) loopCount = -1;
+        loopMode = (LoopType)EditorGUILayout.EnumPopup("Mode", loopMode);
+        EditorGUIUtility.LookLikeControls();
+        GUILayout.EndHorizontal();
 		GUILayout.Label("Number of Frames");
 		GUILayout.Space(2f);
 		numFrames = EditorGUILayout.IntField(numFrames,GUI.skin.textField,GUILayout.Width(position.width-10f-12f));
@@ -108,6 +128,8 @@ public class AMSettings : EditorWindow {
             __aData = AMTimeline.window.aData;
 			numFrames = __aData.getCurrentTake().numFrames;
 			frameRate = __aData.getCurrentTake().frameRate;
+            loopCount = __aData.getCurrentTake().numLoop;
+            loopMode = __aData.getCurrentTake().loopMode;
 		}
 	}
 }

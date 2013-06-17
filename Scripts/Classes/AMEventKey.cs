@@ -34,7 +34,7 @@ public class AMEventKey : AMKey {
     }
 
     public bool isMatch(ParameterInfo[] cachedParameterInfos) {
-        if(cachedParameterInfos.Length == parameters.Count) {
+        if(cachedParameterInfos != null && parameters != null && cachedParameterInfos.Length == parameters.Count) {
             for(int i = 0; i < cachedParameterInfos.Length; i++) {
                 if(parameters[i].valueType == (int)AMEventParameter.ValueType.Array) {
                     if(!parameters[i].checkArrayIntegrity() || cachedParameterInfos[i].ParameterType != parameters[i].getParamType())

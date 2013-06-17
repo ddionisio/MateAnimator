@@ -20,6 +20,9 @@ public class AMTake : ScriptableObject {
     public float endFrame = 100f;
     public int playbackSpeedIndex = 2;		// default playback speed x1
 
+    public int numLoop = 1; //number of times this plays before it is done
+    public LoopType loopMode = LoopType.Restart;
+
     public int selectedTrack = -1;			// currently selected track index
     public int selectedFrame = 1;			// currently selected frame (frame to preview, not necessarily in context selection)
     public int selectedGroup = 0;
@@ -1201,6 +1204,12 @@ public class AMTake : ScriptableObject {
         }
     }
 
+    public void cleanRemovedKeys() {
+        foreach(AMTrack track in trackValues) {
+            track.removeNullKeys();
+        }
+    }
+
     public void maintainCaches() {
         // re-updates cache if there are null values
         foreach(AMTrack track in trackValues) {
@@ -1223,10 +1232,14 @@ public class AMTake : ScriptableObject {
         executeActions(time * frameRate);	
     }*/
 
-    public void BuildSequence(string goName) {
+    public void BuildSequence(string goName, bool autoKill) {
         if(mSequence == null) {
-            mSequence = new Sequence(new SequenceParms().Id(string.Format("{0}:{1}", goName, name)));
-            mSequence.autoKillOnComplete = false;
+            mSequence = new Sequence(
+                new SequenceParms()
+                .Id(string.Format("{0}:{1}", goName, name))
+                .AutoKill(autoKill)
+                .Loops(numLoop, loopMode)
+                .OnComplete(OnSequenceComplete, null));
 
             maintainCaches();
             previewFrame(0.0f, false, false, false, true);
@@ -1248,6 +1261,11 @@ public class AMTake : ScriptableObject {
                 mSequence = null;
             }
         }
+    }
+
+    void OnSequenceComplete(TweenEvent dat) {
+        if(dat.tween.autoKillOnComplete)
+            mSequence = null;
     }
 
     public void executeActions(float fromFrame = 0f) {

@@ -10,6 +10,10 @@ public class AnimatorData : MonoBehaviour {
     // show
     public List<AMTake> takes = new List<AMTake>();
     public AMTake playOnStart = null;
+
+    public bool sequenceLoadAll = true;
+    public bool sequenceKillWhenDone = false;
+    public bool playOnEnable = false;
     // hide
 
     public bool isPlaying {
@@ -82,6 +86,7 @@ public class AnimatorData : MonoBehaviour {
     private bool _isPaused = false;
     //private bool isLooping = false;
     //private float takeTime = 0f;
+    private bool mStarted = false;
 
     public object Invoker(object[] args) {
         switch((int)args[0]) {
@@ -140,11 +145,23 @@ public class AnimatorData : MonoBehaviour {
     }
 
     void OnDestroy() {
+        playOnStart = null;
+
         foreach(AMTake take in takes) {
             take.destroy();
         }
 
         takes.Clear();
+    }
+
+    void OnEnable() {
+        if(mStarted && playOnEnable && playOnStart) {
+            Play(playOnStart.name, true, 0f, false);
+        }
+    }
+
+    void OnDisable() {
+        Stop();
     }
 
     void Awake() {
@@ -157,9 +174,15 @@ public class AnimatorData : MonoBehaviour {
     }
 
     void Start() {
+        mStarted = true;
+
+        if(sequenceLoadAll && takes != null) {
+            foreach(AMTake take in takes)
+                take.BuildSequence(gameObject.name, sequenceKillWhenDone);
+        }
+
         if(playOnStart) {
             Play(playOnStart.name, true, 0f, false);
-            playOnStart = null;
         }
     }
 
@@ -178,6 +201,23 @@ public class AnimatorData : MonoBehaviour {
         }
     }*/
 
+    public string[] GenerateTakeNames(bool firstIndexNone = true) {
+        if(takes != null) {
+            string[] ret = firstIndexNone ? new string[takes.Count + 1] : new string[takes.Count];
+
+            if(firstIndexNone)
+                ret[0] = "None";
+
+            for(int i = 0; i < takes.Count; i++) {
+                ret[firstIndexNone ? i + 1 : i] = takes[i].name;
+            }
+
+            return ret;
+        }
+        else {
+            return firstIndexNone ? new string[] { "None" } : null;
+        }
+    }
 
     // play take by name
     public void Play(string takeName, bool loop = false) {
@@ -211,8 +251,8 @@ public class AnimatorData : MonoBehaviour {
         nowPlayingTake.stopAnimations();
 
         if(nowPlayingTake.sequence != null) {
+            nowPlayingTake.sequence.GoTo(0.0f, true);
             nowPlayingTake.sequence.Pause();
-            nowPlayingTake.sequence.GoTo(0.0f);
         }
 
         nowPlayingTake = null;
@@ -245,17 +285,23 @@ public class AnimatorData : MonoBehaviour {
         nowPlayingTake = getTake(take_name);
         if(nowPlayingTake) {
             if(nowPlayingTake.sequence == null)
-                nowPlayingTake.BuildSequence(gameObject.name);
+                nowPlayingTake.BuildSequence(gameObject.name, sequenceKillWhenDone);
 
             if(nowPlayingTake.sequence != null) {
-                nowPlayingTake.sequence.loops = loop ? -1 : 1;
-                nowPlayingTake.sequence.loopType = LoopType.Restart;
+                if(loop) {
+                    nowPlayingTake.sequence.loops = -1;
+                    nowPlayingTake.sequence.loopType = LoopType.Restart;
+                }
+                else {
+                    nowPlayingTake.sequence.loops = nowPlayingTake.numLoop;
+                    nowPlayingTake.sequence.loopType = nowPlayingTake.loopMode;
+                }
 
                 float startTime = value;
                 if(isFrame) startTime /= nowPlayingTake.frameRate;
 
-                nowPlayingTake.sequence.Play();
                 nowPlayingTake.sequence.GoTo(startTime);
+                nowPlayingTake.sequence.Play();
             }
 
             //isLooping = loop;
@@ -327,6 +373,8 @@ public class AnimatorData : MonoBehaviour {
         // set defaults
         a.name = name;
         makeTakeNameUnique(a);
+        a.numLoop = 1;
+        a.loopMode = LoopType.Restart;
         a.frameRate = 24;
         a.numFrames = 1440;
         a.startFrame = 1;
