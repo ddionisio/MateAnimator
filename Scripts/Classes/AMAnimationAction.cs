@@ -23,7 +23,8 @@ public class AMAnimationAction : AMAction {
 
             Animation anm = obj.animation;
 
-            anm.wrapMode = wrapMode;
+            if(wrapMode != WrapMode.Default)
+                anm.wrapMode = wrapMode;
 
             if(crossfade) {
                 anm.CrossFade(amClip.name, crossfadeTime);

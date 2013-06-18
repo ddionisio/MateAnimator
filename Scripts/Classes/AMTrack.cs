@@ -87,7 +87,7 @@ public class AMTrack : MonoBehaviour {
             if(key.frame == _frame) return key;
         }
         Debug.LogError("Animator: No key found on frame " + _frame);
-        return new AMKey();
+        return null;
     }
 
     // track type as string

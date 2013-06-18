@@ -630,7 +630,10 @@ public class AMTimeline : EditorWindow {
             // recheck for component
             GameObject go = Selection.activeGameObject;
             if(go) {
-                aData = go.GetComponent<AnimatorData>();
+                if(PrefabUtility.GetPrefabType(go) != PrefabType.Prefab)
+                    aData = go.GetComponent<AnimatorData>();
+                else
+                    go = null;
             }
             if(!aData) {
                 // no data component message
