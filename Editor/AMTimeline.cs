@@ -448,7 +448,7 @@ public class AMTimeline : EditorWindow {
         // find component
         if(!aData && !EditorApplication.isPlayingOrWillChangePlaymode) {
             GameObject go = Selection.activeGameObject;
-            if(go) {
+            if(go && PrefabUtility.GetPrefabType(go) != PrefabType.Prefab) {
                 aData = go.GetComponent<AnimatorData>();
             }
         }
@@ -592,7 +592,7 @@ public class AMTimeline : EditorWindow {
     }
     void OnSelectionChange() {
         if(!aData) {
-            if(Selection.activeGameObject) {
+            if(Selection.activeGameObject && PrefabUtility.GetPrefabType(Selection.activeGameObject) != PrefabType.Prefab) {
                 aData = Selection.activeGameObject.GetComponent<AnimatorData>();
                 Repaint();
             }
