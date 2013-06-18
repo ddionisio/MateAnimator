@@ -7,10 +7,8 @@ using System.Reflection;
 
 using Holoville.HOTween;
 
-[System.Serializable]
-
-public class AMTake : ScriptableObject {
-
+[AddComponentMenu("")]
+public class AMTake : MonoBehaviour {
     public delegate void OnSequenceDone(AMTake take);
 
     #region Declarations
@@ -50,8 +48,22 @@ public class AMTake : ScriptableObject {
 
     public Sequence sequence { get { return mSequence; } }
     public event OnSequenceDone sequenceCompleteCallback;
-
+        
     #endregion
+
+    public static AMTake NewInstance(GameObject holder) {
+        AMTake newTake = holder.AddComponent<AMTake>();
+        newTake.enabled = false;
+        newTake.loopBackToFrame = -1;
+        return newTake;
+    }
+
+    void OnDestroy() {
+        if(mSequence != null) {
+            HOTween.Kill(mSequence);
+            mSequence = null;
+        }
+    }
 
     // Adding a new track type
     // =====================
@@ -109,7 +121,8 @@ public class AMTake : ScriptableObject {
 
     // add translation track
     public void addTranslationTrack(GameObject obj, bool isLocal=false) {
-        AMTranslationTrack a = ScriptableObject.CreateInstance<AMTranslationTrack>();
+        AMTranslationTrack a = gameObject.AddComponent<AMTranslationTrack>();
+        a.enabled = false;
         a.setName(getTrackCount());
         a.id = getUniqueTrackID();
         if(obj) a.obj = obj.transform;
@@ -120,7 +133,8 @@ public class AMTake : ScriptableObject {
 
     // add rotation track
     public void addRotationTrack(GameObject obj, bool isLocal=false) {
-        AMRotationTrack a = ScriptableObject.CreateInstance<AMRotationTrack>();
+        AMRotationTrack a = gameObject.AddComponent<AMRotationTrack>();
+        a.enabled = false;
         a.setName(getTrackCount());
         a.id = getUniqueTrackID();
         if(obj) a.obj = obj.transform;
@@ -130,7 +144,8 @@ public class AMTake : ScriptableObject {
 
     // add orientation track
     public void addOrientationTrack(GameObject obj) {
-        AMOrientationTrack a = ScriptableObject.CreateInstance<AMOrientationTrack>();
+        AMOrientationTrack a = gameObject.AddComponent<AMOrientationTrack>();
+        a.enabled = false;
         a.setName(getTrackCount());
         a.id = getUniqueTrackID();
         if(obj) a.obj = obj.transform;
@@ -139,7 +154,8 @@ public class AMTake : ScriptableObject {
 
     // add animation track
     public void addAnimationTrack(GameObject obj) {
-        AMAnimationTrack a = ScriptableObject.CreateInstance<AMAnimationTrack>();
+        AMAnimationTrack a = gameObject.AddComponent<AMAnimationTrack>();
+        a.enabled = false;
         a.setName(getTrackCount());
         a.id = getUniqueTrackID();
         if(obj && obj.GetComponent(typeof(Animation))) a.obj = obj;
@@ -148,7 +164,8 @@ public class AMTake : ScriptableObject {
 
     // add audio track
     public void addAudioTrack(GameObject obj) {
-        AMAudioTrack a = ScriptableObject.CreateInstance<AMAudioTrack>();
+        AMAudioTrack a = gameObject.AddComponent<AMAudioTrack>();
+        a.enabled = false;
         a.setName(getTrackCount());
         a.id = getUniqueTrackID();
         if(obj && obj.GetComponent(typeof(AudioSource))) a.audioSource = (AudioSource)obj.GetComponent(typeof(AudioSource));
@@ -157,7 +174,8 @@ public class AMTake : ScriptableObject {
 
     // add property track
     public void addPropertyTrack(GameObject obj) {
-        AMPropertyTrack a = ScriptableObject.CreateInstance<AMPropertyTrack>();
+        AMPropertyTrack a = gameObject.AddComponent<AMPropertyTrack>();
+        a.enabled = false;
         a.setName(getTrackCount());
         a.id = getUniqueTrackID();
         if(obj) a.obj = obj;
@@ -166,7 +184,8 @@ public class AMTake : ScriptableObject {
 
     // add event track
     public void addEventTrack(GameObject obj) {
-        AMEventTrack a = ScriptableObject.CreateInstance<AMEventTrack>();
+        AMEventTrack a = gameObject.AddComponent<AMEventTrack>();
+        a.enabled = false;
         a.setName(getTrackCount());
         a.id = getUniqueTrackID();
         if(obj) a.obj = obj;
@@ -355,7 +374,6 @@ public class AMTake : ScriptableObject {
             }
         }
         if(found) groupKeys.RemoveAt(j);
-        grp.destroy();
 
     }
 
@@ -546,7 +564,7 @@ public class AMTake : ScriptableObject {
 
     public void addGroup() {
         initGroups();
-        AMGroup g = ScriptableObject.CreateInstance<AMGroup>();
+        AMGroup g = new AMGroup();
         g.init(getUniqueGroupID());
         groupKeys.Add(g.group_id);
         groupValues.Add(g);
@@ -591,7 +609,7 @@ public class AMTake : ScriptableObject {
 
     public void initGroups() {
         if(rootGroup == null) {
-            AMGroup g = ScriptableObject.CreateInstance<AMGroup>();
+            AMGroup g = new AMGroup();
             g.init(0);
             rootGroup = g;
         }
@@ -1378,17 +1396,9 @@ public class AMTake : ScriptableObject {
         foreach(AMTrack track in trackValues) {
             track.destroy();
         }
-        rootGroup.destroy();
-        foreach(AMGroup grp in groupValues) {
-            grp.destroy();
-        }
 
-        if(Application.isPlaying) {
-            if(mSequence != null) {
-                HOTween.Kill(mSequence);
-                mSequence = null;
-            }
-        }
+        groupValues.Clear();
+        rootGroup = null;
 
         sequenceCompleteCallback = null;
 

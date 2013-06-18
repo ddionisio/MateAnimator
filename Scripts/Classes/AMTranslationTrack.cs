@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using Holoville.HOTween.Core;
 using Holoville.HOTween;
 
-[System.Serializable]
+[AddComponentMenu("")]
 public class AMTranslationTrack : AMTrack {
     [SerializeField]
     private Transform _obj;
@@ -95,7 +95,8 @@ public class AMTranslationTrack : AMTrack {
                 return;
             }
         }
-        AMTranslationKey a = ScriptableObject.CreateInstance<AMTranslationKey>();
+        AMTranslationKey a = gameObject.AddComponent<AMTranslationKey>();
+        a.enabled = false;
         a.frame = _frame;
         a.position = _position;
         a.interp = _interp;
@@ -116,7 +117,8 @@ public class AMTranslationTrack : AMTrack {
                 return;
             }
         }
-        AMTranslationKey a = ScriptableObject.CreateInstance<AMTranslationKey>();
+        AMTranslationKey a = gameObject.AddComponent<AMTranslationKey>();
+        a.enabled = false;
         a.frame = _frame;
         a.position = _position;
         // add a new key
@@ -288,7 +290,8 @@ public class AMTranslationTrack : AMTrack {
         // get all paths and add them to the action list
         for(int i = 0; i < keys.Count; i++) {
             path = getPathFromIndex(i);
-            AMTranslationAction a = ScriptableObject.CreateInstance<AMTranslationAction>();
+            AMTranslationAction a = gameObject.AddComponent<AMTranslationAction>();
+            a.enabled = false;
             a.isLocal = _isLocal;
             a.startFrame = path.startFrame;
             a.endFrame = path.endFrame;

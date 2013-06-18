@@ -3,7 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 
 [System.Serializable]
-public class AMGroup : ScriptableObject {
+public class AMGroup {
 		
 
 		public string group_name;
@@ -19,9 +19,6 @@ public class AMGroup : ScriptableObject {
 			if(group_name == null) this.group_name = "Group"+Mathf.Abs(this.group_id);
 			else this.group_name = group_name;
 		
-		}
-		public void destroy() {
-			Object.DestroyImmediate(this);
 		}
 	
 }

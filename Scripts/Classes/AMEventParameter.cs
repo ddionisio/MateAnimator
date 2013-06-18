@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 
 [System.Serializable]
-public class AMEventParameter : ScriptableObject {
+public class AMEventParameter {
     public enum ValueType {
         Integer = 0,
         Long = 1,
@@ -181,7 +181,6 @@ public class AMEventParameter : ScriptableObject {
     public void destroy() {
         foreach(AMEventParameter param in lsArray)
             param.destroy();
-        DestroyImmediate(this);
     }
 
     public string getStringValue() {
@@ -272,7 +271,7 @@ public class AMEventParameter : ScriptableObject {
                 for(int i = 0; i < arr.Length; i++) {
                     object arrElem = arr.GetValue(i);
                     if(arrElem != null) {
-                        AMEventParameter a = CreateInstance<AMEventParameter>();
+                        AMEventParameter a = new AMEventParameter();
                         a.setValueType(arrElem.GetType());
                         a.fromObject(arrElem);
                         lsArray.Add(a);
@@ -539,7 +538,7 @@ public class AMEventParameter : ScriptableObject {
     }
 
     public AMEventParameter CreateClone() {
-        AMEventParameter a = ScriptableObject.CreateInstance<AMEventParameter>();
+        AMEventParameter a = new AMEventParameter();
         a.val_bool = val_bool;
         a.valueType = valueType;
         a.val_int = val_int;

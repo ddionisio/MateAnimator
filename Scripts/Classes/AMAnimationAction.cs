@@ -4,7 +4,7 @@ using System.Collections;
 using Holoville.HOTween;
 using Holoville.HOTween.Core;
 
-[System.Serializable]
+[AddComponentMenu("")]
 public class AMAnimationAction : AMAction {
     public AnimationClip amClip;
     public WrapMode wrapMode;

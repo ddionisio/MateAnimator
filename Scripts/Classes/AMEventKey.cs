@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using System.Linq;
 
-[System.Serializable]
+[AddComponentMenu("")]
 public class AMEventKey : AMKey {
 
     private struct ParamKeep {
@@ -76,7 +76,7 @@ public class AMEventKey : AMKey {
 
             // add parameters
             for(int i = 0; i < cachedParameterInfos.Length; i++) {
-                AMEventParameter a = CreateInstance<AMEventParameter>();
+                AMEventParameter a = new AMEventParameter();
                 a.paramName = cachedParameterInfos[i].Name;
                 a.setValueType(cachedParameterInfos[i].ParameterType);
 
@@ -130,7 +130,8 @@ public class AMEventKey : AMKey {
     // copy properties from key
     public override AMKey CreateClone() {
 
-        AMEventKey a = ScriptableObject.CreateInstance<AMEventKey>();
+        AMEventKey a = gameObject.AddComponent<AMEventKey>();
+        a.enabled = false;
         a.frame = frame;
         a.component = component;
         a.useSendMessage = useSendMessage;

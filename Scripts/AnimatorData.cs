@@ -82,6 +82,11 @@ public class AnimatorData : MonoBehaviour {
     //[HideInInspector] public FieldInfo fieldInfo;
     [HideInInspector]
     public bool autoKey = false;
+
+    [HideInInspector]
+    [SerializeField]
+    private GameObject _dataHolder;
+
     //[HideInInspector]
     //public float elapsedTime = 0f;
     // private
@@ -91,6 +96,18 @@ public class AnimatorData : MonoBehaviour {
     private bool mStarted = false;
 
     public AMTake currentPlayingTake { get { return nowPlayingTake; } }
+
+    public GameObject dataHolder {
+        get {
+            if(_dataHolder == null) {
+                _dataHolder = new GameObject("_data");
+                _dataHolder.transform.parent = transform;
+                _dataHolder.SetActive(false);
+            }
+
+            return _dataHolder;
+        }
+    }
 
     public object Invoker(object[] args) {
         switch((int)args[0]) {
@@ -148,13 +165,13 @@ public class AnimatorData : MonoBehaviour {
     }
 
     void OnDestroy() {
-        playOnStart = null;
+        /*playOnStart = null;
 
         foreach(AMTake take in takes) {
             take.destroy();
         }
 
-        takes.Clear();
+        takes.Clear();*/
     }
 
     void OnEnable() {
@@ -364,7 +381,7 @@ public class AnimatorData : MonoBehaviour {
 
     public void addTake() {
         string name = "Take" + (takes.Count + 1);
-        AMTake a = ScriptableObject.CreateInstance<AMTake>();
+        AMTake a = AMTake.NewInstance(dataHolder);
         // set defaults
         a.name = name;
         makeTakeNameUnique(a);

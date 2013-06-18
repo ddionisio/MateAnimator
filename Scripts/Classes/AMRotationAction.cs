@@ -4,7 +4,7 @@ using System.Collections;
 using Holoville.HOTween;
 using Holoville.HOTween.Plugins;
 
-[System.Serializable]
+[AddComponentMenu("")]
 public class AMRotationAction : AMAction {
 
     //public int type = 0; // 0 = Rotate To, 1 = Look At

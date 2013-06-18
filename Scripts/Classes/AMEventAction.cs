@@ -7,7 +7,7 @@ using System;
 using Holoville.HOTween;
 using Holoville.HOTween.Core;
 
-[System.Serializable]
+[AddComponentMenu("")]
 public class AMEventAction : AMAction {
     public Component component;
     public bool frameLimit = true; //if true, this means event is called only when elapse crosses this key. false means sequencer will call this anytime elapse is beyond its key.

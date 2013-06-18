@@ -7,7 +7,7 @@ using System;
 using Holoville.HOTween;
 using Holoville.HOTween.Plugins;
 
-[System.Serializable]
+[AddComponentMenu("")]
 public class AMPropertyAction : AMAction {
 
     public int valueType;
@@ -176,7 +176,7 @@ public class AMPropertyAction : AMAction {
     public override void execute(int frameRate, float delay) {
         if(targetsAreEqual()) return;
         if((endFrame == -1) || !component || ((fieldInfo == null) && (propertyInfo == null) && (methodInfo == null))) return;
-        
+
         Debug.LogError("need implement");
 
     }

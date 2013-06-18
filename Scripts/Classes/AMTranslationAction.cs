@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using Holoville.HOTween;
 using Holoville.HOTween.Plugins;
 
-[System.Serializable]
+[AddComponentMenu("")]
 public class AMTranslationAction : AMAction {
 
     public int endFrame;

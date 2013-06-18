@@ -3,7 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
-[System.Serializable]
+[AddComponentMenu("")]
 public class AMEventTrack : AMTrack {
 
     public GameObject obj;
@@ -21,7 +21,8 @@ public class AMEventTrack : AMTrack {
         sortKeys();
         // add all clips to list
         for(int i = 0; i < keys.Count; i++) {
-            AMEventAction a = ScriptableObject.CreateInstance<AMEventAction>();
+            AMEventAction a = gameObject.AddComponent<AMEventAction>();
+            a.enabled = false;
             a.startFrame = keys[i].frame;
             a.component = (keys[i] as AMEventKey).component;
             a.methodInfo = (keys[i] as AMEventKey).methodInfo;
@@ -47,7 +48,7 @@ public class AMEventTrack : AMTrack {
                 return;
             }
         }
-        AMEventKey a = ScriptableObject.CreateInstance<AMEventKey>();
+        AMEventKey a = gameObject.AddComponent<AMEventKey>();
         a.frame = _frame;
         a.component = null;
         a.methodName = null;

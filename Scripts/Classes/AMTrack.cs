@@ -2,9 +2,8 @@ using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 
-[System.Serializable]
-
-public class AMTrack : ScriptableObject {
+[AddComponentMenu("")]
+public class AMTrack : MonoBehaviour {
 
     public int id;
     public new string name;
@@ -209,8 +208,7 @@ public class AMTrack : ScriptableObject {
         }
         if(cache.Count > 0) return cache[0];	// return first if not greater than any action
         Debug.LogError("Animator: No action found for frame " + frame);
-        AMAction a = ScriptableObject.CreateInstance<AMAction>();
-        return a;
+        return null;
     }
 
     // get action for frame from cache
@@ -219,8 +217,7 @@ public class AMTrack : ScriptableObject {
             if(action.startFrame == startFrame) return action;
         }
         Debug.LogError("Animator: No action found for frame " + startFrame);
-        AMAction a = ScriptableObject.CreateInstance<AMAction>();
-        return a;
+        return null;
     }
 
     // get index of action for frame

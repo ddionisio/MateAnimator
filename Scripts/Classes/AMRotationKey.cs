@@ -2,7 +2,7 @@ using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 
-[System.Serializable]
+[AddComponentMenu("")]
 public class AMRotationKey : AMKey {
 
     //public int type = 0; // 0 = Rotate To, 1 = Look At
@@ -39,7 +39,8 @@ public class AMRotationKey : AMKey {
     // copy properties from key
     public override AMKey CreateClone() {
 
-        AMRotationKey a = ScriptableObject.CreateInstance<AMRotationKey>();
+        AMRotationKey a = gameObject.AddComponent<AMRotationKey>();
+        a.enabled = false;
         a.frame = frame;
         //a.type = type;
         a.rotation = rotation;

@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using Holoville.HOTween;
 using Holoville.HOTween.Core;
 
-[System.Serializable]
+[AddComponentMenu("")]
 public class AMOrientationAction : AMAction {
 
     public int endFrame;

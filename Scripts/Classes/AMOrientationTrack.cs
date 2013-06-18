@@ -2,7 +2,7 @@ using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 
-[System.Serializable]
+[AddComponentMenu("")]
 public class AMOrientationTrack : AMTrack {
 
     public Transform obj;
@@ -31,7 +31,8 @@ public class AMOrientationTrack : AMTrack {
                 return;
             }
         }
-        AMOrientationKey a = ScriptableObject.CreateInstance<AMOrientationKey>();
+        AMOrientationKey a = gameObject.AddComponent<AMOrientationKey>();
+        a.enabled = false;
         a.frame = _frame;
         a.target = target;
         // set default ease type to linear
@@ -57,7 +58,8 @@ public class AMOrientationTrack : AMTrack {
         AMTranslationTrack translationTrack = curTake.getTranslationTrackForTransform(obj);
         for(int i = 0; i < keys.Count; i++) {
             // create new action and add it to cache list
-            AMOrientationAction a = ScriptableObject.CreateInstance<AMOrientationAction>();
+            AMOrientationAction a = gameObject.AddComponent<AMOrientationAction>();
+            a.enabled = false;
             a.startFrame = keys[i].frame;
             if(keys.Count > (i + 1)) a.endFrame = keys[i + 1].frame;
             else a.endFrame = -1;

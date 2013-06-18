@@ -66,7 +66,7 @@ public class AMSettings : EditorWindow {
             //save other data
             aData.getCurrentTake().numLoop = loopCount;
             aData.getCurrentTake().loopMode = loopMode;
-            aData.getCurrentTake().loopBackToFrame = loopBackFrame;
+            aData.getCurrentTake().loopBackToFrame = Mathf.Clamp(loopBackFrame, -1, numFrames);
 
             // save data
             EditorUtility.SetDirty(aData.getCurrentTake());

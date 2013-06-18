@@ -2,7 +2,7 @@ using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 
-[System.Serializable]
+[AddComponentMenu("")]
 public class AMOrientationKey : AMKey {
 
     public Transform target;
@@ -17,7 +17,8 @@ public class AMOrientationKey : AMKey {
 
     public override AMKey CreateClone() {
 
-        AMOrientationKey a = ScriptableObject.CreateInstance<AMOrientationKey>();
+        AMOrientationKey a = gameObject.AddComponent<AMOrientationKey>();
+        a.enabled = false;
         a.frame = frame;
         a.target = target;
         a.easeType = easeType;

@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using Holoville.HOTween.Core;
 using Holoville.HOTween;
 
-[System.Serializable]
+[AddComponentMenu("")]
 public class AMRotationTrack : AMTrack {
 
     [SerializeField]
@@ -91,7 +91,8 @@ public class AMRotationTrack : AMTrack {
                 return;
             }
         }
-        AMRotationKey a = ScriptableObject.CreateInstance<AMRotationKey>();
+        AMRotationKey a = gameObject.AddComponent<AMRotationKey>();
+        a.enabled = false;
         a.frame = _frame;
         a.rotation = _rotation;
         // set default ease type to linear
@@ -112,7 +113,8 @@ public class AMRotationTrack : AMTrack {
         for(int i = 0; i < keys.Count; i++) {
 
             // or create new action and add it to cache list
-            AMRotationAction a = ScriptableObject.CreateInstance<AMRotationAction>();
+            AMRotationAction a = gameObject.AddComponent<AMRotationAction>();
+            a.enabled = false;
             //a.type = (keys[i] as AMRotationKey).type;
             a.startFrame = keys[i].frame;
             if(keys.Count > (i + 1)) a.endFrame = keys[i + 1].frame;

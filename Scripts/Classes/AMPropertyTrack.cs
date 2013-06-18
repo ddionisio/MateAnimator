@@ -7,7 +7,7 @@ using System;
 using Holoville.HOTween.Core;
 using Holoville.HOTween;
 
-[System.Serializable]
+[AddComponentMenu("")]
 public class AMPropertyTrack : AMTrack {
     public enum ValueType {
         Integer = 0,
@@ -124,7 +124,8 @@ public class AMPropertyTrack : AMTrack {
                 return;
             }
         }
-        AMPropertyKey a = ScriptableObject.CreateInstance<AMPropertyKey>();
+        AMPropertyKey a = gameObject.AddComponent<AMPropertyKey>();
+        a.enabled = false;
         a.frame = _frame;
         a.setValue(val);
         // set default ease type to linear
@@ -145,7 +146,8 @@ public class AMPropertyTrack : AMTrack {
                 return;
             }
         }
-        AMPropertyKey a = ScriptableObject.CreateInstance<AMPropertyKey>();
+        AMPropertyKey a = gameObject.AddComponent<AMPropertyKey>();
+        a.enabled = false;
         a.frame = _frame;
         a.setValue(val);
         // set default ease type to linear
@@ -166,7 +168,8 @@ public class AMPropertyTrack : AMTrack {
                 return;
             }
         }
-        AMPropertyKey a = ScriptableObject.CreateInstance<AMPropertyKey>();
+        AMPropertyKey a = gameObject.AddComponent<AMPropertyKey>();
+        a.enabled = false;
         a.frame = _frame;
         a.setValue(val);
         // set default ease type to linear
@@ -187,7 +190,8 @@ public class AMPropertyTrack : AMTrack {
                 return;
             }
         }
-        AMPropertyKey a = ScriptableObject.CreateInstance<AMPropertyKey>();
+        AMPropertyKey a = gameObject.AddComponent<AMPropertyKey>();
+        a.enabled = false;
         a.frame = _frame;
         a.setValue(val);
         // set default ease type to linear
@@ -208,7 +212,8 @@ public class AMPropertyTrack : AMTrack {
                 return;
             }
         }
-        AMPropertyKey a = ScriptableObject.CreateInstance<AMPropertyKey>();
+        AMPropertyKey a = gameObject.AddComponent<AMPropertyKey>();
+        a.enabled = false;
         a.frame = _frame;
         a.setValue(val);
         // set default ease type to linear
@@ -281,7 +286,8 @@ public class AMPropertyTrack : AMTrack {
         cache = new List<AMAction>();
         for(int i = 0; i < keys.Count; i++) {
 
-            AMPropertyAction a = ScriptableObject.CreateInstance<AMPropertyAction>();
+            AMPropertyAction a = gameObject.AddComponent<AMPropertyAction>();
+            a.enabled = false;
             a.component = component;
             a.startFrame = keys[i].frame;
             if(keys.Count > (i + 1)) a.endFrame = keys[i + 1].frame;

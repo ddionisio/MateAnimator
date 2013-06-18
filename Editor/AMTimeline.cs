@@ -1519,7 +1519,7 @@ public class AMTimeline : EditorWindow {
             GUI.Label(new Rect(rectDragElement.x + 15f + 4f, rectDragElement.y, rectDragElement.width - 15f - 4f, rectDragElement.height), dragElementName);
         }
         mouseAboveGroupElements = e.mousePosition.y < (height_menu_bar + height_control_bar);
-        if(!aData.getCurrentTake().rootGroup || aData.getCurrentTake().rootGroup.elements.Count <= 0) {
+        if(aData.getCurrentTake().rootGroup == null || aData.getCurrentTake().rootGroup.elements.Count <= 0) {
 
             if(aData.isInspectorOpen) aData.isInspectorOpen = false;
             float width_helpbox = position.width - width_inspector_closed - 28f - width_track;
@@ -3004,7 +3004,7 @@ public class AMTimeline : EditorWindow {
             if(arrayFieldFoldout[id]) {
                 // show elements if folded out
                 if(parameter.lsArray.Count <= 0) {
-                    AMEventParameter a = CreateInstance<AMEventParameter>();
+                    AMEventParameter a = new AMEventParameter();
                     a.setValueType(t.GetElementType());
                     parameter.lsArray.Add(a);
                     saveChanges = true;
@@ -3033,7 +3033,7 @@ public class AMTimeline : EditorWindow {
                 rectButtonAddElement.x += rectButtonRemoveElement.width + margin;
                 GUI.enabled = !isPlaying;
                 if(GUI.Button(rectButtonAddElement, "+")) {
-                    AMEventParameter a = CreateInstance<AMEventParameter>();
+                    AMEventParameter a = new AMEventParameter();
                     a.setValueType(t.GetElementType());
                     parameter.lsArray.Add(a);
                     saveChanges = true;
