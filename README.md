@@ -11,6 +11,10 @@ This takes advantage of Sequence and the ability to cache all the tweens at star
 
 Also, Animator is no longer global and can be added to any game object.  You can now have many Sequences running simultaneously.
 
+Camera Transition and Mega Morph has been removed
+
+Import/Export, Code Generator doesn't work.
+
 How To
 ======
 
@@ -18,3 +22,4 @@ TODO
 ====
 
 Better Undo/Redo
+Fix Orientation
