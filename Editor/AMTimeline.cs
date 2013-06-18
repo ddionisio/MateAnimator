@@ -4406,6 +4406,10 @@ public class AMTimeline : EditorWindow {
             // add key to event track
             (amTrack as AMEventTrack).addKey(_frame);
         }
+                
+        setDirtyKeys(aData.getCurrentTake().getSelectedTrack());
+        setDirtyCache(aData.getCurrentTake().getSelectedTrack());
+        refreshGizmos();
 
         AMCodeView.refresh();
     }

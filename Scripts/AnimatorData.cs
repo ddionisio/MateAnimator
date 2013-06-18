@@ -100,9 +100,21 @@ public class AnimatorData : MonoBehaviour {
     public GameObject dataHolder {
         get {
             if(_dataHolder == null) {
-                _dataHolder = new GameObject("_data");
-                _dataHolder.transform.parent = transform;
-                _dataHolder.SetActive(false);
+                foreach(Transform child in transform) {
+                    if(child.gameObject.name == "_animdata") {
+                        _dataHolder = child.gameObject;
+                        break;
+                    }
+                }
+
+                if(_dataHolder) {
+                    //refresh data?
+                }
+                else {
+                    _dataHolder = new GameObject("_animdata");
+                    _dataHolder.transform.parent = transform;
+                    _dataHolder.SetActive(false);
+                }
             }
 
             return _dataHolder;

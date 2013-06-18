@@ -63,6 +63,8 @@ public class AMTake : MonoBehaviour {
             HOTween.Kill(mSequence);
             mSequence = null;
         }
+
+        sequenceCompleteCallback = null;
     }
 
     // Adding a new track type
@@ -197,6 +199,11 @@ public class AMTake : MonoBehaviour {
         if(index < 0 || index >= trackKeys.Count || index >= trackValues.Count) {
             Debug.LogError("Animator: Track id " + id + " not found");
             return;
+        }
+
+        AMTrack track = getTrack(id);
+        if(track) {
+            track.destroy();
         }
 
         trackKeys.RemoveAt(index);
@@ -1399,8 +1406,6 @@ public class AMTake : MonoBehaviour {
 
         groupValues.Clear();
         rootGroup = null;
-
-        sequenceCompleteCallback = null;
 
         DestroyImmediate(this);
     }
