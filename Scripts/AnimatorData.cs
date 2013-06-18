@@ -10,7 +10,7 @@ using Holoville.HOTween;
 public class AnimatorData : MonoBehaviour {
     // show
     public List<AMTake> takes = new List<AMTake>();
-    public AMTake playOnStart = null;
+    public int playOnStartInd = -1;
 
     public bool sequenceLoadAll = true;
     public bool sequenceKillWhenDone = false;
@@ -100,9 +100,19 @@ public class AnimatorData : MonoBehaviour {
     public GameObject dataHolder {
         get {
             if(_dataHolder == null) {
-                _dataHolder = new GameObject("_data");
-                _dataHolder.transform.parent = transform;
-                _dataHolder.SetActive(false);
+                //find even if inactive
+                foreach(Transform c in transform) {
+                    if(c.gameObject.name == "_animdata") {
+                        _dataHolder = c.gameObject;
+                    }
+                }
+
+                //not in children
+                if(_dataHolder == null) {
+                    _dataHolder = new GameObject("_animdata");
+                    _dataHolder.transform.parent = transform;
+                    _dataHolder.SetActive(false);
+                }
             }
 
             return _dataHolder;
@@ -119,7 +129,7 @@ public class AnimatorData : MonoBehaviour {
                 return takeName;
             // play
             case 2:
-                Play((string)args[1], true, 0f, (bool)args[2]);
+                Play(getTake((string)args[1]), true, 0f, (bool)args[2]);
                 break;
             // stop
             case 3:
@@ -135,11 +145,11 @@ public class AnimatorData : MonoBehaviour {
                 break;
             // play from time
             case 6:
-                Play((string)args[1], false, (float)args[2], (bool)args[3]);
+                Play(getTake((string)args[1]), false, (float)args[2], (bool)args[3]);
                 break;
             // play from frame
             case 7:
-                Play((string)args[1], true, (float)((int)args[2]), (bool)args[3]);
+                Play(getTake((string)args[1]), true, (float)((int)args[2]), (bool)args[3]);
                 break;
             // preview frame
             case 8:
@@ -175,8 +185,8 @@ public class AnimatorData : MonoBehaviour {
     }
 
     void OnEnable() {
-        if(mStarted && playOnEnable && playOnStart) {
-            Play(playOnStart.name, true, 0f, false);
+        if(mStarted && playOnEnable && playOnStartInd >= 0 && playOnStartInd < takes.Count) {
+            Play(takes[playOnStartInd], true, 0f, false);
         }
     }
 
@@ -185,6 +195,8 @@ public class AnimatorData : MonoBehaviour {
     }
 
     void Awake() {
+        dataHolder.SetActive(false); //make sure it's always inactive
+
         //build the sequences for each take
         /*if(takes != null) {
             foreach(AMTake take in takes) {
@@ -201,8 +213,8 @@ public class AnimatorData : MonoBehaviour {
                 take.BuildSequence(gameObject.name, sequenceKillWhenDone);
         }
 
-        if(playOnStart) {
-            Play(playOnStart.name, true, 0.0f, false);
+        if(playOnStartInd >= 0 && playOnStartInd < takes.Count) {
+            Play(takes[playOnStartInd], true, 0.0f, false);
         }
     }
 
@@ -241,7 +253,7 @@ public class AnimatorData : MonoBehaviour {
 
     // play take by name
     public void Play(string takeName, bool loop = false) {
-        Play(takeName, true, 0f, loop);
+        Play(getTake(takeName), true, 0f, loop);
     }
 
     public void Pause() {
@@ -277,12 +289,12 @@ public class AnimatorData : MonoBehaviour {
 
     // play take by name from time
     public void PlayFromTime(string takeName, float time, bool loop = false) {
-        Play(takeName, false, time, loop);
+        Play(getTake(takeName), false, time, loop);
     }
 
     // play take by name from frame
     public void PlayFromFrame(string takeName, int frame, bool loop = false) {
-        Play(takeName, true, (float)frame, loop);
+        Play(getTake(takeName), true, (float)frame, loop);
     }
 
     // preview a single frame (used for scrubbing)
@@ -295,9 +307,9 @@ public class AnimatorData : MonoBehaviour {
         PreviewValue(takeName, false, time);
     }
 
-    void Play(string take_name, bool isFrame, float value, bool loop) {
-        nowPlayingTake = getTake(take_name);
-        if(nowPlayingTake) {
+    void Play(AMTake take, bool isFrame, float value, bool loop) {
+        nowPlayingTake = take;
+        if(nowPlayingTake != null) {
             if(nowPlayingTake.sequence == null)
                 nowPlayingTake.BuildSequence(gameObject.name, sequenceKillWhenDone);
 
@@ -324,9 +336,9 @@ public class AnimatorData : MonoBehaviour {
 
     void PreviewValue(string take_name, bool isFrame, float value) {
         AMTake take;
-        if(nowPlayingTake && nowPlayingTake.name == takeName) take = nowPlayingTake;
+        if(nowPlayingTake != null && nowPlayingTake.name == takeName) take = nowPlayingTake;
         else take = getTake(take_name);
-        if(!take) return;
+        if(take == null) return;
         float startFrame = value;
         if(!isFrame) startFrame *= take.frameRate;	// convert time to frame
         take.previewFrameInvoker(startFrame);
@@ -381,9 +393,8 @@ public class AnimatorData : MonoBehaviour {
 
     public void addTake() {
         string name = "Take" + (takes.Count + 1);
-        AMTake a = AMTake.NewInstance(dataHolder);
+        AMTake a = AMTake.NewInstance(name);
         // set defaults
-        a.name = name;
         makeTakeNameUnique(a);
         a.numLoop = 1;
         a.loopMode = LoopType.Restart;
@@ -404,7 +415,7 @@ public class AnimatorData : MonoBehaviour {
 
     public void deleteTake(int index) {
         //if(shouldCheckDependencies) shouldCheckDependencies = false;
-        if(playOnStart == takes[index]) playOnStart = null;
+        if(playOnStartInd == index) playOnStartInd = -1;
         takes[index].destroy();
         takes.RemoveAt(index);
         if((currentTake >= index) && (currentTake > 0)) currentTake--;

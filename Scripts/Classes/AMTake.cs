@@ -7,13 +7,12 @@ using System.Reflection;
 
 using Holoville.HOTween;
 
-[AddComponentMenu("")]
-public class AMTake : MonoBehaviour {
+public class AMTake {
     public delegate void OnSequenceDone(AMTake take);
 
     #region Declarations
 
-    public new string name;					// take name
+    public string name;					// take name
     public int frameRate = 24;				// frames per second
     public int numFrames = 1440;			// number of frames
     public float startFrame = 1f;				// first frame to render
@@ -51,14 +50,14 @@ public class AMTake : MonoBehaviour {
         
     #endregion
 
-    public static AMTake NewInstance(GameObject holder) {
-        AMTake newTake = holder.AddComponent<AMTake>();
-        newTake.enabled = false;
+    public static AMTake NewInstance(string name) {
+        AMTake newTake = new AMTake(name);
         newTake.loopBackToFrame = -1;
         return newTake;
     }
 
-    void OnDestroy() {
+
+    public void ClearSequence() {
         if(mSequence != null) {
             HOTween.Kill(mSequence);
             mSequence = null;
@@ -120,8 +119,8 @@ public class AMTake : MonoBehaviour {
     }
 
     // add translation track
-    public void addTranslationTrack(GameObject obj, bool isLocal=false) {
-        AMTranslationTrack a = gameObject.AddComponent<AMTranslationTrack>();
+    public void addTranslationTrack(GameObject holder, GameObject obj, bool isLocal=false) {
+        AMTranslationTrack a = holder.AddComponent<AMTranslationTrack>();
         a.enabled = false;
         a.setName(getTrackCount());
         a.id = getUniqueTrackID();
@@ -132,8 +131,8 @@ public class AMTake : MonoBehaviour {
     }
 
     // add rotation track
-    public void addRotationTrack(GameObject obj, bool isLocal=false) {
-        AMRotationTrack a = gameObject.AddComponent<AMRotationTrack>();
+    public void addRotationTrack(GameObject holder, GameObject obj, bool isLocal = false) {
+        AMRotationTrack a = holder.AddComponent<AMRotationTrack>();
         a.enabled = false;
         a.setName(getTrackCount());
         a.id = getUniqueTrackID();
@@ -143,8 +142,8 @@ public class AMTake : MonoBehaviour {
     }
 
     // add orientation track
-    public void addOrientationTrack(GameObject obj) {
-        AMOrientationTrack a = gameObject.AddComponent<AMOrientationTrack>();
+    public void addOrientationTrack(GameObject holder, GameObject obj) {
+        AMOrientationTrack a = holder.AddComponent<AMOrientationTrack>();
         a.enabled = false;
         a.setName(getTrackCount());
         a.id = getUniqueTrackID();
@@ -153,8 +152,8 @@ public class AMTake : MonoBehaviour {
     }
 
     // add animation track
-    public void addAnimationTrack(GameObject obj) {
-        AMAnimationTrack a = gameObject.AddComponent<AMAnimationTrack>();
+    public void addAnimationTrack(GameObject holder, GameObject obj) {
+        AMAnimationTrack a = holder.AddComponent<AMAnimationTrack>();
         a.enabled = false;
         a.setName(getTrackCount());
         a.id = getUniqueTrackID();
@@ -163,8 +162,8 @@ public class AMTake : MonoBehaviour {
     }
 
     // add audio track
-    public void addAudioTrack(GameObject obj) {
-        AMAudioTrack a = gameObject.AddComponent<AMAudioTrack>();
+    public void addAudioTrack(GameObject holder, GameObject obj) {
+        AMAudioTrack a = holder.AddComponent<AMAudioTrack>();
         a.enabled = false;
         a.setName(getTrackCount());
         a.id = getUniqueTrackID();
@@ -173,8 +172,8 @@ public class AMTake : MonoBehaviour {
     }
 
     // add property track
-    public void addPropertyTrack(GameObject obj) {
-        AMPropertyTrack a = gameObject.AddComponent<AMPropertyTrack>();
+    public void addPropertyTrack(GameObject holder, GameObject obj) {
+        AMPropertyTrack a = holder.AddComponent<AMPropertyTrack>();
         a.enabled = false;
         a.setName(getTrackCount());
         a.id = getUniqueTrackID();
@@ -183,8 +182,8 @@ public class AMTake : MonoBehaviour {
     }
 
     // add event track
-    public void addEventTrack(GameObject obj) {
-        AMEventTrack a = gameObject.AddComponent<AMEventTrack>();
+    public void addEventTrack(GameObject holder, GameObject obj) {
+        AMEventTrack a = holder.AddComponent<AMEventTrack>();
         a.enabled = false;
         a.setName(getTrackCount());
         a.id = getUniqueTrackID();
@@ -198,6 +197,9 @@ public class AMTake : MonoBehaviour {
             Debug.LogError("Animator: Track id " + id + " not found");
             return;
         }
+
+        AMTrack track = getTrack(id);
+        track.destroy();
 
         trackKeys.RemoveAt(index);
         trackValues.RemoveAt(index);
@@ -1181,7 +1183,7 @@ public class AMTake : MonoBehaviour {
 
     public void maintainTake() {
         foreach(AMTrack track in trackValues) {
-            if(!track.parentTake) track.parentTake = this;
+            if(track.parentTake == null) track.parentTake = this;
         }
     }
 
@@ -1401,8 +1403,6 @@ public class AMTake : MonoBehaviour {
         rootGroup = null;
 
         sequenceCompleteCallback = null;
-
-        DestroyImmediate(this);
     }
 
     public List<GameObject> getDependencies() {

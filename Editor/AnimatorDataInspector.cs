@@ -25,8 +25,8 @@ public class AnimatorDataInspector : Editor {
         else
             dat.playOnStart = dat.takes[playOnStartInd - 1];*/
 
-        if(dat.playOnStart) {
-            GUILayout.Label("Play On Start: " + dat.playOnStart.name);
+        if(dat.playOnStartInd >= 0 && dat.playOnStartInd < dat.takes.Count) {
+            GUILayout.Label("Play On Start: " + dat.takes[dat.playOnStartInd].name);
         }
         else {
             GUILayout.Label("Play On Start: None");

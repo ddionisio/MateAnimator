@@ -40,8 +40,6 @@ public class AMTimeline : EditorWindow {
                                 setDirtyCache(track);
                                 EditorUtility.SetDirty(track);
                             }
-
-                            EditorUtility.SetDirty(take);
                         }
                     }
 
@@ -61,14 +59,14 @@ public class AMTimeline : EditorWindow {
                         // add take
                         _aData.addTake();
                         // save data
-                        setDirtyTakes(_aData.takes);
+                        EditorUtility.SetDirty(_aData);
                     }
                     else {
                         _aData.getCurrentTake().maintainTake();	// upgrade take to current version if necessary
                         // save data
                         EditorUtility.SetDirty(_aData);
                         // preview last selected frame
-                        if(!isPlayMode && _aData.getCurrentTake()) _aData.getCurrentTake().previewFrame((float)_aData.getCurrentTake().selectedFrame);
+                        if(!isPlayMode && _aData.getCurrentTake() != null) _aData.getCurrentTake().previewFrame((float)_aData.getCurrentTake().selectedFrame);
                     }
 
                     indexMethodInfo = -1;	// re-check for methodinfo
@@ -885,7 +883,6 @@ public class AMTimeline : EditorWindow {
                 AMCodeView.resetTrackDictionary();
                 // save data
                 EditorUtility.SetDirty(aData);
-                setDirtyTakes(aData.takes);
                 // refresh component
                 refreshGizmos();
             }
@@ -904,22 +901,21 @@ public class AMTimeline : EditorWindow {
             aData.addTake();
             // save data
             EditorUtility.SetDirty(aData);
-            setDirtyTakes(aData.takes);
             // refresh component
             refreshGizmos();
         }
         #endregion
         #region play on start button
         Rect rectBtnPlayOnStart = new Rect(rectBtnDeleteTake.x + rectBtnDeleteTake.width + margin, rectBtnDeleteTake.y, width_button_delete, height_button_delete);
-        bool isPlayOnStart = aData.playOnStart == aData.getCurrentTake();
+        bool isPlayOnStart = aData.playOnStartInd == aData.getCurrentTakeValue();
         GUIStyle styleBtnPlayOnStart = new GUIStyle(/*GUI.skin.GetStyle("ButtonImage")*/EditorStyles.toolbarButton);
         if(isPlayOnStart) {
             styleBtnPlayOnStart.normal.background = styleBtnPlayOnStart.onNormal.background;
             styleBtnPlayOnStart.hover.background = styleBtnPlayOnStart.onNormal.background;
         }
         if(GUI.Button(rectBtnPlayOnStart, new GUIContent(getSkinTextureStyleState("playonstart").background, "Play On Start"), styleBtnPlayOnStart)) {
-            if(!isPlayOnStart) aData.playOnStart = aData.getCurrentTake();
-            else aData.playOnStart = null;
+            if(!isPlayOnStart) aData.playOnStartInd = aData.getCurrentTakeValue();
+            else aData.playOnStartInd = -1;
             EditorUtility.SetDirty(aData);
         }
         #endregion
@@ -3703,7 +3699,7 @@ public class AMTimeline : EditorWindow {
     void processUpdateMethodInfoCache(bool now = false) {
         if(now) updateMethodInfoCacheBuffer = 0;
         // update methodinfo cache if necessary
-        if(!aData || !aData.getCurrentTake()) return;
+        if(!aData || aData.getCurrentTake() == null) return;
         if(aData.getCurrentTake().getTrackCount() <= 0) return;
         if(aData.getCurrentTake().selectedTrack <= -1) return;
         if(updateMethodInfoCacheBuffer > 0) updateMethodInfoCacheBuffer--;
@@ -4052,11 +4048,6 @@ public class AMTimeline : EditorWindow {
             EditorUtility.SetDirty(action);
         }
     }
-    void setDirtyTakes(List<AMTake> takes) {
-        foreach(AMTake take in takes) {
-            EditorUtility.SetDirty(take);
-        }
-    }
     void setDirtyTracks(AMTake take) {
         foreach(AMTrack track in aData.getCurrentTake().trackValues) {
             EditorUtility.SetDirty(track);
@@ -4245,31 +4236,31 @@ public class AMTimeline : EditorWindow {
         // add track based on index
         switch((int)trackType) {
             case (int)Track.Translation:
-                aData.getCurrentTake().addTranslationTrack(object_window);
+                aData.getCurrentTake().addTranslationTrack(aData.dataHolder, object_window);
                 break;
             case (int)Track.LocalTranslation:
-                aData.getCurrentTake().addTranslationTrack(object_window, true);
+                aData.getCurrentTake().addTranslationTrack(aData.dataHolder, object_window, true);
                 break;
             case (int)Track.Rotation:
-                aData.getCurrentTake().addRotationTrack(object_window);
+                aData.getCurrentTake().addRotationTrack(aData.dataHolder, object_window);
                 break;
             case (int)Track.LocalRotation:
-                aData.getCurrentTake().addRotationTrack(object_window, true);
+                aData.getCurrentTake().addRotationTrack(aData.dataHolder, object_window, true);
                 break;
             case (int)Track.Orientation:
-                aData.getCurrentTake().addOrientationTrack(object_window);
+                aData.getCurrentTake().addOrientationTrack(aData.dataHolder, object_window);
                 break;
             case (int)Track.Animation:
-                aData.getCurrentTake().addAnimationTrack(object_window);
+                aData.getCurrentTake().addAnimationTrack(aData.dataHolder, object_window);
                 break;
             case (int)Track.Audio:
-                aData.getCurrentTake().addAudioTrack(object_window);
+                aData.getCurrentTake().addAudioTrack(aData.dataHolder, object_window);
                 break;
             case (int)Track.Property:
-                aData.getCurrentTake().addPropertyTrack(object_window);
+                aData.getCurrentTake().addPropertyTrack(aData.dataHolder, object_window);
                 break;
             case (int)Track.Event:
-                aData.getCurrentTake().addEventTrack(object_window);
+                aData.getCurrentTake().addEventTrack(aData.dataHolder, object_window);
                 break;
             default:
                 int combo_index = (int)trackType - 100;

@@ -69,7 +69,6 @@ public class AMSettings : EditorWindow {
             aData.getCurrentTake().loopBackToFrame = Mathf.Clamp(loopBackFrame, -1, numFrames);
 
             // save data
-            EditorUtility.SetDirty(aData.getCurrentTake());
             EditorUtility.SetDirty(aData);
             
 			EditorWindow.GetWindow (typeof (AMTimeline)).Repaint();

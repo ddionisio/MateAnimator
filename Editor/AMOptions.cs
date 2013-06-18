@@ -128,8 +128,8 @@ public class AMOptions : EditorWindow {
             GUILayout.FlexibleSpace();
             GUILayout.EndVertical();
             if(setPlayOnStartIndex(EditorGUILayout.Popup(playOnStartIndex, takeNamesWithNone.ToArray(), GUILayout.Width(200f)))) {
-                if(playOnStartIndex == 0) aData.playOnStart = null;
-                else aData.playOnStart = aData.getTake(takeNames[playOnStartIndex - 1]);
+                if(playOnStartIndex == 0) aData.playOnStartInd = -1;
+                else aData.playOnStartInd = playOnStartIndex - 1;
             }
             GUILayout.EndHorizontal();
             // gizmo size
@@ -466,7 +466,7 @@ public class AMOptions : EditorWindow {
         if(AMTimeline.window != null) {
             __aData = AMTimeline.window.aData;
             if(__aData) {
-                if(__aData.playOnStart != null) playOnStartIndex = __aData.getTakeIndex(__aData.playOnStart) + 1;
+                if(__aData.playOnStartInd >= 0 && __aData.playOnStartInd < __aData.takes.Count) playOnStartIndex = __aData.playOnStartInd + 1;
                 exportTakeIndex = __aData.getTakeIndex(__aData.getCurrentTake());
             }
         }
