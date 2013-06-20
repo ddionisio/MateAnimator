@@ -229,7 +229,7 @@ public class AMEventAction : AMAction {
     public string ToString(int codeLanguage, int frameRate, string methodInfoVarName) {
         if(component == null) return null;
         string s = "";
-        if(useSendMessage) {
+        /*if(useSendMessage) {
             if(methodName == null) return null;
 
 
@@ -259,7 +259,8 @@ public class AMEventAction : AMAction {
             s += "AMTween.InvokeMethod(" + methodInfoVarName + "CMP, {\"delay\": " + getWaitTime(frameRate, 0f) + ", \"methodinfo\": " + methodInfoVarName;//obj.methodinfo";
             if(parameters != null && parameters.Count > 0) s += ", \"parameters\": [" + parametersToString(codeLanguage) + "]";
             s += "});";
-        }
+        }*/
+        Debug.LogError("need implement");
         return s;
     }
 

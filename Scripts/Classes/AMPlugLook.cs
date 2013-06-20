@@ -28,6 +28,9 @@ public class AMPlugLookFollowTarget : ABSTweenPlugin {
         if(t != null && follow != null)
             t.LookAt(follow);
     }
+
+    protected override void SetValue(object p_value) { }
+    protected override object GetValue() { return null; }
 }
 
 public class AMPlugLookToFollowTarget : ABSTweenPlugin {
@@ -97,4 +100,7 @@ public class AMPlugLookToFollowTarget : ABSTweenPlugin {
             t.rotation = Quaternion.Euler(cur);
         }
     }
+
+    protected override void SetValue(object p_value) { }
+    protected override object GetValue() { return null; }
 }

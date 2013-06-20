@@ -185,7 +185,8 @@ public class AMTimeline : EditorWindow {
         Animation = 5,
         Audio = 6,
         Property = 7,
-        Event = 8
+        Event = 8,
+        GOSetActive = 9
     }
 
     public static string[] TrackNames = new string[] {
@@ -197,7 +198,8 @@ public class AMTimeline : EditorWindow {
 		"Animation",
 		"Audio",
 		"Property",
-		"Event"
+		"Event",
+        "GOSetActive"
 	};
     // skins
     public static string global_skin = "am_skin_blue";
@@ -656,8 +658,8 @@ public class AMTimeline : EditorWindow {
             oData = AMOptionsFile.loadFile();
         }
 
-        if(aData.getCurrentTake() == null) //TODO: figure out something about this
-            return;
+        //retain animator open, this is mostly when recompiling AnimatorData
+        aData.isAnimatorOpen = true;
 
         #endregion
         #region window resize
@@ -2283,6 +2285,12 @@ public class AMTimeline : EditorWindow {
                         cached_action_endFrame = _endFrame;
                         texBox = texBoxDarkBlue;
                     }
+                    else if(_track is AMGOSetActiveTrack) {
+                        // go set active track, from first action start frame to end frame
+                        cached_action_startFrame = _track.cache[0].startFrame;
+                        cached_action_endFrame = _endFrame;
+                        texBox = texBoxDarkBlue;
+                    }
                 }
                 if(cached_action_startFrame > 0 && cached_action_endFrame > 0) {
                     if(cached_action_startFrame <= _startFrame) {
@@ -2336,7 +2344,7 @@ public class AMTimeline : EditorWindow {
                         if(action_endFrame > _track.cache[i + 1].startFrame) action_endFrame = _track.cache[i + 1].startFrame;
                     }
                 }
-                else if((i == 0) && (!didClampBackwards) && (_track is AMPropertyTrack)) {
+                else if((i == 0) && (!didClampBackwards) && (_track is AMPropertyTrack || _track is AMGOSetActiveTrack)) {
                     // clamp behind if first action
                     action_startFrame = 1;
                     action_endFrame = _track.cache[0].startFrame;
@@ -2344,7 +2352,7 @@ public class AMTimeline : EditorWindow {
                     didClampBackwards = true;
                     clamped = -1;
                 }
-                else if((_track is AMAnimationTrack) || (_track is AMAudioTrack) || (_track is AMPropertyTrack) || (_track is AMEventTrack)) {
+                else if((_track is AMAnimationTrack) || (_track is AMAudioTrack) || (_track is AMPropertyTrack) || (_track is AMEventTrack) || (_track is AMGOSetActiveTrack)) {
                     // single frame tracks (clamp box to last frame) (if audio track not set, clamp)
                     action_startFrame = _track.cache[i].startFrame;
                     if(i < _track.cache.Count - 1) {
@@ -2405,6 +2413,7 @@ public class AMTimeline : EditorWindow {
                 else if(_track is AMRotationTrack) texBox = texBoxYellow;
                 else if(_track is AMOrientationTrack) texBox = texBoxOrange;
                 else if(_track is AMEventTrack) texBox = texBoxDarkBlue;
+                else if(_track is AMGOSetActiveTrack) texBox = texBoxDarkBlue;
                 else texBox = texBoxBorder;
                 if(drawEachAction) {
                     GUI.DrawTexture(rectBox, texBox);
@@ -2416,7 +2425,7 @@ public class AMTimeline : EditorWindow {
                 styleTxtInfo.normal.textColor = Color.white;
                 styleTxtInfo.alignment = (hideTxtInfo ? TextAnchor.MiddleLeft : TextAnchor.MiddleCenter);
                 bool isLastAction;
-                if(_track is AMPropertyTrack || _track is AMEventTrack) isLastAction = (i == _track.cache.Count - 1);
+                if(_track is AMPropertyTrack || _track is AMEventTrack || _track is AMGOSetActiveTrack) isLastAction = (i == _track.cache.Count - 1);
                 else if(_track is AMAudioTrack || _track is AMAnimationTrack) isLastAction = false;
                 else isLastAction = (i == _track.cache.Count - 2);
                 if(rectBox.width > 5f) EditorGUI.DropShadowLabel(new Rect(rectBox.x, rectBox.y, rectBox.width - (!isLastAction ? current_width_frame : 0f), rectBox.height), txtInfo, styleTxtInfo);
@@ -2859,6 +2868,62 @@ public class AMTimeline : EditorWindow {
             return;
         }
         #endregion
+        #region event set go active
+        if(sTrack is AMGOSetActiveTrack) {
+            AMGOSetActiveTrack goActiveTrack = sTrack as AMGOSetActiveTrack;
+            AMGOSetActiveKey pKey = (AMGOSetActiveKey)goActiveTrack.getKeyOnFrame(_frame);
+
+            bool doRefreshGizmo = false;
+
+            bool newStartVal;
+
+            // value
+            if(sTrack.keys[0] == pKey) {
+                Rect rectStartField = new Rect(0f, start_y, width_inspector - margin, 22f);
+
+                newStartVal = EditorGUI.Toggle(rectStartField, "Default Active", goActiveTrack.startActive);
+
+                start_y += rectStartField.height + 4.0f;
+            }
+            else
+                newStartVal = goActiveTrack.startActive;
+            
+            Rect rectField = new Rect(0f, start_y, width_inspector - margin, 22f);
+
+            bool newVal = EditorGUI.Toggle(rectField, sTrack.getTrackType(), pKey.setActive);
+
+            if(newStartVal != goActiveTrack.startActive) {
+                goActiveTrack.startActive = newStartVal;
+
+                EditorUtility.SetDirty(goActiveTrack);
+
+                doRefreshGizmo = true;
+            }
+
+            if(newVal != pKey.setActive) {
+                pKey.setActive = newVal;
+
+                // update cache when modifying varaibles
+                sTrack.updateCache();
+                // preview new value
+                aData.getCurrentTake().previewFrame(aData.getCurrentTake().selectedFrame);
+                // save data
+                setDirtyKeys(aData.getCurrentTake().getTrack(aData.getCurrentTake().selectedTrack));
+                setDirtyCache(aData.getCurrentTake().getTrack(aData.getCurrentTake().selectedTrack));
+
+                doRefreshGizmo = true;
+            }
+
+            if(doRefreshGizmo) {
+                AMCodeView.refresh();
+
+                // refresh component
+                refreshGizmos();
+            }
+
+            return;
+        }
+        #endregion
         #region event inspector
         if(sTrack is AMEventTrack) {
             AMEventKey eKey = (AMEventKey)(sTrack as AMEventTrack).getKeyOnFrame(_frame);
@@ -3298,6 +3363,12 @@ public class AMTimeline : EditorWindow {
                 }
             }
         }
+        // set go active
+        else if(amTrack is AMGOSetActiveTrack) {
+            AMGOSetActiveTrack goActiveTrack = amTrack as AMGOSetActiveTrack;
+            goActiveTrack.setObject((GameObject)EditorGUI.ObjectField(rect, goActiveTrack.genericObj, typeof(GameObject), true/*,GUILayout.Width (width_track-padding_track*2)*/));
+        }
+
         GUI.skin = skin;
         EditorGUIUtility.LookLikeControls();
     }
@@ -4145,7 +4216,19 @@ public class AMTimeline : EditorWindow {
             txtInfoOrientation += "\n" + easeTypeNames[(_action as AMOrientationAction).easeType];
             return txtInfoOrientation;
             #endregion
+            #region goactive
         }
+        else if(_action is AMGOSetActiveAction) {
+            AMGOSetActiveAction act = _action as AMGOSetActiveAction;
+            if(!act.go) return "No GameObject";
+
+            if(brief)
+                return string.Format("{0}.SetActive({1})", act.go.name, (_track as AMGOSetActiveTrack).startActive);
+            else
+                return string.Format("{0}.SetActive({1})", act.go.name, act.endVal);
+            #endregion
+        }
+
         return "Unknown";
     }
     public string getMethodInfoSignature(MethodInfo methodInfo) {
@@ -4171,6 +4254,7 @@ public class AMTimeline : EditorWindow {
         else if(_track is AMAudioTrack) return texIconAudio;
         else if(_track is AMRotationTrack) return texIconRotation;
         else if(_track is AMOrientationTrack) return texIconOrientation;
+        else if(_track is AMGOSetActiveTrack) return texIconProperty;
 
         Debug.LogWarning("Animator: Icon texture not found for track " + _track.getTrackType());
         return null;
@@ -4273,6 +4357,9 @@ public class AMTimeline : EditorWindow {
                 break;
             case (int)Track.Event:
                 aData.getCurrentTake().addEventTrack(object_window);
+                break;
+            case (int)Track.GOSetActive:
+                aData.getCurrentTake().addGOSetActiveTrack(object_window);
                 break;
             default:
                 int combo_index = (int)trackType - 100;
@@ -4409,6 +4496,17 @@ public class AMTimeline : EditorWindow {
             // add key to event track
             (amTrack as AMEventTrack).addKey(_frame);
         }
+        else if(amTrack is AMGOSetActiveTrack) {
+            // go set active
+
+            // if missing object, return
+            if(!amTrack.genericObj) {
+                showAlertMissingObjectType("GameObject");
+                return;
+            }
+            // add key to go active track
+            (amTrack as AMGOSetActiveTrack).addKey(_frame);
+        }
                 
         setDirtyKeys(aData.getCurrentTake().getSelectedTrack());
         setDirtyCache(aData.getCurrentTake().getSelectedTrack());
@@ -4473,6 +4571,7 @@ public class AMTimeline : EditorWindow {
         menu.AddItem(new GUIContent("Audio"), false, addTrackFromMenu, (int)Track.Audio);
         menu.AddItem(new GUIContent("Property"), false, addTrackFromMenu, (int)Track.Property);
         menu.AddItem(new GUIContent("Event"), false, addTrackFromMenu, (int)Track.Event);
+        menu.AddItem(new GUIContent("GO Active"), false, addTrackFromMenu, (int)Track.GOSetActive);
     }
     void buildAddTrackMenu_Drag() {
         bool hasTransform = true;
@@ -4519,6 +4618,8 @@ public class AMTimeline : EditorWindow {
         menu_drag.AddItem(new GUIContent("Property"), false, addTrackFromMenu, (int)Track.Property);
         // Event
         menu_drag.AddItem(new GUIContent("Event"), false, addTrackFromMenu, (int)Track.Event);
+        // GO Active
+        menu_drag.AddItem(new GUIContent("GO Active"), false, addTrackFromMenu, (int)Track.GOSetActive);
 
         if(oData.quickAdd_Combos.Count > 0) {
             // multiple tracks

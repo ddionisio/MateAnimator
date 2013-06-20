@@ -6,6 +6,7 @@ using System.Linq;
 
 using Holoville.HOTween;
 
+[ExecuteInEditMode]
 [AddComponentMenu("M8/Animator")]
 public class AnimatorData : MonoBehaviour {
     // show
@@ -58,11 +59,11 @@ public class AnimatorData : MonoBehaviour {
         }
     }
 
-    [HideInInspector]
+    [System.NonSerialized]
     public bool isAnimatorOpen = false;
-    [HideInInspector]
+    [System.NonSerialized]
     public bool isInspectorOpen = false;
-    [HideInInspector]
+    [System.NonSerialized]
     public bool inPlayMode = false;
     [HideInInspector]
     public float zoom = 0.4f;
@@ -177,6 +178,11 @@ public class AnimatorData : MonoBehaviour {
     }
 
     void OnDestroy() {
+        if(_dataHolder) {
+            DestroyImmediate(_dataHolder);
+            _dataHolder = null;
+        }
+
         /*playOnStart = null;
 
         foreach(AMTake take in takes) {
@@ -197,17 +203,13 @@ public class AnimatorData : MonoBehaviour {
     }
 
     void Awake() {
-        //build the sequences for each take
-        /*if(takes != null) {
-            foreach(AMTake take in takes) {
-                take.BuildSequence();
-            }
-        }*/
     }
 
     void Start() {
-        mStarted = true;
+        if(!Application.isPlaying)
+            return;
 
+        mStarted = true;
         if(sequenceLoadAll && takes != null) {
             foreach(AMTake take in takes)
                 take.BuildSequence(gameObject.name, sequenceKillWhenDone);

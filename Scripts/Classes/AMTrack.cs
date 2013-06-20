@@ -2,6 +2,8 @@ using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 
+using Holoville.HOTween;
+
 [AddComponentMenu("")]
 public class AMTrack : MonoBehaviour {
 
@@ -74,6 +76,9 @@ public class AMTrack : MonoBehaviour {
 
     // update cache
     public virtual void updateCache() {
+    }
+
+    public virtual void buildSequenceStart(Sequence s, int frameRate) {
     }
 
     public virtual AnimatorTimeline.JSONInit getJSONInit() {

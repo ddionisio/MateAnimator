@@ -194,6 +194,16 @@ public class AMTake : MonoBehaviour {
         addTrack(a);
     }
 
+    // add go set active track
+    public void addGOSetActiveTrack(GameObject obj) {
+        AMGOSetActiveTrack a = gameObject.AddComponent<AMGOSetActiveTrack>();
+        a.enabled = false;
+        a.setName(getTrackCount());
+        a.id = getUniqueTrackID();
+        if(obj) a.setObject(obj);
+        addTrack(a);
+    }
+
     public void deleteTrack(int id, bool deleteFromGroup = true) {
         int index = getTrackIndex(id);
         if(index < 0 || index >= trackKeys.Count || index >= trackValues.Count) {
@@ -733,50 +743,10 @@ public class AMTake : MonoBehaviour {
         }
     }
 
-
-    public class Morph {
-        public GameObject obj;
-        public MethodInfo methodInfo;
-        public Component component;
-        public List<float> morph;
-
-        public Morph(GameObject obj, MethodInfo methodInfo, Component component, List<float> morph) {
-            this.obj = obj;
-            this.methodInfo = methodInfo;
-            this.component = component;
-            this.morph = new List<float>(morph);
-        }
-
-        public void blendMorph(List<float> new_morph) {
-            // if previous morph channel == 0, apply new morph
-            for(int i = 0; i < (morph.Count >= new_morph.Count ? morph.Count : new_morph.Count); i++) {
-                if(i >= new_morph.Count) break;
-                else if(i >= morph.Count) morph.Add(0f);
-                if(morph[i] == 0f) morph[i] = new_morph[i];
-            }
-        }
-    }
-
-    public void addMorph(GameObject obj, MethodInfo methodInfo, Component component, List<float> morph) {
-        foreach(Morph m in morphs) {
-            if(m.obj == obj && m.component == component) {
-                // found morph, blend
-                m.blendMorph(morph);
-                return;
-            }
-        }
-        // add new morph
-        Morph _m = new Morph(obj, methodInfo, component, morph);
-        morphs.Add(_m);
-    }
-
-    List<Morph> morphs;
-
     // preview a frame
     public void previewFrame(float _frame, bool orientationOnly = false, bool renderStill = true, bool skipCameraSwitcher = false, bool quickPreview = false /* do not preview properties to execute */) {
         List<AMOrientationTrack> tracksOrientaton = new List<AMOrientationTrack>();
         List<AMRotationTrack> tracksRotation = new List<AMRotationTrack>();
-        morphs = new List<Morph>();
 
         foreach(AMTrack track in trackValues) {
             if(track is AMAudioTrack) continue;
@@ -800,22 +770,6 @@ public class AMTake : MonoBehaviour {
                 track.previewFrame(_frame);
             }
         }
-        // preview morph targets
-        foreach(Morph m in morphs) {
-            previewMorph(m);
-        }
-
-    }
-
-    public void previewMorph(Morph m) {
-        //if(valueType == (int)ValueType.MorphChannels) {
-        for(int i = 0; i < m.morph.Count; i++) {
-            if(i >= m.morph.Count) break;
-            m.methodInfo.Invoke(m.component, new object[] { i, m.morph[i] });
-        }
-        //}
-        // update transform to refresh scene
-        if(!Application.isPlaying) m.obj.transform.position = new Vector3(m.obj.transform.position.x, m.obj.transform.position.y, m.obj.transform.position.z);
     }
 
     public void sampleAudioAtFrame(int frame, float speed) {
@@ -1276,6 +1230,8 @@ public class AMTake : MonoBehaviour {
             int numTweensAdded = 0;
 
             foreach(AMTrack track in trackValues) {
+                track.buildSequenceStart(mSequence, frameRate);
+
                 foreach(AMAction action in track.cache) {
                     Tweener tween = action.buildTweener(mSequence, frameRate);
                     if(tween != null) {
