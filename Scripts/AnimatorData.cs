@@ -178,9 +178,16 @@ public class AnimatorData : MonoBehaviour {
     }
 
     void OnDestroy() {
-        if(_dataHolder) {
-            DestroyImmediate(_dataHolder);
-            _dataHolder = null;
+        if(!Application.isPlaying) {
+            if(_dataHolder) {
+                DestroyImmediate(_dataHolder);
+                _dataHolder = null;
+            }
+        }
+        else {
+            foreach(AMTake take in takes) {
+                take.destroy();
+            }
         }
 
         /*playOnStart = null;

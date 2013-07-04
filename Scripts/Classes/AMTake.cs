@@ -1363,6 +1363,13 @@ public class AMTake : MonoBehaviour {
         groupValues.Clear();
         rootGroup = null;
 
+        if(mSequence != null) {
+            HOTween.Kill(mSequence);
+            mSequence = null;
+        }
+
+        sequenceCompleteCallback = null;
+
         DestroyImmediate(this);
     }
 
