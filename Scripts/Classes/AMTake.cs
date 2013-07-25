@@ -744,7 +744,7 @@ public class AMTake : MonoBehaviour {
     }
 
     // preview a frame
-    public void previewFrame(float _frame, bool orientationOnly = false, bool renderStill = true, bool skipCameraSwitcher = false, bool quickPreview = false /* do not preview properties to execute */) {
+    public void previewFrame(float _frame, bool orientationOnly = false, bool quickPreview = false /* do not preview properties to execute */) {
         List<AMOrientationTrack> tracksOrientaton = new List<AMOrientationTrack>();
         List<AMRotationTrack> tracksRotation = new List<AMRotationTrack>();
 
@@ -1195,37 +1195,36 @@ public class AMTake : MonoBehaviour {
 
     public void maintainCaches() {
         // re-updates cache if there are null values
-        foreach(AMTrack track in trackValues) {
-            bool shouldUpdateCache = false;
-            foreach(AMAction action in track.cache) {
-                if(action == null) {
-                    shouldUpdateCache = true;
-                    break;
+        if(trackValues != null) {
+            foreach(AMTrack track in trackValues) {
+                bool shouldUpdateCache = false;
+                if(track != null && track.cache != null) {
+                    foreach(AMAction action in track.cache) {
+                        if(action == null) {
+                            shouldUpdateCache = true;
+                            break;
+                        }
+                    }
+                    if(shouldUpdateCache) {
+                        track.updateCache();
+                    }
                 }
-            }
-            if(shouldUpdateCache) {
-                track.updateCache();
             }
         }
     }
-    public void previewFrameInvoker(float frame) {
-        previewFrame(frame, false, true, false);
-    }
-    /*public void executeActionsFromTime(float time) {
-        executeActions(time * frameRate);	
-    }*/
 
-    public void BuildSequence(string goName, bool autoKill) {
+    public void BuildSequence(string goName, bool autoKill, UpdateType updateType) {
         if(mSequence == null) {
             mSequence = new Sequence(
                 new SequenceParms()
                 .Id(string.Format("{0}:{1}", goName, name))
+                .UpdateType(updateType)
                 .AutoKill(autoKill)
                 .Loops(numLoop, loopMode)
                 .OnComplete(OnSequenceComplete, null));
-
+                        
             maintainCaches();
-            previewFrame(0.0f, false, false, false, true);
+            previewFrame(0.0f, false, true);
 
             int numTweensAdded = 0;
 
@@ -1268,7 +1267,7 @@ public class AMTake : MonoBehaviour {
     public void executeActions(float fromFrame = 0f) {
         float delay = fromFrame / (float)frameRate;
         maintainCaches();
-        previewFrame(fromFrame, false, false, false, true);	// do not skip camera switcher track; properties quick preview
+        previewFrame(fromFrame, false, true);	// do not skip camera switcher track; properties quick preview
         //setupCameraSwitcher(fromFrame);
         foreach(AMTrack track in trackValues) {
             foreach(AMAction action in track.cache) {

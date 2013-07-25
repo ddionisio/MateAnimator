@@ -192,6 +192,16 @@ public class AMPlugQuaternionSlerp : ABSTweenPlugin {
     // ===================================================================================
     // METHODS ---------------------------------------------------------------------------
 
+    /*protected override void SetValue(object p_value) {
+        Transform t = tweenObj.target as Transform;
+        if(t != null && t.rigidbody != null) {
+            Quaternion q = (Quaternion)p_value;
+            t.rigidbody.MoveRotation(q);
+        }
+        else
+            base.SetValue(p_value);
+    }*/
+
     /// <summary>
     /// Returns the speed-based duration based on the given speed x second.
     /// </summary>

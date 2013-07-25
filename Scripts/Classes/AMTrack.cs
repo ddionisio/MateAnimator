@@ -46,13 +46,15 @@ public class AMTrack : MonoBehaviour {
     }
 
     public void removeNullKeys() {
-        List<AMKey> newKeys = new List<AMKey>(keys.Count);
-        foreach(AMKey key in keys) {
-            if(key != null)
-                newKeys.Add(key);
-        }
+        if(keys != null) {
+            List<AMKey> newKeys = new List<AMKey>(keys.Count);
+            foreach(AMKey key in keys) {
+                if(key != null)
+                    newKeys.Add(key);
+            }
 
-        keys = newKeys;
+            keys = newKeys;
+        }
     }
 
     // draw track gizmos

@@ -71,18 +71,25 @@ public class AMTranslationAction : AMAction {
         if(path.Length <= 1) return null;
         if(getNumberOfFrames() <= 0) return null;
 
+        object tweenTarget = obj;
+        string tweenProp = isLocal ? "localPosition" : "position";
+
+        Tweener ret = null;
+
         if(hasCustomEase()) {
             if(path.Length == 2)
-                return HOTween.To(obj, getTime(frameRate), new TweenParms().Prop(isLocal ? "localPosition" : "position", new PlugVector3Path(path, false, PathType.Linear)).Ease(easeCurve));
+                ret = HOTween.To(tweenTarget, getTime(frameRate), new TweenParms().Prop(tweenProp, new PlugVector3Path(path, false, PathType.Linear)).Ease(easeCurve));
             else
-                return HOTween.To(obj, getTime(frameRate), new TweenParms().Prop(isLocal ? "localPosition" : "position", new PlugVector3Path(path, false)).Ease(easeCurve));
+                ret = HOTween.To(tweenTarget, getTime(frameRate), new TweenParms().Prop(tweenProp, new PlugVector3Path(path, false)).Ease(easeCurve));
         }
         else {
             if(path.Length == 2)
-                return HOTween.To(obj, getTime(frameRate), new TweenParms().Prop(isLocal ? "localPosition" : "position", new PlugVector3Path(path, false, PathType.Linear)).Ease((EaseType)easeType));
+                ret = HOTween.To(tweenTarget, getTime(frameRate), new TweenParms().Prop(tweenProp, new PlugVector3Path(path, false, PathType.Linear)).Ease((EaseType)easeType));
             else
-                return HOTween.To(obj, getTime(frameRate), new TweenParms().Prop(isLocal ? "localPosition" : "position", new PlugVector3Path(path, false)).Ease((EaseType)easeType));
+                ret = HOTween.To(tweenTarget, getTime(frameRate), new TweenParms().Prop(tweenProp, new PlugVector3Path(path, false)).Ease((EaseType)easeType));
         }
+
+        return ret;
     }
 
     public override void execute(int frameRate, float delay) {
@@ -124,5 +131,4 @@ public class AMTranslationAction : AMAction {
         }
         return a;
     }
-
 }

@@ -136,7 +136,7 @@ public class AMRotationTrack : AMTrack {
     // preview a frame in the scene view
     public override void previewFrame(float frame, AMTrack extraTrack = null) {
         if(!_obj) return;
-        if(cache.Count <= 0) return;
+        if(cache == null || cache.Count <= 0) return;
         if(cache[0] == null) updateCache();
         // if before or equal to first frame, or is the only frame
         if((frame <= (float)cache[0].startFrame) || ((cache[0] as AMRotationAction).endFrame == -1)) {

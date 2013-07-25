@@ -4122,8 +4122,10 @@ public class AMTimeline : EditorWindow {
         }
     }
     void setDirtyCache(AMTrack track) {
-        foreach(AMAction action in track.cache) {
-            EditorUtility.SetDirty(action);
+        if(track != null && track.cache != null) {
+            foreach(AMAction action in track.cache) {
+                EditorUtility.SetDirty(action);
+            }
         }
     }
     void setDirtyTakes(List<AMTake> takes) {

@@ -130,7 +130,7 @@ public class AMTranslationTrack : AMTrack {
     // preview a frame in the scene view
     public override void previewFrame(float frame, AMTrack extraTrack = null) {
         if(!_obj) return;
-        if(cache.Count <= 0) return;
+        if(cache == null || cache.Count <= 0) return;
         // if before first frame
         if(frame <= (float)cache[0].startFrame) {
             position = (cache[0] as AMTranslationAction).path[0];

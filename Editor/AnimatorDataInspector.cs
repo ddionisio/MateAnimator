@@ -35,6 +35,7 @@ public class AnimatorDataInspector : Editor {
         dat.sequenceLoadAll = GUILayout.Toggle(dat.sequenceLoadAll, "Build All Sequence On Start");
         dat.sequenceKillWhenDone = GUILayout.Toggle(dat.sequenceKillWhenDone, "Kill Sequence When Done");
         dat.playOnEnable = GUILayout.Toggle(dat.playOnEnable, "Play On Enable");
+        dat.updateType = (Holoville.HOTween.UpdateType)EditorGUILayout.EnumPopup("Update", dat.updateType);
 
         if(PrefabUtility.GetPrefabType(dat.gameObject) != PrefabType.Prefab) {
             if(GUILayout.Button("Edit Timeline")) {
@@ -46,6 +47,19 @@ public class AnimatorDataInspector : Editor {
                 }
                 else {
                     EditorWindow.GetWindow(typeof(AMTimeline));
+                }
+            }
+
+            if(GUILayout.Button("Deselect")) {
+                AMTimeline timeline = AMTimeline.window;
+
+                if(timeline != null) {
+                    timeline.aData = null;
+                    timeline.Repaint();
+
+                    if(Selection.activeGameObject == dat.gameObject) {
+                        Selection.activeGameObject = null;
+                    }
                 }
             }
         }

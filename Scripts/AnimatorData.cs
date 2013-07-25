@@ -16,6 +16,7 @@ public class AnimatorData : MonoBehaviour {
     public bool sequenceLoadAll = true;
     public bool sequenceKillWhenDone = false;
     public bool playOnEnable = false;
+    public UpdateType updateType = UpdateType.Update;
     // hide
 
     public bool isPlaying {
@@ -95,6 +96,8 @@ public class AnimatorData : MonoBehaviour {
     //private bool isLooping = false;
     //private float takeTime = 0f;
     private bool mStarted = false;
+
+    private bool mPlayOnEnable = false;
 
     public AMTake currentPlayingTake { get { return nowPlayingTake; } }
 
@@ -200,13 +203,28 @@ public class AnimatorData : MonoBehaviour {
     }
 
     void OnEnable() {
-        if(mStarted && playOnEnable && playOnStart) {
-            Play(playOnStart.name, true, 0f, false);
+        if(mStarted && playOnEnable) {
+            if(isPaused) {
+                if(mPlayOnEnable) {
+                    Resume();
+                    mPlayOnEnable = false;
+                }
+            }
+            else {
+                mPlayOnEnable = false;
+
+                if(playOnStart) {
+                    Play(playOnStart.name, true, 0f, false);
+                }
+            }
         }
     }
 
     void OnDisable() {
-        Stop();
+        if(isPlaying) {
+            Pause();
+            mPlayOnEnable = true;
+        }
     }
 
     void Awake() {
@@ -219,7 +237,7 @@ public class AnimatorData : MonoBehaviour {
         mStarted = true;
         if(sequenceLoadAll && takes != null) {
             foreach(AMTake take in takes)
-                take.BuildSequence(gameObject.name, sequenceKillWhenDone);
+                take.BuildSequence(gameObject.name, sequenceKillWhenDone, updateType);
         }
 
         if(playOnStart) {
@@ -320,7 +338,7 @@ public class AnimatorData : MonoBehaviour {
         nowPlayingTake = getTake(take_name);
         if(nowPlayingTake) {
             if(nowPlayingTake.sequence == null)
-                nowPlayingTake.BuildSequence(gameObject.name, sequenceKillWhenDone);
+                nowPlayingTake.BuildSequence(gameObject.name, sequenceKillWhenDone, updateType);
 
             if(nowPlayingTake.sequence != null) {
                 if(loop) {
@@ -350,7 +368,7 @@ public class AnimatorData : MonoBehaviour {
         if(!take) return;
         float startFrame = value;
         if(!isFrame) startFrame *= take.frameRate;	// convert time to frame
-        take.previewFrameInvoker(startFrame);
+        take.previewFrame(startFrame);
     }
 
     void Execute(AMTake take, bool isFrame = true, float value = 0f /* frame or time */) {
