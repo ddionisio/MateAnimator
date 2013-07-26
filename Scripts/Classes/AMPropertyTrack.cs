@@ -18,7 +18,9 @@ public class AMPropertyTrack : AMTrack {
         Vector3 = 5,
         Color = 6,
         Rect = 7,
-        String = 9
+        String = 9,
+        Vector4 = 10,
+        Quaternion = 11
     }
     public int valueType;
     public GameObject obj;
@@ -110,6 +112,10 @@ public class AMPropertyTrack : AMTrack {
             addKey(_frame, getPropertyValueColor());
         else if(valueType == (int)ValueType.Rect)
             addKey(_frame, getPropertyValueRect());
+        else if(valueType == (int)ValueType.Vector4)
+            addKey(_frame, getPropertyValueVector4());
+        else if(valueType == (int)ValueType.Quaternion)
+            addKey(_frame, getPropertyValueQuaternion());
         else
             Debug.LogError("Animator: Invalid ValueType " + valueType.ToString());
     }
@@ -203,6 +209,50 @@ public class AMPropertyTrack : AMTrack {
     }
     // add key rect
     public void addKey(int _frame, Rect val) {
+        foreach(AMPropertyKey key in keys) {
+            // if key exists on frame, update key
+            if(key.frame == _frame) {
+                key.setValue(val);
+                // update cache
+                updateCache();
+                return;
+            }
+        }
+        AMPropertyKey a = gameObject.AddComponent<AMPropertyKey>();
+        a.enabled = false;
+        a.frame = _frame;
+        a.setValue(val);
+        // set default ease type to linear
+        a.easeType = (int)EaseType.Linear;
+        // add a new key
+        keys.Add(a);
+        // update cache
+        updateCache();
+    }
+    // add key vector4
+    public void addKey(int _frame, Vector4 val) {
+        foreach(AMPropertyKey key in keys) {
+            // if key exists on frame, update key
+            if(key.frame == _frame) {
+                key.setValue(val);
+                // update cache
+                updateCache();
+                return;
+            }
+        }
+        AMPropertyKey a = gameObject.AddComponent<AMPropertyKey>();
+        a.enabled = false;
+        a.frame = _frame;
+        a.setValue(val);
+        // set default ease type to linear
+        a.easeType = (int)EaseType.Linear;
+        // add a new key
+        keys.Add(a);
+        // update cache
+        updateCache();
+    }
+    // add key quaternion
+    public void addKey(int _frame, Quaternion val) {
         foreach(AMPropertyKey key in keys) {
             // if key exists on frame, update key
             if(key.frame == _frame) {
@@ -336,6 +386,14 @@ public class AMPropertyTrack : AMTrack {
                 a.start_rect = (keys[i] as AMPropertyKey).rect;
                 if(a.endFrame != -1) a.end_rect = (keys[i + 1] as AMPropertyKey).rect;
             }
+            else if(_type == typeof(Vector4)) {
+                a.start_vect4 = (keys[i] as AMPropertyKey).vect4;
+                if(a.endFrame != -1) a.end_vect4 = (keys[i + 1] as AMPropertyKey).vect4;
+            }
+            else if(_type == typeof(Quaternion)) {
+                a.start_quat = (keys[i] as AMPropertyKey).quat;
+                if(a.endFrame != -1) a.end_quat = (keys[i + 1] as AMPropertyKey).quat;
+            }
             else {
                 Debug.LogError("Animator: Fatal Error, property type '" + _type.ToString() + "' not found.");
                 a.destroy();
@@ -381,6 +439,24 @@ public class AMPropertyTrack : AMTrack {
             return (Vector3)propertyInfo.GetValue(component, null);
 
     }
+    public Vector4 getPropertyValueVector4() {
+        // field
+        if(fieldInfo != null)
+            return (Vector4)fieldInfo.GetValue(component);
+        // property
+        else
+            return (Vector4)propertyInfo.GetValue(component, null);
+
+    }
+    public Quaternion getPropertyValueQuaternion() {
+        // field
+        if(fieldInfo != null)
+            return (Quaternion)fieldInfo.GetValue(component);
+        // property
+        else
+            return (Quaternion)propertyInfo.GetValue(component, null);
+
+    }
     public Color getPropertyValueColor() {
         // field
         if(fieldInfo != null)
@@ -406,7 +482,7 @@ public class AMPropertyTrack : AMTrack {
     }
 
     public static bool isValidType(Type t) {
-        if((t == typeof(int)) || (t == typeof(long)) || (t == typeof(float)) || (t == typeof(double)) || (t == typeof(Vector2)) || (t == typeof(Vector3)) || (t == typeof(Color)) || (t == typeof(Rect)))
+        if((t == typeof(int)) || (t == typeof(long)) || (t == typeof(float)) || (t == typeof(double)) || (t == typeof(Vector2)) || (t == typeof(Vector3)) || (t == typeof(Color)) || (t == typeof(Rect)) || (t == typeof(Vector4)) || (t == typeof(Quaternion)))
             return true;
         return false;
     }
@@ -431,6 +507,10 @@ public class AMPropertyTrack : AMTrack {
             valueType = (int)ValueType.Color;
         else if(t == typeof(Rect))
             valueType = (int)ValueType.Rect;
+        else if(t == typeof(Vector4))
+            valueType = (int)ValueType.Vector4;
+        else if(t == typeof(Quaternion))
+            valueType = (int)ValueType.Quaternion;
         else {
             valueType = -1;
             Debug.LogWarning("Animator: Value type " + t.ToString() + " is unsupported.");
@@ -581,6 +661,18 @@ public class AMPropertyTrack : AMTrack {
                 else if(propertyInfo != null) propertyInfo.SetValue(component, vCurrentRect, null);
                 refreshTransform();
             }
+            else if(action.valueType == (int)ValueType.Vector4) {
+                Vector4 vCurrentVector4 = Vector4.Lerp(action.start_vect4, action.end_vect4, t);
+                if(fieldInfo != null) fieldInfo.SetValue(component, vCurrentVector4);
+                else if(propertyInfo != null) propertyInfo.SetValue(component, vCurrentVector4, null);
+                refreshTransform();
+            }
+            else if(action.valueType == (int)ValueType.Quaternion) {
+                Quaternion vCurrentQuat = Quaternion.Slerp(action.start_quat, action.end_quat, t);
+                if(fieldInfo != null) fieldInfo.SetValue(component, vCurrentQuat);
+                else if(propertyInfo != null) propertyInfo.SetValue(component, vCurrentQuat, null);
+                refreshTransform();
+            }
             else {
                 Debug.LogError("Animator: Invalid ValueType " + valueType.ToString());
             }
@@ -652,6 +744,16 @@ public class AMPropertyTrack : AMTrack {
             Rect vStartRect = (cache[0] as AMPropertyAction).start_rect;
             if(codeLanguage == 0) s += "new Rect(" + vStartRect.x + "f, " + vStartRect.y + "f, " + vStartRect.width + "f, " + vStartRect.height + "f)";
             else s += "Rect(" + vStartRect.x + ", " + vStartRect.y + ", " + vStartRect.width + ", " + vStartRect.height + ")";
+        }
+        else if(valueType == (int)ValueType.Vector4) {
+            Vector4 vStartVector4 = (cache[0] as AMPropertyAction).start_vect4;
+            if(codeLanguage == 0) s += "new Vector4(" + vStartVector4.x + "f, " + vStartVector4.y + "f, " + vStartVector4.z + "f, " + vStartVector4.w + "f)";
+            else s += "Vector4(" + vStartVector4.x + ", " + vStartVector4.y + ", " + vStartVector4.z + ", " + vStartVector4.w + ")";
+        }
+        else if(valueType == (int)ValueType.Quaternion) {
+            Quaternion q = (cache[0] as AMPropertyAction).start_quat;
+            if(codeLanguage == 0) s += "new Quaternion(" + q.x + "f, " + q.y + "f, " + q.z + "f, " + q.w + "f)";
+            else s += "Quaternion(" + q.x + ", " + q.y + ", " + q.z + ", " + q.w + ")";
         }
         /*if(fieldInfo != null) s += ");";
         else */
@@ -738,6 +840,12 @@ public class AMPropertyTrack : AMTrack {
             AnimatorTimeline.JSONRect r = new AnimatorTimeline.JSONRect();
             r.setValue((cache[0] as AMPropertyAction).start_rect);
             init._rect = r;
+        }
+        else if(valueType == (int)ValueType.Vector4) {
+            Debug.LogError("need implement");
+        }
+        else if(valueType == (int)ValueType.Quaternion) {
+            Debug.LogError("need implement");
         }
         else {
             Debug.LogWarning("Animator: Error exporting JSON, unknown Property ValueType " + valueType);

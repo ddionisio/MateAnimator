@@ -35,6 +35,12 @@ public class AnimatorData : MonoBehaviour {
         }
     }
 
+    public bool isReversed {
+        get {
+            return nowPlayingTake != null && nowPlayingTake.sequence != null && nowPlayingTake.sequence.isReversed;
+        }
+    }
+
     public string takeName {
         get {
             if(nowPlayingTake != null) return nowPlayingTake.name;
@@ -207,17 +213,14 @@ public class AnimatorData : MonoBehaviour {
             if(isPaused) {
                 if(mPlayOnEnable) {
                     Resume();
-                    mPlayOnEnable = false;
                 }
             }
-            else {
-                mPlayOnEnable = false;
-
-                if(playOnStart) {
-                    Play(playOnStart.name, true, 0f, false);
-                }
+            else if(playOnStart) {
+                Play(playOnStart.name, true, 0f, false);
             }
         }
+
+        mPlayOnEnable = false;
     }
 
     void OnDisable() {
@@ -295,7 +298,6 @@ public class AnimatorData : MonoBehaviour {
 
     public void Resume() {
         if(nowPlayingTake == null) return;
-        //AMTween.Resume();
 
         if(nowPlayingTake.sequence != null)
             nowPlayingTake.sequence.Play();
@@ -312,6 +314,13 @@ public class AnimatorData : MonoBehaviour {
         }
 
         nowPlayingTake = null;
+    }
+
+    public void Reverse() {
+        if(nowPlayingTake == null) return;
+
+        if(nowPlayingTake.sequence != null)
+            nowPlayingTake.sequence.Reverse();
     }
 
     // play take by name from time
@@ -335,7 +344,14 @@ public class AnimatorData : MonoBehaviour {
     }
 
     void Play(string take_name, bool isFrame, float value, bool loop) {
-        nowPlayingTake = getTake(take_name);
+        AMTake newPlayTake = getTake(take_name);
+
+        if(newPlayTake != nowPlayingTake) {
+            Stop();
+        }
+
+        nowPlayingTake = newPlayTake;
+
         if(nowPlayingTake) {
             if(nowPlayingTake.sequence == null)
                 nowPlayingTake.BuildSequence(gameObject.name, sequenceKillWhenDone, updateType);

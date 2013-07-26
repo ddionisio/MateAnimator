@@ -64,16 +64,22 @@ public class AMPropertyAction : AMAction {
         }
     }
     public double start_val;		// value as double (includes int/long)
-    public Vector2 start_vect2;
-    public Vector3 start_vect3;
-    public Color start_color;
-    public Rect start_rect;
+    public Vector4 start_vect4;
+
+    public Vector2 start_vect2 { get { return new Vector2(start_vect4.x, start_vect4.y); } set { start_vect4.Set(value.x, value.y, 0, 0); } }
+    public Vector3 start_vect3 { get { return new Vector3(start_vect4.x, start_vect4.y, start_vect4.z); } set { start_vect4.Set(value.x, value.y, value.z, 0); } }
+    public Color start_color { get { return new Color(start_vect4.x, start_vect4.y, start_vect4.z, start_vect4.w); } set { start_vect4.Set(value.r, value.g, value.b, value.a); } }
+    public Rect start_rect { get { return new Rect(start_vect4.x, start_vect4.y, start_vect4.z, start_vect4.w); } set { start_vect4.Set(value.xMin, value.yMin, value.width, value.height); } }
+    public Quaternion start_quat { get { return new Quaternion(start_vect4.x, start_vect4.y, start_vect4.z, start_vect4.w); } set { start_vect4.Set(value.x, value.y, value.z, value.w); } }
 
     public double end_val;			// value as double (includes int/long)
-    public Vector2 end_vect2;
-    public Vector3 end_vect3;
-    public Color end_color;
-    public Rect end_rect;
+    public Vector4 end_vect4;
+
+    public Vector2 end_vect2 { get { return new Vector2(end_vect4.x, end_vect4.y); } set { end_vect4.Set(value.x, value.y, 0, 0); } }
+    public Vector3 end_vect3 { get { return new Vector3(end_vect4.x, end_vect4.y, end_vect4.z); } set { end_vect4.Set(value.x, value.y, value.z, 0); } }
+    public Color end_color { get { return new Color(end_vect4.x, end_vect4.y, end_vect4.z, end_vect4.w); } set { end_vect4.Set(value.r, value.g, value.b, value.a); } }
+    public Rect end_rect { get { return new Rect(end_vect4.x, end_vect4.y, end_vect4.z, end_vect4.w); } set { end_vect4.Set(value.xMin, value.yMin, value.width, value.height); } }
+    public Quaternion end_quat { get { return new Quaternion(end_vect4.x, end_vect4.y, end_vect4.z, end_vect4.w); } set { end_vect4.Set(value.x, value.y, value.z, value.w); } }
 
     public override string ToString(int codeLanguage, int frameRate) {
         /*if (endFrame == -1 || targetsAreEqual()) return null;
@@ -126,7 +132,7 @@ public class AMPropertyAction : AMAction {
         else if(propertyInfo != null) {
             varName = propertyName;
         }
-
+        //return HOTween.To(obj, getTime(frameRate), new TweenParms().Prop(isLocal ? "localRotation" : "rotation", new AMPlugQuaternionSlerp(endRotation)).Ease(easeCurve));
         if(varName != null) {
             if(hasCustomEase()) {
                 switch((AMPropertyTrack.ValueType)valueType) {
@@ -146,6 +152,10 @@ public class AMPropertyAction : AMAction {
                         return HOTween.To(component, getTime(frameRate), new TweenParms().Prop(varName, end_color).Ease(easeCurve));
                     case AMPropertyTrack.ValueType.Rect:
                         return HOTween.To(component, getTime(frameRate), new TweenParms().Prop(varName, end_rect).Ease(easeCurve));
+                    case AMPropertyTrack.ValueType.Vector4:
+                        return HOTween.To(component, getTime(frameRate), new TweenParms().Prop(varName, end_vect4).Ease(easeCurve));
+                    case AMPropertyTrack.ValueType.Quaternion:
+                        return HOTween.To(component, getTime(frameRate), new TweenParms().Prop(varName, new AMPlugQuaternionSlerp(end_quat)).Ease(easeCurve));
                 }
             }
             else {
@@ -166,6 +176,10 @@ public class AMPropertyAction : AMAction {
                         return HOTween.To(component, getTime(frameRate), new TweenParms().Prop(varName, end_color).Ease((EaseType)easeType));
                     case AMPropertyTrack.ValueType.Rect:
                         return HOTween.To(component, getTime(frameRate), new TweenParms().Prop(varName, end_rect).Ease((EaseType)easeType));
+                    case AMPropertyTrack.ValueType.Vector4:
+                        return HOTween.To(component, getTime(frameRate), new TweenParms().Prop(varName, end_vect4).Ease((EaseType)easeType));
+                    case AMPropertyTrack.ValueType.Quaternion:
+                        return HOTween.To(component, getTime(frameRate), new TweenParms().Prop(varName, new AMPlugQuaternionSlerp(end_quat)).Ease((EaseType)easeType));
                 }
             }
         }
@@ -262,6 +276,8 @@ public class AMPropertyAction : AMAction {
         if(valueType == (int)AMPropertyTrack.ValueType.Vector3) return (start_vect3 == end_vect3);
         if(valueType == (int)AMPropertyTrack.ValueType.Color) return (start_color == end_color); //return start_color.ToString()+" -> "+end_color.ToString();
         if(valueType == (int)AMPropertyTrack.ValueType.Rect) return (start_rect == end_rect); //return start_rect.ToString()+" -> "+end_rect.ToString();
+        if(valueType == (int)AMPropertyTrack.ValueType.Vector4) return (start_vect4 == end_vect4);
+        if(valueType == (int)AMPropertyTrack.ValueType.Quaternion) return (start_quat == end_quat);
 
         Debug.LogError("Animator: Invalid ValueType " + valueType);
         return false;
@@ -276,6 +292,8 @@ public class AMPropertyAction : AMAction {
         if(valueType == (int)AMPropertyTrack.ValueType.Vector3) return start_vect3;
         if(valueType == (int)AMPropertyTrack.ValueType.Color) return start_color; //return start_color.ToString()+" -> "+end_color.ToString();
         if(valueType == (int)AMPropertyTrack.ValueType.Rect) return start_rect; //return start_rect.ToString()+" -> "+end_rect.ToString();
+        if(valueType == (int)AMPropertyTrack.ValueType.Vector4) return start_vect4;
+        if(valueType == (int)AMPropertyTrack.ValueType.Quaternion) return start_quat;
         return "Unknown";
     }
     public object getEndValue() {
@@ -287,6 +305,8 @@ public class AMPropertyAction : AMAction {
         if(valueType == (int)AMPropertyTrack.ValueType.Vector3) return end_vect3;
         if(valueType == (int)AMPropertyTrack.ValueType.Color) return end_color; //return start_color.ToString()+" -> "+end_color.ToString();
         if(valueType == (int)AMPropertyTrack.ValueType.Rect) return end_rect; //return start_rect.ToString()+" -> "+end_rect.ToString();
+        if(valueType == (int)AMPropertyTrack.ValueType.Vector4) return end_vect4;
+        if(valueType == (int)AMPropertyTrack.ValueType.Quaternion) return end_quat;
         return "Unknown";
     }
 

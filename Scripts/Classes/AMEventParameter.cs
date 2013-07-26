@@ -25,19 +25,24 @@ public class AMEventParameter {
 
     public string paramName;
 
-    public bool val_bool;
     public int valueType;
+
     public int val_int;
-    public float val_float;
-    public Vector2 val_vect2;
-    public Vector3 val_vect3;
-    public Vector4 val_vect4;
-    public Color val_color;
-    public Rect val_rect;
     public string val_string;
+    public Vector4 val_vect4;
     public UnityEngine.Object val_obj;
     public List<AMEventParameter> lsArray = new List<AMEventParameter>();
 
+    public bool val_bool { get { return val_int == 1; } set { val_int = value ? 1 : 0; } }
+    public long val_long { get { return val_int; } set { val_int = (int)value; } }
+    public float val_float { get { return val_vect4.x; } set { val_vect4.Set(value, 0,0,0); } }
+    public double val_double { get { return val_float; } set { val_float = (float)value; } }
+    public Vector2 val_vect2 { get { return new Vector2(val_vect4.x, val_vect4.y); } set { val_vect4.Set(value.x, value.y, 0, 0); } }
+    public Vector3 val_vect3 { get { return new Vector3(val_vect4.x, val_vect4.y, val_vect4.z); } set { val_vect4.Set(value.x, value.y, value.z, 0); } }
+
+    public Color val_color { get { return new Color(val_vect4.x, val_vect4.y, val_vect4.z, val_vect4.w); } set { val_vect4.Set(value.r, value.g, value.b, value.a); } }
+    public Rect val_rect { get { return new Rect(val_vect4.x, val_vect4.y, val_vect4.z, val_vect4.w); } set { val_vect4.Set(value.xMin, value.yMin, value.width, value.height); } }
+    
     public AMEventParameter() {
 
     }
@@ -55,9 +60,23 @@ public class AMEventParameter {
         }
         return false;
     }
+    public bool setLong(int val_long) {
+        if(this.val_long != val_long) {
+            this.val_long = val_long;
+            return true;
+        }
+        return false;
+    }
     public bool setFloat(float val_float) {
         if(this.val_float != val_float) {
             this.val_float = val_float;
+            return true;
+        }
+        return false;
+    }
+    public bool setDouble(double val_double) {
+        if(this.val_double != val_double) {
+            this.val_double = val_double;
             return true;
         }
         return false;
@@ -229,12 +248,16 @@ public class AMEventParameter {
     public void fromObject(object dat) {
         switch((ValueType)valueType) {
             case ValueType.Integer:
-            case ValueType.Long:
                 val_int = Convert.ToInt32(dat);
                 break;
+            case ValueType.Long:
+                val_long = Convert.ToInt64(dat);
+                break;
             case ValueType.Float:
-            case ValueType.Double:
                 val_float = Convert.ToSingle(dat);
+                break;
+            case ValueType.Double:
+                val_double = Convert.ToDouble(dat);
                 break;
             case ValueType.Vector2:
                 val_vect2 = (Vector2)dat;
@@ -291,8 +314,10 @@ public class AMEventParameter {
             if(val_string == null || val_string.Length <= 0) return '\0';
             return (val_string[0]/* as object*/);
         }
-        if(valueType == (int)ValueType.Integer || valueType == (int)ValueType.Long) return (val_int/* as object*/);
-        if(valueType == (int)ValueType.Float || valueType == (int)ValueType.Double) return (val_float/* as object*/);
+        if(valueType == (int)ValueType.Integer) return (val_int/* as object*/);
+        if(valueType == (int)ValueType.Long) return (val_long/* as object*/);
+        if(valueType == (int)ValueType.Float) return (val_float/* as object*/);
+        if(valueType == (int)ValueType.Double) return (val_double/* as object*/);
         if(valueType == (int)ValueType.Vector2) return (val_vect2/* as object*/);
         if(valueType == (int)ValueType.Vector3) return (val_vect3/* as object*/);
         if(valueType == (int)ValueType.Vector4) return (val_vect4/* as object*/);
@@ -321,17 +346,31 @@ public class AMEventParameter {
                 }
                 return arrObj;
             }
-            if(lsArray[0].valueType == (int)ValueType.Integer || lsArray[0].valueType == (int)ValueType.Long) {
+            if(lsArray[0].valueType == (int)ValueType.Integer) {
                 int[] arrObj = new int[lsArray.Count];
                 for(int i = 0; i < lsArray.Count; i++) {
                     arrObj[i] = lsArray[i].val_int;
                 }
                 return arrObj;
             }
-            if(lsArray[0].valueType == (int)ValueType.Float || lsArray[0].valueType == (int)ValueType.Double) {
+            if(lsArray[0].valueType == (int)ValueType.Long) {
+                long[] arrObj = new long[lsArray.Count];
+                for(int i = 0; i < lsArray.Count; i++) {
+                    arrObj[i] = lsArray[i].val_long;
+                }
+                return arrObj;
+            }
+            if(lsArray[0].valueType == (int)ValueType.Float) {
                 float[] arrObj = new float[lsArray.Count];
                 for(int i = 0; i < lsArray.Count; i++) {
                     arrObj[i] = lsArray[i].val_float;
+                }
+                return arrObj;
+            }
+            if(lsArray[0].valueType == (int)ValueType.Double) {
+                double[] arrObj = new double[lsArray.Count];
+                for(int i = 0; i < lsArray.Count; i++) {
+                    arrObj[i] = lsArray[i].val_double;
                 }
                 return arrObj;
             }
@@ -539,15 +578,9 @@ public class AMEventParameter {
 
     public AMEventParameter CreateClone() {
         AMEventParameter a = new AMEventParameter();
-        a.val_bool = val_bool;
         a.valueType = valueType;
         a.val_int = val_int;
-        a.val_float = val_float;
-        a.val_vect2 = val_vect2;
-        a.val_vect3 = val_vect3;
         a.val_vect4 = val_vect4;
-        a.val_color = val_color;
-        a.val_rect = val_rect;
         a.val_string = val_string;
         a.val_obj = val_obj;
         foreach(AMEventParameter e in lsArray) {

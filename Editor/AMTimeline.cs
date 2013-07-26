@@ -2860,6 +2860,22 @@ public class AMTimeline : EditorWindow {
                     refreshGizmos();
                 }
             }
+            else if((sTrack as AMPropertyTrack).valueType == (int)AMPropertyTrack.ValueType.Vector4
+                || (sTrack as AMPropertyTrack).valueType == (int)AMPropertyTrack.ValueType.Quaternion) {
+                rectField.height = 40f;
+                if(pKey.setValue(EditorGUI.Vector4Field(rectField, propertyLabel, pKey.vect4))) {
+                    // update cache when modifying varaibles
+                    sTrack.updateCache();
+                    AMCodeView.refresh();
+                    // preview new value
+                    aData.getCurrentTake().previewFrame(aData.getCurrentTake().selectedFrame);
+                    // save data
+                    setDirtyKeys(aData.getCurrentTake().getTrack(aData.getCurrentTake().selectedTrack));
+                    setDirtyCache(aData.getCurrentTake().getTrack(aData.getCurrentTake().selectedTrack));
+                    // refresh component
+                    refreshGizmos();
+                }
+            }
             // property ease, show if not last key (check for action; there is no rotation action for last key). do not show for morph channels, because it is shown before the parameters
             if(pKey != (sTrack as AMPropertyTrack).keys[(sTrack as AMPropertyTrack).keys.Count - 1]) {
                 Rect rectEasePicker = new Rect(0f, rectField.y + rectField.height + height_inspector_space, width_inspector - margin, 0f);

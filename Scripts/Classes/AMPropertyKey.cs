@@ -5,15 +5,34 @@ using System;
 
 [AddComponentMenu("")]
 public class AMPropertyKey : AMKey {
+    //union for single values
     public double val;	// value as double
-    public Vector2 vect2;
-    public Vector3 vect3;
-    public Color color;
-    public Rect rect;
+
+    //union for vectors, color, rect
+    public Vector4 vect4;
+    public Vector2 vect2 { get { return new Vector2(vect4.x, vect4.y); } set { vect4.Set(value.x, value.y, 0, 0); } }
+    public Vector3 vect3 { get { return new Vector3(vect4.x, vect4.y, vect4.z); } set { vect4.Set(value.x, value.y, value.z, 0); } }
+    public Color color { get { return new Color(vect4.x, vect4.y, vect4.z, vect4.w); } set { vect4.Set(value.r, value.g, value.b, value.a); } }
+    public Rect rect { get { return new Rect(vect4.x, vect4.y, vect4.z, vect4.w); } set { vect4.Set(value.xMin, value.yMin, value.width, value.height); } }
+    public Quaternion quat { get { return new Quaternion(vect4.x, vect4.y, vect4.z, vect4.w); } set { vect4.Set(value.x, value.y, value.z, value.w); } }
 
     public bool setValue(float val) {
         if(this.val != (double)val) {
             this.val = (double)val;
+            return true;
+        }
+        return false;
+    }
+    public bool setValue(Quaternion quat) {
+        if(this.quat != quat) {
+            this.quat = quat;
+            return true;
+        }
+        return false;
+    }
+    public bool setValue(Vector4 vect4) {
+        if(this.vect4 != vect4) {
+            this.vect4 = vect4;
             return true;
         }
         return false;
@@ -78,10 +97,7 @@ public class AMPropertyKey : AMKey {
         a.enabled = false;
         a.frame = frame;
         a.val = val;
-        a.vect2 = vect2;
-        a.vect3 = vect3;
-        a.color = color;
-        a.rect = rect;
+        a.vect4 = vect4;
         a.easeType = easeType;
         a.customEase = new List<float>(customEase);
 
