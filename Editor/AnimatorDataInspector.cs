@@ -38,27 +38,26 @@ public class AnimatorDataInspector : Editor {
         dat.updateType = (Holoville.HOTween.UpdateType)EditorGUILayout.EnumPopup("Update", dat.updateType);
 
         if(PrefabUtility.GetPrefabType(dat.gameObject) != PrefabType.Prefab) {
-            if(GUILayout.Button("Edit Timeline")) {
-                AMTimeline timeline = AMTimeline.window;
+            AMTimeline timeline = AMTimeline.window;
 
-                if(timeline != null) {
-                    timeline.aData = dat;
-                    timeline.Repaint();
-                }
-                else {
-                    EditorWindow.GetWindow(typeof(AMTimeline));
-                }
-            }
-
-            if(GUILayout.Button("Deselect")) {
-                AMTimeline timeline = AMTimeline.window;
-
-                if(timeline != null) {
+            if(timeline != null && dat == timeline.aData) {
+                if(GUILayout.Button("Deselect")) {
                     timeline.aData = null;
                     timeline.Repaint();
 
                     if(Selection.activeGameObject == dat.gameObject) {
                         Selection.activeGameObject = null;
+                    }
+                }
+            }
+            else {
+                if(GUILayout.Button("Edit Timeline")) {
+                    if(timeline != null) {
+                        timeline.aData = dat;
+                        timeline.Repaint();
+                    }
+                    else {
+                        EditorWindow.GetWindow(typeof(AMTimeline));
                     }
                 }
             }
