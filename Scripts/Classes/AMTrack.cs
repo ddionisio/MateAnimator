@@ -288,4 +288,18 @@ public class AMTrack : MonoBehaviour {
         return lsKeyRatios.ToArray();
     }
 
+    protected virtual AMTrack doDuplicate(AMTake newTake) {
+        return null;
+    }
+
+    public AMTrack duplicate(AMTake newTake) {
+        AMTrack ntrack = doDuplicate(newTake);
+        if(ntrack != null) {
+            ntrack.id = id;
+            ntrack.parentTake = newTake;
+            ntrack.name = name;
+        }
+
+        return ntrack;
+    }
 }

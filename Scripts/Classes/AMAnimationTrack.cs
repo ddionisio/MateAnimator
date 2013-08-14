@@ -119,4 +119,13 @@ public class AMAnimationTrack : AMTrack {
 
         return lsFlagToKeep;
     }
+
+    protected override AMTrack doDuplicate(AMTake newTake) {
+        AMAnimationTrack ntrack = newTake.gameObject.AddComponent<AMAnimationTrack>();
+        ntrack.enabled = false;
+
+        ntrack.obj = obj;
+
+        return ntrack;
+    }
 }

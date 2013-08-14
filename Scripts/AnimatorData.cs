@@ -24,7 +24,7 @@ public class AnimatorData : MonoBehaviour {
             if(nowPlayingTake == null) return false;
 
             Sequence seq = nowPlayingTake.sequence;
-                        
+
             return seq != null && !(seq.isPaused || seq.isComplete);
         }
     }
@@ -105,7 +105,11 @@ public class AnimatorData : MonoBehaviour {
 
     private bool mPlayOnEnable = false;
 
+    private int _prevTake = -1;
+
     public AMTake currentPlayingTake { get { return nowPlayingTake; } }
+
+    public int prevTake { get { return _prevTake; } }
 
     public GameObject dataHolder {
         get {
@@ -366,7 +370,7 @@ public class AnimatorData : MonoBehaviour {
 
                 float startTime = value;
                 if(isFrame) startTime /= nowPlayingTake.frameRate;
-                                
+
                 nowPlayingTake.sequence.Play();
                 nowPlayingTake.sequence.GoTo(startTime);
             }
@@ -402,16 +406,14 @@ public class AnimatorData : MonoBehaviour {
 
     }
 
-    public int getCurrentTakeValue() {
-        return currentTake;
-    }
-
     public int getTakeCount() {
         return takes.Count;
     }
 
     public bool setCurrentTakeValue(int _take) {
         if(_take != currentTake) {
+            _prevTake = currentTake;
+
             // reset preview to frame 1
             getCurrentTake().previewFrame(1f);
             // change take
@@ -424,6 +426,10 @@ public class AnimatorData : MonoBehaviour {
     public AMTake getCurrentTake() {
         if(takes == null || currentTake >= takes.Count) return null;
         return takes[currentTake];
+    }
+
+    public AMTake getPreviousTake() {
+        return takes != null && _prevTake >= 0 && _prevTake < takes.Count ? takes[_prevTake] : null;
     }
 
     public AMTake getTake(string takeName) {
@@ -457,6 +463,65 @@ public class AnimatorData : MonoBehaviour {
 
     }
 
+    /// <summary>
+    /// This will only duplicate the tracks and groups
+    /// </summary>
+    /// <param name="take"></param>
+    public void duplicateTake(AMTake dupTake) {
+        AMTake a = AMTake.NewInstance(dataHolder);
+
+        a.name = dupTake.name;
+        makeTakeNameUnique(a);
+        a.numLoop = dupTake.numLoop;
+        a.loopMode = dupTake.loopMode;
+        a.frameRate = dupTake.frameRate;
+        a.numFrames = dupTake.numFrames;
+        a.startFrame = dupTake.startFrame;
+        a.selectedFrame = 1;
+        a.selectedTrack = dupTake.selectedTrack;
+        a.selectedGroup = dupTake.selectedGroup;
+        a.playbackSpeedIndex = 2;
+        //a.lsTracks = new List<AMTrack>();
+        //a.dictTracks = new Dictionary<int,AMTrack>();
+
+        if(dupTake.rootGroup != null) {
+            a.rootGroup = dupTake.rootGroup.duplicate();
+        }
+        else {
+            a.initGroups();
+        }
+
+        a.group_count = dupTake.group_count;
+
+        if(dupTake.groupKeys != null)
+            a.groupKeys = new List<int>(dupTake.groupKeys);
+
+        if(dupTake.groupValues != null) {
+            a.groupValues = new List<AMGroup>();
+            foreach(AMGroup grp in dupTake.groupValues) {
+                a.groupValues.Add(grp.duplicate());
+            }
+        }
+
+        a.track_count = dupTake.track_count;
+
+        if(dupTake.trackKeys != null)
+            a.trackKeys = new List<int>(dupTake.trackKeys);
+
+        if(dupTake.trackValues != null) {
+            a.trackValues = new List<AMTrack>();
+            foreach(AMTrack track in dupTake.trackValues) {
+                a.trackValues.Add(track.duplicate(a));
+            }
+        }
+        a.contextSelection = new List<int>();
+        a.ghostSelection = new List<int>();
+        a.contextSelectionTracks = new List<int>();
+
+        takes.Add(a);
+        selectTake(takes.Count - 1);
+    }
+
     public void deleteTake(int index) {
         //if(shouldCheckDependencies) shouldCheckDependencies = false;
         if(playOnStart == takes[index]) playOnStart = null;
@@ -470,6 +535,9 @@ public class AnimatorData : MonoBehaviour {
     }
 
     public void selectTake(int index) {
+        if(currentTake != index)
+            _prevTake = currentTake;
+
         currentTake = index;
     }
 
@@ -498,11 +566,12 @@ public class AnimatorData : MonoBehaviour {
     }
 
     public string[] getTakeNames() {
-        string[] names = new string[takes.Count + 1];
+        string[] names = new string[takes.Count + 2];
         for(int i = 0; i < takes.Count; i++) {
             names[i] = takes[i].name;
         }
-        names[names.Length - 1] = "Create new...";
+        names[names.Length - 2] = "Create new...";
+        names[names.Length - 1] = "Duplicate current...";
         return names;
     }
 

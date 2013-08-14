@@ -149,6 +149,9 @@ public class AMOrientationTrack : AMTrack {
         // draw line to target
         if(!inPlayMode) {
             foreach(AMAction action in cache) {
+                if(action == null)
+                    continue;
+
                 if((action as AMOrientationAction).startFrame > frame) break;
                 if(frame >= (action as AMOrientationAction).startFrame && frame <= (action as AMOrientationAction).endFrame) {
                     if((action as AMOrientationAction).isLookFollow() && (action as AMOrientationAction).startTarget) {
@@ -232,5 +235,14 @@ public class AMOrientationTrack : AMTrack {
         }
 
         return new List<GameObject>();
+    }
+
+    protected override AMTrack doDuplicate(AMTake newTake) {
+        AMOrientationTrack ntrack = newTake.gameObject.AddComponent<AMOrientationTrack>();
+        ntrack.enabled = false;
+
+        ntrack.obj = obj;
+
+        return ntrack;
     }
 }

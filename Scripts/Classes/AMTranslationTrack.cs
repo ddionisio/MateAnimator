@@ -241,7 +241,7 @@ public class AMTranslationTrack : AMTrack {
     // draw gizmos
     public override void drawGizmos(float gizmo_size) {
         foreach(AMTranslationAction action in cache) {
-            if(action.path.Length > 1) {
+            if(action != null && action.path.Length > 1) {
                 if(_isLocal && _obj != null && _obj.parent != null) {
                     AMGizmo.DrawPathRelative(_obj.parent, action.path, new Color(255f, 255f, 255f, .5f));
                     Gizmos.color = Color.green;
@@ -352,4 +352,14 @@ public class AMTranslationTrack : AMTrack {
         return new List<GameObject>();
     }
 
+    protected override AMTrack doDuplicate(AMTake newTake) {
+        AMTranslationTrack ntrack = newTake.gameObject.AddComponent<AMTranslationTrack>();
+        ntrack.enabled = false;
+
+        ntrack._obj = _obj;
+        ntrack._isLocal = _isLocal;
+        ntrack.cachedInitialPosition = cachedInitialPosition;
+
+        return ntrack;
+    }
 }

@@ -272,4 +272,15 @@ public class AMRotationTrack : AMTrack {
         }
         return new List<GameObject>();
     }
+
+    protected override AMTrack doDuplicate(AMTake newTake) {
+        AMRotationTrack ntrack = newTake.gameObject.AddComponent<AMRotationTrack>();
+        ntrack.enabled = false;
+
+        ntrack._obj = _obj;
+        ntrack._isLocal = _isLocal;
+        ntrack.cachedInitialRotation = cachedInitialRotation;
+
+        return ntrack;
+    }
 }

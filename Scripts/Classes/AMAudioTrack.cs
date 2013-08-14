@@ -144,4 +144,13 @@ public class AMAudioTrack : AMTrack {
         }
         return lsFlagToKeep;
     }
+
+    protected override AMTrack doDuplicate(AMTake newTake) {
+        AMAudioTrack ntrack = newTake.gameObject.AddComponent<AMAudioTrack>();
+        ntrack.enabled = false;
+
+        ntrack.audioSource = audioSource;
+
+        return ntrack;
+    }
 }

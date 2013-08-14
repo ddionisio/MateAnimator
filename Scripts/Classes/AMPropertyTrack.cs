@@ -889,4 +889,23 @@ public class AMPropertyTrack : AMTrack {
         }
         return lsFlagToKeep;
     }
+
+    protected override AMTrack doDuplicate(AMTake newTake) {
+        AMPropertyTrack ntrack = newTake.gameObject.AddComponent<AMPropertyTrack>();
+        ntrack.enabled = false;
+
+        ntrack.valueType = valueType;
+        ntrack.obj = obj;
+        ntrack.component = component;
+        ntrack.propertyName = propertyName;
+        ntrack.fieldName = fieldName;
+        ntrack.methodName = methodName;
+
+        if(methodParameterTypes != null) {
+            ntrack.methodParameterTypes = new string[methodParameterTypes.Length];
+            Array.Copy(methodParameterTypes, ntrack.methodParameterTypes, methodParameterTypes.Length);
+        }
+        
+        return ntrack;
+    }
 }

@@ -30,7 +30,7 @@ public class AMTimeline : EditorWindow {
                     //Debug.Log("previous data: " + _aData.name + " hash: " + _aData.GetHashCode());
 
                     _aData.isAnimatorOpen = false;
-                                        
+
                     if(aData.takes != null) {
                         foreach(AMTake take in aData.takes) {
                             take.cleanRemovedKeys();
@@ -78,7 +78,7 @@ public class AMTimeline : EditorWindow {
                     ReloadOtherWindows();
                 }
                 //else
-                    //Debug.Log("no data");
+                //Debug.Log("no data");
             }
         }
     }// AnimatorData component, holds all data
@@ -464,10 +464,7 @@ public class AMTimeline : EditorWindow {
 
         // add track menu
         buildAddTrackMenu();
-        // undo callback
-        undoCallback = typeof(EditorApplication).GetField("undoRedoPerformed", BindingFlags.NonPublic | BindingFlags.Static);
-        EditorApplication.CallbackFunction undoCBVal = (EditorApplication.CallbackFunction)undoCallback.GetValue(null);
-        undoCBVal += OnUndoRedo;
+
         // playmode callback
         EditorApplication.playmodeStateChanged += OnPlayMode;
 
@@ -475,10 +472,6 @@ public class AMTimeline : EditorWindow {
         AMTake.isProLicense = PlayerSettings.advancedLicense;
     }
     void OnDisable() {
-        undoCallback = typeof(EditorApplication).GetField("undoRedoPerformed", BindingFlags.NonPublic | BindingFlags.Static);
-        EditorApplication.CallbackFunction undoCBVal = (EditorApplication.CallbackFunction)undoCallback.GetValue(null);
-        undoCBVal -= OnUndoRedo;
-
         EditorApplication.playmodeStateChanged -= OnPlayMode;
 
         window = null;
@@ -488,7 +481,7 @@ public class AMTimeline : EditorWindow {
 
             // preview first frame
             aData.getCurrentTake().previewFrame(1f);
-                        
+
             aData = null;
 
             // reset property select track
@@ -648,7 +641,7 @@ public class AMTimeline : EditorWindow {
                     // create component
                     if(!go) go = new GameObject("AnimatorData");
                     aData = go.AddComponent<AnimatorData>();
-                    
+
                     oData = AMOptionsFile.loadFile();
                 }
                 return;
@@ -851,13 +844,13 @@ public class AMTimeline : EditorWindow {
         }
         else {
             // show popup
-            if(aData.setCurrentTakeValue(EditorGUI.Popup(rectTakePopup, aData.getCurrentTakeValue(), aData.getTakeNames(), EditorStyles.toolbarPopup))) {
+            if(aData.setCurrentTakeValue(EditorGUI.Popup(rectTakePopup, aData.currentTake, aData.getTakeNames(), EditorStyles.toolbarPopup))) {
                 // take changed
 
                 // reset code view dictionaries
                 AMCodeView.resetTrackDictionary();
                 // if not creating new take
-                if(aData.getCurrentTakeValue() != aData.takes.Count) {
+                if(aData.currentTake < aData.takes.Count) {
                     // select current frame
                     timelineSelectFrame(aData.getCurrentTake().selectedTrack, aData.getCurrentTake().selectedFrame);
                     // save data
@@ -901,12 +894,32 @@ public class AMTimeline : EditorWindow {
         if(GUI.color.a < 1f) GUI.color = new Color(GUI.color.r, GUI.color.g, GUI.color.b, 1f);
         #endregion
         #region create new take after deleting
-        if(aData.getCurrentTakeValue() == aData.takes.Count) {
-            aData.currentTake -= 1; // decrement for undo
+        if(aData.currentTake == aData.takes.Count) {
+            aData.currentTake = aData.takes.Count - 1; // decrement for undo
             registerUndo("New Take");
-            aData.currentTake += 1;
+            aData.currentTake = aData.takes.Count;
             cancelTextEditting();
             aData.addTake();
+            // save data
+            EditorUtility.SetDirty(aData);
+            setDirtyTakes(aData.takes);
+            // refresh component
+            refreshGizmos();
+        }
+        else if(aData.currentTake == aData.takes.Count + 1) {
+            aData.currentTake = aData.takes.Count - 1; // decrement for undo
+            registerUndo("New Duplicate Take");
+
+            cancelTextEditting();
+
+            AMTake prevTake = aData.getPreviousTake(); //if(takes == null || currentTake >= takes.Count) return null;
+            if(prevTake != null)
+                aData.duplicateTake(prevTake);
+            else
+                aData.addTake();
+
+            aData.currentTake = aData.takes.Count - 1;
+            
             // save data
             EditorUtility.SetDirty(aData);
             setDirtyTakes(aData.takes);
@@ -1142,7 +1155,7 @@ public class AMTimeline : EditorWindow {
         #endregion
         #region playback speed popup
         Rect rectPopupPlaybackSpeed = new Rect(rectSkipForward.x + rectSkipForward.width + margin, height_indicator_footer / 2f - 15f / 2f, width_playback_speed, rectBtnTogglePlay.height);
-        aData.takes[aData.getCurrentTakeValue()].playbackSpeedIndex = EditorGUI.Popup(rectPopupPlaybackSpeed, aData.takes[aData.getCurrentTakeValue()].playbackSpeedIndex, playbackSpeed);
+        aData.takes[aData.currentTake].playbackSpeedIndex = EditorGUI.Popup(rectPopupPlaybackSpeed, aData.takes[aData.currentTake].playbackSpeedIndex, playbackSpeed);
         #endregion
         #region scrub controls
         GUIStyle styleScrubControl = new GUIStyle(GUI.skin.label);
@@ -1593,6 +1606,12 @@ public class AMTimeline : EditorWindow {
 
     void OnUndoRedo() {
         if(isPlaying) isPlaying = false;
+
+        if(_aData != null)
+            _aData = _aData.gameObject.GetComponent<AnimatorData>();
+
+        Repaint();
+
         // recheck for component
         /*GameObject go = GameObject.Find("AnimatorData");
         if(go) {
@@ -1667,7 +1686,21 @@ public class AMTimeline : EditorWindow {
     #region Static
 
     public static void registerUndo(string name) {
-        Undo.RegisterSceneUndo(name);
+        AnimatorData dat = window._aData;
+        if(dat != null) {
+            List<UnityEngine.Object> objs = new List<UnityEngine.Object>();
+
+            objs.Add(dat);
+            objs.Add(dat.dataHolder);
+            Component[] comps = dat.dataHolder.GetComponentsInChildren<Component>(true);
+            foreach(Component comp in comps) {
+                objs.Add(comp);
+            }
+
+            Undo.RegisterUndo(objs.ToArray(), name);
+        }
+
+        //Undo.RegisterSceneUndo(name);
     }
     public static void MessageBox(string message, MessageBoxType type) {
 
@@ -2903,7 +2936,7 @@ public class AMTimeline : EditorWindow {
             }
             else
                 newStartVal = goActiveTrack.startActive;
-            
+
             Rect rectField = new Rect(0f, start_y, width_inspector - margin, 22f);
 
             bool newVal = EditorGUI.Toggle(rectField, sTrack.getTrackType(), pKey.setActive);
@@ -2961,7 +2994,7 @@ public class AMTimeline : EditorWindow {
             if((indexMethodInfo < cachedMethodInfo.Count) || !paramMatched) {
                 // process change
                 // update cache when modifying varaibles
-                if(eKey.setMethodInfo(cachedMethodInfoComponents[indexMethodInfo], cachedMethodInfo[indexMethodInfo], cachedParameterInfos, !paramMatched)) {						
+                if(eKey.setMethodInfo(cachedMethodInfoComponents[indexMethodInfo], cachedMethodInfo[indexMethodInfo], cachedParameterInfos, !paramMatched)) {
                     sTrack.updateCache();
                     AMCodeView.refresh();
                     // save data
@@ -4347,6 +4380,8 @@ public class AMTimeline : EditorWindow {
     }
 
     void addTrackWithGameObject(object trackType, GameObject object_window) {
+        registerUndo("New Track");
+
         // add track based on index
         switch((int)trackType) {
             case (int)Track.Translation:
@@ -4525,7 +4560,7 @@ public class AMTimeline : EditorWindow {
             // add key to go active track
             (amTrack as AMGOSetActiveTrack).addKey(_frame);
         }
-                
+
         setDirtyKeys(aData.getCurrentTake().getSelectedTrack());
         setDirtyCache(aData.getCurrentTake().getSelectedTrack());
         refreshGizmos();
