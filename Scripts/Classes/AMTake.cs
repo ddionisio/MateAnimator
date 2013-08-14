@@ -122,7 +122,7 @@ public class AMTake : MonoBehaviour {
     }
 
     // add translation track
-    public void addTranslationTrack(GameObject obj, bool isLocal=false) {
+    public AMTrack addTranslationTrack(GameObject obj, bool isLocal = false) {
         AMTranslationTrack a = gameObject.AddComponent<AMTranslationTrack>();
         a.enabled = false;
         a.setName(getTrackCount());
@@ -130,11 +130,11 @@ public class AMTake : MonoBehaviour {
         if(obj) a.obj = obj.transform;
         a.isLocal = isLocal;
         addTrack(a);
-
+        return a;
     }
 
     // add rotation track
-    public void addRotationTrack(GameObject obj, bool isLocal=false) {
+    public AMTrack addRotationTrack(GameObject obj, bool isLocal = false) {
         AMRotationTrack a = gameObject.AddComponent<AMRotationTrack>();
         a.enabled = false;
         a.setName(getTrackCount());
@@ -142,66 +142,73 @@ public class AMTake : MonoBehaviour {
         if(obj) a.obj = obj.transform;
         a.isLocal = isLocal;
         addTrack(a);
+        return a;
     }
 
     // add orientation track
-    public void addOrientationTrack(GameObject obj) {
+    public AMTrack addOrientationTrack(GameObject obj) {
         AMOrientationTrack a = gameObject.AddComponent<AMOrientationTrack>();
         a.enabled = false;
         a.setName(getTrackCount());
         a.id = getUniqueTrackID();
         if(obj) a.obj = obj.transform;
         addTrack(a);
+        return a;
     }
 
     // add animation track
-    public void addAnimationTrack(GameObject obj) {
+    public AMTrack addAnimationTrack(GameObject obj) {
         AMAnimationTrack a = gameObject.AddComponent<AMAnimationTrack>();
         a.enabled = false;
         a.setName(getTrackCount());
         a.id = getUniqueTrackID();
         if(obj && obj.GetComponent(typeof(Animation))) a.obj = obj;
         addTrack(a);
+        return a;
     }
 
     // add audio track
-    public void addAudioTrack(GameObject obj) {
+    public AMTrack addAudioTrack(GameObject obj) {
         AMAudioTrack a = gameObject.AddComponent<AMAudioTrack>();
         a.enabled = false;
         a.setName(getTrackCount());
         a.id = getUniqueTrackID();
         if(obj && obj.GetComponent(typeof(AudioSource))) a.audioSource = (AudioSource)obj.GetComponent(typeof(AudioSource));
         addTrack(a);
+        return a;
     }
 
     // add property track
-    public void addPropertyTrack(GameObject obj) {
+    public AMTrack addPropertyTrack(GameObject obj) {
         AMPropertyTrack a = gameObject.AddComponent<AMPropertyTrack>();
         a.enabled = false;
         a.setName(getTrackCount());
         a.id = getUniqueTrackID();
         if(obj) a.obj = obj;
         addTrack(a);
+        return a;
     }
 
     // add event track
-    public void addEventTrack(GameObject obj) {
+    public AMTrack addEventTrack(GameObject obj) {
         AMEventTrack a = gameObject.AddComponent<AMEventTrack>();
         a.enabled = false;
         a.setName(getTrackCount());
         a.id = getUniqueTrackID();
         if(obj) a.obj = obj;
         addTrack(a);
+        return a;
     }
 
     // add go set active track
-    public void addGOSetActiveTrack(GameObject obj) {
+    public AMTrack addGOSetActiveTrack(GameObject obj) {
         AMGOSetActiveTrack a = gameObject.AddComponent<AMGOSetActiveTrack>();
         a.enabled = false;
         a.setName(getTrackCount());
         a.id = getUniqueTrackID();
         if(obj) a.setObject(obj);
         addTrack(a);
+        return a;
     }
 
     public void deleteTrack(int id, bool deleteFromGroup = true) {
@@ -477,7 +484,7 @@ public class AMTake : MonoBehaviour {
         return false;
     }
 
-    public void addTrack(AMTrack track) {
+    private void addTrack(AMTrack track) {
         trackKeys.Add(track.id);
         trackValues.Add(track);
         addToGroup(track.id, selectedGroup);
@@ -749,7 +756,7 @@ public class AMTake : MonoBehaviour {
         List<AMRotationTrack> tracksRotation = new List<AMRotationTrack>();
 
         foreach(AMTrack track in trackValues) {
-            if(track is AMAudioTrack) continue;
+            if(track == null || track is AMAudioTrack) continue;
             else if(track is AMOrientationTrack) tracksOrientaton.Add(track as AMOrientationTrack);
             else if(!orientationOnly) {
                 if(track is AMRotationTrack) tracksRotation.Add(track as AMRotationTrack);	// if rotation, add to list and preview
@@ -1189,7 +1196,8 @@ public class AMTake : MonoBehaviour {
 
     public void cleanRemovedKeys() {
         foreach(AMTrack track in trackValues) {
-            track.removeNullKeys();
+            if(track)
+                track.removeNullKeys();
         }
     }
 
@@ -1299,8 +1307,8 @@ public class AMTake : MonoBehaviour {
                     height += getElementsHeight(id, height_track, height_track_foldin, height_group);
                 }
                 else {
-
-                    if(getTrack(id).foldout) height += height_track;
+                    AMTrack track = getTrack(id);
+                    if(track && track.foldout) height += height_track;
                     else height += height_track_foldin;
                 }
             }

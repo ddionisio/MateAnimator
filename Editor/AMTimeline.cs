@@ -33,15 +33,19 @@ public class AMTimeline : EditorWindow {
 
                     if(aData.takes != null) {
                         foreach(AMTake take in aData.takes) {
-                            take.cleanRemovedKeys();
-                            take.maintainCaches();
+                            if(take) {
+                                take.cleanRemovedKeys();
+                                take.maintainCaches();
 
-                            foreach(AMTrack track in take.trackValues) {
-                                setDirtyCache(track);
-                                EditorUtility.SetDirty(track);
+                                foreach(AMTrack track in take.trackValues) {
+                                    if(track) {
+                                        setDirtyCache(track);
+                                        EditorUtility.SetDirty(track);
+                                    }
+                                }
+
+                                EditorUtility.SetDirty(take);
                             }
-
-                            EditorUtility.SetDirty(take);
                         }
                     }
 
@@ -594,6 +598,10 @@ public class AMTimeline : EditorWindow {
         }
     }
     void OnGUI() {
+        if(Event.current.type != EventType.Repaint && Event.current.type != EventType.Layout) {
+            Debug.Log("event type: " + Event.current.type);
+        }
+
         AMTimeline.loadSkin(oData, ref skin, ref cachedSkinName, position);
         if(EditorApplication.isPlayingOrWillChangePlaymode) {
             this.ShowNotification(new GUIContent("Play Mode"));
@@ -4068,11 +4076,12 @@ public class AMTimeline : EditorWindow {
 
     #region Timeline/Timeline Manipulation
 
-    void timelineSelectTrack(int _track) {
+    void timelineSelectTrack(int _track, bool undo = true) {
         // select a track from the timeline
         cancelTextEditting();
         if(aData.getCurrentTake().getTrackCount() <= 0) return;
-        registerUndo("Select Track");
+        if(undo)
+            registerUndo("Select Track");
         // select track
         aData.getCurrentTake().selectTrack(_track, isShiftDown, isControlDown);
         // set active object
@@ -4365,6 +4374,7 @@ public class AMTimeline : EditorWindow {
     }
     void addTrack(object trackType) {
         registerUndo("New Track");
+
         // add one null GameObject if no GameObject dragged onto timeline (when clicked on new track button)
         if(objects_window.Count <= 0) {
             objects_window.Add(null);
@@ -4373,46 +4383,58 @@ public class AMTimeline : EditorWindow {
             addTrackWithGameObject(trackType, object_window);
         }
         objects_window = new List<GameObject>();
-        timelineSelectTrack(aData.getCurrentTake().track_count);
+        timelineSelectTrack(aData.getCurrentTake().track_count, false);
         // move scrollview to last created track
         setScrollViewValue(aData.getCurrentTake().getElementY(aData.getCurrentTake().selectedTrack, height_track, height_track_foldin, height_group));
         AMCodeView.refresh();
+
+        Undo.RegisterUndo((GameObject)null, "New Track");
     }
 
     void addTrackWithGameObject(object trackType, GameObject object_window) {
-        registerUndo("New Track");
+        AMTrack ntrack;
 
         // add track based on index
         switch((int)trackType) {
             case (int)Track.Translation:
-                aData.getCurrentTake().addTranslationTrack(object_window);
+                ntrack = aData.getCurrentTake().addTranslationTrack(object_window);
+                Undo.RegisterCreatedObjectUndo(ntrack, "New Translation Track");
                 break;
             case (int)Track.LocalTranslation:
-                aData.getCurrentTake().addTranslationTrack(object_window, true);
+                ntrack = aData.getCurrentTake().addTranslationTrack(object_window, true);
+                Undo.RegisterCreatedObjectUndo(ntrack, "New Local Translation Track");
                 break;
             case (int)Track.Rotation:
-                aData.getCurrentTake().addRotationTrack(object_window);
+                ntrack = aData.getCurrentTake().addRotationTrack(object_window);
+                Undo.RegisterCreatedObjectUndo(ntrack, "New Rotation Track");
                 break;
             case (int)Track.LocalRotation:
-                aData.getCurrentTake().addRotationTrack(object_window, true);
+                ntrack = aData.getCurrentTake().addRotationTrack(object_window, true);
+                Undo.RegisterCreatedObjectUndo(ntrack, "New Local Rotation Track");
                 break;
             case (int)Track.Orientation:
-                aData.getCurrentTake().addOrientationTrack(object_window);
+                ntrack = aData.getCurrentTake().addOrientationTrack(object_window);
+                Undo.RegisterCreatedObjectUndo(ntrack, "New Orientation Track");
                 break;
             case (int)Track.Animation:
-                aData.getCurrentTake().addAnimationTrack(object_window);
+                ntrack = aData.getCurrentTake().addAnimationTrack(object_window);
+                Undo.RegisterCreatedObjectUndo(ntrack, "New Animation Track");
                 break;
             case (int)Track.Audio:
-                aData.getCurrentTake().addAudioTrack(object_window);
+                ntrack = aData.getCurrentTake().addAudioTrack(object_window);
+                Undo.RegisterCreatedObjectUndo(ntrack, "New Audio Track");
                 break;
             case (int)Track.Property:
-                aData.getCurrentTake().addPropertyTrack(object_window);
+                ntrack = aData.getCurrentTake().addPropertyTrack(object_window);
+                Undo.RegisterCreatedObjectUndo(ntrack, "New Property Track");
                 break;
             case (int)Track.Event:
-                aData.getCurrentTake().addEventTrack(object_window);
+                ntrack = aData.getCurrentTake().addEventTrack(object_window);
+                Undo.RegisterCreatedObjectUndo(ntrack, "New Event Track");
                 break;
             case (int)Track.GOSetActive:
-                aData.getCurrentTake().addGOSetActiveTrack(object_window);
+                ntrack = aData.getCurrentTake().addGOSetActiveTrack(object_window);
+                Undo.RegisterCreatedObjectUndo(ntrack, "New GO Set Active Track");
                 break;
             default:
                 int combo_index = (int)trackType - 100;
