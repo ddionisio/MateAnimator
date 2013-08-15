@@ -21,24 +21,18 @@ public class AMGOSetActiveTrack : AMTrack {
     }
     // update cache
     public override void updateCache() {
-        // destroy cache
-        destroyCache();
-        // create new cache
-        cache = new List<AMAction>();
         // sort keys
         sortKeys();
         // add all clips to list
         for(int i = 0; i < keys.Count; i++) {
-            AMGOSetActiveAction a = gameObject.AddComponent<AMGOSetActiveAction>();
+            AMGOSetActiveKey key = keys[i] as AMGOSetActiveKey;
 
-            a.startFrame = keys[i].frame;
-            if(keys.Count > (i + 1)) a.endFrame = keys[i + 1].frame;
-            else a.endFrame = -1;
+            key.version = version;
 
-            a.enabled = false;
-            a.endVal = (keys[i] as AMGOSetActiveKey).setActive;
-            a.go = obj;
-            cache.Add(a);
+            if(keys.Count > (i + 1)) key.endFrame = keys[i + 1].frame;
+            else key.endFrame = -1;
+
+            key.go = obj;
         }
         base.updateCache();
     }
@@ -54,35 +48,35 @@ public class AMGOSetActiveTrack : AMTrack {
     }
     // preview a frame in the scene view
     public override void previewFrame(float frame, AMTrack extraTrack = null) {
-        if(cache == null || cache.Count <= 0) {
+        if(keys == null || keys.Count <= 0) {
             return;
         }
         if(!obj) return;
 
         // if before the first frame
-        if(frame < (float)cache[0].startFrame) {
+        if(frame < (float)keys[0].frame) {
             //obj.rotation = (cache[0] as AMPropertyAction).getStartQuaternion();
             obj.SetActive(startActive);
             return;
         }
         // if beyond or equal to last frame
-        if(frame >= (float)(cache[cache.Count - 1] as AMGOSetActiveAction).startFrame) {
-            obj.SetActive((cache[cache.Count - 1] as AMGOSetActiveAction).endVal);
+        if(frame >= (float)(keys[keys.Count - 1] as AMGOSetActiveKey).frame) {
+            obj.SetActive((keys[keys.Count - 1] as AMGOSetActiveKey).setActive);
             return;
         }
         // if lies on property action
-        foreach(AMGOSetActiveAction action in cache) {
-            if((frame < (float)action.startFrame) || (frame > (float)action.endFrame)) continue;
+        foreach(AMGOSetActiveKey key in keys) {
+            if((frame < (float)key.frame) || (frame > (float)key.endFrame)) continue;
 
-            obj.SetActive(action.endVal);
+            obj.SetActive(key.setActive);
             return;
         }
     }
 
     public override void buildSequenceStart(Sequence s, int frameRate) {
         //need to add activate game object on start to 'reset' properly during reverse
-        if(cache.Count > 0 && cache[0].startFrame > 0) {
-            s.Insert(0.0f, HOTween.To(obj, ((float)cache[0].startFrame)/((float)frameRate),
+        if(keys.Count > 0 && keys[0].frame > 0) {
+            s.Insert(0.0f, HOTween.To(obj, ((float)keys[0].frame) / ((float)frameRate),
                 new TweenParms().Prop("active", new AMPlugGOActive(startActive)).Ease(EaseType.Linear)));
         }
     }

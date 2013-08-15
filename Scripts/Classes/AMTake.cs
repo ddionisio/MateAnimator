@@ -41,14 +41,14 @@ public class AMTake : MonoBehaviour {
     public AMGroup rootGroup;
     public List<int> groupKeys = new List<int>();
     public List<AMGroup> groupValues = new List<AMGroup>();
-        
+
     public static bool isProLicense = true;
 
     private Sequence mSequence;
 
     public Sequence sequence { get { return mSequence; } }
     public event OnSequenceDone sequenceCompleteCallback;
-        
+
     #endregion
 
     public static AMTake NewInstance(GameObject holder) {
@@ -1206,9 +1206,9 @@ public class AMTake : MonoBehaviour {
         if(trackValues != null) {
             foreach(AMTrack track in trackValues) {
                 bool shouldUpdateCache = false;
-                if(track != null && track.cache != null) {
-                    foreach(AMAction action in track.cache) {
-                        if(action == null) {
+                if(track != null && track.keys != null) {
+                    foreach(AMKey key in track.keys) {
+                        if(key == null || key.version != track.version) {
                             shouldUpdateCache = true;
                             break;
                         }
@@ -1230,7 +1230,7 @@ public class AMTake : MonoBehaviour {
                 .AutoKill(autoKill)
                 .Loops(numLoop, loopMode)
                 .OnComplete(OnSequenceComplete, null));
-                        
+
             maintainCaches();
             previewFrame(0.0f, false, true);
 
@@ -1239,10 +1239,10 @@ public class AMTake : MonoBehaviour {
             foreach(AMTrack track in trackValues) {
                 track.buildSequenceStart(mSequence, frameRate);
 
-                foreach(AMAction action in track.cache) {
-                    Tweener tween = action.buildTweener(mSequence, frameRate);
+                foreach(AMKey key in track.keys) {
+                    Tweener tween = key.buildTweener(mSequence, frameRate);
                     if(tween != null) {
-                        mSequence.Insert(action.getWaitTime(frameRate, 0.0f), tween);
+                        mSequence.Insert(key.getWaitTime(frameRate, 0.0f), tween);
                         numTweensAdded++;
                     }
                 }
@@ -1273,19 +1273,7 @@ public class AMTake : MonoBehaviour {
     }
 
     public void executeActions(float fromFrame = 0f) {
-        float delay = fromFrame / (float)frameRate;
-        maintainCaches();
-        previewFrame(fromFrame, false, true);	// do not skip camera switcher track; properties quick preview
-        //setupCameraSwitcher(fromFrame);
-        foreach(AMTrack track in trackValues) {
-            foreach(AMAction action in track.cache) {
-                if(action is AMAudioAction) {
-                    if(!(action as AMAudioAction).loop && (action.startFrame + (action as AMAudioAction).getNumberOfFrames(frameRate) - 1 < (int)fromFrame)) continue;
-                }
-                else if(action.startFrame + action.getNumberOfFrames() - 1 < (int)fromFrame) continue;
-                action.execute(frameRate, delay);
-            }
-        }
+        Debug.LogError("need implement");
     }
 
     public float getElementsHeight(int group_id, float height_track, float height_track_foldin, float height_group) {

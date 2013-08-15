@@ -53,31 +53,24 @@ public class AMOrientationTrack : AMTrack {
         Quaternion temp = obj.rotation;
         // sort keys
         sortKeys();
-        destroyCache();
-        cache = new List<AMAction>();
         AMTranslationTrack translationTrack = curTake.getTranslationTrackForTransform(obj);
         for(int i = 0; i < keys.Count; i++) {
-            // create new action and add it to cache list
-            AMOrientationAction a = gameObject.AddComponent<AMOrientationAction>();
-            a.enabled = false;
-            a.startFrame = keys[i].frame;
-            if(keys.Count > (i + 1)) a.endFrame = keys[i + 1].frame;
-            else a.endFrame = -1;
-            a.obj = obj;
-            // targets
-            a.startTarget = (keys[i] as AMOrientationKey).target;
-            if(a.endFrame != -1) a.endTarget = (keys[i + 1] as AMOrientationKey).target;
-            a.easeType = (keys[i] as AMOrientationKey).easeType;
-            a.customEase = new List<float>(keys[i].customEase);
-            if(translationTrack != null && !a.isLookFollow()) {
-                a.isSetStartPosition = true;
-                a.startPosition = translationTrack.getPositionAtFrame(a.startFrame, true);
-                a.isSetEndPosition = true;
-                a.endPosition = translationTrack.getPositionAtFrame(a.endFrame, true);
-            }
+            AMOrientationKey key = keys[i] as AMOrientationKey;
 
-            // add to cache
-            cache.Add(a);
+            key.version = version;
+
+            if(keys.Count > (i + 1)) key.endFrame = keys[i + 1].frame;
+            else key.endFrame = -1;
+            key.obj = obj;
+            // targets
+            if(key.endFrame != -1) key.endTarget = (keys[i + 1] as AMOrientationKey).target;
+
+            if(translationTrack != null && !key.isLookFollow()) {
+                key.isSetStartPosition = true;
+                key.startPosition = translationTrack.getPositionAtFrame(key.frame, true);
+                key.isSetEndPosition = true;
+                key.endPosition = translationTrack.getPositionAtFrame(key.endFrame, true);
+            }
         }
         // restore rotation
         if(restoreRotation) obj.rotation = temp;
@@ -89,39 +82,39 @@ public class AMOrientationTrack : AMTrack {
 
     public override void previewFrame(float frame, AMTrack extraTrack = null) {
 
-        if(cache == null || cache.Count <= 0) {
+        if(keys == null || keys.Count <= 0) {
             return;
         }
-        for(int i = 0; i < cache.Count; i++) {
+        for(int i = 0; i < keys.Count; i++) {
             // before first frame
-            if(frame <= (cache[i] as AMOrientationAction).startFrame) {
-                if(!(cache[i] as AMOrientationAction).startTarget) return;
+            if(frame <= (keys[i] as AMOrientationKey).frame) {
+                if(!(keys[i] as AMOrientationKey).target) return;
                 Vector3 startPos;
-                if(cachedTranslationTrackStartTarget == null) startPos = (cache[i] as AMOrientationAction).startTarget.position;
-                else startPos = (cachedTranslationTrackStartTarget as AMTranslationTrack).getPositionAtFrame((cache[i] as AMOrientationAction).startFrame, true);
+                if(cachedTranslationTrackStartTarget == null) startPos = (keys[i] as AMOrientationKey).target.position;
+                else startPos = (cachedTranslationTrackStartTarget as AMTranslationTrack).getPositionAtFrame((keys[i] as AMOrientationKey).frame, true);
                 obj.LookAt(startPos);
                 return;
                 // between first and last frame
             }
-            else if(frame <= (cache[i] as AMOrientationAction).endFrame) {
-                if(!(cache[i] as AMOrientationAction).startTarget || !(cache[i] as AMOrientationAction).endTarget) return;
-                float framePositionInPath = frame - (float)cache[i].startFrame;
+            else if(frame <= (keys[i] as AMOrientationKey).endFrame) {
+                if(!(keys[i] as AMOrientationKey).target || !(keys[i] as AMOrientationKey).endTarget) return;
+                float framePositionInPath = frame - (float)keys[i].frame;
                 if(framePositionInPath < 0f) framePositionInPath = 0f;
-                float percentage = framePositionInPath / cache[i].getNumberOfFrames();
-                if((cache[i] as AMOrientationAction).isLookFollow()) obj.rotation = (cache[i] as AMOrientationAction).getQuaternionAtPercent(percentage);
+                float percentage = framePositionInPath / keys[i].getNumberOfFrames();
+                if((keys[i] as AMOrientationKey).isLookFollow()) obj.rotation = (keys[i] as AMOrientationKey).getQuaternionAtPercent(percentage);
                 else {
-                    Vector3? startPos = (cachedTranslationTrackStartTarget == null ? null : (Vector3?)(cachedTranslationTrackStartTarget as AMTranslationTrack).getPositionAtFrame((cache[i] as AMOrientationAction).startFrame, true));
-                    Vector3? endPos = (cachedTranslationTrackEndTarget == null ? null : (Vector3?)(cachedTranslationTrackEndTarget as AMTranslationTrack).getPositionAtFrame((cache[i] as AMOrientationAction).endFrame, true));
-                    obj.rotation = (cache[i] as AMOrientationAction).getQuaternionAtPercent(percentage, startPos, endPos);
+                    Vector3? startPos = (cachedTranslationTrackStartTarget == null ? null : (Vector3?)(cachedTranslationTrackStartTarget as AMTranslationTrack).getPositionAtFrame((keys[i] as AMOrientationKey).frame, true));
+                    Vector3? endPos = (cachedTranslationTrackEndTarget == null ? null : (Vector3?)(cachedTranslationTrackEndTarget as AMTranslationTrack).getPositionAtFrame((keys[i] as AMOrientationKey).endFrame, true));
+                    obj.rotation = (keys[i] as AMOrientationKey).getQuaternionAtPercent(percentage, startPos, endPos);
                 }
                 return;
                 // after last frame
             }
-            else if(i == cache.Count - 2) {
-                if(!(cache[i] as AMOrientationAction).endTarget) return;
+            else if(i == keys.Count - 2) {
+                if(!(keys[i] as AMOrientationKey).endTarget) return;
                 Vector3 endPos;
-                if(cachedTranslationTrackEndTarget == null) endPos = (cache[i] as AMOrientationAction).endTarget.position;
-                else endPos = (cachedTranslationTrackEndTarget as AMTranslationTrack).getPositionAtFrame((cache[i] as AMOrientationAction).endFrame, true);
+                if(cachedTranslationTrackEndTarget == null) endPos = (keys[i] as AMOrientationKey).endTarget.position;
+                else endPos = (cachedTranslationTrackEndTarget as AMTranslationTrack).getPositionAtFrame((keys[i] as AMOrientationKey).endFrame, true);
                 obj.LookAt(endPos);
                 return;
             }
@@ -129,14 +122,14 @@ public class AMOrientationTrack : AMTrack {
     }
 
     public Transform getStartTargetForFrame(float frame) {
-        foreach(AMOrientationAction action in cache) {
-            if(/*((int)frame<action.startFrame)||*/((int)frame > action.endFrame)) continue;
-            return action.startTarget;
+        foreach(AMOrientationKey key in keys) {
+            if(/*((int)frame<action.startFrame)||*/((int)frame > key.endFrame)) continue;
+            return key.target;
         }
         return null;
     }
     public Transform getEndTargetForFrame(float frame) {
-        if(cache.Count > 1) return (cache[cache.Count - 2] as AMOrientationAction).endTarget;
+        if(keys.Count > 1) return (keys[keys.Count - 2] as AMOrientationKey).endTarget;
         return null;
     }
     public Transform getTargetForFrame(float frame) {
@@ -148,15 +141,15 @@ public class AMOrientationTrack : AMTrack {
         if(!obj) return;
         // draw line to target
         if(!inPlayMode) {
-            foreach(AMAction action in cache) {
-                if(action == null)
+            foreach(AMOrientationKey key in keys) {
+                if(key == null)
                     continue;
 
-                if((action as AMOrientationAction).startFrame > frame) break;
-                if(frame >= (action as AMOrientationAction).startFrame && frame <= (action as AMOrientationAction).endFrame) {
-                    if((action as AMOrientationAction).isLookFollow() && (action as AMOrientationAction).startTarget) {
+                if(key.frame > frame) break;
+                if(frame >= key.frame && frame <= key.endFrame) {
+                    if(key.isLookFollow() && key.target) {
                         Gizmos.color = new Color(245f / 255f, 107f / 255f, 30f / 255f, 0.2f);
-                        Gizmos.DrawLine(obj.transform.position, (action as AMOrientationAction).startTarget.transform.position);
+                        Gizmos.DrawLine(obj.transform.position, key.target.transform.position);
                     }
                     break;
                 }
@@ -188,8 +181,8 @@ public class AMOrientationTrack : AMTrack {
 
 
     public bool hasTarget(Transform obj) {
-        foreach(AMOrientationAction action in cache) {
-            if(action.startTarget == obj || action.endTarget == obj) return true;
+        foreach(AMOrientationKey key in keys) {
+            if(key.target == obj || key.endTarget == obj) return true;
         }
         return false;
     }

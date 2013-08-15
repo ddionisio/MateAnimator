@@ -1,8 +1,12 @@
 using UnityEngine;
 using System.Collections;
 
+using Holoville.HOTween;
+using Holoville.HOTween.Core;
+
 [AddComponentMenu("")]
 public class AMAnimationKey : AMKey {
+    public GameObject obj;
 
     public WrapMode wrapMode;	// animation wrap mode
     public AnimationClip amClip;
@@ -53,4 +57,42 @@ public class AMAnimationKey : AMKey {
 
         return a;
     }
+
+    // get number of frames, -1 is infinite
+    public int getNumberOfFrames(int frameRate) {
+        if(!amClip) return -1;
+        if(wrapMode != WrapMode.Once) return -1;
+        return Mathf.CeilToInt(amClip.length * frameRate);
+    }
+
+    #region action
+    void OnMethodCallbackParams(TweenEvent dat) {
+        if(obj != null && obj.animation != null && amClip != null) {
+            float elapsed = dat.tween.elapsed;
+            float frameRate = (float)dat.parms[0];
+            float curFrame = frameRate * elapsed;
+            float numFrames = getNumberOfFrames(Mathf.RoundToInt(frameRate));
+
+            if(numFrames > 0.0f && curFrame > frame + numFrames) return;
+
+            Animation anm = obj.animation;
+
+            if(wrapMode != WrapMode.Default)
+                anm.wrapMode = wrapMode;
+
+            if(crossfade) {
+                anm.CrossFade(amClip.name, crossfadeTime);
+            }
+            else {
+                anm.Play(amClip.name);
+            }
+        }
+    }
+
+    public override Tweener buildTweener(Sequence sequence, int frameRate) {
+        sequence.InsertCallback(getWaitTime(frameRate, 0.0f), OnMethodCallbackParams, (float)frameRate);
+
+        return null;
+    }
+    #endregion
 }

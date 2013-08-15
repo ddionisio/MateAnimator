@@ -19,21 +19,13 @@ public class AMAudioTrack : AMTrack {
         return false;
     }
     public override void updateCache() {
-        // destroy cache
-        destroyCache();
-        // create new cache
-        cache = new List<AMAction>();
         // sort keys
         sortKeys();
         // add all clips to list
         for(int i = 0; i < keys.Count; i++) {
-            AMAudioAction a = gameObject.AddComponent<AMAudioAction>();
-            a.enabled = false;
-            a.startFrame = keys[i].frame;
-            a.audioSource = audioSource;
-            a.audioClip = (keys[i] as AMAudioKey).audioClip;
-            a.loop = (keys[i] as AMAudioKey).loop;
-            cache.Add(a);
+            AMAudioKey key = keys[i] as AMAudioKey;
+            key.version = version;
+            key.audioSource = audioSource;
         }
         base.updateCache();
     }
@@ -67,19 +59,19 @@ public class AMAudioTrack : AMTrack {
     public void sampleAudio(float frame, float speed, int frameRate) {
         if(!audioSource) return;
         float time;
-        for(int i = cache.Count - 1; i >= 0; i--) {
-            if(!(cache[i] as AMAudioAction).audioClip) return;
-            if(cache[i].startFrame <= frame) {
+        for(int i = keys.Count - 1; i >= 0; i--) {
+            if(!(keys[i] as AMAudioKey).audioClip) return;
+            if(keys[i].frame <= frame) {
                 // get time
-                time = ((frame - cache[i].startFrame) / frameRate);
+                time = ((frame - keys[i].frame) / frameRate);
                 // if loop is set to false and is beyond length, then return
-                if(!(cache[i] as AMAudioAction).loop && time > (cache[i] as AMAudioAction).audioClip.length) return;
+                if(!(keys[i] as AMAudioKey).loop && time > (keys[i] as AMAudioKey).audioClip.length) return;
                 // find time based on length
-                time = time % (cache[i] as AMAudioAction).audioClip.length;
+                time = time % (keys[i] as AMAudioKey).audioClip.length;
                 if(audioSource.isPlaying) audioSource.Stop();
                 audioSource.clip = null;
-                audioSource.clip = (cache[i] as AMAudioAction).audioClip;
-                audioSource.loop = (cache[i] as AMAudioAction).loop;
+                audioSource.clip = (keys[i] as AMAudioKey).audioClip;
+                audioSource.loop = (keys[i] as AMAudioKey).loop;
                 audioSource.time = time;
                 audioSource.pitch = speed;
 
@@ -93,13 +85,13 @@ public class AMAudioTrack : AMTrack {
     public void sampleAudioAtFrame(int frame, float speed, int frameRate) {
         if(!audioSource) return;
 
-        for(int i = cache.Count - 1; i >= 0; i--) {
-            if(cache[i].startFrame == frame) {
+        for(int i = keys.Count - 1; i >= 0; i--) {
+            if(keys[i].frame == frame) {
                 if(audioSource.isPlaying) audioSource.Stop();
                 audioSource.clip = null;
-                audioSource.clip = (cache[i] as AMAudioAction).audioClip;
+                audioSource.clip = (keys[i] as AMAudioKey).audioClip;
                 audioSource.time = 0f;
-                audioSource.loop = (cache[i] as AMAudioAction).loop;
+                audioSource.loop = (keys[i] as AMAudioKey).loop;
                 audioSource.pitch = speed;
                 audioSource.Play();
                 return;

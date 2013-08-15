@@ -10,10 +10,11 @@ public class AMTrack : MonoBehaviour {
     public int id;
     public new string name;
     public List<AMKey> keys = new List<AMKey>();
-    public List<AMAction> cache = new List<AMAction>();	// action cache
     public bool foldout = true;							// whether or not to foldout track in timeline GUI
 
     public AMTake parentTake;
+
+    public virtual int version { get { return 1; } } //must be at least 1
 
     public virtual UnityEngine.Object genericObj {
         get { return null; }
@@ -40,6 +41,7 @@ public class AMTrack : MonoBehaviour {
     public bool checkKeyIntegrity() {
         foreach(AMKey key in keys) {
             if(key == null) return false;
+            else if(key.version != version) return false;
         }
 
         return true;
@@ -62,19 +64,6 @@ public class AMTrack : MonoBehaviour {
 
     // preview frame
     public virtual void previewFrame(float frame, AMTrack extraTrack = null) { }
-
-    public bool checkCacheIntegrity() {
-        if(cache != null) {
-            foreach(AMAction act in cache) {
-                if(act == null)
-                    return false;
-            }
-        }
-        else
-            return false;
-
-        return true;
-    }
 
     // update cache
     public virtual void updateCache() {
@@ -135,8 +124,6 @@ public class AMTrack : MonoBehaviour {
         foreach(AMKey key in keys) {
             key.destroy();
         }
-        // destroy cache
-        destroyCache();
         keys = new List<AMKey>();
     }
 
@@ -163,8 +150,6 @@ public class AMTrack : MonoBehaviour {
 
         parentTake = null;
 
-        // destroy cache
-        destroyCache();
         // destroy track
         Object.DestroyImmediate(this);
     }
@@ -175,15 +160,6 @@ public class AMTrack : MonoBehaviour {
 
     public virtual List<GameObject> updateDependencies(List<GameObject> newReferences, List<GameObject> oldReferences) {
         return new List<GameObject>();
-    }
-
-    public void destroyCache() {
-        if(cache == null) return;
-        foreach(AMAction action in cache) {
-            if(action == null) continue;
-            action.destroy();
-        }
-        cache = null;
     }
 
     public void offsetKeysFromBy(int frame, int amount) {
@@ -209,38 +185,30 @@ public class AMTrack : MonoBehaviour {
     }
 
     // get action for frame from cache
-    public AMAction getActionContainingFrame(int frame) {
-        for(int i = cache.Count - 1; i >= 0; i--) {
-            if(frame >= cache[i].startFrame) return cache[i];
+    public AMKey getKeyContainingFrame(int frame) {
+        for(int i = keys.Count - 1; i >= 0; i--) {
+            if(frame >= keys[i].frame) return keys[i];
         }
-        if(cache.Count > 0) return cache[0];	// return first if not greater than any action
-        Debug.LogError("Animator: No action found for frame " + frame);
+        if(keys.Count > 0) return keys[0];	// return first if not greater than any action
+        Debug.LogError("Animator: No key found for frame " + frame);
         return null;
     }
 
     // get action for frame from cache
-    public AMAction getActionForFrame(int startFrame) {
-        foreach(AMAction action in cache) {
-            if(action.startFrame == startFrame) return action;
+    public AMKey getKeyForFrame(int startFrame) {
+        foreach(AMKey key in keys) {
+            if(key.frame == startFrame) return key;
         }
-        Debug.LogError("Animator: No action found for frame " + startFrame);
+        Debug.LogError("Animator: No key found for frame " + startFrame);
         return null;
     }
 
     // get index of action for frame
-    public int getActionIndexForFrame(int startFrame) {
-        for(int i = 0; i < cache.Count; i++) {
-            if(cache[i].startFrame == startFrame) return i;
+    public int getKeyIndexForFrame(int startFrame) {
+        for(int i = 0; i < keys.Count; i++) {
+            if(keys[i].frame == startFrame) return i;
         }
         return -1;
-    }
-
-    // is there any action with the start frame
-    public bool hasActionOnFrame(int _frame) {
-        foreach(AMAction action in cache) {
-            if(action.startFrame == _frame) return true;
-        }
-        return false;
     }
 
     // if whole take is true, when end frame is reached the last keyframe will be returned. This is used for the playback controls

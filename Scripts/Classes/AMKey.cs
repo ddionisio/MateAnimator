@@ -2,8 +2,11 @@ using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 
+using Holoville.HOTween;
+
 [AddComponentMenu("")]
 public class AMKey : MonoBehaviour {
+    public int version = 0; //for upgrading/initializing
 
     public int frame;
     public int easeType = (int)0;//AMTween.EaseType.linear; 			// ease type, AMTween.EaseType enum
@@ -25,19 +28,28 @@ public class AMKey : MonoBehaviour {
         return null;
     }
 
-    public bool setEaseType(int easeType) {
-        if(easeType != this.easeType) {
-            this.easeType = easeType;
-            if(easeType == 32 && customEase.Count <= 0) {
-                // set up default custom ease with linear
-                customEase = new List<float>() {
-					0f,0f,1f,1f,
-					1f,1f,1f,1f
-				};
-            }
-            return true;
-        }
-        return false;
+    /// <summary>
+    /// Use sequence to insert callbacks, or some other crap, just don't insert the tweener you are returning!
+    /// </summary>
+    public virtual Tweener buildTweener(Sequence sequence, int frameRate) {
+        Debug.LogError("Animator: No override for buildTweener.");
+        return null;
+    }
+
+    public float getWaitTime(int frameRate, float delay) {
+        return ((float)frame - 1f) / (float)frameRate - delay;
+    }
+
+    public virtual int getStartFrame() {
+        return frame;
+    }
+
+    public virtual int getNumberOfFrames() {
+        return 1;
+    }
+
+    public virtual AnimatorTimeline.JSONAction getJSONAction(int frameRate) {
+        return null;
     }
 
     public void setCustomEase(AnimationCurve curve) {
@@ -48,10 +60,10 @@ public class AMKey : MonoBehaviour {
             customEase.Add(k.inTangent);
             customEase.Add(k.outTangent);
         }
-        _cachedEaseCurve = null;
     }
 
     public AnimationCurve getCustomEaseCurve() {
+
         AnimationCurve curve = new AnimationCurve();
         if(customEase.Count < 0) {
             return curve;
@@ -67,7 +79,22 @@ public class AMKey : MonoBehaviour {
     }
 
     public bool hasCustomEase() {
-        if(easeType == 32) return true;
+        if(easeType == (int)EaseType.AnimationCurve) return true;
+        return false;
+    }
+
+    public bool setEaseType(int easeType) {
+        if(easeType != this.easeType) {
+            this.easeType = easeType;
+            if(easeType == 32 && customEase.Count <= 0) {
+                // set up default custom ease with linear
+                customEase = new List<float>() {
+					0f,0f,1f,1f,
+					1f,1f,1f,1f
+				};
+            }
+            return true;
+        }
         return false;
     }
 }

@@ -42,41 +42,29 @@ public class AMAnimationTrack : AMTrack {
     }
     // update cache
     public override void updateCache() {
-        // destroy cache
-        destroyCache();
-        // create new cache
-        cache = new List<AMAction>();
         // sort keys
         sortKeys();
-        // add all clips to list
         for(int i = 0; i < keys.Count; i++) {
-            AMAnimationAction a = gameObject.AddComponent<AMAnimationAction>();
-            a.enabled = false;
-            a.startFrame = keys[i].frame;
-            a.obj = obj;
-            a.amClip = (keys[i] as AMAnimationKey).amClip;
-            a.wrapMode = (keys[i] as AMAnimationKey).wrapMode;
-            a.crossfade = (keys[i] as AMAnimationKey).crossfade;
-            a.crossfadeTime = (keys[i] as AMAnimationKey).crossfadeTime;
-            cache.Add(a);
+            AMAnimationKey key = keys[i] as AMAnimationKey;
+            key.version = version;
+            key.obj = obj;
         }
         base.updateCache();
     }
     // preview a frame in the scene view
     public void previewFrame(float frame, float frameRate) {
         if(!obj) return;
-        if(cache.Count <= 0) return;
         bool found = false;
-        for(int i = cache.Count - 1; i >= 0; i--) {
-            if(cache[i].startFrame <= frame) {
+        for(int i = keys.Count - 1; i >= 0; i--) {
+            if(keys[i].frame <= frame) {
 
-                AnimationClip amClip = (cache[i] as AMAnimationAction).amClip;
+                AnimationClip amClip = (keys[i] as AMAnimationKey).amClip;
                 if(!amClip) {
                     // do nothing
                 }
                 else {
-                    amClip.wrapMode = (cache[i] as AMAnimationAction).wrapMode;
-                    obj.SampleAnimation(amClip, getTime(frameRate, frame - cache[i].startFrame));
+                    amClip.wrapMode = (keys[i] as AMAnimationKey).wrapMode;
+                    obj.SampleAnimation(amClip, getTime(frameRate, frame - keys[i].frame));
                 }
                 found = true;
                 break;

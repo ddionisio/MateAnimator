@@ -13,23 +13,12 @@ public class AMEventTrack : AMTrack {
     }
     // update cache
     public override void updateCache() {
-        // destroy cache
-        destroyCache();
-        // create new cache
-        cache = new List<AMAction>();
         // sort keys
         sortKeys();
         // add all clips to list
         for(int i = 0; i < keys.Count; i++) {
-            AMEventAction a = gameObject.AddComponent<AMEventAction>();
-            a.enabled = false;
-            a.startFrame = keys[i].frame;
-            a.component = (keys[i] as AMEventKey).component;
-            a.methodInfo = (keys[i] as AMEventKey).methodInfo;
-            a.parameters = (keys[i] as AMEventKey).parameters;
-            a.useSendMessage = (keys[i] as AMEventKey).useSendMessage;
-            a.frameLimit = (keys[i] as AMEventKey).frameLimit;
-            cache.Add(a);
+            AMEventKey key = keys[i] as AMEventKey;
+            key.version = version;
         }
         base.updateCache();
     }

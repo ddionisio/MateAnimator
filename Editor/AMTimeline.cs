@@ -39,7 +39,7 @@ public class AMTimeline : EditorWindow {
 
                                 foreach(AMTrack track in take.trackValues) {
                                     if(track) {
-                                        setDirtyCache(track);
+                                        setDirtyKeys(track);
                                         EditorUtility.SetDirty(track);
                                     }
                                 }
@@ -598,9 +598,9 @@ public class AMTimeline : EditorWindow {
         }
     }
     void OnGUI() {
-        if(Event.current.type != EventType.Repaint && Event.current.type != EventType.Layout) {
+        /*if(Event.current.type != EventType.Repaint && Event.current.type != EventType.Layout) {
             Debug.Log("event type: " + Event.current.type);
-        }
+        }*/
 
         AMTimeline.loadSkin(oData, ref skin, ref cachedSkinName, position);
         if(EditorApplication.isPlayingOrWillChangePlaymode) {
@@ -2292,26 +2292,23 @@ public class AMTimeline : EditorWindow {
             #region group textures / buttons (performance increase)
             Rect rectTimelineActions = new Rect(0f, _current_height_frame, 0f, height_track - current_height_frame);	// used to group textures into one draw call
             if(!drawEachAction) {
-                if(!_track.checkCacheIntegrity())
-                    _track.updateCache();
-
-                if(_track.cache.Count > 0) {
-                    if(_track is AMTranslationTrack && _track.cache.Count > 1) {
+                if(_track.keys.Count > 0) {
+                    if(_track is AMTranslationTrack && _track.keys.Count > 1) {
                         // translation track, from first action frame to end action frame
-                        cached_action_startFrame = _track.cache[0].startFrame;
-                        cached_action_endFrame = (_track.cache[_track.cache.Count - 1] as AMTranslationAction).endFrame;
+                        cached_action_startFrame = _track.keys[0].getStartFrame();
+                        cached_action_endFrame = (_track.keys[_track.keys.Count - 1] as AMTranslationKey).endFrame;
                         texBox = texBoxGreen;
                     }
-                    else if(_track is AMRotationTrack && _track.cache.Count > 1) {
+                    else if(_track is AMRotationTrack && _track.keys.Count > 1) {
                         // rotation track, from first action start frame to last action start frame
-                        cached_action_startFrame = _track.cache[0].startFrame;
-                        cached_action_endFrame = _track.cache[_track.cache.Count - 1].startFrame;
+                        cached_action_startFrame = _track.keys[0].getStartFrame();
+                        cached_action_endFrame = _track.keys[_track.keys.Count - 1].getStartFrame();
                         texBox = texBoxYellow;
                     }
-                    else if(_track is AMOrientationTrack && _track.cache.Count > 1) {
+                    else if(_track is AMOrientationTrack && _track.keys.Count > 1) {
                         // orientation track, from first action start frame to last action start frame
-                        cached_action_startFrame = _track.cache[0].startFrame;
-                        cached_action_endFrame = _track.cache[_track.cache.Count - 1].startFrame;
+                        cached_action_startFrame = _track.keys[0].getStartFrame();
+                        cached_action_endFrame = _track.keys[_track.keys.Count - 1].getStartFrame();
                         texBox = texBoxOrange;
                     }
                     else if(_track is AMPropertyTrack) {
@@ -2322,13 +2319,13 @@ public class AMTimeline : EditorWindow {
                     }
                     else if(_track is AMEventTrack) {
                         // event track, from first action start frame to end frame
-                        cached_action_startFrame = _track.cache[0].startFrame;
+                        cached_action_startFrame = _track.keys[0].getStartFrame();
                         cached_action_endFrame = _endFrame;
                         texBox = texBoxDarkBlue;
                     }
                     else if(_track is AMGOSetActiveTrack) {
                         // go set active track, from first action start frame to end frame
-                        cached_action_startFrame = _track.cache[0].startFrame;
+                        cached_action_startFrame = _track.keys[0].getStartFrame();
                         cached_action_endFrame = _endFrame;
                         texBox = texBoxDarkBlue;
                     }
@@ -2358,46 +2355,46 @@ public class AMTimeline : EditorWindow {
             // draw box for each action in track
             bool didClampBackwards = false;	// whether or not clamped backwards, used to break infinite loop
             int last_action_startFrame = -1;
-            for(int i = 0; i < _track.cache.Count; i++) {
+            for(int i = 0; i < _track.keys.Count; i++) {
                 #region calculate dimensions
                 int clamped = 0; // 0 = no clamp, -1 = backwards clamp, 1 = forwards clamp
-                if(_track.cache[i] == null) {
+                if(_track.keys[i] == null || _track.keys[i].version != _track.version) {
                     // if cache is null, recheck for component and update caches
                     //aData = (AnimatorData)GameObject.Find("AnimatorData").GetComponent("AnimatorData");
                     aData.getCurrentTake().maintainCaches();
                 }
-                if((_track is AMAudioTrack) && ((_track.cache[i] as AMAudioAction).getNumberOfFrames(aData.getCurrentTake().frameRate)) > -1 && (_track.cache[i].startFrame + (_track.cache[i] as AMAudioAction).getNumberOfFrames(aData.getCurrentTake().frameRate) <= aData.getCurrentTake().numFrames)) {
+                if((_track is AMAudioTrack) && ((_track.keys[i] as AMAudioKey).getNumberOfFrames(aData.getCurrentTake().frameRate)) > -1 && (_track.keys[i].getStartFrame() + (_track.keys[i] as AMAudioKey).getNumberOfFrames(aData.getCurrentTake().frameRate) <= aData.getCurrentTake().numFrames)) {
                     // based on audio clip length
-                    action_startFrame = _track.cache[i].startFrame;
-                    action_endFrame = _track.cache[i].startFrame + (_track.cache[i] as AMAudioAction).getNumberOfFrames(aData.getCurrentTake().frameRate);
+                    action_startFrame = _track.keys[i].getStartFrame();
+                    action_endFrame = _track.keys[i].getStartFrame() + (_track.keys[i] as AMAudioKey).getNumberOfFrames(aData.getCurrentTake().frameRate);
                     //audioClip = (_track.cache[i] as AMAudioAction).audioClip;
                     // if intersects new audio clip, then cut
-                    if(i < _track.cache.Count - 1) {
-                        if(action_endFrame > _track.cache[i + 1].startFrame) action_endFrame = _track.cache[i + 1].startFrame;
+                    if(i < _track.keys.Count - 1) {
+                        if(action_endFrame > _track.keys[i + 1].getStartFrame()) action_endFrame = _track.keys[i + 1].getStartFrame();
                     }
                 }
-                else if((_track is AMAnimationTrack) && ((_track.cache[i] as AMAnimationAction).getNumberOfFrames(aData.getCurrentTake().frameRate)) > -1 && (_track.cache[i].startFrame + (_track.cache[i] as AMAnimationAction).getNumberOfFrames(aData.getCurrentTake().frameRate) <= aData.getCurrentTake().numFrames)) {
+                else if((_track is AMAnimationTrack) && ((_track.keys[i] as AMAnimationKey).getNumberOfFrames(aData.getCurrentTake().frameRate)) > -1 && (_track.keys[i].getStartFrame() + (_track.keys[i] as AMAnimationKey).getNumberOfFrames(aData.getCurrentTake().frameRate) <= aData.getCurrentTake().numFrames)) {
                     // based on animation clip length
-                    action_startFrame = _track.cache[i].startFrame;
-                    action_endFrame = _track.cache[i].startFrame + (_track.cache[i] as AMAnimationAction).getNumberOfFrames(aData.getCurrentTake().frameRate);
+                    action_startFrame = _track.keys[i].getStartFrame();
+                    action_endFrame = _track.keys[i].getStartFrame() + (_track.keys[i] as AMAnimationKey).getNumberOfFrames(aData.getCurrentTake().frameRate);
                     // if intersects new animation clip, then cut
-                    if(i < _track.cache.Count - 1) {
-                        if(action_endFrame > _track.cache[i + 1].startFrame) action_endFrame = _track.cache[i + 1].startFrame;
+                    if(i < _track.keys.Count - 1) {
+                        if(action_endFrame > _track.keys[i + 1].getStartFrame()) action_endFrame = _track.keys[i + 1].getStartFrame();
                     }
                 }
                 else if((i == 0) && (!didClampBackwards) && (_track is AMPropertyTrack || _track is AMGOSetActiveTrack)) {
                     // clamp behind if first action
                     action_startFrame = 1;
-                    action_endFrame = _track.cache[0].startFrame;
+                    action_endFrame = _track.keys[0].getStartFrame();
                     i--;
                     didClampBackwards = true;
                     clamped = -1;
                 }
                 else if((_track is AMAnimationTrack) || (_track is AMAudioTrack) || (_track is AMPropertyTrack) || (_track is AMEventTrack) || (_track is AMGOSetActiveTrack)) {
                     // single frame tracks (clamp box to last frame) (if audio track not set, clamp)
-                    action_startFrame = _track.cache[i].startFrame;
-                    if(i < _track.cache.Count - 1) {
-                        action_endFrame = _track.cache[i + 1].startFrame;
+                    action_startFrame = _track.keys[i].getStartFrame();
+                    if(i < _track.keys.Count - 1) {
+                        action_endFrame = _track.keys[i + 1].getStartFrame();
                     }
                     else {
                         clamped = 1;
@@ -2407,9 +2404,9 @@ public class AMTimeline : EditorWindow {
                 }
                 else {
                     // tracks with start frame and end frame (do not clamp box, stop before last key)
-                    if(_track.cache[i].getNumberOfFrames() <= 0) continue;
-                    action_startFrame = _track.cache[i].startFrame;
-                    action_endFrame = _track.cache[i].startFrame + _track.cache[i].getNumberOfFrames();
+                    if(_track.keys[i].getNumberOfFrames() <= 0) continue;
+                    action_startFrame = _track.keys[i].getStartFrame();
+                    action_endFrame = _track.keys[i].getStartFrame() + _track.keys[i].getNumberOfFrames();
                 }
                 if(action_startFrame > _endFrame) {
                     last_action_startFrame = action_startFrame;
@@ -2419,8 +2416,8 @@ public class AMTimeline : EditorWindow {
                     last_action_startFrame = action_startFrame;
                     continue;
                 }
-                if(i >= 0) txtInfo = getInfoTextForAction(_track, _track.cache[i], false, clamped);
-                else txtInfo = getInfoTextForAction(_track, _track.cache[0], true, clamped);
+                if(i >= 0) txtInfo = getInfoTextForAction(_track, _track.keys[i], false, clamped);
+                else txtInfo = getInfoTextForAction(_track, _track.keys[0], true, clamped);
                 float rectLeft, rectWidth; ;
                 float rectTop = current_height_frame;
                 float rectHeight = height_track - current_height_frame;
@@ -2466,9 +2463,9 @@ public class AMTimeline : EditorWindow {
                 styleTxtInfo.normal.textColor = Color.white;
                 styleTxtInfo.alignment = (hideTxtInfo ? TextAnchor.MiddleLeft : TextAnchor.MiddleCenter);
                 bool isLastAction;
-                if(_track is AMPropertyTrack || _track is AMEventTrack || _track is AMGOSetActiveTrack) isLastAction = (i == _track.cache.Count - 1);
+                if(_track is AMPropertyTrack || _track is AMEventTrack || _track is AMGOSetActiveTrack) isLastAction = (i == _track.keys.Count - 1);
                 else if(_track is AMAudioTrack || _track is AMAnimationTrack) isLastAction = false;
-                else isLastAction = (i == _track.cache.Count - 2);
+                else isLastAction = (i == _track.keys.Count - 2);
                 if(rectBox.width > 5f) EditorGUI.DropShadowLabel(new Rect(rectBox.x, rectBox.y, rectBox.width - (!isLastAction ? current_width_frame : 0f), rectBox.height), txtInfo, styleTxtInfo);
                 // if clicked on info box, select the starting frame for action. show tooltip if text does not fit
                 if(drawEachAction && GUI.Button(rectBox, /*(hideTxtInfo ? new GUIContent("",txtInfo) : new GUIContent(""))*/"", "label") && dragType != (int)DragType.ResizeAction) {
@@ -2542,12 +2539,12 @@ public class AMTimeline : EditorWindow {
                 // timeline action button
                 if(GUI.Button(rectTimelineActions,/*new GUIContent("",tooltip)*/"", "label") && dragType == (int)DragType.None) {
                     int _frame_num_action = (int)aData.getCurrentTake().startFrame + Mathf.CeilToInt(e.mousePosition.x / current_width_frame) - 1;
-                    AMAction _action = _track.getActionContainingFrame(_frame_num_action);
+                    AMKey _action = _track.getKeyContainingFrame(_frame_num_action);
                     int prevFrame = aData.getCurrentTake().selectedFrame;
                     // timeline select
-                    timelineSelectFrame(t, _action.startFrame);
+                    timelineSelectFrame(t, _action.getStartFrame());
                     // clear and add frame to context selection
-                    contextSelectFrame(_action.startFrame, prevFrame);
+                    contextSelectFrame(_action.getStartFrame(), prevFrame);
                 }
             }
 
@@ -2603,7 +2600,6 @@ public class AMTimeline : EditorWindow {
                 timelineSelectFrame(aData.getCurrentTake().selectedTrack, aData.getCurrentTake().selectedFrame);
                 // save data
                 setDirtyKeys(aData.getCurrentTake().getTrack(aData.getCurrentTake().selectedTrack));
-                setDirtyCache(aData.getCurrentTake().getTrack(aData.getCurrentTake().selectedTrack));
                 // refresh component
                 refreshGizmos();
             }
@@ -2617,7 +2613,6 @@ public class AMTimeline : EditorWindow {
                 aData.getCurrentTake().previewFrame(aData.getCurrentTake().selectedFrame);
                 // save data
                 setDirtyKeys(aData.getCurrentTake().getTrack(aData.getCurrentTake().selectedTrack));
-                setDirtyCache(aData.getCurrentTake().getTrack(aData.getCurrentTake().selectedTrack));
                 // refresh component
                 refreshGizmos();
             }
@@ -2631,7 +2626,7 @@ public class AMTimeline : EditorWindow {
                     showEasePicker(sTrack, tKey, aData, recEasePicker.x, recEasePicker.y, recEasePicker.width);
                 }
                 else {
-                    showEasePicker(sTrack, (sTrack as AMTranslationTrack).getActionStartKeyFor(tKey.frame), aData, recEasePicker.x, recEasePicker.y, recEasePicker.width);
+                    showEasePicker(sTrack, (sTrack as AMTranslationTrack).getKeyStartFor(tKey.frame), aData, recEasePicker.x, recEasePicker.y, recEasePicker.width);
                 }
             }
             return;
@@ -2650,14 +2645,13 @@ public class AMTimeline : EditorWindow {
                 aData.getCurrentTake().previewFrame(aData.getCurrentTake().selectedFrame);
                 // save data
                 setDirtyKeys(aData.getCurrentTake().getTrack(aData.getCurrentTake().selectedTrack));
-                setDirtyCache(aData.getCurrentTake().getTrack(aData.getCurrentTake().selectedTrack));
                 // refresh component
                 refreshGizmos();
             }
             // if not last key, show ease
             if(rKey != (sTrack as AMRotationTrack).keys[(sTrack as AMRotationTrack).keys.Count - 1]) {
                 Rect recEasePicker = new Rect(0f, rectQuaternion.y + rectQuaternion.height + height_inspector_space, width_inspector - margin, 0f);
-                if((sTrack as AMRotationTrack).getActionIndexForFrame(_frame) > -1) {
+                if((sTrack as AMRotationTrack).getKeyIndexForFrame(_frame) > -1) {
                     showEasePicker(sTrack, rKey, aData, recEasePicker.x, recEasePicker.y, recEasePicker.width);
                 }
             }
@@ -2679,7 +2673,6 @@ public class AMTimeline : EditorWindow {
                 aData.getCurrentTake().previewFrame(aData.getCurrentTake().selectedFrame);
                 // save data
                 setDirtyKeys(aData.getCurrentTake().getTrack(aData.getCurrentTake().selectedTrack));
-                setDirtyCache(aData.getCurrentTake().getTrack(aData.getCurrentTake().selectedTrack));
                 // refresh component
                 refreshGizmos();
             }
@@ -2692,8 +2685,8 @@ public class AMTimeline : EditorWindow {
             }
             // if not last key, show ease
             if(oKey != (sTrack as AMOrientationTrack).keys[(sTrack as AMOrientationTrack).keys.Count - 1]) {
-                int oActionIndex = (sTrack as AMOrientationTrack).getActionIndexForFrame(_frame);
-                if(oActionIndex > -1 && (sTrack.cache[oActionIndex] as AMOrientationAction).startTarget != (sTrack.cache[oActionIndex] as AMOrientationAction).endTarget) {
+                int oActionIndex = (sTrack as AMOrientationTrack).getKeyIndexForFrame(_frame);
+                if(oActionIndex > -1 && (sTrack.keys[oActionIndex] as AMOrientationKey).target != (sTrack.keys[oActionIndex] as AMOrientationKey).endTarget) {
                     Rect recEasePicker = new Rect(0f, rectNewTarget.y + rectNewTarget.height + height_inspector_space, width_inspector - margin, 0f);
                     showEasePicker(sTrack, oKey, aData, recEasePicker.x, recEasePicker.y, recEasePicker.width);
                 }
@@ -2716,7 +2709,6 @@ public class AMTimeline : EditorWindow {
                 aData.getCurrentTake().previewFrame(aData.getCurrentTake().selectedFrame);
                 // save data
                 setDirtyKeys(aData.getCurrentTake().getTrack(aData.getCurrentTake().selectedTrack));
-                setDirtyCache(aData.getCurrentTake().getTrack(aData.getCurrentTake().selectedTrack));
                 // refresh component
                 refreshGizmos();
             }
@@ -2732,7 +2724,6 @@ public class AMTimeline : EditorWindow {
                 aData.getCurrentTake().previewFrame(aData.getCurrentTake().selectedFrame);
                 // save data
                 setDirtyKeys(aData.getCurrentTake().getTrack(aData.getCurrentTake().selectedTrack));
-                setDirtyCache(aData.getCurrentTake().getTrack(aData.getCurrentTake().selectedTrack));
                 // refresh component
                 refreshGizmos();
             }
@@ -2748,7 +2739,6 @@ public class AMTimeline : EditorWindow {
                 aData.getCurrentTake().previewFrame(aData.getCurrentTake().selectedFrame);
                 // save data
                 setDirtyKeys(aData.getCurrentTake().getTrack(aData.getCurrentTake().selectedTrack));
-                setDirtyCache(aData.getCurrentTake().getTrack(aData.getCurrentTake().selectedTrack));
                 // refresh component
                 refreshGizmos();
             }
@@ -2762,7 +2752,6 @@ public class AMTimeline : EditorWindow {
                 AMCodeView.refresh();
                 // save data
                 setDirtyKeys(aData.getCurrentTake().getTrack(aData.getCurrentTake().selectedTrack));
-                setDirtyCache(aData.getCurrentTake().getTrack(aData.getCurrentTake().selectedTrack));
                 // refresh component
                 refreshGizmos();
             }
@@ -2784,7 +2773,6 @@ public class AMTimeline : EditorWindow {
                 AMCodeView.refresh();
                 // save data
                 setDirtyKeys(aData.getCurrentTake().getTrack(aData.getCurrentTake().selectedTrack));
-                setDirtyCache(aData.getCurrentTake().getTrack(aData.getCurrentTake().selectedTrack));
                 // refresh component
                 refreshGizmos();
 
@@ -2799,7 +2787,6 @@ public class AMTimeline : EditorWindow {
                 AMCodeView.refresh();
                 // save data
                 setDirtyKeys(aData.getCurrentTake().getTrack(aData.getCurrentTake().selectedTrack));
-                setDirtyCache(aData.getCurrentTake().getTrack(aData.getCurrentTake().selectedTrack));
                 // refresh component
                 refreshGizmos();
             }
@@ -2822,7 +2809,6 @@ public class AMTimeline : EditorWindow {
                     aData.getCurrentTake().previewFrame(aData.getCurrentTake().selectedFrame);
                     // save data
                     setDirtyKeys(aData.getCurrentTake().getTrack(aData.getCurrentTake().selectedTrack));
-                    setDirtyCache(aData.getCurrentTake().getTrack(aData.getCurrentTake().selectedTrack));
                     // refresh component
                     refreshGizmos();
                 }
@@ -2836,7 +2822,6 @@ public class AMTimeline : EditorWindow {
                     aData.getCurrentTake().previewFrame(aData.getCurrentTake().selectedFrame);
                     // save data
                     setDirtyKeys(aData.getCurrentTake().getTrack(aData.getCurrentTake().selectedTrack));
-                    setDirtyCache(aData.getCurrentTake().getTrack(aData.getCurrentTake().selectedTrack));
                     // refresh component
                     refreshGizmos();
                 }
@@ -2851,7 +2836,6 @@ public class AMTimeline : EditorWindow {
                     aData.getCurrentTake().previewFrame(aData.getCurrentTake().selectedFrame);
                     // save data
                     setDirtyKeys(aData.getCurrentTake().getTrack(aData.getCurrentTake().selectedTrack));
-                    setDirtyCache(aData.getCurrentTake().getTrack(aData.getCurrentTake().selectedTrack));
                     // refresh component
                     refreshGizmos();
                 }
@@ -2866,7 +2850,6 @@ public class AMTimeline : EditorWindow {
                     aData.getCurrentTake().previewFrame(aData.getCurrentTake().selectedFrame);
                     // save data
                     setDirtyKeys(aData.getCurrentTake().getTrack(aData.getCurrentTake().selectedTrack));
-                    setDirtyCache(aData.getCurrentTake().getTrack(aData.getCurrentTake().selectedTrack));
                     // refresh component
                     refreshGizmos();
                 }
@@ -2881,7 +2864,6 @@ public class AMTimeline : EditorWindow {
                     aData.getCurrentTake().previewFrame(aData.getCurrentTake().selectedFrame);
                     // save data
                     setDirtyKeys(aData.getCurrentTake().getTrack(aData.getCurrentTake().selectedTrack));
-                    setDirtyCache(aData.getCurrentTake().getTrack(aData.getCurrentTake().selectedTrack));
                     // refresh component
                     refreshGizmos();
                 }
@@ -2896,7 +2878,6 @@ public class AMTimeline : EditorWindow {
                     aData.getCurrentTake().previewFrame(aData.getCurrentTake().selectedFrame);
                     // save data
                     setDirtyKeys(aData.getCurrentTake().getTrack(aData.getCurrentTake().selectedTrack));
-                    setDirtyCache(aData.getCurrentTake().getTrack(aData.getCurrentTake().selectedTrack));
                     // refresh component
                     refreshGizmos();
                 }
@@ -2912,7 +2893,6 @@ public class AMTimeline : EditorWindow {
                     aData.getCurrentTake().previewFrame(aData.getCurrentTake().selectedFrame);
                     // save data
                     setDirtyKeys(aData.getCurrentTake().getTrack(aData.getCurrentTake().selectedTrack));
-                    setDirtyCache(aData.getCurrentTake().getTrack(aData.getCurrentTake().selectedTrack));
                     // refresh component
                     refreshGizmos();
                 }
@@ -2966,7 +2946,6 @@ public class AMTimeline : EditorWindow {
                 aData.getCurrentTake().previewFrame(aData.getCurrentTake().selectedFrame);
                 // save data
                 setDirtyKeys(aData.getCurrentTake().getTrack(aData.getCurrentTake().selectedTrack));
-                setDirtyCache(aData.getCurrentTake().getTrack(aData.getCurrentTake().selectedTrack));
 
                 doRefreshGizmo = true;
             }
@@ -3007,7 +2986,6 @@ public class AMTimeline : EditorWindow {
                     AMCodeView.refresh();
                     // save data
                     setDirtyKeys(aData.getCurrentTake().getTrack(aData.getCurrentTake().selectedTrack));
-                    setDirtyCache(aData.getCurrentTake().getTrack(aData.getCurrentTake().selectedTrack));
                     // deselect fields
                     GUIUtility.keyboardControl = 0;
                 }
@@ -3019,7 +2997,6 @@ public class AMTimeline : EditorWindow {
                     AMCodeView.refresh();
                     // save data
                     setDirtyKeys(aData.getCurrentTake().getTrack(aData.getCurrentTake().selectedTrack));
-                    setDirtyCache(aData.getCurrentTake().getTrack(aData.getCurrentTake().selectedTrack));
                 }
                 sendMessageToggleEnabled = false;	// disable sendmessage toggle
             }
@@ -3054,7 +3031,6 @@ public class AMTimeline : EditorWindow {
                 AMCodeView.refresh();
                 // save data
                 setDirtyKeys(aData.getCurrentTake().getTrack(aData.getCurrentTake().selectedTrack));
-                setDirtyCache(aData.getCurrentTake().getTrack(aData.getCurrentTake().selectedTrack));
             }
             //
             GUI.enabled = sendMessageToggleEnabled;
@@ -3066,7 +3042,6 @@ public class AMTimeline : EditorWindow {
                 AMCodeView.refresh();
                 // save data
                 setDirtyKeys(aData.getCurrentTake().getTrack(aData.getCurrentTake().selectedTrack));
-                setDirtyCache(aData.getCurrentTake().getTrack(aData.getCurrentTake().selectedTrack));
             }
             GUI.enabled = !isPlaying;
             Rect rectButtonSendMessageInfo = new Rect(width_inspector - 20f - margin, rectLabelSendMessage.y, 20f, 20f);
@@ -3093,7 +3068,6 @@ public class AMTimeline : EditorWindow {
                         AMCodeView.refresh();
                         // save data
                         setDirtyKeys(aData.getCurrentTake().getTrack(aData.getCurrentTake().selectedTrack));
-                        setDirtyCache(aData.getCurrentTake().getTrack(aData.getCurrentTake().selectedTrack));
                     }
                     rectField.y += height_field;
                     height_all_fields += height_field;
@@ -4179,13 +4153,6 @@ public class AMTimeline : EditorWindow {
             EditorUtility.SetDirty(key);
         }
     }
-    void setDirtyCache(AMTrack track) {
-        if(track != null && track.cache != null) {
-            foreach(AMAction action in track.cache) {
-                EditorUtility.SetDirty(action);
-            }
-        }
-    }
     void setDirtyTakes(List<AMTake> takes) {
         foreach(AMTake take in takes) {
             EditorUtility.SetDirty(take);
@@ -4206,86 +4173,86 @@ public class AMTimeline : EditorWindow {
             scrollViewValue.y = Mathf.Clamp(val, 0f, maxScrollView());
     }
     // timeline action info
-    string getInfoTextForAction(AMTrack _track, AMAction _action, bool brief, int clamped) {
+    string getInfoTextForAction(AMTrack _track, AMKey _key, bool brief, int clamped) {
         // get text for track type
         #region translation
-        if(_action is AMTranslationAction) {
-            return easeTypeNames[(_action as AMTranslationAction).easeType];
+        if(_key is AMTranslationKey) {
+            return easeTypeNames[(_key as AMTranslationKey).easeType];
         #endregion
             #region rotation
         }
-        else if(_action is AMRotationAction) {
-            return easeTypeNames[(_action as AMRotationAction).easeType];
+        else if(_key is AMRotationKey) {
+            return easeTypeNames[(_key as AMRotationKey).easeType];
             #endregion
             #region animation
         }
-        else if(_action is AMAnimationAction) {
-            if(!(_action as AMAnimationAction).amClip) return "Not Set";
-            return (_action as AMAnimationAction).amClip.name + "\n" + ((WrapMode)(_action as AMAnimationAction).wrapMode).ToString();
+        else if(_key is AMAnimationKey) {
+            if(!(_key as AMAnimationKey).amClip) return "Not Set";
+            return (_key as AMAnimationKey).amClip.name + "\n" + ((WrapMode)(_key as AMAnimationKey).wrapMode).ToString();
             #endregion
             #region audio
         }
-        else if(_action is AMAudioAction) {
-            if(!(_action as AMAudioAction).audioClip) return "Not Set";
-            return (_action as AMAudioAction).audioClip.name;
+        else if(_key is AMAudioKey) {
+            if(!(_key as AMAudioKey).audioClip) return "Not Set";
+            return (_key as AMAudioKey).audioClip.name;
             #endregion
             #region property
         }
-        else if(_action is AMPropertyAction) {
-            string info = (_action as AMPropertyAction).getName() + "\n";
-            if((_action as AMPropertyAction).targetsAreEqual()) brief = true;
-            if(!brief && (_action as AMPropertyAction).endFrame != -1) {
-                info += easeTypeNames[(_action as AMPropertyAction).easeType] + ": ";
+        else if(_key is AMPropertyKey) {
+            string info = (_key as AMPropertyKey).getName() + "\n";
+            if((_key as AMPropertyKey).targetsAreEqual()) brief = true;
+            if(!brief && (_key as AMPropertyKey).endFrame != -1) {
+                info += easeTypeNames[(_key as AMPropertyKey).easeType] + ": ";
             }
-            string detail = (_action as AMPropertyAction).getValueString(brief);	// extra details such as integer values ex. 1 -> 12
+            string detail = (_key as AMPropertyKey).getValueString(brief);	// extra details such as integer values ex. 1 -> 12
             if(detail != null) info += detail;
             return info;
             #endregion
             #region event
         }
-        else if(_action is AMEventAction) {
-            if((_action as AMEventAction).methodInfo == null) {
+        else if(_key is AMEventKey) {
+            if((_key as AMEventKey).methodInfo == null) {
                 return "Not Set";
             }
-            string txtInfoEvent = (_action as AMEventAction).methodName;
+            string txtInfoEvent = (_key as AMEventKey).methodName;
             // include parameters
-            if((_action as AMEventAction).parameters != null) {
+            if((_key as AMEventKey).parameters != null) {
                 txtInfoEvent += "(";
-                for(int i = 0; i < (_action as AMEventAction).parameters.Count; i++) {
-                    if((_action as AMEventAction).parameters[i] == null) txtInfoEvent += "";
-                    else txtInfoEvent += (_action as AMEventAction).parameters[i].getStringValue();
-                    if(i < (_action as AMEventAction).parameters.Count - 1) txtInfoEvent += ", ";
+                for(int i = 0; i < (_key as AMEventKey).parameters.Count; i++) {
+                    if((_key as AMEventKey).parameters[i] == null) txtInfoEvent += "";
+                    else txtInfoEvent += (_key as AMEventKey).parameters[i].getStringValue();
+                    if(i < (_key as AMEventKey).parameters.Count - 1) txtInfoEvent += ", ";
                 }
 
                 txtInfoEvent += ")";
                 return txtInfoEvent;
             }
-            return (_action as AMEventAction).methodName;
+            return (_key as AMEventKey).methodName;
             #endregion
             #region orientation
         }
-        else if(_action is AMOrientationAction) {
-            if(!(_action as AMOrientationAction).startTarget) return "No Target";
+        else if(_key is AMOrientationKey) {
+            if(!(_key as AMOrientationKey).target) return "No Target";
             string txtInfoOrientation = null;
-            if((_action as AMOrientationAction).isLookFollow()) {
-                txtInfoOrientation = (_action as AMOrientationAction).startTarget.gameObject.name;
+            if((_key as AMOrientationKey).isLookFollow()) {
+                txtInfoOrientation = (_key as AMOrientationKey).target.gameObject.name;
                 return txtInfoOrientation;
             }
-            txtInfoOrientation = (_action as AMOrientationAction).startTarget.gameObject.name +
-            " -> " + ((_action as AMOrientationAction).endTarget ? (_action as AMOrientationAction).endTarget.gameObject.name : "No Target");
-            txtInfoOrientation += "\n" + easeTypeNames[(_action as AMOrientationAction).easeType];
+            txtInfoOrientation = (_key as AMOrientationKey).target.gameObject.name +
+            " -> " + ((_key as AMOrientationKey).endTarget ? (_key as AMOrientationKey).endTarget.gameObject.name : "No Target");
+            txtInfoOrientation += "\n" + easeTypeNames[(_key as AMOrientationKey).easeType];
             return txtInfoOrientation;
             #endregion
             #region goactive
         }
-        else if(_action is AMGOSetActiveAction) {
-            AMGOSetActiveAction act = _action as AMGOSetActiveAction;
+        else if(_key is AMGOSetActiveKey) {
+            AMGOSetActiveKey act = _key as AMGOSetActiveKey;
             if(!act.go) return "No GameObject";
 
             if(brief)
                 return string.Format("{0}.SetActive({1})", act.go.name, (_track as AMGOSetActiveTrack).startActive);
             else
-                return string.Format("{0}.SetActive({1})", act.go.name, act.endVal);
+                return string.Format("{0}.SetActive({1})", act.go.name, act.setActive);
             #endregion
         }
 
@@ -4361,7 +4328,6 @@ public class AMTimeline : EditorWindow {
         aData.getCurrentTake().previewFrame(aData.getCurrentTake().selectedFrame);
         // save data
         setDirtyKeys(aData.getCurrentTake().getTrack(aData.getCurrentTake().selectedTrack));
-        setDirtyCache(aData.getCurrentTake().getTrack(aData.getCurrentTake().selectedTrack));
         // refresh component
         refreshGizmos();
 
@@ -4459,7 +4425,6 @@ public class AMTimeline : EditorWindow {
             //aData.getCurrentTake().previewFrame(aData.getCurrentTake().selectedFrame);
             // save data
             setDirtyKeys(aData.getCurrentTake().getTrack(aData.getCurrentTake().selectedTrack));
-            setDirtyCache(aData.getCurrentTake().getTrack(aData.getCurrentTake().selectedTrack));
             // refresh component
             refreshGizmos();
         }
@@ -4475,7 +4440,6 @@ public class AMTimeline : EditorWindow {
             aData.getCurrentTake().previewFrame(aData.getCurrentTake().selectedFrame);
             // save data
             setDirtyKeys(aData.getCurrentTake().getTrack(aData.getCurrentTake().selectedTrack));
-            setDirtyCache(aData.getCurrentTake().getTrack(aData.getCurrentTake().selectedTrack));
             // refresh component
             refreshGizmos();
         }
@@ -4584,7 +4548,6 @@ public class AMTimeline : EditorWindow {
         }
 
         setDirtyKeys(aData.getCurrentTake().getSelectedTrack());
-        setDirtyCache(aData.getCurrentTake().getSelectedTrack());
         refreshGizmos();
 
         AMCodeView.refresh();
@@ -4596,7 +4559,6 @@ public class AMTimeline : EditorWindow {
         AMCodeView.refresh();
         // save data
         setDirtyKeys(aData.getCurrentTake().getSelectedTrack());
-        setDirtyCache(aData.getCurrentTake().getSelectedTrack());
         // select current frame
         timelineSelectFrame(aData.getCurrentTake().selectedTrack, aData.getCurrentTake().selectedFrame);
         // refresh gizmos
@@ -4621,7 +4583,6 @@ public class AMTimeline : EditorWindow {
         //aData.getCurrentTake().deleteSelectedKeys();
         // save data
         setDirtyKeys(aData.getCurrentTake().getSelectedTrack());
-        setDirtyCache(aData.getCurrentTake().getSelectedTrack());
         // select current frame
         timelineSelectFrame(aData.getCurrentTake().selectedTrack, aData.getCurrentTake().selectedFrame, false);
         // refresh gizmos

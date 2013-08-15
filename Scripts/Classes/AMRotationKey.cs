@@ -2,11 +2,19 @@ using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 
+using Holoville.HOTween;
+using Holoville.HOTween.Plugins;
+
 [AddComponentMenu("")]
 public class AMRotationKey : AMKey {
 
     //public int type = 0; // 0 = Rotate To, 1 = Look At
     public Quaternion rotation;
+
+    public int endFrame;
+    public Transform obj;
+    public bool isLocal;
+    public Quaternion endRotation;
 
     public bool setRotation(Vector3 rotation) {
         if(this.rotation != Quaternion.Euler(rotation)) {
@@ -49,5 +57,31 @@ public class AMRotationKey : AMKey {
 
         return a;
     }
+
+    #region action
+    public override int getNumberOfFrames() {
+        return endFrame - frame;
+    }
+    public float getTime(int frameRate) {
+        return (float)getNumberOfFrames() / (float)frameRate;
+    }
+    public override Tweener buildTweener(Sequence sequence, int frameRate) {
+        if(!obj) return null;
+        if(endFrame == -1) return null;
+        if(hasCustomEase()) {
+            return HOTween.To(obj, getTime(frameRate), new TweenParms().Prop(isLocal ? "localRotation" : "rotation", new AMPlugQuaternionSlerp(endRotation)).Ease(easeCurve));
+        }
+        else {
+            return HOTween.To(obj, getTime(frameRate), new TweenParms().Prop(isLocal ? "localRotation" : "rotation", new AMPlugQuaternionSlerp(endRotation)).Ease((EaseType)easeType));
+        }
+    }
+
+    public Quaternion getStartQuaternion() {
+        return rotation;
+    }
+    public Quaternion getEndQuaternion() {
+        return endRotation;
+    }
+    #endregion
 
 }

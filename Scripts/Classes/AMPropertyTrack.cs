@@ -330,80 +330,64 @@ public class AMPropertyTrack : AMTrack {
     public override void updateCache() {
         // sort keys
         sortKeys();
-        // destroy cache
-        destroyCache();
-        // create new cache
-        cache = new List<AMAction>();
         for(int i = 0; i < keys.Count; i++) {
+            AMPropertyKey key = keys[i] as AMPropertyKey;
 
-            AMPropertyAction a = gameObject.AddComponent<AMPropertyAction>();
-            a.enabled = false;
-            a.component = component;
-            a.startFrame = keys[i].frame;
-            if(keys.Count > (i + 1)) a.endFrame = keys[i + 1].frame;
-            else a.endFrame = -1;
-            a.valueType = valueType;
+            key.version = version;
+
+            key.component = component;
+            if(keys.Count > (i + 1)) key.endFrame = keys[i + 1].frame;
+            else key.endFrame = -1;
+            key.valueType = valueType;
             Type _type = null;
             bool showError = true;
             //int methodInfoType = -1;
             if(fieldInfo != null) {
-                a.fieldInfo = fieldInfo;
+                key.fieldInfo = fieldInfo;
                 _type = fieldInfo.FieldType;
                 showError = false;
             }
             else if(propertyInfo != null) {
-                a.propertyInfo = propertyInfo;
+                key.propertyInfo = propertyInfo;
                 _type = propertyInfo.PropertyType;
                 showError = false;
             }
             else if(methodInfo != null) {
-                a.methodInfo = methodInfo;
-                a.methodParameterTypes = methodParameterTypes;
+                key.methodInfo = methodInfo;
+                key.methodParameterTypes = methodParameterTypes;
             }
             if(showError) {
                 Debug.LogError("Animator: Fatal Error; fieldInfo, propertyInfo and methodInfo are unset for Value Type " + valueType);
-                a.destroy();
+                key.destroy();
                 return;
             }
             // set value
             if(isNumeric(_type)) {
-                a.start_val = (double)(keys[i] as AMPropertyKey).val;
-                if(a.endFrame != -1) a.end_val = (double)(keys[i + 1] as AMPropertyKey).val;
+                if(key.endFrame != -1) key.end_val = (double)(keys[i + 1] as AMPropertyKey).val;
             }
             else if(_type == typeof(Vector2)) {
-                a.start_vect2 = (keys[i] as AMPropertyKey).vect2;
-                if(a.endFrame != -1) a.end_vect2 = (keys[i + 1] as AMPropertyKey).vect2;
+                if(key.endFrame != -1) key.end_vect2 = (keys[i + 1] as AMPropertyKey).vect2;
             }
             else if(_type == typeof(Vector3)) {
-                a.start_vect3 = (keys[i] as AMPropertyKey).vect3;
-                if(a.endFrame != -1) a.end_vect3 = (keys[i + 1] as AMPropertyKey).vect3;
+                if(key.endFrame != -1) key.end_vect3 = (keys[i + 1] as AMPropertyKey).vect3;
             }
             else if(_type == typeof(Color)) {
-                a.start_color = (keys[i] as AMPropertyKey).color;
-                if(a.endFrame != -1) a.end_color = (keys[i + 1] as AMPropertyKey).color;
+                if(key.endFrame != -1) key.end_color = (keys[i + 1] as AMPropertyKey).color;
             }
             else if(_type == typeof(Rect)) {
-                a.start_rect = (keys[i] as AMPropertyKey).rect;
-                if(a.endFrame != -1) a.end_rect = (keys[i + 1] as AMPropertyKey).rect;
+                if(key.endFrame != -1) key.end_rect = (keys[i + 1] as AMPropertyKey).rect;
             }
             else if(_type == typeof(Vector4)) {
-                a.start_vect4 = (keys[i] as AMPropertyKey).vect4;
-                if(a.endFrame != -1) a.end_vect4 = (keys[i + 1] as AMPropertyKey).vect4;
+                if(key.endFrame != -1) key.end_vect4 = (keys[i + 1] as AMPropertyKey).vect4;
             }
             else if(_type == typeof(Quaternion)) {
-                a.start_quat = (keys[i] as AMPropertyKey).quat;
-                if(a.endFrame != -1) a.end_quat = (keys[i + 1] as AMPropertyKey).quat;
+                if(key.endFrame != -1) key.end_quat = (keys[i + 1] as AMPropertyKey).quat;
             }
             else {
                 Debug.LogError("Animator: Fatal Error, property type '" + _type.ToString() + "' not found.");
-                a.destroy();
+                key.destroy();
                 return;
             }
-            // set action ease
-            a.easeType = (keys[i] as AMPropertyKey).easeType;
-            a.customEase = new List<float>(keys[i].customEase);
-            // add to cache
-            cache.Add(a);
         }
         base.updateCache();
 
@@ -519,20 +503,20 @@ public class AMPropertyTrack : AMTrack {
     }
     // preview a frame in the scene view
     public void previewFrame(float frame, bool quickPreview = false) {
-        if(cache == null || cache.Count <= 0) {
+        if(keys == null || keys.Count <= 0) {
             return;
         }
         if(!component || !obj) return;
 
         // if before or equal to first frame, or is the only frame
-        if((frame <= (float)cache[0].startFrame) || ((cache[0] as AMPropertyAction).endFrame == -1)) {
+        if((frame <= (float)keys[0].frame) || ((keys[0] as AMPropertyKey).endFrame == -1)) {
             //obj.rotation = (cache[0] as AMPropertyAction).getStartQuaternion();
             if(fieldInfo != null) {
-                fieldInfo.SetValue(component, (cache[0] as AMPropertyAction).getStartValue());
+                fieldInfo.SetValue(component, (keys[0] as AMPropertyKey).getStartValue());
                 refreshTransform();
             }
             else if(propertyInfo != null) {
-                propertyInfo.SetValue(component, (cache[0] as AMPropertyAction).getStartValue(), null);
+                propertyInfo.SetValue(component, (keys[0] as AMPropertyKey).getStartValue(), null);
                 refreshTransform();
             }
             else if(methodInfo != null) {
@@ -540,13 +524,13 @@ public class AMPropertyTrack : AMTrack {
             return;
         }
         // if beyond or equal to last frame
-        if(frame >= (float)(cache[cache.Count - 2] as AMPropertyAction).endFrame) {
+        if(frame >= (float)(keys[keys.Count - 2] as AMPropertyKey).endFrame) {
             if(fieldInfo != null) {
-                fieldInfo.SetValue(component, (cache[cache.Count - 2] as AMPropertyAction).getEndValue());
+                fieldInfo.SetValue(component, (keys[keys.Count - 2] as AMPropertyKey).getEndValue());
                 refreshTransform();
             }
             else if(propertyInfo != null) {
-                propertyInfo.SetValue(component, (cache[cache.Count - 2] as AMPropertyAction).getEndValue(), null);
+                propertyInfo.SetValue(component, (keys[keys.Count - 2] as AMPropertyKey).getEndValue(), null);
                 refreshTransform();
             }
             else if(methodInfo != null) {
@@ -554,17 +538,17 @@ public class AMPropertyTrack : AMTrack {
             return;
         }
         // if lies on property action
-        foreach(AMPropertyAction action in cache) {
-            if((frame < (float)action.startFrame) || (frame > (float)action.endFrame)) continue;
-            if(quickPreview && !action.targetsAreEqual()) return;	// quick preview; if action will execute then skip
+        foreach(AMPropertyKey key in keys) {
+            if((frame < (float)key.frame) || (frame > (float)key.endFrame)) continue;
+            if(quickPreview && !key.targetsAreEqual()) return;	// quick preview; if action will execute then skip
             // if on startFrame
-            if(frame == (float)action.startFrame) {
+            if(frame == (float)key.frame) {
                 if(fieldInfo != null) {
-                    fieldInfo.SetValue(component, action.getStartValue());
+                    fieldInfo.SetValue(component, key.getStartValue());
                     refreshTransform();
                 }
                 else if(propertyInfo != null) {
-                    propertyInfo.SetValue(component, action.getStartValue(), null);
+                    propertyInfo.SetValue(component, key.getStartValue(), null);
                     refreshTransform();
                 }
                 else if(methodInfo != null) {
@@ -572,13 +556,13 @@ public class AMPropertyTrack : AMTrack {
                 return;
             }
             // if on endFrame
-            if(frame == (float)action.endFrame) {
+            if(frame == (float)key.endFrame) {
                 if(fieldInfo != null) {
-                    fieldInfo.SetValue(component, action.getEndValue());
+                    fieldInfo.SetValue(component, key.getEndValue());
                     refreshTransform();
                 }
                 else if(propertyInfo != null) {
-                    propertyInfo.SetValue(component, action.getEndValue(), null);
+                    propertyInfo.SetValue(component, key.getEndValue(), null);
                     refreshTransform();
                 }
                 else if(methodInfo != null) {
@@ -587,71 +571,71 @@ public class AMPropertyTrack : AMTrack {
             }
             // else find value using easing function
 
-            float framePositionInAction = frame - (float)action.startFrame;
+            float framePositionInAction = frame - (float)key.frame;
             if(framePositionInAction < 0f) framePositionInAction = 0f;
 
             float t = 0.0f;
 
-            if(action.hasCustomEase()) {
-                t = AMUtil.EaseCustom(0.0f, 1.0f, framePositionInAction / action.getNumberOfFrames(), action.easeCurve);
+            if(key.hasCustomEase()) {
+                t = AMUtil.EaseCustom(0.0f, 1.0f, framePositionInAction / key.getNumberOfFrames(), key.easeCurve);
             }
             else {
-                TweenDelegate.EaseFunc ease = AMUtil.GetEasingFunction((EaseType)action.easeType);
-                t = ease(framePositionInAction, 0.0f, 1.0f, action.getNumberOfFrames(), 0.0f, 0.0f);
+                TweenDelegate.EaseFunc ease = AMUtil.GetEasingFunction((EaseType)key.easeType);
+                t = ease(framePositionInAction, 0.0f, 1.0f, key.getNumberOfFrames(), 0.0f, 0.0f);
             }
 
             //qCurrent.x = ease(qStart.x,qEnd.x,percentage);
-            if(action.valueType == (int)ValueType.Integer) {
-                float vStartInteger = Convert.ToSingle(action.start_val);
-                float vEndInteger = Convert.ToSingle(action.end_val);
+            if(key.valueType == (int)ValueType.Integer) {
+                float vStartInteger = Convert.ToSingle(key.val);
+                float vEndInteger = Convert.ToSingle(key.end_val);
                 int vCurrentInteger = Mathf.RoundToInt(Mathf.Lerp(vStartInteger, vEndInteger, t));
                 if(fieldInfo != null) fieldInfo.SetValue(component, vCurrentInteger);
                 else if(propertyInfo != null) propertyInfo.SetValue(component, vCurrentInteger, null);
                 refreshTransform();
             }
-            else if(action.valueType == (int)ValueType.Long) {
-                float vStartLong = Convert.ToSingle(action.start_val);
-                float vEndLong = Convert.ToSingle(action.end_val);
+            else if(key.valueType == (int)ValueType.Long) {
+                float vStartLong = Convert.ToSingle(key.val);
+                float vEndLong = Convert.ToSingle(key.end_val);
                 long vCurrentLong = (long)Mathf.Lerp(vStartLong, vEndLong, t);
                 if(fieldInfo != null) fieldInfo.SetValue(component, vCurrentLong);
                 else if(propertyInfo != null) propertyInfo.SetValue(component, vCurrentLong, null);
                 refreshTransform();
             }
-            else if(action.valueType == (int)ValueType.Float) {
-                float vStartFloat = Convert.ToSingle(action.start_val);
-                float vEndFloat = Convert.ToSingle(action.end_val);
+            else if(key.valueType == (int)ValueType.Float) {
+                float vStartFloat = Convert.ToSingle(key.val);
+                float vEndFloat = Convert.ToSingle(key.end_val);
                 float vCurrentFloat = Mathf.Lerp(vStartFloat, vEndFloat, t);
                 if(fieldInfo != null) fieldInfo.SetValue(component, vCurrentFloat);
                 else if(propertyInfo != null) propertyInfo.SetValue(component, vCurrentFloat, null);
                 refreshTransform();
             }
-            else if(action.valueType == (int)ValueType.Double) {
-                double vCurrentDouble = action.start_val + ((double)t) * (action.end_val - action.start_val);
+            else if(key.valueType == (int)ValueType.Double) {
+                double vCurrentDouble = key.val + ((double)t) * (key.end_val - key.val);
                 if(fieldInfo != null) fieldInfo.SetValue(component, vCurrentDouble);
                 else if(propertyInfo != null) propertyInfo.SetValue(component, vCurrentDouble, null);
                 refreshTransform();
             }
-            else if(action.valueType == (int)ValueType.Vector2) {
-                Vector2 vCurrentVector2 = Vector2.Lerp(action.start_vect2, action.end_vect2, t);
+            else if(key.valueType == (int)ValueType.Vector2) {
+                Vector2 vCurrentVector2 = Vector2.Lerp(key.vect2, key.end_vect2, t);
                 if(fieldInfo != null) fieldInfo.SetValue(component, vCurrentVector2);
                 else if(propertyInfo != null) propertyInfo.SetValue(component, vCurrentVector2, null);
                 refreshTransform();
             }
-            else if(action.valueType == (int)ValueType.Vector3) {
-                Vector3 vCurrentVector3 = Vector3.Lerp(action.start_vect3, action.end_vect3, t);
+            else if(key.valueType == (int)ValueType.Vector3) {
+                Vector3 vCurrentVector3 = Vector3.Lerp(key.vect3, key.end_vect3, t);
                 if(fieldInfo != null) fieldInfo.SetValue(component, vCurrentVector3);
                 else if(propertyInfo != null) propertyInfo.SetValue(component, vCurrentVector3, null);
                 refreshTransform();
             }
-            else if(action.valueType == (int)ValueType.Color) {
-                Color vCurrentColor = Color.Lerp(action.start_color, action.end_color, t);
+            else if(key.valueType == (int)ValueType.Color) {
+                Color vCurrentColor = Color.Lerp(key.color, key.end_color, t);
                 if(fieldInfo != null) fieldInfo.SetValue(component, vCurrentColor);
                 else if(propertyInfo != null) propertyInfo.SetValue(component, vCurrentColor, null);
                 refreshTransform();
             }
-            else if(action.valueType == (int)ValueType.Rect) {
-                Rect vStartRect = action.start_rect;
-                Rect vEndRect = action.end_rect;
+            else if(key.valueType == (int)ValueType.Rect) {
+                Rect vStartRect = key.rect;
+                Rect vEndRect = key.end_rect;
                 Rect vCurrentRect = new Rect();
                 vCurrentRect.x = Mathf.Lerp(vStartRect.x, vEndRect.x, t);
                 vCurrentRect.y = Mathf.Lerp(vStartRect.y, vEndRect.y, t);
@@ -661,14 +645,14 @@ public class AMPropertyTrack : AMTrack {
                 else if(propertyInfo != null) propertyInfo.SetValue(component, vCurrentRect, null);
                 refreshTransform();
             }
-            else if(action.valueType == (int)ValueType.Vector4) {
-                Vector4 vCurrentVector4 = Vector4.Lerp(action.start_vect4, action.end_vect4, t);
+            else if(key.valueType == (int)ValueType.Vector4) {
+                Vector4 vCurrentVector4 = Vector4.Lerp(key.vect4, key.end_vect4, t);
                 if(fieldInfo != null) fieldInfo.SetValue(component, vCurrentVector4);
                 else if(propertyInfo != null) propertyInfo.SetValue(component, vCurrentVector4, null);
                 refreshTransform();
             }
-            else if(action.valueType == (int)ValueType.Quaternion) {
-                Quaternion vCurrentQuat = Quaternion.Slerp(action.start_quat, action.end_quat, t);
+            else if(key.valueType == (int)ValueType.Quaternion) {
+                Quaternion vCurrentQuat = Quaternion.Slerp(key.quat, key.end_quat, t);
                 if(fieldInfo != null) fieldInfo.SetValue(component, vCurrentQuat);
                 else if(propertyInfo != null) propertyInfo.SetValue(component, vCurrentQuat, null);
                 refreshTransform();
@@ -694,76 +678,7 @@ public class AMPropertyTrack : AMTrack {
     }
     public string getValueInitialization(int codeLanguage, string varName) {
         string s = "";
-
-        s += varName + "Property.";
-        if(methodInfo != null) {
-            s += "Invoke(" + varName + ", ";
-            if(codeLanguage == 0) s += "new object[]{";
-            else s += "[";
-        }
-        else {
-            s += "SetValue(" + varName + ", ";
-        }
-        /*if(valueType == (int)ValueType.MorphChannels) {
-            s += (cache[0] as AMPropertyAction).getFloatArrayString(codeLanguage, (cache[0] as AMPropertyAction).start_morph);
-        }else */
-        if(valueType == (int)ValueType.Integer) {
-            float vStartInteger = Convert.ToSingle((cache[0] as AMPropertyAction).start_val);
-            s += vStartInteger;
-        }
-        else if(valueType == (int)ValueType.Long) {
-            float vStartLong = Convert.ToSingle((cache[0] as AMPropertyAction).start_val);
-            s += vStartLong;
-        }
-        else if(valueType == (int)ValueType.Float) {
-            float vStartFloat = Convert.ToSingle((cache[0] as AMPropertyAction).start_val);
-            s += vStartFloat;
-            if(codeLanguage == 0) s += "f";
-        }
-        else if(valueType == (int)ValueType.Double) {
-            float vStartDouble = Convert.ToSingle((cache[0] as AMPropertyAction).start_val);
-            s += vStartDouble;
-            if(codeLanguage == 0) s += "f";
-        }
-        else if(valueType == (int)ValueType.Vector2) {
-            Vector2 vStartVector2 = (cache[0] as AMPropertyAction).start_vect2;
-            if(codeLanguage == 0) s += "new Vector2(" + vStartVector2.x + "f, " + vStartVector2.y + "f)";
-            else s += "Vector2(" + vStartVector2.x + ", " + vStartVector2.y + ")";
-        }
-        else if(valueType == (int)ValueType.Vector3) {
-            Vector3 vStartVector3 = (cache[0] as AMPropertyAction).start_vect3;
-            if(codeLanguage == 0) s += "new Vector3(" + vStartVector3.x + "f, " + vStartVector3.y + "f, " + vStartVector3.z + "f)";
-            else s += "Vector3(" + vStartVector3.x + ", " + vStartVector3.y + ", " + vStartVector3.z + ")";
-        }
-        else if(valueType == (int)ValueType.Color) {
-            Color vStartColor = (cache[0] as AMPropertyAction).start_color;
-            if(codeLanguage == 0) s += "new Color(" + vStartColor.r + "f, " + vStartColor.g + "f, " + vStartColor.b + "f, " + vStartColor.a + "f)";
-            else s += "Color(" + vStartColor.r + ", " + vStartColor.g + ", " + vStartColor.b + ", " + vStartColor.a + ")";
-        }
-        else if(valueType == (int)ValueType.Rect) {
-            Rect vStartRect = (cache[0] as AMPropertyAction).start_rect;
-            if(codeLanguage == 0) s += "new Rect(" + vStartRect.x + "f, " + vStartRect.y + "f, " + vStartRect.width + "f, " + vStartRect.height + "f)";
-            else s += "Rect(" + vStartRect.x + ", " + vStartRect.y + ", " + vStartRect.width + ", " + vStartRect.height + ")";
-        }
-        else if(valueType == (int)ValueType.Vector4) {
-            Vector4 vStartVector4 = (cache[0] as AMPropertyAction).start_vect4;
-            if(codeLanguage == 0) s += "new Vector4(" + vStartVector4.x + "f, " + vStartVector4.y + "f, " + vStartVector4.z + "f, " + vStartVector4.w + "f)";
-            else s += "Vector4(" + vStartVector4.x + ", " + vStartVector4.y + ", " + vStartVector4.z + ", " + vStartVector4.w + ")";
-        }
-        else if(valueType == (int)ValueType.Quaternion) {
-            Quaternion q = (cache[0] as AMPropertyAction).start_quat;
-            if(codeLanguage == 0) s += "new Quaternion(" + q.x + "f, " + q.y + "f, " + q.z + "f, " + q.w + "f)";
-            else s += "Quaternion(" + q.x + ", " + q.y + ", " + q.z + ", " + q.w + ")";
-        }
-        /*if(fieldInfo != null) s += ");";
-        else */
-        if(propertyInfo != null) s += ", null";
-        else if(methodInfo != null) {
-            if(codeLanguage == 0) s += "}";
-            else s += "]";
-
-        }
-        s += ");";
+        Debug.LogError("need implement");
         return s;
     }
     public static bool isValueTypeNumeric(int valueType) {
@@ -780,79 +695,8 @@ public class AMPropertyTrack : AMTrack {
     }
 
     public override AnimatorTimeline.JSONInit getJSONInit() {
-        if(!obj || keys.Count <= 0 || cache.Count <= 0) return null;
-        AnimatorTimeline.JSONInit init = new AnimatorTimeline.JSONInit();
-        init.go = obj.gameObject.name;
-        List<string> strings = new List<string>();
-        strings.Add(component.GetType().Name);
-        if(fieldInfo != null) {
-            init.typeExtra = "fieldinfo";
-            strings.Add(fieldInfo.Name);
-        }
-        else if(propertyInfo != null) {
-            init.typeExtra = "propertyinfo";
-            strings.Add(propertyInfo.Name);
-        }
-        else if(methodInfo != null) {
-            init.typeExtra = "methodinfo";
-            strings.Add(methodInfo.Name);
-            // parameter types
-            foreach(string s in methodParameterTypes) {
-                strings.Add(s);
-            }
-        }
-        if(valueType == (int)ValueType.Integer) {
-            init.type = "propertyint";
-            init._int = Convert.ToInt32((cache[0] as AMPropertyAction).start_val);
-        }
-        else if(valueType == (int)ValueType.Long) {
-            init.type = "propertylong";
-            init._long = Convert.ToInt64((cache[0] as AMPropertyAction).start_val);
-        }
-        else if(valueType == (int)ValueType.Float) {
-            init.type = "propertyfloat";
-            init.floats = new float[] { Convert.ToSingle((cache[0] as AMPropertyAction).start_val) };
-        }
-        else if(valueType == (int)ValueType.Double) {
-            init.type = "propertydouble";
-            init._double = (cache[0] as AMPropertyAction).start_val;
-        }
-        else if(valueType == (int)ValueType.Vector2) {
-            init.type = "propertyvect2";
-            AnimatorTimeline.JSONVector2 v2 = new AnimatorTimeline.JSONVector2();
-            v2.setValue((cache[0] as AMPropertyAction).start_vect2);
-            init._vect2 = v2;
-        }
-        else if(valueType == (int)ValueType.Vector3) {
-            init.type = "propertyvect3";
-            AnimatorTimeline.JSONVector3 v3 = new AnimatorTimeline.JSONVector3();
-            v3.setValue((cache[0] as AMPropertyAction).start_vect3);
-            init.position = v3;
-        }
-        else if(valueType == (int)ValueType.Color) {
-            init.type = "propertycolor";
-            AnimatorTimeline.JSONColor c = new AnimatorTimeline.JSONColor();
-            c.setValue((cache[0] as AMPropertyAction).start_color);
-            init._color = c;
-        }
-        else if(valueType == (int)ValueType.Rect) {
-            init.type = "propertyrect";
-            AnimatorTimeline.JSONRect r = new AnimatorTimeline.JSONRect();
-            r.setValue((cache[0] as AMPropertyAction).start_rect);
-            init._rect = r;
-        }
-        else if(valueType == (int)ValueType.Vector4) {
-            Debug.LogError("need implement");
-        }
-        else if(valueType == (int)ValueType.Quaternion) {
-            Debug.LogError("need implement");
-        }
-        else {
-            Debug.LogWarning("Animator: Error exporting JSON, unknown Property ValueType " + valueType);
-            return null;
-        }
-        init.strings = strings.ToArray();
-        return init;
+        Debug.LogError("need implement");
+        return null;
     }
 
     public override List<GameObject> getDependencies() {
@@ -905,7 +749,7 @@ public class AMPropertyTrack : AMTrack {
             ntrack.methodParameterTypes = new string[methodParameterTypes.Length];
             Array.Copy(methodParameterTypes, ntrack.methodParameterTypes, methodParameterTypes.Length);
         }
-        
+
         return ntrack;
     }
 }
