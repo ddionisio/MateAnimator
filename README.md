@@ -13,7 +13,9 @@ Also, Animator is no longer global and can be added to any game object.  You can
 
 Camera Transition and Mega Morph has been removed
 
-Import/Export, Code Generator doesn't work.
+Import/Export, Code Generator doesn't work. JSON stuff mangled. 
+
+Undo/Redo works as far as I've tested.
 
 How To
 ======
@@ -21,5 +23,8 @@ How To
 TODO
 ====
 
-Better Undo/Redo
 Fix Orientation
+
+Add a way to make this tool extensive
+
+Fix Wonky window positioning and pop-up menu weirdness
