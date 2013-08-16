@@ -350,16 +350,31 @@ public class AnimatorData : MonoBehaviour {
     /// <summary>
     /// Return true if there are no nulls in references
     /// </summary>
-    public bool CheckNulls() {
+    public bool CheckIntegrity() {
+        int numTracks = 0;
+        int numKeys = 0;
+
         foreach(AMTake take in takes) {
             if(take) {
-                if(!take.CheckNulls())
+                if(!take.CheckNulls(ref numKeys))
                     return false;
+
+                numTracks += take.trackValues.Count;
             }
             else {
                 return false;
             }
         }
+
+        //check if actual takes in game object is the same count...
+        GameObject dh = dataHolder;
+
+        if(takes.Count != dh.GetComponentsInChildren<AMTake>(true).Length)
+            return false;
+        else if(numTracks != dh.GetComponentsInChildren<AMTrack>(true).Length)
+            return false;
+        else if(numKeys != dh.GetComponentsInChildren<AMKey>(true).Length)
+            return false;
 
         return true;
     }

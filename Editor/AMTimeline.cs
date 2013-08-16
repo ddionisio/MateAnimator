@@ -497,16 +497,20 @@ public class AMTimeline : EditorWindow {
             //aData.propertySelectTrack = null;
         }
     }
-    void OnHierarchyChange() {
-        if(_aData && !_aData.CheckNulls()) {
-            contextSelectionKeysBuffer.Clear();
-            contextSelectionTracksBuffer.Clear();
-            cachedContextSelection.Clear();
+    void ShadyRefresh() {
+        contextSelectionKeysBuffer.Clear();
+        contextSelectionTracksBuffer.Clear();
+        cachedContextSelection.Clear();
 
-            GameObject go = _aData.gameObject;
-            _aData.isAnimatorOpen = false;
-            _aData = null;
-            Selection.activeGameObject = go;
+        GameObject go = _aData.gameObject;
+        _aData.isAnimatorOpen = false;
+        _aData = null;
+        Selection.activeGameObject = go;
+    }
+
+    void OnHierarchyChange() {
+        if(_aData && !_aData.CheckIntegrity()) {
+            ShadyRefresh();
         }
     }
     void OnAutoKey(AMTrack track, AMKey key) {
@@ -642,30 +646,14 @@ public class AMTimeline : EditorWindow {
             this.ShowNotification(new GUIContent("Code Compiling"));
             return;
         }
-
-        if(tickerSpeed <= 0) tickerSpeed = 1;
-        ticker = (ticker + 1) % tickerSpeed;
-        EditorGUIUtility.LookLikeControls();
-        // reset mouse over element
-        mouseOverElement = (int)ElementType.None;
-        mouseOverFrame = 0;
-        mouseXOverFrame = 0;
-        mouseOverTrack = -1;
-        mouseOverGroupElement = new Vector2(0, 0);
-        tooltip = "";
-        int difference = 0;
-        
-        //if(oData.disableTimelineActions) current_height_frame = height_track;
-        //else current_height_frame = height_frame;
-        if(oData.disableTimelineActions) height_action_min = 0f;
-        else height_action_min = 45f;
         #region no data component
         if(!aData) {
             // recheck for component
             GameObject go = Selection.activeGameObject;
             if(go) {
-                if(PrefabUtility.GetPrefabType(go) != PrefabType.Prefab)
+                if(PrefabUtility.GetPrefabType(go) != PrefabType.Prefab) {
                     aData = go.GetComponent<AnimatorData>();
+                }
                 else
                     go = null;
             }
@@ -683,7 +671,8 @@ public class AMTimeline : EditorWindow {
                 }
             }
 
-            return;
+            if(!aData) //still no data
+                return;
         }
         /*else {
             if(!aData.CheckNulls()) {
@@ -692,6 +681,8 @@ public class AMTimeline : EditorWindow {
                 return;
             }
         }*/
+
+        if(!aData.getCurrentTake()) { Repaint(); return; } //????
 
         //retain animator open, this is mostly when recompiling AnimatorData
         aData.isAnimatorOpen = true;
@@ -719,6 +710,24 @@ public class AMTimeline : EditorWindow {
             return;
         }
         #endregion
+
+        if(tickerSpeed <= 0) tickerSpeed = 1;
+        ticker = (ticker + 1) % tickerSpeed;
+        EditorGUIUtility.LookLikeControls();
+        // reset mouse over element
+        mouseOverElement = (int)ElementType.None;
+        mouseOverFrame = 0;
+        mouseXOverFrame = 0;
+        mouseOverTrack = -1;
+        mouseOverGroupElement = new Vector2(0, 0);
+        tooltip = "";
+        int difference = 0;
+
+        //if(oData.disableTimelineActions) current_height_frame = height_track;
+        //else current_height_frame = height_frame;
+        if(oData.disableTimelineActions) height_action_min = 0f;
+        else height_action_min = 45f;
+
         #region temporary variables
         Rect rectWindow = new Rect(0f, 0f, position.width, position.height);
         Event e = Event.current;
@@ -856,10 +865,12 @@ public class AMTimeline : EditorWindow {
         }
         if(rectBtnOptions.Contains(e.mousePosition) && mouseOverElement == (int)ElementType.None) mouseOverElement = (int)ElementType.Button;
         #endregion
-        #region code view button
+        #region refresh button
+        bool doRefresh = false;
         Rect rectBtnCodeView = new Rect(rectBtnOptions.x + rectBtnOptions.width + margin, rectBtnOptions.y, 80f, rectBtnOptions.height);
-        if(GUI.Button(rectBtnCodeView, "Code View", EditorStyles.toolbarButton)) {
-            EditorWindow.GetWindow(typeof(AMCodeView));
+        if(GUI.Button(rectBtnCodeView, "Refresh", EditorStyles.toolbarButton)) {
+            //EditorWindow.GetWindow(typeof(AMCodeView));
+            doRefresh = true;
         }
         if(rectBtnCodeView.Contains(e.mousePosition) && mouseOverElement == (int)ElementType.None) {
             mouseOverElement = (int)ElementType.Button;
@@ -1649,6 +1660,8 @@ public class AMTimeline : EditorWindow {
         if(e.alt && !isDragging) startZoomXOverFrame = mouseXOverFrame;
         e.Use();
 
+        if(doRefresh)
+            ShadyRefresh();
     }
     void ReloadOtherWindows() {
         if(AMOptions.window) AMOptions.window.reloadAnimatorData();
@@ -3984,6 +3997,8 @@ public class AMTimeline : EditorWindow {
         if(window) window.cachedZoom = -1f;
     }
     void calculateNumFramesToRender(bool clickedZoom, Event e) {
+        if(!aData.getCurrentTake()) return;
+
         int min = Mathf.FloorToInt((position.width - width_track - 18f - (aData.isInspectorOpen ? width_inspector_open : width_inspector_closed)) / (oData.disableTimelineActions ? height_track / 2f : height_track - height_action_min));
         int _mouseXOverFrame = (int)aData.getCurrentTake().startFrame + Mathf.CeilToInt((e.mousePosition.x - width_track) / current_width_frame) - 1;
         // move frames with hand cursor

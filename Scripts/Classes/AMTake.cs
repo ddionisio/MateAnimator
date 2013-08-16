@@ -1381,11 +1381,13 @@ public class AMTake : MonoBehaviour {
         return lsFlagToKeep;
     }
 
-    public bool CheckNulls() {
+    public bool CheckNulls(ref int numKeys) {
         foreach(AMTrack track in trackValues) {
             if(track) {
                 if(!track.CheckNullKeys())
                     return false;
+
+                numKeys += track.keys.Count;
             }
             else {
                 return false;

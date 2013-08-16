@@ -5,6 +5,8 @@ using System.Collections;
 [CustomEditor(typeof(AnimatorData))]
 public class AnimatorDataInspector : Editor {
     public override void OnInspectorGUI() {
+        serializedObject.Update();
+
         AnimatorData dat = target as AnimatorData;
 
         GUILayout.BeginVertical();
@@ -31,6 +33,14 @@ public class AnimatorDataInspector : Editor {
         else {
             GUILayout.Label("Play On Start: None");
         }
+
+        /*GUILayout.Label("Take Count: "+dat.takes.Count);
+        if(AMTimeline.window && AMTimeline.window.aData) {
+            if(dat.takes.Count != AMTimeline.window.aData.takes.Count) {
+                AMTimeline.window.aData = null;
+            }
+            //GUILayout.Label("Take Count e: " + AMTimeline.window.aData.takes.Count);
+        }*/
 
         dat.sequenceLoadAll = GUILayout.Toggle(dat.sequenceLoadAll, "Build All Sequence On Start");
         dat.sequenceKillWhenDone = GUILayout.Toggle(dat.sequenceKillWhenDone, "Kill Sequence When Done");
@@ -67,5 +77,7 @@ public class AnimatorDataInspector : Editor {
             EditorUtility.SetDirty(dat);
 
         GUILayout.EndVertical();
+
+        serializedObject.ApplyModifiedProperties();
     }
 }
