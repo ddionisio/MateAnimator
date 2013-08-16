@@ -26,6 +26,10 @@ public class AMTimeline : EditorWindow {
         }
         set {
             if(_aData != value) {
+                contextSelectionKeysBuffer.Clear();
+                contextSelectionTracksBuffer.Clear();
+                cachedContextSelection.Clear();
+
                 if(_aData != null) {
                     //Debug.Log("previous data: " + _aData.name + " hash: " + _aData.GetHashCode());
 
@@ -34,7 +38,6 @@ public class AMTimeline : EditorWindow {
                     if(aData.takes != null) {
                         foreach(AMTake take in aData.takes) {
                             if(take) {
-                                take.cleanRemovedKeys();
                                 take.maintainCaches();
 
                                 foreach(AMTrack track in take.trackValues) {
@@ -474,6 +477,8 @@ public class AMTimeline : EditorWindow {
 
         // check for pro license
         AMTake.isProLicense = PlayerSettings.advancedLicense;
+
+        //autoRepaintOnSceneChange = true;
     }
     void OnDisable() {
         EditorApplication.playmodeStateChanged -= OnPlayMode;
@@ -491,6 +496,24 @@ public class AMTimeline : EditorWindow {
             // reset property select track
             //aData.propertySelectTrack = null;
         }
+    }
+    void OnHierarchyChange() {
+        if(_aData && !_aData.CheckNulls()) {
+            contextSelectionKeysBuffer.Clear();
+            contextSelectionTracksBuffer.Clear();
+            cachedContextSelection.Clear();
+
+            GameObject go = _aData.gameObject;
+            _aData.isAnimatorOpen = false;
+            _aData = null;
+            Selection.activeGameObject = go;
+        }
+    }
+    void OnAutoKey(AMTrack track, AMKey key) {
+        registerUndo("Auto Key");
+
+        if(key != null)
+            Undo.RegisterCreatedObjectUndo(key, "Auto Key");
     }
     void Update() {
         isPlayMode = EditorApplication.isPlayingOrWillChangePlaymode;
@@ -572,7 +595,9 @@ public class AMTimeline : EditorWindow {
         else {
             // autokey
             if(!isDragging && aData != null && aData.autoKey) {
-                if(aData.getCurrentTake().autoKey(Selection.activeTransform, aData.getCurrentTake().selectedFrame)) {
+                bool autoKeyMade = aData.getCurrentTake().autoKey(Selection.activeTransform, aData.getCurrentTake().selectedFrame, OnAutoKey);
+
+                if(autoKeyMade) {
                     // preview frame, update orientation only
                     aData.getCurrentTake().previewFrame(aData.getCurrentTake().selectedFrame, true);
                     // save data
@@ -592,8 +617,11 @@ public class AMTimeline : EditorWindow {
     void OnSelectionChange() {
         if(!aData) {
             if(Selection.activeGameObject && PrefabUtility.GetPrefabType(Selection.activeGameObject) != PrefabType.Prefab) {
-                aData = Selection.activeGameObject.GetComponent<AnimatorData>();
-                Repaint();
+                AnimatorData newDat = Selection.activeGameObject.GetComponent<AnimatorData>();
+                if(newDat != aData) {
+                    aData = newDat;
+                    Repaint();
+                }
             }
         }
     }
@@ -601,6 +629,9 @@ public class AMTimeline : EditorWindow {
         /*if(Event.current.type != EventType.Repaint && Event.current.type != EventType.Layout) {
             Debug.Log("event type: " + Event.current.type);
         }*/
+        if(!oData) {
+            oData = AMOptionsFile.loadFile();
+        }
 
         AMTimeline.loadSkin(oData, ref skin, ref cachedSkinName, position);
         if(EditorApplication.isPlayingOrWillChangePlaymode) {
@@ -623,7 +654,7 @@ public class AMTimeline : EditorWindow {
         mouseOverGroupElement = new Vector2(0, 0);
         tooltip = "";
         int difference = 0;
-
+        
         //if(oData.disableTimelineActions) current_height_frame = height_track;
         //else current_height_frame = height_frame;
         if(oData.disableTimelineActions) height_action_min = 0f;
@@ -649,15 +680,18 @@ public class AMTimeline : EditorWindow {
                     // create component
                     if(!go) go = new GameObject("AnimatorData");
                     aData = go.AddComponent<AnimatorData>();
-
-                    oData = AMOptionsFile.loadFile();
                 }
+            }
+
+            return;
+        }
+        /*else {
+            if(!aData.CheckNulls()) {
+                aData = null;
+                Repaint();
                 return;
             }
-        }
-        if(!oData) {
-            oData = AMOptionsFile.loadFile();
-        }
+        }*/
 
         //retain animator open, this is mostly when recompiling AnimatorData
         aData.isAnimatorOpen = true;
@@ -668,7 +702,6 @@ public class AMTimeline : EditorWindow {
             MessageBox("Window is too small! Animator requires a width of at least " + width_window_minimum + " pixels to function correctly.", MessageBoxType.Warning);
             GUILayout.BeginHorizontal();
             if(GUILayout.Button("Ignore (Not Recommended)")) {
-                registerUndo("Ignore Min. Window Size");
                 oData.ignoreMinSize = true;
                 // save
                 EditorUtility.SetDirty(aData);
@@ -676,7 +709,6 @@ public class AMTimeline : EditorWindow {
                 this.Repaint();
             }
             if(GUILayout.Button("Resize")) {
-                registerUndo("Window Resize");
                 Rect rectDimensions = position;
                 rectDimensions.width = width_window_minimum + 1f;
                 position = rectDimensions;
@@ -886,7 +918,8 @@ public class AMTimeline : EditorWindow {
         Rect rectBtnDeleteTake = new Rect(rectBtnRenameTake.x + rectBtnRenameTake.width + margin, rectBtnRenameTake.y, width_button_delete, height_button_delete);
         if(GUI.Button(rectBtnDeleteTake, new GUIContent("", "Delete Take"),/*GUI.skin.GetStyle("ButtonImage")*/EditorStyles.toolbarButton)) {
             if((EditorUtility.DisplayDialog("Delete Take", "Are you sure you want to delete take '" + aData.getCurrentTake().name + "'?", "Delete", "Cancel"))) {
-                registerUndo("Delete Take");
+                //registerUndo("Delete Take");
+                Undo.RegisterSceneUndo("Delete Take");
                 aData.deleteCurrentTake();
                 AMCodeView.resetTrackDictionary();
                 // save data
@@ -907,7 +940,10 @@ public class AMTimeline : EditorWindow {
             registerUndo("New Take");
             aData.currentTake = aData.takes.Count;
             cancelTextEditting();
-            aData.addTake();
+            
+            AMTake newTake = aData.addTake();
+            Undo.RegisterCreatedObjectUndo(newTake, "New Take");
+
             // save data
             EditorUtility.SetDirty(aData);
             setDirtyTakes(aData.takes);
@@ -921,10 +957,15 @@ public class AMTimeline : EditorWindow {
             cancelTextEditting();
 
             AMTake prevTake = aData.getPreviousTake(); //if(takes == null || currentTake >= takes.Count) return null;
-            if(prevTake != null)
-                aData.duplicateTake(prevTake);
-            else
-                aData.addTake();
+            if(prevTake != null) {
+                List<UnityEngine.Object> ret = aData.duplicateTake(prevTake);
+                foreach(UnityEngine.Object newObj in ret)
+                    Undo.RegisterCreatedObjectUndo(newObj, "New Duplicate Take");
+            }
+            else {
+                AMTake newTake = aData.addTake();
+                Undo.RegisterCreatedObjectUndo(newTake, "New Duplicate Take");
+            }
 
             aData.currentTake = aData.takes.Count - 1;
             
@@ -1072,22 +1113,28 @@ public class AMTimeline : EditorWindow {
                 string strMsgDeleteTrack = (aData.getCurrentTake().contextSelectionTracks.Count > 1 ? "multiple tracks" : "track '" + aData.getCurrentTake().getSelectedTrack().name + "'");
 
                 if((EditorUtility.DisplayDialog("Delete " + strTitleDeleteTrack, "Are you sure you want to delete " + strMsgDeleteTrack + "?", "Delete", "Cancel"))) {
-                    registerUndo("Delete Track");
+                    //registerUndo("Delete Track");
+                    Undo.RegisterSceneUndo("Delete Track");
+
                     isRenamingTrack = -1;
 
-                    foreach(int track_id in aData.getCurrentTake().contextSelectionTracks) {
-                        aData.getCurrentTake().deleteTrack(track_id);
+                    AMTake curTake = aData.getCurrentTake();
+                    foreach(int track_id in curTake.contextSelectionTracks) {
+                        curTake.deleteTrack(track_id);
                     }
-                    aData.getCurrentTake().contextSelectionTracks = new List<int>();
+                    curTake.contextSelectionTracks = new List<int>();
                     //aData.getCurrentTake().deleteTrack(aData.getCurrentTake().selectedTrack);
+                    
+                    // deselect track
+                    curTake.selectedTrack = -1;
+                    // deselect group
+                    curTake.selectedGroup = 0;
+
                     // save data
-                    setDirtyTracks(aData.getCurrentTake());
+                    setDirtyTracks(curTake);
                     // refresh gizmos
                     refreshGizmos();
-                    // deselect track
-                    aData.getCurrentTake().selectedTrack = -1;
-                    // deselect group
-                    aData.getCurrentTake().selectedGroup = 0;
+
                     AMCodeView.refresh();
                 }
             }
@@ -1693,23 +1740,36 @@ public class AMTimeline : EditorWindow {
 
     #region Static
 
-    public static void registerUndo(string name) {
+    static UnityEngine.Object[] getDataObjs() {
         AnimatorData dat = window._aData;
         if(dat != null) {
             List<UnityEngine.Object> objs = new List<UnityEngine.Object>();
 
-            objs.Add(dat);
-            objs.Add(dat.dataHolder);
             Component[] comps = dat.dataHolder.GetComponentsInChildren<Component>(true);
             foreach(Component comp in comps) {
                 objs.Add(comp);
             }
 
-            Undo.RegisterUndo(objs.ToArray(), name);
+            objs.Add(dat.dataHolder);
+
+            objs.Add(dat);
+
+            return objs.ToArray();
+        }
+
+        return null;
+    }
+
+    public static void registerUndo(string name) {
+        UnityEngine.Object[] objs = getDataObjs();
+
+        if(objs != null && objs.Length > 0) {
+            Undo.RegisterUndo(objs, name);
         }
 
         //Undo.RegisterSceneUndo(name);
     }
+
     public static void MessageBox(string message, MessageBoxType type) {
 
         MessageType messageType;
@@ -1779,7 +1839,7 @@ public class AMTimeline : EditorWindow {
         // returns true if mouse over track
         if(id >= 0) {
             AMTrack _track = aData.getCurrentTake().getTrack(id);
-            return showTrack(_track, id, group_lvl, ref track_y, ref isAnyTrackFoldedOut, ref height_group_elements, e, scrollViewBounds);
+            return _track ? showTrack(_track, id, group_lvl, ref track_y, ref isAnyTrackFoldedOut, ref height_group_elements, e, scrollViewBounds) : false;
         }
         else {
             return showGroup(id, group_lvl, ref track_y, ref isAnyTrackFoldedOut, ref height_group_elements, e, scrollViewBounds);
@@ -2073,7 +2133,9 @@ public class AMTimeline : EditorWindow {
                 }
                 else {
                     if(track_y > scrollViewBounds.y) return;	// if start y is beyond max y
-                    showFrames(aData.getCurrentTake().getTrack(id), ref track_y, e, birdseye, scrollViewBounds);
+                    AMTrack track = aData.getCurrentTake().getTrack(id);
+                    if(track)
+                        showFrames(track, ref track_y, e, birdseye, scrollViewBounds);
                 }
             }
         }
@@ -2173,11 +2235,9 @@ public class AMTimeline : EditorWindow {
         List<int> birdseyeKeyFrames = new List<int>();
         List<Rect> birdseyeKeyRects = new List<Rect>();
         if(birdseye) {
-            bool rebuildKeys = false;
-
             // draw birds eye keyframe textures, prepare button rects
             foreach(AMKey key in _track.keys) {
-                if(!key) { rebuildKeys = true; continue; }
+                if(!key) continue;
 
                 selected = ((isTrackSelected) && aData.getCurrentTake().isFrameSelected(key.frame));
                 //_track.sortKeys();
@@ -2190,9 +2250,6 @@ public class AMTimeline : EditorWindow {
                 birdseyeKeyFrames.Add(key.frame);
                 birdseyeKeyRects.Add(rectKeyBirdsEye);
             }
-
-            if(rebuildKeys)
-                _track.removeNullKeys();
 
             // birds eye buttons
             if(birdseyeKeyFrames.Count > 0) {
@@ -2208,20 +2265,16 @@ public class AMTimeline : EditorWindow {
             }
         }
         else {
-            bool rebuildKeys = false;
-
             selected = (isTrackSelected);
             foreach(AMKey key in _track.keys) {
-                if(!key) { rebuildKeys = true; continue; }
+                if(!key) continue;
+
                 //_track.sortKeys();
                 if(key.frame < aData.getCurrentTake().startFrame) continue;
                 if(key.frame > aData.getCurrentTake().endFrame) break;
                 Rect rectFrame = new Rect(current_width_frame * (key.frame - aData.getCurrentTake().startFrame), 0f, current_width_frame, _current_height_frame);
                 GUI.DrawTexture(new Rect(rectFrame.x + 2f, rectFrame.y + rectFrame.height - (rectFrame.width - 4f) - 2f, rectFrame.width - 4f, rectFrame.width - 4f), texFrKey);
             }
-
-            if(rebuildKeys)
-                _track.removeNullKeys();
         }
         // click on empty frames
         if(GUI.Button(rectFramesBirdsEye, "", "label") && dragType == (int)DragType.None) {
@@ -2293,19 +2346,19 @@ public class AMTimeline : EditorWindow {
             Rect rectTimelineActions = new Rect(0f, _current_height_frame, 0f, height_track - current_height_frame);	// used to group textures into one draw call
             if(!drawEachAction) {
                 if(_track.keys.Count > 0) {
-                    if(_track is AMTranslationTrack && _track.keys.Count > 1) {
+                    if(_track is AMTranslationTrack && _track.keys.Count > 1 && _track.keys[0] && _track.keys[_track.keys.Count - 1]) {
                         // translation track, from first action frame to end action frame
                         cached_action_startFrame = _track.keys[0].getStartFrame();
                         cached_action_endFrame = (_track.keys[_track.keys.Count - 1] as AMTranslationKey).endFrame;
                         texBox = texBoxGreen;
                     }
-                    else if(_track is AMRotationTrack && _track.keys.Count > 1) {
+                    else if(_track is AMRotationTrack && _track.keys.Count > 1 && _track.keys[0] && _track.keys[_track.keys.Count - 1]) {
                         // rotation track, from first action start frame to last action start frame
                         cached_action_startFrame = _track.keys[0].getStartFrame();
                         cached_action_endFrame = _track.keys[_track.keys.Count - 1].getStartFrame();
                         texBox = texBoxYellow;
                     }
-                    else if(_track is AMOrientationTrack && _track.keys.Count > 1) {
+                    else if(_track is AMOrientationTrack && _track.keys.Count > 1 && _track.keys[0] && _track.keys[_track.keys.Count - 1]) {
                         // orientation track, from first action start frame to last action start frame
                         cached_action_startFrame = _track.keys[0].getStartFrame();
                         cached_action_endFrame = _track.keys[_track.keys.Count - 1].getStartFrame();
@@ -2317,13 +2370,13 @@ public class AMTimeline : EditorWindow {
                         cached_action_endFrame = _endFrame;
                         texBox = texBoxLightBlue;
                     }
-                    else if(_track is AMEventTrack) {
+                    else if(_track is AMEventTrack && _track.keys[0]) {
                         // event track, from first action start frame to end frame
                         cached_action_startFrame = _track.keys[0].getStartFrame();
                         cached_action_endFrame = _endFrame;
                         texBox = texBoxDarkBlue;
                     }
-                    else if(_track is AMGOSetActiveTrack) {
+                    else if(_track is AMGOSetActiveTrack && _track.keys[0]) {
                         // go set active track, from first action start frame to end frame
                         cached_action_startFrame = _track.keys[0].getStartFrame();
                         cached_action_endFrame = _endFrame;
@@ -2356,9 +2409,11 @@ public class AMTimeline : EditorWindow {
             bool didClampBackwards = false;	// whether or not clamped backwards, used to break infinite loop
             int last_action_startFrame = -1;
             for(int i = 0; i < _track.keys.Count; i++) {
+                if(_track.keys[i] == null) continue;
+
                 #region calculate dimensions
                 int clamped = 0; // 0 = no clamp, -1 = backwards clamp, 1 = forwards clamp
-                if(_track.keys[i] == null || _track.keys[i].version != _track.version) {
+                if(_track.keys[i].version != _track.version) {
                     // if cache is null, recheck for component and update caches
                     //aData = (AnimatorData)GameObject.Find("AnimatorData").GetComponent("AnimatorData");
                     aData.getCurrentTake().maintainCaches();
@@ -4353,8 +4408,6 @@ public class AMTimeline : EditorWindow {
         // move scrollview to last created track
         setScrollViewValue(aData.getCurrentTake().getElementY(aData.getCurrentTake().selectedTrack, height_track, height_track_foldin, height_group));
         AMCodeView.refresh();
-
-        Undo.RegisterUndo((GameObject)null, "New Track");
     }
 
     void addTrackWithGameObject(object trackType, GameObject object_window) {
@@ -4448,6 +4501,8 @@ public class AMTimeline : EditorWindow {
     void addKey(int _track, int _frame) {
         // add a key to the track number and frame, used in OnGUI. Needs to be updated for every track type.
         AMTrack amTrack = aData.getCurrentTake().getTrack(_track);
+        AMKey newKey = null;
+
         // translation
         if(amTrack is AMTranslationTrack) {
             // if missing object, return
@@ -4455,7 +4510,7 @@ public class AMTimeline : EditorWindow {
                 showAlertMissingObjectType("Transform");
                 return;
             }
-            (amTrack as AMTranslationTrack).addKey(_frame, (amTrack as AMTranslationTrack).position);
+            newKey = (amTrack as AMTranslationTrack).addKey(_frame, (amTrack as AMTranslationTrack).position, null);
         }
         else if(amTrack is AMRotationTrack) {
             // rotation
@@ -4466,7 +4521,7 @@ public class AMTimeline : EditorWindow {
                 return;
             }
             // add key to rotation track
-            (amTrack as AMRotationTrack).addKey(_frame, (amTrack as AMRotationTrack).rotation);
+            newKey = (amTrack as AMRotationTrack).addKey(_frame, (amTrack as AMRotationTrack).rotation, null);
         }
         else if(amTrack is AMOrientationTrack) {
             // orientation
@@ -4484,7 +4539,7 @@ public class AMTimeline : EditorWindow {
                 AMOrientationKey _oKey = ((amTrack as AMOrientationTrack).getKeyOnFrame(last_key) as AMOrientationKey);
                 last_target = _oKey.target;
             }
-            (amTrack as AMOrientationTrack).addKey(_frame, last_target);
+            newKey = (amTrack as AMOrientationTrack).addKey(_frame, last_target);
         }
         else if(amTrack is AMAnimationTrack) {
             // animation
@@ -4495,7 +4550,7 @@ public class AMTimeline : EditorWindow {
                 return;
             }
             // add key to animation track
-            (amTrack as AMAnimationTrack).addKey(_frame, (amTrack as AMAnimationTrack).obj.animation.clip, WrapMode.Once);
+            newKey = (amTrack as AMAnimationTrack).addKey(_frame, (amTrack as AMAnimationTrack).obj.animation.clip, WrapMode.Once);
         }
         else if(amTrack is AMAudioTrack) {
             // audio
@@ -4506,7 +4561,7 @@ public class AMTimeline : EditorWindow {
                 return;
             }
             // add key to animation track
-            (amTrack as AMAudioTrack).addKey(_frame, null, false);
+            newKey = (amTrack as AMAudioTrack).addKey(_frame, null, false);
 
         }
         else if(amTrack is AMPropertyTrack) {
@@ -4522,7 +4577,7 @@ public class AMTimeline : EditorWindow {
                 EditorUtility.DisplayDialog("Property Not Set", "You must set the track property before you can add keys.", "Okay");
                 return;
             }
-            (amTrack as AMPropertyTrack).addKey(_frame);
+            newKey = (amTrack as AMPropertyTrack).addKey(_frame);
         }
         else if(amTrack is AMEventTrack) {
             // event
@@ -4533,7 +4588,7 @@ public class AMTimeline : EditorWindow {
                 return;
             }
             // add key to event track
-            (amTrack as AMEventTrack).addKey(_frame);
+            newKey = (amTrack as AMEventTrack).addKey(_frame);
         }
         else if(amTrack is AMGOSetActiveTrack) {
             // go set active
@@ -4544,8 +4599,11 @@ public class AMTimeline : EditorWindow {
                 return;
             }
             // add key to go active track
-            (amTrack as AMGOSetActiveTrack).addKey(_frame);
+            newKey = (amTrack as AMGOSetActiveTrack).addKey(_frame);
         }
+
+        if(newKey != null)
+            Undo.RegisterCreatedObjectUndo(newKey, "New Key");
 
         setDirtyKeys(aData.getCurrentTake().getSelectedTrack());
         refreshGizmos();
@@ -4553,7 +4611,8 @@ public class AMTimeline : EditorWindow {
         AMCodeView.refresh();
     }
     void deleteKeyFromSelectedFrame() {
-        registerUndo("Clear Frame");
+        //registerUndo("Clear Frame");
+        Undo.RegisterSceneUndo("Clear Frame");
         aData.getCurrentTake().getSelectedTrack().deleteKeyOnFrame(aData.getCurrentTake().selectedFrame);
         aData.getCurrentTake().getSelectedTrack().updateCache();
         AMCodeView.refresh();
@@ -4566,7 +4625,8 @@ public class AMTimeline : EditorWindow {
         AMCodeView.refresh();
     }
     void deleteSelectedKeys(bool showWarning) {
-        registerUndo("Clear Frames");
+        //registerUndo("Clear Frames");
+        Undo.RegisterSceneUndo("Clear Frames");
         bool shouldClearFrames = true;
         if(showWarning) {
             if(aData.getCurrentTake().contextSelectionTracks.Count > 1) {
@@ -4757,38 +4817,53 @@ public class AMTimeline : EditorWindow {
         else if(index == 5) contextSelectAllFrames();
     }
     void contextCutKeys() {
-        registerUndo("Cut Frames");
+        //registerUndo("Cut Frames");
+        Undo.RegisterSceneUndo("Cut Frames");
         contextCopyFrames();
         deleteSelectedKeys(false);
     }
     void contextPasteKeys() {
+        if(contextSelectionKeysBuffer == null || contextSelectionKeysBuffer.Count == 0) return;
+
         registerUndo("Paste Frames");
-        if(contextSelectionKeysBuffer == null || contextSelectionKeysBuffer.Count < 0) return;
 
         bool singleTrack = contextSelectionKeysBuffer.Count == 1;
         int offset = (int)contextSelectionRange.y - (int)contextSelectionRange.x + 1;
 
         if(singleTrack) {
-            aData.getCurrentTake().getSelectedTrack().offsetKeysFromBy(contextMenuFrame, offset);
-            // add buffer keys to track
+            List<AMKey> newKeys = new List<AMKey>(contextSelectionKeysBuffer[0].Count);
             foreach(AMKey a in contextSelectionKeysBuffer[0]) {
-                // offset keys based on selection range
-                a.frame += (contextMenuFrame - (int)contextSelectionRange.x);
-                aData.getCurrentTake().getSelectedTrack().keys.Add(a);
-                //a.destroy();
+                if(a != null) {
+                    AMKey newKey = a.CreateClone();
+                    Undo.RegisterCreatedObjectUndo(newKey, "Paste Frames");
+                    newKey.frame += (contextMenuFrame - (int)contextSelectionRange.x);
+                    newKeys.Add(newKey);
+                }
             }
+
+            aData.getCurrentTake().getSelectedTrack().offsetKeysFromBy(contextMenuFrame, offset);
+
+            aData.getCurrentTake().getSelectedTrack().keys.AddRange(newKeys);
         }
         else {
+            List<AMKey> newKeys = new List<AMKey>();
+
             for(int i = 0; i < contextSelectionTracksBuffer.Count; i++) {
+                foreach(AMKey a in contextSelectionKeysBuffer[i]) {
+                    if(a != null) {
+                        AMKey newKey = a.CreateClone();
+                        Undo.RegisterCreatedObjectUndo(newKey, "Paste Frames");
+                        newKey.frame += (contextMenuFrame - (int)contextSelectionRange.x);
+                        newKeys.Add(newKey);
+                    }
+                }
+
                 // offset all keys beyond paste
                 contextSelectionTracksBuffer[i].offsetKeysFromBy(contextMenuFrame, offset);
-                // add buffer keys to track
-                foreach(AMKey a in contextSelectionKeysBuffer[i]) {
-                    // offset keys based on selection range
-                    a.frame += (contextMenuFrame - (int)contextSelectionRange.x);
-                    contextSelectionTracksBuffer[i].keys.Add(a);
-                    //a.destroy();
-                }
+
+                contextSelectionTracksBuffer[i].keys.AddRange(newKeys);
+
+                newKeys.Clear();
             }
         }
 
@@ -4806,8 +4881,8 @@ public class AMTimeline : EditorWindow {
         }
         AMCodeView.refresh();
         // clear buffer
-        contextSelectionKeysBuffer = new List<List<AMKey>>();
-        contextSelectionTracksBuffer = new List<AMTrack>();
+        contextSelectionKeysBuffer.Clear();
+        contextSelectionTracksBuffer.Clear();
         // update selection
         //   retrieve cached context selection 
         aData.getCurrentTake().contextSelection = new List<int>();
@@ -4867,17 +4942,9 @@ public class AMTimeline : EditorWindow {
         // set selection track
         //contextSelectionTrack = aData.getCurrentTake().selectedTrack;
 
-        if(contextSelectionKeysBuffer != null) {
-            foreach(List<AMKey> ls in contextSelectionKeysBuffer) {
-                foreach(AMKey key in ls) {
-                    if(key == null) continue;
-                    key.destroy();
-                }
-            }
-        }
-        contextSelectionKeysBuffer = new List<List<AMKey>>();
+        contextSelectionKeysBuffer.Clear();
         aData.getCurrentTake().contextSelectionTracks.Sort();
-        contextSelectionTracksBuffer = new List<AMTrack>();
+        contextSelectionTracksBuffer.Clear();
 
         foreach(int track_id in aData.getCurrentTake().contextSelectionTracks) {
             contextSelectionTracksBuffer.Add(aData.getCurrentTake().getTrack(track_id));
@@ -4885,8 +4952,7 @@ public class AMTimeline : EditorWindow {
         foreach(AMTrack track in contextSelectionTracksBuffer) {
             contextSelectionKeysBuffer.Add(new List<AMKey>());
             foreach(AMKey key in aData.getCurrentTake().getContextSelectionKeysForTrack(track)) {
-                AMKey a = key.CreateClone();
-                contextSelectionKeysBuffer[contextSelectionKeysBuffer.Count - 1].Add(a);
+                contextSelectionKeysBuffer[contextSelectionKeysBuffer.Count - 1].Add(key);
             }
         }
     }
@@ -4913,7 +4979,7 @@ public class AMTimeline : EditorWindow {
     }*/
 
     void contextCopyFrames() {
-        cachedContextSelection = new List<int>();
+        cachedContextSelection.Clear();
         // cache context selection
         foreach(int frame in aData.getCurrentTake().contextSelection) {
             cachedContextSelection.Add(frame);

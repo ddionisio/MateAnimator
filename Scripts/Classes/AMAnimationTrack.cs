@@ -19,7 +19,7 @@ public class AMAnimationTrack : AMTrack {
         return false;
     }
     // add a new key
-    public void addKey(int _frame, AnimationClip _clip, WrapMode _wrapMode) {
+    public AMKey addKey(int _frame, AnimationClip _clip, WrapMode _wrapMode) {
         foreach(AMAnimationKey key in keys) {
             // if key exists on frame, update key
             if(key.frame == _frame) {
@@ -27,7 +27,7 @@ public class AMAnimationTrack : AMTrack {
                 key.wrapMode = _wrapMode;
                 // update cache
                 updateCache();
-                return;
+                return null;
             }
         }
         AMAnimationKey a = gameObject.AddComponent<AMAnimationKey>();
@@ -39,6 +39,8 @@ public class AMAnimationTrack : AMTrack {
         keys.Add(a);
         // update cache
         updateCache();
+
+        return a;
     }
     // update cache
     public override void updateCache() {
@@ -111,7 +113,6 @@ public class AMAnimationTrack : AMTrack {
     protected override AMTrack doDuplicate(AMTake newTake) {
         AMAnimationTrack ntrack = newTake.gameObject.AddComponent<AMAnimationTrack>();
         ntrack.enabled = false;
-
         ntrack.obj = obj;
 
         return ntrack;

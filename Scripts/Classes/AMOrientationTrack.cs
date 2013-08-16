@@ -21,14 +21,14 @@ public class AMOrientationTrack : AMTrack {
         return false;
     }
     // add a new key
-    public void addKey(int _frame, Transform target) {
+    public AMKey addKey(int _frame, Transform target) {
         foreach(AMOrientationKey key in keys) {
             // if key exists on frame, update key
             if(key.frame == _frame) {
                 key.target = target;
                 // update cache
                 updateCache();
-                return;
+                return null;
             }
         }
         AMOrientationKey a = gameObject.AddComponent<AMOrientationKey>();
@@ -41,6 +41,7 @@ public class AMOrientationTrack : AMTrack {
         keys.Add(a);
         // update cache
         updateCache();
+        return a;
     }
     public override void updateCache() {
         //_updateCache();
@@ -233,7 +234,6 @@ public class AMOrientationTrack : AMTrack {
     protected override AMTrack doDuplicate(AMTake newTake) {
         AMOrientationTrack ntrack = newTake.gameObject.AddComponent<AMOrientationTrack>();
         ntrack.enabled = false;
-
         ntrack.obj = obj;
 
         return ntrack;

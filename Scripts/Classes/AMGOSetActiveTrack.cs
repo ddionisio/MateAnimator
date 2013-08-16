@@ -82,13 +82,13 @@ public class AMGOSetActiveTrack : AMTrack {
     }
 
     // add a new key
-    public void addKey(int _frame) {
+    public AMKey addKey(int _frame) {
         foreach(AMGOSetActiveKey key in keys) {
             // if key exists on frame, update
             if(key.frame == _frame) {
                 key.setActive = true;
                 updateCache();
-                return;
+                return null;
             }
         }
         AMGOSetActiveKey a = gameObject.AddComponent<AMGOSetActiveKey>();
@@ -98,6 +98,7 @@ public class AMGOSetActiveTrack : AMTrack {
         keys.Add(a);
         // update cache
         updateCache();
+        return a;
     }
 
     public override AnimatorTimeline.JSONInit getJSONInit() {
@@ -131,7 +132,6 @@ public class AMGOSetActiveTrack : AMTrack {
     protected override AMTrack doDuplicate(AMTake newTake) {
         AMGOSetActiveTrack ntrack = newTake.gameObject.AddComponent<AMGOSetActiveTrack>();
         ntrack.enabled = false;
-
         ntrack.obj = obj;
         ntrack.startActive = startActive;
 

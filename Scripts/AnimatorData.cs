@@ -347,6 +347,23 @@ public class AnimatorData : MonoBehaviour {
         PreviewValue(takeName, false, time);
     }
 
+    /// <summary>
+    /// Return true if there are no nulls in references
+    /// </summary>
+    public bool CheckNulls() {
+        foreach(AMTake take in takes) {
+            if(take) {
+                if(!take.CheckNulls())
+                    return false;
+            }
+            else {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     void Play(string take_name, bool isFrame, float value, bool loop) {
         AMTake newPlayTake = getTake(take_name);
 
@@ -440,7 +457,7 @@ public class AnimatorData : MonoBehaviour {
         return new AMTake(null);
     }
 
-    public void addTake() {
+    public AMTake addTake() {
         string name = "Take" + (takes.Count + 1);
         AMTake a = AMTake.NewInstance(dataHolder);
         // set defaults
@@ -460,15 +477,19 @@ public class AnimatorData : MonoBehaviour {
         a.trackValues = new List<AMTrack>();
         takes.Add(a);
         selectTake(takes.Count - 1);
-
+        return a;
     }
 
     /// <summary>
     /// This will only duplicate the tracks and groups
     /// </summary>
     /// <param name="take"></param>
-    public void duplicateTake(AMTake dupTake) {
+    public List<UnityEngine.Object> duplicateTake(AMTake dupTake) {
+        List<UnityEngine.Object> ret = new List<Object>();
+
         AMTake a = AMTake.NewInstance(dataHolder);
+
+        ret.Add(a);
 
         a.name = dupTake.name;
         makeTakeNameUnique(a);
@@ -511,7 +532,11 @@ public class AnimatorData : MonoBehaviour {
         if(dupTake.trackValues != null) {
             a.trackValues = new List<AMTrack>();
             foreach(AMTrack track in dupTake.trackValues) {
-                a.trackValues.Add(track.duplicate(a));
+                AMTrack dupTrack = track.duplicate(a);
+
+                a.trackValues.Add(dupTrack);
+
+                ret.Add(dupTrack);
             }
         }
         a.contextSelection = new List<int>();
@@ -520,6 +545,8 @@ public class AnimatorData : MonoBehaviour {
 
         takes.Add(a);
         selectTake(takes.Count - 1);
+
+        return ret;
     }
 
     public void deleteTake(int index) {

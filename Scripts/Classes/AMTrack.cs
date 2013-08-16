@@ -6,6 +6,7 @@ using Holoville.HOTween;
 
 [AddComponentMenu("")]
 public class AMTrack : MonoBehaviour {
+    public delegate void OnKey(AMTrack track, AMKey key);
 
     public int id;
     public new string name;
@@ -38,27 +39,13 @@ public class AMTrack : MonoBehaviour {
         return false;
     }
 
-    public bool checkKeyIntegrity() {
+    public bool CheckNullKeys() {
         foreach(AMKey key in keys) {
             if(key == null) return false;
-            else if(key.version != version) return false;
         }
-
         return true;
     }
-
-    public void removeNullKeys() {
-        if(keys != null) {
-            List<AMKey> newKeys = new List<AMKey>(keys.Count);
-            foreach(AMKey key in keys) {
-                if(key != null)
-                    newKeys.Add(key);
-            }
-
-            keys = newKeys;
-        }
-    }
-
+    
     // draw track gizmos
     public virtual void drawGizmos(float gizmo_size) { }
 

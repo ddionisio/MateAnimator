@@ -30,7 +30,7 @@ public class AMAudioTrack : AMTrack {
         base.updateCache();
     }
     // add a new key
-    public void addKey(int _frame, AudioClip _clip, bool _loop) {
+    public AMKey addKey(int _frame, AudioClip _clip, bool _loop) {
         foreach(AMAudioKey key in keys) {
             // if key exists on frame, update key
             if(key.frame == _frame) {
@@ -38,7 +38,7 @@ public class AMAudioTrack : AMTrack {
                 key.loop = _loop;
                 // update cache
                 updateCache();
-                return;
+                return null;
             }
         }
         AMAudioKey a = gameObject.AddComponent<AMAudioKey>();
@@ -50,6 +50,7 @@ public class AMAudioTrack : AMTrack {
         keys.Add(a);
         // update cache
         updateCache();
+        return a;
     }
 
     public override void previewFrame(float frame, AMTrack extraTrack = null) {
@@ -140,7 +141,6 @@ public class AMAudioTrack : AMTrack {
     protected override AMTrack doDuplicate(AMTake newTake) {
         AMAudioTrack ntrack = newTake.gameObject.AddComponent<AMAudioTrack>();
         ntrack.enabled = false;
-
         ntrack.audioSource = audioSource;
 
         return ntrack;

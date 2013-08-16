@@ -79,14 +79,17 @@ public class AMRotationTrack : AMTrack {
         return _isLocal ? "Local Rotation" : "Rotation";
     }
     // add a new key
-    public void addKey(int _frame, Quaternion _rotation) {
+    public AMKey addKey(int _frame, Quaternion _rotation, OnKey addCallback) {
         foreach(AMRotationKey key in keys) {
             // if key exists on frame, update key
             if(key.frame == _frame) {
+                if(addCallback != null)
+                    addCallback(this, null);
+
                 key.rotation = _rotation;
                 // update cache
                 updateCache();
-                return;
+                return null;
             }
         }
         AMRotationKey a = gameObject.AddComponent<AMRotationKey>();
@@ -95,10 +98,16 @@ public class AMRotationTrack : AMTrack {
         a.rotation = _rotation;
         // set default ease type to linear
         a.easeType = (int)EaseType.Linear;
+
+        if(addCallback != null)
+            addCallback(this, a);
+
         // add a new key
         keys.Add(a);
         // update cache
         updateCache();
+
+        return a;
     }
 
     // update cache (optimized)
@@ -170,25 +179,26 @@ public class AMRotationTrack : AMTrack {
             return;
         }
     }
-    // returns true if autoKey successful
-    public bool autoKey(Transform aObj, int frame) {
-        if(!_obj) return false;
-        if(_obj != aObj) return false;
+    // returns true if autoKey successful, sets output key
+    public bool autoKey(Transform aObj, int frame, OnKey addCallback) {
+        if(!_obj || _obj != aObj) { return false; }
 
         if(keys.Count <= 0) {
             if(rotation != cachedInitialRotation) {
                 // if updated position, addkey
-                addKey(frame, rotation);
+                addKey(frame, rotation, addCallback);
                 return true;
             }
+
             return false;
         }
         Quaternion oldRot = getRotationAtFrame((float)frame);
         if(rotation != oldRot) {
             // if updated position, addkey
-            addKey(frame, rotation);
+            addKey(frame, rotation, addCallback);
             return true;
         }
+
         return false;
     }
     public Quaternion getRotationAtFrame(float frame) {
@@ -266,7 +276,6 @@ public class AMRotationTrack : AMTrack {
     protected override AMTrack doDuplicate(AMTake newTake) {
         AMRotationTrack ntrack = newTake.gameObject.AddComponent<AMRotationTrack>();
         ntrack.enabled = false;
-
         ntrack._obj = _obj;
         ntrack._isLocal = _isLocal;
         ntrack.cachedInitialRotation = cachedInitialRotation;

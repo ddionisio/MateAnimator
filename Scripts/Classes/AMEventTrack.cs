@@ -30,11 +30,11 @@ public class AMEventTrack : AMTrack {
         return false;
     }
     // add a new key
-    public void addKey(int _frame) {
+    public AMKey addKey(int _frame) {
         foreach(AMEventKey key in keys) {
             // if key exists on frame, do nothing
             if(key.frame == _frame) {
-                return;
+                return null;
             }
         }
         AMEventKey a = gameObject.AddComponent<AMEventKey>();
@@ -46,6 +46,7 @@ public class AMEventTrack : AMTrack {
         keys.Add(a);
         // update cache
         updateCache();
+        return a;
     }
     public bool hasSameEventsAs(AMEventTrack _track) {
         if(_track.obj == obj)
@@ -103,7 +104,6 @@ public class AMEventTrack : AMTrack {
     protected override AMTrack doDuplicate(AMTake newTake) {
         AMEventTrack ntrack = newTake.gameObject.AddComponent<AMEventTrack>();
         ntrack.enabled = false;
-
         ntrack.obj = obj;
 
         return ntrack;

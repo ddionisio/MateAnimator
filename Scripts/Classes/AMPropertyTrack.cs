@@ -101,33 +101,35 @@ public class AMPropertyTrack : AMTrack {
     }
 
     // add key
-    public void addKey(int _frame) {
+    public AMKey addKey(int _frame) {
         if(isValueTypeNumeric(valueType))
-            addKey(_frame, getPropertyValueNumeric());
+            return addKey(_frame, getPropertyValueNumeric());
         else if(valueType == (int)ValueType.Vector2)
-            addKey(_frame, getPropertyValueVector2());
+            return addKey(_frame, getPropertyValueVector2());
         else if(valueType == (int)ValueType.Vector3)
-            addKey(_frame, getPropertyValueVector3());
+            return addKey(_frame, getPropertyValueVector3());
         else if(valueType == (int)ValueType.Color)
-            addKey(_frame, getPropertyValueColor());
+            return addKey(_frame, getPropertyValueColor());
         else if(valueType == (int)ValueType.Rect)
-            addKey(_frame, getPropertyValueRect());
+            return addKey(_frame, getPropertyValueRect());
         else if(valueType == (int)ValueType.Vector4)
-            addKey(_frame, getPropertyValueVector4());
+            return addKey(_frame, getPropertyValueVector4());
         else if(valueType == (int)ValueType.Quaternion)
-            addKey(_frame, getPropertyValueQuaternion());
-        else
+            return addKey(_frame, getPropertyValueQuaternion());
+        else {
             Debug.LogError("Animator: Invalid ValueType " + valueType.ToString());
+            return null;
+        }
     }
     // add key numeric
-    public void addKey(int _frame, double val) {
+    public AMKey addKey(int _frame, double val) {
         foreach(AMPropertyKey key in keys) {
             // if key exists on frame, update key
             if(key.frame == _frame) {
                 key.setValue(val);
                 // update cache
                 updateCache();
-                return;
+                return null;
             }
         }
         AMPropertyKey a = gameObject.AddComponent<AMPropertyKey>();
@@ -140,16 +142,17 @@ public class AMPropertyTrack : AMTrack {
         keys.Add(a);
         // update cache
         updateCache();
+        return a;
     }
     // add key vector2
-    public void addKey(int _frame, Vector2 val) {
+    public AMKey addKey(int _frame, Vector2 val) {
         foreach(AMPropertyKey key in keys) {
             // if key exists on frame, update key
             if(key.frame == _frame) {
                 key.setValue(val);
                 // update cache
                 updateCache();
-                return;
+                return null;
             }
         }
         AMPropertyKey a = gameObject.AddComponent<AMPropertyKey>();
@@ -162,16 +165,17 @@ public class AMPropertyTrack : AMTrack {
         keys.Add(a);
         // update cache
         updateCache();
+        return a;
     }
     // add key vector3
-    public void addKey(int _frame, Vector3 val) {
+    public AMKey addKey(int _frame, Vector3 val) {
         foreach(AMPropertyKey key in keys) {
             // if key exists on frame, update key
             if(key.frame == _frame) {
                 key.setValue(val);
                 // update cache
                 updateCache();
-                return;
+                return null;
             }
         }
         AMPropertyKey a = gameObject.AddComponent<AMPropertyKey>();
@@ -184,16 +188,17 @@ public class AMPropertyTrack : AMTrack {
         keys.Add(a);
         // update cache
         updateCache();
+        return a;
     }
     // add key color
-    public void addKey(int _frame, Color val) {
+    public AMKey addKey(int _frame, Color val) {
         foreach(AMPropertyKey key in keys) {
             // if key exists on frame, update key
             if(key.frame == _frame) {
                 key.setValue(val);
                 // update cache
                 updateCache();
-                return;
+                return null;
             }
         }
         AMPropertyKey a = gameObject.AddComponent<AMPropertyKey>();
@@ -206,16 +211,17 @@ public class AMPropertyTrack : AMTrack {
         keys.Add(a);
         // update cache
         updateCache();
+        return a;
     }
     // add key rect
-    public void addKey(int _frame, Rect val) {
+    public AMKey addKey(int _frame, Rect val) {
         foreach(AMPropertyKey key in keys) {
             // if key exists on frame, update key
             if(key.frame == _frame) {
                 key.setValue(val);
                 // update cache
                 updateCache();
-                return;
+                return null;
             }
         }
         AMPropertyKey a = gameObject.AddComponent<AMPropertyKey>();
@@ -228,16 +234,17 @@ public class AMPropertyTrack : AMTrack {
         keys.Add(a);
         // update cache
         updateCache();
+        return a;
     }
     // add key vector4
-    public void addKey(int _frame, Vector4 val) {
+    public AMKey addKey(int _frame, Vector4 val) {
         foreach(AMPropertyKey key in keys) {
             // if key exists on frame, update key
             if(key.frame == _frame) {
                 key.setValue(val);
                 // update cache
                 updateCache();
-                return;
+                return null;
             }
         }
         AMPropertyKey a = gameObject.AddComponent<AMPropertyKey>();
@@ -250,16 +257,17 @@ public class AMPropertyTrack : AMTrack {
         keys.Add(a);
         // update cache
         updateCache();
+        return a;
     }
     // add key quaternion
-    public void addKey(int _frame, Quaternion val) {
+    public AMKey addKey(int _frame, Quaternion val) {
         foreach(AMPropertyKey key in keys) {
             // if key exists on frame, update key
             if(key.frame == _frame) {
                 key.setValue(val);
                 // update cache
                 updateCache();
-                return;
+                return null;
             }
         }
         AMPropertyKey a = gameObject.AddComponent<AMPropertyKey>();
@@ -272,6 +280,7 @@ public class AMPropertyTrack : AMTrack {
         keys.Add(a);
         // update cache
         updateCache();
+        return a;
     }
     // determines whether the supplied object is equal to the object in this instance
     public bool isObjectUnique(GameObject obj) {
@@ -737,7 +746,6 @@ public class AMPropertyTrack : AMTrack {
     protected override AMTrack doDuplicate(AMTake newTake) {
         AMPropertyTrack ntrack = newTake.gameObject.AddComponent<AMPropertyTrack>();
         ntrack.enabled = false;
-
         ntrack.valueType = valueType;
         ntrack.obj = obj;
         ntrack.component = component;

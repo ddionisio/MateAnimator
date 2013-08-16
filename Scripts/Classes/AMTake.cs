@@ -211,14 +211,15 @@ public class AMTake : MonoBehaviour {
         return a;
     }
 
-    public void deleteTrack(int id, bool deleteFromGroup = true) {
-        int index = getTrackIndex(id);
-        if(index < 0 || index >= trackKeys.Count || index >= trackValues.Count) {
-            Debug.LogError("Animator: Track id " + id + " not found");
-            return;
-        }
+    public void deleteTrack(int trackid, bool deleteFromGroup = true) {
+        AMTrack track = getTrack(trackid);
+        if(track)
+            deleteTrack(track, deleteFromGroup);
+    }
 
-        AMTrack track = getTrack(id);
+    public void deleteTrack(AMTrack track, bool deleteFromGroup = true) {
+        int id = track.id;
+        int index = getTrackIndex(id);
         if(track) {
             track.destroy();
         }
@@ -898,19 +899,19 @@ public class AMTake : MonoBehaviour {
     }
 
     // returns true if autokey successful
-    public bool autoKey(Transform obj, int frame) {
+    public bool autoKey(Transform obj, int frame, AMTrack.OnKey addCallback) {
         if(!obj) return false;
         bool didKey = false;
         foreach(AMTrack track in trackValues) {
             // for each track, if rotation or translation then autokey
             if(track is AMTranslationTrack) {
-                if((track as AMTranslationTrack).autoKey(obj, frame)) {
+                if((track as AMTranslationTrack).autoKey(obj, frame, addCallback)) {
                     if(!didKey) didKey = true;
                     //track.updateCache();
                 }
             }
             else if(track is AMRotationTrack) {
-                if((track as AMRotationTrack).autoKey(obj, frame)) {
+                if((track as AMRotationTrack).autoKey(obj, frame, addCallback)) {
                     if(!didKey) didKey = true;
                 }
             }
@@ -1194,13 +1195,6 @@ public class AMTake : MonoBehaviour {
         }
     }
 
-    public void cleanRemovedKeys() {
-        foreach(AMTrack track in trackValues) {
-            if(track)
-                track.removeNullKeys();
-        }
-    }
-
     public void maintainCaches() {
         // re-updates cache if there are null values
         if(trackValues != null) {
@@ -1208,7 +1202,7 @@ public class AMTake : MonoBehaviour {
                 bool shouldUpdateCache = false;
                 if(track != null && track.keys != null) {
                     foreach(AMKey key in track.keys) {
-                        if(key == null || key.version != track.version) {
+                        if(key.version != track.version) {
                             shouldUpdateCache = true;
                             break;
                         }
@@ -1387,4 +1381,17 @@ public class AMTake : MonoBehaviour {
         return lsFlagToKeep;
     }
 
+    public bool CheckNulls() {
+        foreach(AMTrack track in trackValues) {
+            if(track) {
+                if(!track.CheckNullKeys())
+                    return false;
+            }
+            else {
+                return false;
+            }
+        }
+
+        return true;
+    }
 }
