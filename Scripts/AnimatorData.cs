@@ -456,7 +456,7 @@ public class AnimatorData : MonoBehaviour {
     }
 
     public AMTake getCurrentTake() {
-        if(takes == null || currentTake >= takes.Count) return null;
+        if(takes == null || currentTake >= takes.Count || currentTake < 0) return null;
         return takes[currentTake];
     }
 
