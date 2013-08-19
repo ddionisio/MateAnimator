@@ -5,10 +5,9 @@ using System.Collections.Generic;
 [AddComponentMenu("")]
 public class AMOrientationTrack : AMTrack {
 
-    public Transform obj;
+    public override int order { get { return 1; } }
 
-    public AMTrack cachedTranslationTrackStartTarget = null;
-    public AMTrack cachedTranslationTrackEndTarget = null;
+    public Transform obj;
 
     public override string getTrackType() {
         return "Orientation";
@@ -54,7 +53,6 @@ public class AMOrientationTrack : AMTrack {
         Quaternion temp = obj.rotation;
         // sort keys
         sortKeys();
-        AMTranslationTrack translationTrack = curTake.getTranslationTrackForTransform(obj);
         for(int i = 0; i < keys.Count; i++) {
             AMOrientationKey key = keys[i] as AMOrientationKey;
 
@@ -65,13 +63,6 @@ public class AMOrientationTrack : AMTrack {
             key.obj = obj;
             // targets
             if(key.endFrame != -1) key.endTarget = (keys[i + 1] as AMOrientationKey).target;
-
-            if(translationTrack != null && !key.isLookFollow()) {
-                key.isSetStartPosition = true;
-                key.startPosition = translationTrack.getPositionAtFrame(key.frame, true);
-                key.isSetEndPosition = true;
-                key.endPosition = translationTrack.getPositionAtFrame(key.endFrame, true);
-            }
         }
         // restore rotation
         if(restoreRotation) obj.rotation = temp;
@@ -90,10 +81,7 @@ public class AMOrientationTrack : AMTrack {
             // before first frame
             if(frame <= (keys[i] as AMOrientationKey).frame) {
                 if(!(keys[i] as AMOrientationKey).target) return;
-                Vector3 startPos;
-                if(cachedTranslationTrackStartTarget == null) startPos = (keys[i] as AMOrientationKey).target.position;
-                else startPos = (cachedTranslationTrackStartTarget as AMTranslationTrack).getPositionAtFrame((keys[i] as AMOrientationKey).frame, true);
-                obj.LookAt(startPos);
+                obj.LookAt((keys[i] as AMOrientationKey).target);
                 return;
                 // between first and last frame
             }
@@ -102,21 +90,13 @@ public class AMOrientationTrack : AMTrack {
                 float framePositionInPath = frame - (float)keys[i].frame;
                 if(framePositionInPath < 0f) framePositionInPath = 0f;
                 float percentage = framePositionInPath / keys[i].getNumberOfFrames();
-                if((keys[i] as AMOrientationKey).isLookFollow()) obj.rotation = (keys[i] as AMOrientationKey).getQuaternionAtPercent(percentage);
-                else {
-                    Vector3? startPos = (cachedTranslationTrackStartTarget == null ? null : (Vector3?)(cachedTranslationTrackStartTarget as AMTranslationTrack).getPositionAtFrame((keys[i] as AMOrientationKey).frame, true));
-                    Vector3? endPos = (cachedTranslationTrackEndTarget == null ? null : (Vector3?)(cachedTranslationTrackEndTarget as AMTranslationTrack).getPositionAtFrame((keys[i] as AMOrientationKey).endFrame, true));
-                    obj.rotation = (keys[i] as AMOrientationKey).getQuaternionAtPercent(percentage, startPos, endPos);
-                }
+                obj.rotation = (keys[i] as AMOrientationKey).getQuaternionAtPercent(percentage);
                 return;
                 // after last frame
             }
             else if(i == keys.Count - 2) {
                 if(!(keys[i] as AMOrientationKey).endTarget) return;
-                Vector3 endPos;
-                if(cachedTranslationTrackEndTarget == null) endPos = (keys[i] as AMOrientationKey).endTarget.position;
-                else endPos = (cachedTranslationTrackEndTarget as AMTranslationTrack).getPositionAtFrame((keys[i] as AMOrientationKey).endFrame, true);
-                obj.LookAt(endPos);
+                obj.LookAt((keys[i] as AMOrientationKey).endTarget);
                 return;
             }
         }

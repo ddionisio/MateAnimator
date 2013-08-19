@@ -17,6 +17,8 @@ public class AMTrack : MonoBehaviour {
 
     public virtual int version { get { return 1; } } //must be at least 1
 
+    public virtual int order { get { return 0; } }
+
     public virtual UnityEngine.Object genericObj {
         get { return null; }
     }

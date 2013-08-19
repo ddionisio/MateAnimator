@@ -488,7 +488,6 @@ public class AnimatorData : MonoBehaviour {
         a.playbackSpeedIndex = 2;
         //a.lsTracks = new List<AMTrack>();
         //a.dictTracks = new Dictionary<int,AMTrack>();
-        a.trackKeys = new List<int>();
         a.trackValues = new List<AMTrack>();
         takes.Add(a);
         selectTake(takes.Count - 1);
@@ -529,9 +528,6 @@ public class AnimatorData : MonoBehaviour {
 
         a.group_count = dupTake.group_count;
 
-        if(dupTake.groupKeys != null)
-            a.groupKeys = new List<int>(dupTake.groupKeys);
-
         if(dupTake.groupValues != null) {
             a.groupValues = new List<AMGroup>();
             foreach(AMGroup grp in dupTake.groupValues) {
@@ -540,9 +536,6 @@ public class AnimatorData : MonoBehaviour {
         }
 
         a.track_count = dupTake.track_count;
-
-        if(dupTake.trackKeys != null)
-            a.trackKeys = new List<int>(dupTake.trackKeys);
 
         if(dupTake.trackValues != null) {
             a.trackValues = new List<AMTrack>();

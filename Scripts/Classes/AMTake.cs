@@ -28,7 +28,6 @@ public class AMTake : MonoBehaviour {
     public int selectedFrame = 1;			// currently selected frame (frame to preview, not necessarily in context selection)
     public int selectedGroup = 0;
 
-    public List<int> trackKeys = new List<int>();
     public List<AMTrack> trackValues = new List<AMTrack>();
 
     public List<int> contextSelection = new List<int>();	// list of all frames included in the context selection
@@ -39,7 +38,6 @@ public class AMTake : MonoBehaviour {
     public int group_count = 0;		// number of groups created, used to generate unique group ids. negative number to differentiate from positive track ids
 
     public AMGroup rootGroup;
-    public List<int> groupKeys = new List<int>();
     public List<AMGroup> groupValues = new List<AMGroup>();
 
     public static bool isProLicense = true;
@@ -224,7 +222,6 @@ public class AMTake : MonoBehaviour {
             track.destroy();
         }
 
-        trackKeys.RemoveAt(index);
         trackValues.RemoveAt(index);
         if(deleteFromGroup) deleteTrackFromGroups(id);
     }
@@ -389,16 +386,13 @@ public class AMTake : MonoBehaviour {
         }
 
         removeFromGroup(grp.group_id);
-        bool found = false;
         int j = 0;
         for(; j < groupValues.Count; j++) {
             if(groupValues[j] == grp) {
-                found = true;
                 groupValues.Remove(grp);
                 break;
             }
         }
-        if(found) groupKeys.RemoveAt(j);
 
     }
 
@@ -413,9 +407,9 @@ public class AMTake : MonoBehaviour {
 
         track_count++;
 
-        foreach(int id in trackKeys) {
-            if(id >= track_count) track_count = id + 1;
-        }
+        foreach(AMTrack track in trackValues)
+            if(track.id >= track_count) track_count = track.id + 1;
+
         return track_count;
     }
 
@@ -423,8 +417,8 @@ public class AMTake : MonoBehaviour {
 
         group_count--;
 
-        foreach(int id in groupKeys) {
-            if(id <= group_count) group_count = id - 1;
+        foreach(AMGroup grp in groupValues) {
+            if(grp.group_id <= group_count) group_count = grp.group_id - 1;
 
         }
         return group_count;
@@ -432,8 +426,8 @@ public class AMTake : MonoBehaviour {
 
     public int getTrackIndex(int id) {
         int index = -1;
-        for(int i = 0; i < trackKeys.Count; i++) {
-            if(trackKeys[i] == id) {
+        for(int i = 0; i < trackValues.Count; i++) {
+            if(trackValues[i].id == id) {
                 index = i;
                 break;
             }
@@ -486,7 +480,6 @@ public class AMTake : MonoBehaviour {
     }
 
     private void addTrack(AMTrack track) {
-        trackKeys.Add(track.id);
         trackValues.Add(track);
         addToGroup(track.id, selectedGroup);
         track.parentTake = this;
@@ -591,7 +584,6 @@ public class AMTake : MonoBehaviour {
         initGroups();
         AMGroup g = new AMGroup();
         g.init(getUniqueGroupID());
-        groupKeys.Add(g.group_id);
         groupValues.Add(g);
         rootGroup.elements.Add(g.group_id);
 
@@ -606,13 +598,13 @@ public class AMTake : MonoBehaviour {
     // get the new index for a new track
     public int getTrackCount() {
         //return lsTracks.Count;
-        return trackKeys.Count;
+        return trackValues.Count;
     }
 
     public int getGroupIndex(int id) {
         int index = -1;
-        for(int i = 0; i < groupKeys.Count; i++) {
-            if(groupKeys[i] == id) {
+        for(int i = 0; i < groupValues.Count; i++) {
+            if(groupValues[i].group_id == id) {
                 index = i;
                 break;
             }
@@ -751,31 +743,32 @@ public class AMTake : MonoBehaviour {
         }
     }
 
+    static int TrackCompare(AMTrack t1, AMTrack t2) {
+        if(t1 == t2)
+            return 0;
+        else if(t1 == null)
+            return 1;
+        else if(t2 == null)
+            return -1;
+
+        return t1.order - t2.order;
+    }
+
     // preview a frame
     public void previewFrame(float _frame, bool orientationOnly = false, bool quickPreview = false /* do not preview properties to execute */) {
-        List<AMOrientationTrack> tracksOrientaton = new List<AMOrientationTrack>();
-        List<AMRotationTrack> tracksRotation = new List<AMRotationTrack>();
+        trackValues.Sort(TrackCompare);
 
-        foreach(AMTrack track in trackValues) {
-            if(track == null || track is AMAudioTrack) continue;
-            else if(track is AMOrientationTrack) tracksOrientaton.Add(track as AMOrientationTrack);
-            else if(!orientationOnly) {
-                if(track is AMRotationTrack) tracksRotation.Add(track as AMRotationTrack);	// if rotation, add to list and preview
+        if(orientationOnly) {
+            foreach(AMTrack track in trackValues) {
+                if(track is AMOrientationTrack || track is AMRotationTrack)
+                    track.previewFrame(_frame);
+            }
+        }
+        else {
+            foreach(AMTrack track in trackValues) {
                 if(track is AMAnimationTrack) (track as AMAnimationTrack).previewFrame(_frame, frameRate);
                 else if(track is AMPropertyTrack) (track as AMPropertyTrack).previewFrame(_frame, quickPreview);
                 else track.previewFrame(_frame);
-            }
-        }
-        // preview orientation
-        foreach(AMOrientationTrack track in tracksOrientaton) {
-            track.cachedTranslationTrackStartTarget = getTranslationTrackForTransform(track.getStartTargetForFrame(_frame));
-            track.cachedTranslationTrackEndTarget = getTranslationTrackForTransform(track.getEndTargetForFrame(_frame));
-            track.previewFrame(_frame);
-        }
-        if(tracksOrientaton.Count > 0) {
-            // preview rotation, second pass
-            foreach(AMRotationTrack track in tracksRotation) {
-                track.previewFrame(_frame);
             }
         }
     }

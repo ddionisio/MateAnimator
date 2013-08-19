@@ -4,6 +4,71 @@ using System.Collections.Generic;
 
 using Holoville.HOTween;
 using Holoville.HOTween.Core;
+using Holoville.HOTween.Plugins.Core;
+
+public class AMPlugOrientation : ABSTweenPlugin {
+    internal static System.Type[] validPropTypes = { typeof(Quaternion) };
+    internal static System.Type[] validValueTypes = { typeof(Quaternion) };
+
+    Transform sTarget;
+    Transform eTarget;
+
+    Quaternion changeVal;
+
+    protected override object startVal { get { return _startVal; } set { _startVal = value; } }
+
+    protected override object endVal { get { return _endVal; } set { _endVal = value; } }
+
+    public AMPlugOrientation(Transform start, Transform end)
+        : base(null, false) { this.sTarget = start; this.eTarget = end; }
+
+    public AMPlugOrientation(Transform start, Transform end, bool isRelative)
+        : base(null, isRelative) { this.sTarget = start; this.eTarget = end; }
+
+    public AMPlugOrientation(Transform start, Transform end, EaseType easeType)
+        : base(null, easeType, false) { this.sTarget = start; this.eTarget = end; }
+
+    public AMPlugOrientation(Transform start, Transform end, EaseType easeType, bool isRelative)
+        : base(null, easeType, isRelative) { this.sTarget = start; this.eTarget = end; }
+
+    public AMPlugOrientation(Transform start, Transform end, AnimationCurve curve)
+        : base(null, curve, false) { this.sTarget = start; this.eTarget = end; }
+
+    public AMPlugOrientation(Transform start, Transform end, AnimationCurve curve, bool isRelative)
+        : base(null, curve, isRelative) { this.sTarget = start; this.eTarget = end; }
+
+    protected override float GetSpeedBasedDuration(float p_speed) {
+        return p_speed;
+    }
+
+    protected override void SetChangeVal() {
+    }
+
+    protected override void SetIncremental(int p_diffIncr) {
+    }
+
+    protected override void DoUpdate(float p_totElapsed) {
+        Transform t = tweenObj.target as Transform;
+
+        if(sTarget == null && eTarget == null)
+            return;
+        else if(sTarget == null)
+            t.LookAt(eTarget);
+        else if(eTarget == null || sTarget == eTarget)
+            t.LookAt(sTarget);
+        else {
+            float time = ease(p_totElapsed, 0f, 1f, _duration, tweenObj.easeOvershootOrAmplitude, tweenObj.easePeriod);
+
+            Quaternion s = Quaternion.LookRotation(sTarget.position - t.position);
+            Quaternion e = Quaternion.LookRotation(eTarget.position - t.position);
+
+            t.rotation = Quaternion.Slerp(s, e, time);
+        }
+    }
+
+    protected override void SetValue(object p_value) { }
+    protected override object GetValue() { return null; }
+}
 
 [AddComponentMenu("")]
 public class AMOrientationKey : AMKey {
@@ -13,12 +78,7 @@ public class AMOrientationKey : AMKey {
     public int endFrame;
     public Transform obj;
     public Transform endTarget;
-
-    public bool isSetStartPosition = false;
-    public bool isSetEndPosition = false;
-    public Vector3 startPosition;
-    public Vector3 endPosition;
-
+    
     public bool setTarget(Transform target) {
         if(target != this.target) {
             this.target = target;
@@ -43,20 +103,14 @@ public class AMOrientationKey : AMKey {
         if(!obj) return null;
         if(endFrame == -1) return null;
         if(isLookFollow()) {
-            return HOTween.To(obj, getTime(frameRate), new TweenParms().Prop("position", new AMPlugLookFollowTarget(target)));
+            return HOTween.To(obj, getTime(frameRate), new TweenParms().Prop("rotation", new AMPlugOrientation(target, null)));
         }
         else {
             if(hasCustomEase()) {
-                if(isSetEndPosition)
-                    return HOTween.To(obj, getTime(frameRate), new TweenParms().Prop("position", new AMPlugLookToFollowTarget(endTarget, endPosition)).Ease(easeCurve));
-                else
-                    return HOTween.To(obj, getTime(frameRate), new TweenParms().Prop("position", new AMPlugLookToFollowTarget(endTarget)).Ease(easeCurve));
+                return HOTween.To(obj, getTime(frameRate), new TweenParms().Prop("rotation", new AMPlugOrientation(target, endTarget)).Ease(easeCurve));
             }
             else {
-                if(isSetEndPosition)
-                    return HOTween.To(obj, getTime(frameRate), new TweenParms().Prop("position", new AMPlugLookToFollowTarget(endTarget, endPosition)).Ease((EaseType)easeType));
-                else
-                    return HOTween.To(obj, getTime(frameRate), new TweenParms().Prop("position", new AMPlugLookToFollowTarget(endTarget)).Ease((EaseType)easeType));
+                return HOTween.To(obj, getTime(frameRate), new TweenParms().Prop("rotation", new AMPlugOrientation(target, endTarget)).Ease((EaseType)easeType));
             }
         }
     }
@@ -74,37 +128,25 @@ public class AMOrientationKey : AMKey {
         return true;
     }
 
-    public Quaternion getQuaternionAtPercent(float percentage, /*Vector3 startPosition, Vector3 endPosition,*/ Vector3? startVector = null, Vector3? endVector = null) {
+    public Quaternion getQuaternionAtPercent(float percentage) {
         if(isLookFollow()) {
-            obj.LookAt(target);
-            return obj.rotation;
+            return Quaternion.LookRotation(target.position - obj.position);
         }
 
-        Vector3 _temp = obj.position;
-        if(isSetStartPosition) obj.position = (Vector3)startPosition;
-        obj.LookAt(startVector ?? target.position);
-        Vector3 eStart = obj.eulerAngles;
-        if(isSetEndPosition) obj.position = (Vector3)endPosition;
-        obj.LookAt(endVector ?? endTarget.position);
-        Vector3 eEnd = obj.eulerAngles;
-        obj.position = _temp;
-        eEnd = new Vector3(AMUtil.clerp(eStart.x, eEnd.x, 1), AMUtil.clerp(eStart.y, eEnd.y, 1), AMUtil.clerp(eStart.z, eEnd.z, 1));
+        Quaternion s = Quaternion.LookRotation(target.position - obj.position);
+        Quaternion e = Quaternion.LookRotation(endTarget.position - obj.position);
 
-        Vector3 eCurrent = new Vector3();
+        float time = 0.0f;
 
         if(hasCustomEase()) {
-            eCurrent.x = AMUtil.EaseCustom(eStart.x, eEnd.x - eStart.x, percentage, easeCurve);
-            eCurrent.y = AMUtil.EaseCustom(eStart.y, eEnd.y - eStart.y, percentage, easeCurve);
-            eCurrent.z = AMUtil.EaseCustom(eStart.z, eEnd.z - eStart.z, percentage, easeCurve);
+            time = AMUtil.EaseCustom(0.0f, 1.0f, percentage, easeCurve);
         }
         else {
             TweenDelegate.EaseFunc ease = AMUtil.GetEasingFunction((EaseType)easeType);
-            eCurrent.x = ease(percentage, eStart.x, eEnd.x - eStart.x, 1.0f, 0.0f, 0.0f);
-            eCurrent.y = ease(percentage, eStart.y, eEnd.y - eStart.y, 1.0f, 0.0f, 0.0f);
-            eCurrent.z = ease(percentage, eStart.z, eEnd.z - eStart.z, 1.0f, 0.0f, 0.0f);
+            time = ease(percentage, 0.0f, 1.0f, 1.0f, 0.0f, 0.0f);
         }
 
-        return Quaternion.Euler(eCurrent);
+        return Quaternion.Slerp(s, e, time);
     }
     #endregion
 }

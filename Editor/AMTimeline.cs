@@ -3577,8 +3577,8 @@ public class AMTimeline : EditorWindow {
                 draggingGroupElement = mouseOverGroupElement;
                 draggingGroupElementType = mouseOverElement;
                 dragType = (int)DragType.GroupElement;
-                if(mouseOverElement == (int)ElementType.Group) timelineSelectGroup((int)mouseOverGroupElement.x);
-                else timelineSelectTrack((int)mouseOverGroupElement.y);
+                if(mouseOverElement == (int)ElementType.Group) timelineSelectGroup((int)mouseOverGroupElement.x, false);
+                else timelineSelectTrack((int)mouseOverGroupElement.y, false);
             }
             #endregion
             #region frame
@@ -4131,9 +4131,10 @@ public class AMTimeline : EditorWindow {
         // set active object
         timelineSelectObjectFor(aData.getCurrentTake().getTrack(_track));
     }
-    void timelineSelectGroup(int group_id) {
+    void timelineSelectGroup(int group_id, bool undo = true) {
         cancelTextEditting();
-        registerUndo("Select Group");
+        if(undo)
+            registerUndo("Select Group");
 
         aData.getCurrentTake().selectGroup(group_id, isShiftDown, isControlDown);
         aData.getCurrentTake().selectedTrack = -1;

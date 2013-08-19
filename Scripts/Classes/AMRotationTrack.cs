@@ -7,7 +7,6 @@ using Holoville.HOTween;
 
 [AddComponentMenu("")]
 public class AMRotationTrack : AMTrack {
-
     [SerializeField]
     private Transform _obj;
     public Transform obj {
