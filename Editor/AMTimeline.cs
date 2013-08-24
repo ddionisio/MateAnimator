@@ -509,6 +509,8 @@ public class AMTimeline : EditorWindow {
     }
 
     void OnHierarchyChange() {
+        if(isPlayMode) return;
+
         if(_aData && !_aData.CheckIntegrity()) {
             ShadyRefresh();
         }
