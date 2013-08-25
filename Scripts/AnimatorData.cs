@@ -290,6 +290,10 @@ public class AnimatorData : MonoBehaviour {
         Play(takeName, true, 0f, loop);
     }
 
+    public void PlayAtTime(string takeName, float time, bool loop = false) {
+        Play(takeName, false, time, loop);
+    }
+
     public void Pause() {
         if(nowPlayingTake == null) return;
         nowPlayingTake.stopAudio();
