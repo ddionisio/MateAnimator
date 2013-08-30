@@ -21,6 +21,8 @@ public class AMRotationTrack : AMTrack {
         get { return _obj; }
     }
 
+    public override int version { get { return 2; } }
+
     [SerializeField]
     private bool _isLocal;
     public bool isLocal {
@@ -116,6 +118,8 @@ public class AMRotationTrack : AMTrack {
         sortKeys();
         for(int i = 0; i < keys.Count; i++) {
             AMRotationKey key = keys[i] as AMRotationKey;
+
+            isLocal = true;
 
             key.version = version;
 

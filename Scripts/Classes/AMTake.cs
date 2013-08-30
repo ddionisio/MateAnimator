@@ -120,25 +120,25 @@ public class AMTake : MonoBehaviour {
     }
 
     // add translation track
-    public AMTrack addTranslationTrack(GameObject obj, bool isLocal = false) {
+    public AMTrack addTranslationTrack(GameObject obj) {
         AMTranslationTrack a = gameObject.AddComponent<AMTranslationTrack>();
         a.enabled = false;
         a.setName(getTrackCount());
         a.id = getUniqueTrackID();
         if(obj) a.obj = obj.transform;
-        a.isLocal = isLocal;
+        a.isLocal = true;
         addTrack(a);
         return a;
     }
 
     // add rotation track
-    public AMTrack addRotationTrack(GameObject obj, bool isLocal = false) {
+    public AMTrack addRotationTrack(GameObject obj) {
         AMRotationTrack a = gameObject.AddComponent<AMRotationTrack>();
         a.enabled = false;
         a.setName(getTrackCount());
         a.id = getUniqueTrackID();
         if(obj) a.obj = obj.transform;
-        a.isLocal = isLocal;
+        a.isLocal = true;
         addTrack(a);
         return a;
     }

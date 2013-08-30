@@ -6,6 +6,8 @@ using System.Collections.Generic;
 using Holoville.HOTween.Core;
 using Holoville.HOTween;
 
+//Note: no longer using global
+
 [AddComponentMenu("")]
 public class AMTranslationTrack : AMTrack {
     [SerializeField]
@@ -21,6 +23,8 @@ public class AMTranslationTrack : AMTrack {
     public override UnityEngine.Object genericObj {
         get { return _obj; }
     }
+
+    public override int version { get { return 2; } }
 
     [SerializeField]
     private bool _isLocal;
@@ -307,6 +311,9 @@ public class AMTranslationTrack : AMTrack {
             AMTranslationKey key = keys[i] as AMTranslationKey;
 
             key.version = version;
+
+            //force local, using global is useless
+            isLocal = true;
 
             path = getPathFromIndex(i);
 

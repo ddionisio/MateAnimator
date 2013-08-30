@@ -185,22 +185,18 @@ public class AMTimeline : EditorWindow {
     [SerializeField]
     public enum Track {
         Translation = 0,
-        LocalTranslation = 1,
-        Rotation = 2,
-        LocalRotation = 3,
-        Orientation = 4,
-        Animation = 5,
-        Audio = 6,
-        Property = 7,
-        Event = 8,
-        GOSetActive = 9
+        Rotation = 1,
+        Orientation = 2,
+        Animation = 3,
+        Audio = 4,
+        Property = 5,
+        Event = 6,
+        GOSetActive = 7
     }
 
     public static string[] TrackNames = new string[] {
 		"Translation",
-        "L.Translation",
 		"Rotation",
-        "L.Rotation",
 		"Orientation",
 		"Animation",
 		"Audio",
@@ -4437,17 +4433,9 @@ public class AMTimeline : EditorWindow {
                 ntrack = aData.getCurrentTake().addTranslationTrack(object_window);
                 Undo.RegisterCreatedObjectUndo(ntrack, "New Translation Track");
                 break;
-            case (int)Track.LocalTranslation:
-                ntrack = aData.getCurrentTake().addTranslationTrack(object_window, true);
-                Undo.RegisterCreatedObjectUndo(ntrack, "New Local Translation Track");
-                break;
             case (int)Track.Rotation:
                 ntrack = aData.getCurrentTake().addRotationTrack(object_window);
                 Undo.RegisterCreatedObjectUndo(ntrack, "New Rotation Track");
-                break;
-            case (int)Track.LocalRotation:
-                ntrack = aData.getCurrentTake().addRotationTrack(object_window, true);
-                Undo.RegisterCreatedObjectUndo(ntrack, "New Local Rotation Track");
                 break;
             case (int)Track.Orientation:
                 ntrack = aData.getCurrentTake().addOrientationTrack(object_window);
@@ -4677,9 +4665,7 @@ public class AMTimeline : EditorWindow {
     }
     void buildAddTrackMenu() {
         menu.AddItem(new GUIContent("Translation"), false, addTrackFromMenu, (int)Track.Translation);
-        menu.AddItem(new GUIContent("Local Translation"), false, addTrackFromMenu, (int)Track.LocalTranslation);
         menu.AddItem(new GUIContent("Rotation"), false, addTrackFromMenu, (int)Track.Rotation);
-        menu.AddItem(new GUIContent("Local Rotation"), false, addTrackFromMenu, (int)Track.LocalRotation);
         menu.AddItem(new GUIContent("Orientation"), false, addTrackFromMenu, (int)Track.Orientation);
         menu.AddItem(new GUIContent("Animation"), false, addTrackFromMenu, (int)Track.Animation);
         menu.AddItem(new GUIContent("Audio"), false, addTrackFromMenu, (int)Track.Audio);
@@ -4714,11 +4700,11 @@ public class AMTimeline : EditorWindow {
         menu_drag = new GenericMenu();
 
         // Translation
-        if(hasTransform) { menu_drag.AddItem(new GUIContent("Translation"), false, addTrackFromMenu, (int)Track.Translation); menu_drag.AddItem(new GUIContent("Local Translation"), false, addTrackFromMenu, (int)Track.LocalTranslation); }
-        else { menu_drag.AddDisabledItem(new GUIContent("Translation")); menu_drag.AddDisabledItem(new GUIContent("Local Translation")); }
+        if(hasTransform) { menu_drag.AddItem(new GUIContent("Translation"), false, addTrackFromMenu, (int)Track.Translation); }
+        else { menu_drag.AddDisabledItem(new GUIContent("Translation")); }
         // Rotation
-        if(hasTransform) { menu_drag.AddItem(new GUIContent("Rotation"), false, addTrackFromMenu, (int)Track.Rotation); menu_drag.AddItem(new GUIContent("Local Rotation"), false, addTrackFromMenu, (int)Track.LocalRotation); }
-        else { menu_drag.AddDisabledItem(new GUIContent("Rotation")); menu_drag.AddDisabledItem(new GUIContent("Local Rotation")); }
+        if(hasTransform) { menu_drag.AddItem(new GUIContent("Rotation"), false, addTrackFromMenu, (int)Track.Rotation); }
+        else { menu_drag.AddDisabledItem(new GUIContent("Rotation")); }
         // Orientation
         if(hasTransform) menu_drag.AddItem(new GUIContent("Orientation"), false, addTrackFromMenu, (int)Track.Orientation);
         else menu_drag.AddDisabledItem(new GUIContent("Orientation"));
@@ -4753,7 +4739,7 @@ public class AMTimeline : EditorWindow {
     }
     bool canQuickAddCombo(List<int> combo, bool hasTransform, bool hasAnimation, bool hasAudioSource, bool hasCamera) {
         foreach(int _track in combo) {
-            if(!hasTransform && (_track == (int)Track.Translation || _track == (int)Track.LocalTranslation || _track == (int)Track.Rotation || _track == (int)Track.LocalRotation || _track == (int)Track.Orientation))
+            if(!hasTransform && (_track == (int)Track.Translation || _track == (int)Track.Rotation || _track == (int)Track.Orientation))
                 return false;
             else if(!hasAnimation && _track == (int)Track.Animation)
                 return false;
