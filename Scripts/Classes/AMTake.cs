@@ -43,6 +43,7 @@ public class AMTake : MonoBehaviour {
     public static bool isProLicense = true;
 
     private Sequence mSequence;
+    private bool mTracksSorted = false;
 
     public Sequence sequence { get { return mSequence; } }
     public event OnSequenceDone sequenceCompleteCallback;
@@ -756,7 +757,15 @@ public class AMTake : MonoBehaviour {
 
     // preview a frame
     public void previewFrame(float _frame, bool orientationOnly = false, bool quickPreview = false /* do not preview properties to execute */) {
-        trackValues.Sort(TrackCompare);
+#if UNITY_EDITOR
+        if(!Application.isPlaying)
+            mTracksSorted = false;
+#endif
+
+        if(!mTracksSorted) {
+            trackValues.Sort(TrackCompare);
+            mTracksSorted = true;
+        }
 
         if(orientationOnly) {
             foreach(AMTrack track in trackValues) {

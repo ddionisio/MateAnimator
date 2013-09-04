@@ -316,8 +316,7 @@ public class AnimatorData : MonoBehaviour {
         nowPlayingTake.stopAudio();
         nowPlayingTake.stopAnimations();
 
-        if(nowPlayingTake.sequence != null) {
-            nowPlayingTake.sequence.GoTo(0.0f, true);
+        if(nowPlayingTake.sequence != null && !nowPlayingTake.sequence.isComplete) {
             nowPlayingTake.sequence.Pause();
         }
 
@@ -393,8 +392,15 @@ public class AnimatorData : MonoBehaviour {
         nowPlayingTake = newPlayTake;
 
         if(nowPlayingTake) {
+            float startTime = value;
+            if(isFrame) startTime /= nowPlayingTake.frameRate;
+
             if(nowPlayingTake.sequence == null)
                 nowPlayingTake.BuildSequence(gameObject.name, sequenceKillWhenDone, updateType);
+            else {
+                //TODO: make this more efficient
+                nowPlayingTake.previewFrame(isFrame ? value : nowPlayingTake.frameRate * value, false, true);
+            }
 
             if(nowPlayingTake.sequence != null) {
                 if(loop) {
@@ -403,10 +409,7 @@ public class AnimatorData : MonoBehaviour {
                 else {
                     nowPlayingTake.sequence.loops = nowPlayingTake.numLoop;
                 }
-
-                float startTime = value;
-                if(isFrame) startTime /= nowPlayingTake.frameRate;
-
+                                
                 nowPlayingTake.sequence.Play();
                 nowPlayingTake.sequence.GoTo(startTime);
             }
