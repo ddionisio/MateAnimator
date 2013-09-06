@@ -316,8 +316,11 @@ public class AnimatorData : MonoBehaviour {
         nowPlayingTake.stopAudio();
         nowPlayingTake.stopAnimations();
 
-        if(nowPlayingTake.sequence != null && !nowPlayingTake.sequence.isComplete) {
+        if(nowPlayingTake.sequence != null) {
             nowPlayingTake.sequence.Pause();
+
+            if(!nowPlayingTake.sequence.isComplete)
+                nowPlayingTake.sequence.GoTo(0.0f);
         }
 
         nowPlayingTake = null;

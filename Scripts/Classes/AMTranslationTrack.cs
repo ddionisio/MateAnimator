@@ -14,9 +14,12 @@ public class AMTranslationTrack : AMTrack {
     private Transform _obj;
     public Transform obj {
         set {
-            if(value != null && keys.Count <= 0) cachedInitialPosition = _isLocal ? value.localPosition : value.position;
-            _obj = value;
+            if(_obj != value) {
+                if(value != null && keys.Count <= 0) cachedInitialPosition = _isLocal ? value.localPosition : value.position;
+                _obj = value;
 
+                updateCache();
+            }
         }
     }
 
