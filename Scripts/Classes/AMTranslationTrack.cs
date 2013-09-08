@@ -344,9 +344,11 @@ public class AMTranslationTrack : AMTrack {
             }
         }
         // update cache for orientation tracks with track obj as target
-        foreach(AMTrack track in parentTake.trackValues) {
-            if(track is AMOrientationTrack && ((track as AMOrientationTrack).obj == _obj || (track as AMOrientationTrack).hasTarget(_obj))) {
-                track.updateCache();
+        if(parentTake) {
+            foreach(AMTrack track in parentTake.trackValues) {
+                if(track is AMOrientationTrack && ((track as AMOrientationTrack).obj == _obj || (track as AMOrientationTrack).hasTarget(_obj))) {
+                    track.updateCache();
+                }
             }
         }
         base.updateCache();
