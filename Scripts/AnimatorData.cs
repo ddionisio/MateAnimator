@@ -318,12 +318,20 @@ public class AnimatorData : MonoBehaviour {
 
         if(nowPlayingTake.sequence != null) {
             nowPlayingTake.sequence.Pause();
-
-            if(!nowPlayingTake.sequence.isComplete)
-                nowPlayingTake.sequence.GoTo(0.0f);
+            nowPlayingTake.sequence.GoTo(0.0f);
         }
 
         nowPlayingTake = null;
+    }
+
+    public void GotoFrame(float frame) {
+        if(nowPlayingTake != null && nowPlayingTake.sequence != null) {
+            float t = frame / nowPlayingTake.frameRate;
+            nowPlayingTake.sequence.GoTo(t);
+        }
+        else {
+            Debug.LogWarning("No take playing...");
+        }
     }
 
     public void Reverse() {

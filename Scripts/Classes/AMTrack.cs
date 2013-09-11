@@ -42,6 +42,8 @@ public class AMTrack : MonoBehaviour {
     }
 
     public bool CheckNullKeys() {
+        if(keys == null) return false;
+
         foreach(AMKey key in keys) {
             if(key == null) return false;
         }
