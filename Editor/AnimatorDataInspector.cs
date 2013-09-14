@@ -45,6 +45,7 @@ public class AnimatorDataInspector : Editor {
         dat.sequenceLoadAll = GUILayout.Toggle(dat.sequenceLoadAll, "Build All Sequence On Start");
         dat.sequenceKillWhenDone = GUILayout.Toggle(dat.sequenceKillWhenDone, "Kill Sequence When Done");
         dat.playOnEnable = GUILayout.Toggle(dat.playOnEnable, "Play On Enable");
+        dat.onDisableAction = (AnimatorData.DisableAction)EditorGUILayout.EnumPopup("On Disable", dat.onDisableAction);
         dat.updateType = (Holoville.HOTween.UpdateType)EditorGUILayout.EnumPopup("Update", dat.updateType);
 
         if(PrefabUtility.GetPrefabType(dat.gameObject) != PrefabType.Prefab) {

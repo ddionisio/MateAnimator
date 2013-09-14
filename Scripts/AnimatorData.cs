@@ -9,13 +9,23 @@ using Holoville.HOTween;
 [ExecuteInEditMode]
 [AddComponentMenu("M8/Animator")]
 public class AnimatorData : MonoBehaviour {
+    public enum DisableAction {
+        None,
+        Pause,
+        Stop
+    }
+
     // show
     public List<AMTake> takes = new List<AMTake>();
     public AMTake playOnStart = null;
 
     public bool sequenceLoadAll = true;
     public bool sequenceKillWhenDone = false;
+
     public bool playOnEnable = false;
+
+    public DisableAction onDisableAction = DisableAction.Pause;
+
     public UpdateType updateType = UpdateType.Update;
     // hide
 
@@ -102,8 +112,6 @@ public class AnimatorData : MonoBehaviour {
     //private bool isLooping = false;
     //private float takeTime = 0f;
     private bool mStarted = false;
-
-    private bool mPlayOnEnable = false;
 
     private int _prevTake = -1;
 
@@ -213,28 +221,28 @@ public class AnimatorData : MonoBehaviour {
     }
 
     void OnEnable() {
-        if(mStarted && playOnEnable) {
-            if(isPaused) {
-                if(mPlayOnEnable) {
+        if(mStarted) {
+            if(playOnEnable) {
+                if(currentPlayingTake == null && playOnStart != null)
+                    Play(playOnStart.name, true, 0f, false);
+                else
                     Resume();
-                }
             }
-            else if(playOnStart) {
-                Play(playOnStart.name, true, 0f, false);
-            }
+            //else if(playOnStart) {
+            //Play(playOnStart.name, true, 0f, false);
+            //}
         }
-
-        mPlayOnEnable = false;
     }
 
     void OnDisable() {
-        if(isPlaying) {
-            Pause();
-            mPlayOnEnable = true;
+        switch(onDisableAction) {
+            case DisableAction.Pause:
+                Pause();
+                break;
+            case DisableAction.Stop:
+                Stop();
+                break;
         }
-    }
-
-    void Awake() {
     }
 
     void Start() {
@@ -347,8 +355,8 @@ public class AnimatorData : MonoBehaviour {
     }
 
     // play take by name from frame
-    public void PlayFromFrame(string takeName, int frame, bool loop = false) {
-        Play(takeName, true, (float)frame, loop);
+    public void PlayFromFrame(string takeName, float frame, bool loop = false) {
+        Play(takeName, true, frame, loop);
     }
 
     // preview a single frame (used for scrubbing)
@@ -396,39 +404,47 @@ public class AnimatorData : MonoBehaviour {
     void Play(string take_name, bool isFrame, float value, bool loop) {
         AMTake newPlayTake = getTake(take_name);
 
-        if(newPlayTake != nowPlayingTake) {
+        if(!newPlayTake) {
             Stop();
+            return;
+        }
+
+        if(newPlayTake != nowPlayingTake && nowPlayingTake != null) {
+            if(newPlayTake.pausePreviousTake)
+                Pause();
+            else
+                Stop();
         }
 
         nowPlayingTake = newPlayTake;
 
-        if(nowPlayingTake) {
-            float startTime = value;
-            if(isFrame) startTime /= nowPlayingTake.frameRate;
+        float startTime = value;
+        if(isFrame) startTime /= nowPlayingTake.frameRate;
 
-            if(nowPlayingTake.sequence == null)
-                nowPlayingTake.BuildSequence(gameObject.name, sequenceKillWhenDone, updateType);
-            else {
-                //TODO: make this more efficient
-                nowPlayingTake.previewFrame(isFrame ? value : nowPlayingTake.frameRate * value, false, true);
-            }
-
-            if(nowPlayingTake.sequence != null) {
-                if(loop) {
-                    nowPlayingTake.sequence.loops = -1;
-                }
-                else {
-                    nowPlayingTake.sequence.loops = nowPlayingTake.numLoop;
-                }
-                                
-                nowPlayingTake.sequence.Play();
-                nowPlayingTake.sequence.GoTo(startTime);
-            }
-
-            //isLooping = loop;
-
-            //Execute(nowPlayingTake, isFrame, value);
+        if(nowPlayingTake.sequence == null)
+            nowPlayingTake.BuildSequence(gameObject.name, sequenceKillWhenDone, updateType);
+        else {
+            //TODO: make this more efficient
+            if(value == 0.0f)
+                nowPlayingTake.previewFrame(0, false, true);
+            //nowPlayingTake.previewFrame(isFrame ? value : nowPlayingTake.frameRate * value, false, true);
         }
+
+        if(nowPlayingTake.sequence != null) {
+            if(loop) {
+                nowPlayingTake.sequence.loops = -1;
+            }
+            else {
+                nowPlayingTake.sequence.loops = nowPlayingTake.numLoop;
+            }
+
+            nowPlayingTake.sequence.Play();
+            nowPlayingTake.sequence.GoTo(startTime);
+        }
+
+        //isLooping = loop;
+
+        //Execute(nowPlayingTake, isFrame, value);
     }
 
     void PreviewValue(string take_name, bool isFrame, float value) {
