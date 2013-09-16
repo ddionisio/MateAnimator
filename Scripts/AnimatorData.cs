@@ -293,6 +293,12 @@ public class AnimatorData : MonoBehaviour {
         }
     }
 
+    public void PlayDefault(bool loop = false) {
+        if(playOnStart) {
+            Play(playOnStart.name, loop);
+        }
+    }
+
     // play take by name
     public void Play(string takeName, bool loop = false) {
         Play(takeName, true, 0f, loop);
@@ -326,7 +332,7 @@ public class AnimatorData : MonoBehaviour {
 
         if(nowPlayingTake.sequence != null) {
             nowPlayingTake.sequence.Pause();
-            nowPlayingTake.sequence.GoTo(0.0f);
+            nowPlayingTake.sequence.GoTo(0);
         }
 
         nowPlayingTake = null;
@@ -421,13 +427,18 @@ public class AnimatorData : MonoBehaviour {
         float startTime = value;
         if(isFrame) startTime /= nowPlayingTake.frameRate;
 
+        float startFrame = 0;//isFrame ? value : nowPlayingTake.frameRate * value;
+
         if(nowPlayingTake.sequence == null)
-            nowPlayingTake.BuildSequence(gameObject.name, sequenceKillWhenDone, updateType);
+            nowPlayingTake.BuildSequence(gameObject.name, sequenceKillWhenDone, updateType, startFrame);
         else {
             //TODO: make this more efficient
             if(value == 0.0f)
                 nowPlayingTake.previewFrame(0, false, true);
-            //nowPlayingTake.previewFrame(isFrame ? value : nowPlayingTake.frameRate * value, false, true);
+            /*if(startTime > nowPlayingTake.sequence.duration)
+                startFrame = (startTime / nowPlayingTake.sequence.duration) * nowPlayingTake.frameRate;
+
+            nowPlayingTake.previewFrame(startFrame, false, true);*/
         }
 
         if(nowPlayingTake.sequence != null) {
@@ -438,8 +449,8 @@ public class AnimatorData : MonoBehaviour {
                 nowPlayingTake.sequence.loops = nowPlayingTake.numLoop;
             }
 
-            nowPlayingTake.sequence.Play();
             nowPlayingTake.sequence.GoTo(startTime);
+            nowPlayingTake.sequence.Play();
         }
 
         //isLooping = loop;

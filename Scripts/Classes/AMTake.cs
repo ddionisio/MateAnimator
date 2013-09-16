@@ -1218,7 +1218,7 @@ public class AMTake : MonoBehaviour {
         }
     }
 
-    public void BuildSequence(string goName, bool autoKill, UpdateType updateType) {
+    public void BuildSequence(string goName, bool autoKill, UpdateType updateType, float startFrame = float.PositiveInfinity) {
         if(mSequence == null) {
             mSequence = new Sequence(
                 new SequenceParms()
@@ -1229,7 +1229,13 @@ public class AMTake : MonoBehaviour {
                 .OnComplete(OnSequenceComplete, null));
 
             maintainCaches();
-            previewFrame(0.0f, false, true);
+
+            if(!float.IsInfinity(startFrame)) {
+                if(startFrame > mSequence.duration * frameRate)
+                    startFrame /= mSequence.duration * frameRate;
+
+                previewFrame(startFrame, false, true);
+            }
 
             int numTweensAdded = 0;
 

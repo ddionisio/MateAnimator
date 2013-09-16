@@ -10,6 +10,10 @@ public class AMKey : MonoBehaviour {
 
     public int frame;
     public int easeType = (int)0;//AMTween.EaseType.linear; 			// ease type, AMTween.EaseType enum
+    
+    public float amplitude = 0.0f;
+    public float period = 0.0f;
+
     public List<float> customEase = new List<float>();
     private AnimationCurve _cachedEaseCurve;
     public AnimationCurve easeCurve {

@@ -181,7 +181,7 @@ public class AMTranslationTrack : AMTrack {
             }
             else {
                 TweenDelegate.EaseFunc ease = AMUtil.GetEasingFunction((EaseType)key.easeType);
-                _value = ease(framePositionInPath, 0.0f, 1.0f, key.getNumberOfFrames(), 0.0f, 0.0f);
+                _value = ease(framePositionInPath, 0.0f, 1.0f, key.getNumberOfFrames(), key.amplitude, key.period);
                 if(float.IsNaN(_value)) { //this really shouldn't happen...
                     return;
                 }
@@ -249,7 +249,7 @@ public class AMTranslationTrack : AMTrack {
                 }
                 else {
                     TweenDelegate.EaseFunc ease = AMUtil.GetEasingFunction((EaseType)key.easeType);
-                    ret = AMUtil.PointOnPath(key.path, Mathf.Clamp(ease(framePositionInPath, 0.0f, 1.0f, key.getNumberOfFrames(), 0.0f, 0.0f), 0.0f, 1.0f));
+                    ret = AMUtil.PointOnPath(key.path, Mathf.Clamp(ease(framePositionInPath, 0.0f, 1.0f, key.getNumberOfFrames(), key.amplitude, key.period), 0.0f, 1.0f));
                     retFound = true;
                     break;
                 }

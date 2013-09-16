@@ -590,7 +590,7 @@ public class AMPropertyTrack : AMTrack {
             }
             else {
                 TweenDelegate.EaseFunc ease = AMUtil.GetEasingFunction((EaseType)key.easeType);
-                t = ease(framePositionInAction, 0.0f, 1.0f, key.getNumberOfFrames(), 0.0f, 0.0f);
+                t = ease(framePositionInAction, 0.0f, 1.0f, key.getNumberOfFrames(), key.amplitude, key.period);
             }
 
             //qCurrent.x = ease(qStart.x,qEnd.x,percentage);

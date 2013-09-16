@@ -949,7 +949,7 @@ public class AMTimeline : EditorWindow {
             registerUndo("New Take");
             aData.currentTake = aData.takes.Count;
             cancelTextEditting();
-            
+
             AMTake newTake = aData.addTake();
             Undo.RegisterCreatedObjectUndo(newTake, "New Take");
 
@@ -977,7 +977,7 @@ public class AMTimeline : EditorWindow {
             }
 
             aData.currentTake = aData.takes.Count - 1;
-            
+
             // save data
             EditorUtility.SetDirty(aData);
             setDirtyTakes(aData.takes);
@@ -1133,7 +1133,7 @@ public class AMTimeline : EditorWindow {
                     }
                     curTake.contextSelectionTracks = new List<int>();
                     //aData.getCurrentTake().deleteTrack(aData.getCurrentTake().selectedTrack);
-                    
+
                     // deselect track
                     curTake.selectedTrack = -1;
                     // deselect group
@@ -3499,6 +3499,18 @@ public class AMTimeline : EditorWindow {
                 AMEasePicker.setValues(/*aData,*/key, track);
                 EditorWindow.GetWindow(typeof(AMEasePicker));
             }
+
+            //display specific variable for certain tweens
+            //TODO: only show this for specific tweens
+            if(!key.hasCustomEase()) {
+                y += rectButton.height + 4;
+                Rect rectAmp = new Rect(x, y, 200f, height);
+                key.amplitude = EditorGUI.FloatField(rectAmp, "Amplitude", key.amplitude);
+
+                y += rectAmp.height + 4;
+                Rect rectPer = new Rect(x, y, 200f, height);
+                key.period = EditorGUI.FloatField(rectPer, "Period", key.period);
+            }
         }
         else {
             GUILayout.BeginHorizontal();
@@ -3528,6 +3540,14 @@ public class AMTimeline : EditorWindow {
             }
             GUILayout.Space(1f);
             GUILayout.EndHorizontal();
+
+            //display specific variable for certain tweens
+            //TODO: only show this for specific tweens
+            if(!key.hasCustomEase()) {
+                key.amplitude = EditorGUILayout.FloatField("Amplitude", key.amplitude);
+
+                key.period = EditorGUILayout.FloatField("Period", key.period);
+            }
         }
         return didUpdate;
     }

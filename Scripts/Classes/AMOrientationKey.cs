@@ -110,7 +110,7 @@ public class AMOrientationKey : AMKey {
                 return HOTween.To(obj, getTime(frameRate), new TweenParms().Prop("rotation", new AMPlugOrientation(target, endTarget)).Ease(easeCurve));
             }
             else {
-                return HOTween.To(obj, getTime(frameRate), new TweenParms().Prop("rotation", new AMPlugOrientation(target, endTarget)).Ease((EaseType)easeType));
+                return HOTween.To(obj, getTime(frameRate), new TweenParms().Prop("rotation", new AMPlugOrientation(target, endTarget)).Ease((EaseType)easeType, amplitude, period));
             }
         }
     }
@@ -143,7 +143,7 @@ public class AMOrientationKey : AMKey {
         }
         else {
             TweenDelegate.EaseFunc ease = AMUtil.GetEasingFunction((EaseType)easeType);
-            time = ease(percentage, 0.0f, 1.0f, 1.0f, 0.0f, 0.0f);
+            time = ease(percentage, 0.0f, 1.0f, 1.0f, amplitude, period);
         }
 
         return Quaternion.Slerp(s, e, time);

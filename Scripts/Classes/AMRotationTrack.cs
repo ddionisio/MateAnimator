@@ -180,7 +180,7 @@ public class AMRotationTrack : AMTrack {
             }
             else {
                 TweenDelegate.EaseFunc ease = AMUtil.GetEasingFunction((EaseType)key.easeType);
-                rotation = Quaternion.Slerp(qStart, qEnd, ease(framePositionInAction, 0.0f, 1.0f, key.getNumberOfFrames(), 0.0f, 0.0f));
+                rotation = Quaternion.Slerp(qStart, qEnd, ease(framePositionInAction, 0.0f, 1.0f, key.getNumberOfFrames(), key.amplitude, key.period));
             }
 
             return;
