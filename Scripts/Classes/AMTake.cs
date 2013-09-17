@@ -23,7 +23,6 @@ public class AMTake : MonoBehaviour {
     public int numLoop = 1; //number of times this plays before it is done
     public LoopType loopMode = LoopType.Restart;
     public int loopBackToFrame = -1; //set this to loop back at given frame when sequence is complete, make sure numLoop = 1 and loopMode is Restart
-    public bool pausePreviousTake = false;
 
     public int selectedTrack = -1;			// currently selected track index
     public int selectedFrame = 1;			// currently selected frame (frame to preview, not necessarily in context selection)

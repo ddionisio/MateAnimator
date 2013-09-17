@@ -416,10 +416,7 @@ public class AnimatorData : MonoBehaviour {
         }
 
         if(newPlayTake != nowPlayingTake && nowPlayingTake != null) {
-            if(newPlayTake.pausePreviousTake)
-                Pause();
-            else
-                Stop();
+            Pause();
         }
 
         nowPlayingTake = newPlayTake;

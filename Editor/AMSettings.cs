@@ -26,7 +26,6 @@ public class AMSettings : EditorWindow {
     private int loopCount = 1;
     private LoopType loopMode = LoopType.Restart;
     private int loopBackFrame = -1;
-    private bool pausePreviousTake = false;
     private bool saveChanges = false;
     // skins
     private GUISkin skin = null;
@@ -68,7 +67,6 @@ public class AMSettings : EditorWindow {
             aData.getCurrentTake().numLoop = loopCount;
             aData.getCurrentTake().loopMode = loopMode;
             aData.getCurrentTake().loopBackToFrame = Mathf.Clamp(loopBackFrame, -1, numFrames);
-            aData.getCurrentTake().pausePreviousTake = pausePreviousTake;
 
             // save data
             EditorUtility.SetDirty(aData.getCurrentTake());
@@ -102,7 +100,7 @@ public class AMSettings : EditorWindow {
         EditorGUIUtility.LookLikeControls();
 
         GUILayout.Space(2f);
-        pausePreviousTake = EditorGUILayout.Toggle("Pause Prev. Take", pausePreviousTake);
+        //pausePreviousTake = EditorGUILayout.Toggle("Pause Prev. Take", pausePreviousTake);
                 
         GUILayout.Space(4f);
         loopBackFrame = EditorGUILayout.IntSlider("Loop Back To Frame", loopBackFrame, -1, numFrames);
@@ -145,7 +143,6 @@ public class AMSettings : EditorWindow {
             loopCount = __aData.getCurrentTake().numLoop;
             loopMode = __aData.getCurrentTake().loopMode;
             loopBackFrame = __aData.getCurrentTake().loopBackToFrame;
-            pausePreviousTake = __aData.getCurrentTake().pausePreviousTake;
         }
     }
 }
