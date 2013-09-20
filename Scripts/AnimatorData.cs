@@ -46,6 +46,19 @@ public class AnimatorData : MonoBehaviour {
     }
 
     public bool isReversed {
+        set {
+            if(nowPlayingTake != null && nowPlayingTake.sequence != null) {
+                if(value) {
+                    if(!nowPlayingTake.sequence.isReversed)
+                        nowPlayingTake.sequence.Reverse();
+                }
+                else {
+                    if(nowPlayingTake.sequence.isReversed)
+                        nowPlayingTake.sequence.Reverse();
+                }
+            }
+        }
+
         get {
             return nowPlayingTake != null && nowPlayingTake.sequence != null && nowPlayingTake.sequence.isReversed;
         }
