@@ -236,7 +236,7 @@ public class AnimatorData : MonoBehaviour {
     void OnEnable() {
         if(mStarted) {
             if(playOnEnable) {
-                if(currentPlayingTake == null && playOnStart != null)
+                if(nowPlayingTake == null && playOnStart != null)
                     Play(playOnStart.name, true, 0f, false);
                 else
                     Resume();
