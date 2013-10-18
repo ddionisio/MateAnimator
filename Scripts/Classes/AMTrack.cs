@@ -131,13 +131,15 @@ public class AMTrack : MonoBehaviour {
 
     public void destroy() {
         // destroy keys
-        foreach(AMKey key in keys) {
-            if(key)
-                key.destroy();
-        }
+        if(keys != null) {
+            foreach(AMKey key in keys) {
+                if(key)
+                    key.destroy();
+            }
 
-        keys.Clear();
-        keys = null;
+            keys.Clear();
+            keys = null;
+        }
 
         parentTake = null;
 
