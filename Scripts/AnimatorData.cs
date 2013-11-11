@@ -134,6 +134,19 @@ public class AnimatorData : MonoBehaviour {
 
     public int prevTake { get { return _prevTake; } }
 
+    public float animScale {
+        get { return mAnimScale; }
+        set {
+            if(mAnimScale != value) {
+                mAnimScale = value;
+                if(isPlaying) {
+                    Sequence seq = nowPlayingTake.sequence;
+                    seq.timeScale = mAnimScale;
+                }
+            }
+        }
+    }
+
     public GameObject dataHolder {
         get {
             if(_dataHolder == null) {
@@ -258,6 +271,8 @@ public class AnimatorData : MonoBehaviour {
                 Stop();
                 break;
         }
+
+        mAnimScale = 1.0f;
     }
 
     void Start() {
@@ -463,6 +478,7 @@ public class AnimatorData : MonoBehaviour {
 
             nowPlayingTake.sequence.GoTo(startTime);
             nowPlayingTake.sequence.Play();
+            nowPlayingTake.sequence.timeScale = mAnimScale;
         }
 
         //isLooping = loop;
