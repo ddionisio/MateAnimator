@@ -128,6 +128,8 @@ public class AnimatorData : MonoBehaviour {
 
     private int _prevTake = -1;
 
+    private float mAnimScale = 1.0f; //NOTE: this is reset during disable
+
     public AMTake currentPlayingTake { get { return nowPlayingTake; } }
 
     public int prevTake { get { return _prevTake; } }
