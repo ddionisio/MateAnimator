@@ -15,6 +15,8 @@ public class AnimatorData : MonoBehaviour {
         Stop
     }
 
+    public delegate void OnTake(AnimatorData anim, AMTake take);
+
     // show
     public List<AMTake> takes = new List<AMTake>();
     public AMTake playOnStart = null;
@@ -28,6 +30,8 @@ public class AnimatorData : MonoBehaviour {
 
     public UpdateType updateType = UpdateType.Update;
     // hide
+
+    public event OnTake takeCompleteCallback;
 
     public bool isPlaying {
         get {
@@ -246,6 +250,7 @@ public class AnimatorData : MonoBehaviour {
         }
 
         takes.Clear();*/
+        takeCompleteCallback = null;
     }
 
     void OnEnable() {
@@ -273,6 +278,14 @@ public class AnimatorData : MonoBehaviour {
         }
 
         mAnimScale = 1.0f;
+    }
+
+    void Awake() {
+        if(!Application.isPlaying)
+            return;
+
+        foreach(AMTake take in takes)
+            take.sequenceCompleteCallback += OnTakeSequenceDone;
     }
 
     void Start() {
@@ -751,4 +764,8 @@ public class AnimatorData : MonoBehaviour {
         return lsFlagToKeep;
     }
 
+    void OnTakeSequenceDone(AMTake aTake) {
+        if(takeCompleteCallback != null)
+            takeCompleteCallback(this, aTake);
+    }
 }
