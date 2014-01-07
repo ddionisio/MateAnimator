@@ -17,9 +17,9 @@ public class AnimatorTimeline {
 	}
 	
 	public static void ParseJSONString(string json) {
-        fastJSON.JSON.Instance.Parameters.UseExtensions = false;
-        JSONTake j = fastJSON.JSON.Instance.ToObject < JSONTake >(json);
-		if(!parseJSONTake(j)) Debug.LogWarning("Animator: Error parsing JSON");
+        //fastJSON.JSON.Instance.Parameters.UseExtensions = false;
+        //JSONTake j = fastJSON.JSON.Instance.ToObject < JSONTake >(json);
+		//if(!parseJSONTake(j)) Debug.LogWarning("Animator: Error parsing JSON");
 	}
 	
 	private static Dictionary<string,GameObject> dictGameObjects;
