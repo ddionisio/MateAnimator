@@ -96,8 +96,19 @@ public class AMTrack : MonoBehaviour {
         }
     }
 
-    public void deleteDuplicateKeys() {
-        sortKeys();
+	public AMKey[] removeKeyOnFrame(int frame) {
+		List<AMKey> rkeys = new List<AMKey>(keys.Count);
+		for(int i = 0; i < keys.Count; i++) {
+			if(keys[i].frame == frame) {
+				rkeys.Add(keys[i]);
+				keys.RemoveAt(i);
+			}
+		}
+		return rkeys.ToArray();
+	}
+	
+	public void deleteDuplicateKeys() {
+		sortKeys();
         int lastKey = -1;
         for(int i = 0; i < keys.Count; i++) {
             if(keys[i].frame == lastKey) {

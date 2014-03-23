@@ -305,7 +305,7 @@ public class AnimatorData : MonoBehaviour {
 
     void OnDrawGizmos() {
         if(!isAnimatorOpen) return;
-        //takes[currentTake].drawGizmos(gizmo_size, inPlayMode);
+        takes[currentTake].drawGizmos(gizmo_size, inPlayMode);
     }
 
     /*void Update() {
@@ -649,10 +649,6 @@ public class AnimatorData : MonoBehaviour {
         takes[index].destroy();
         takes.RemoveAt(index);
         if((currentTake >= index) && (currentTake > 0)) currentTake--;
-    }
-
-    public void deleteCurrentTake() {
-        deleteTake(currentTake);
     }
 
     public void selectTake(int index) {

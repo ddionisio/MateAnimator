@@ -245,6 +245,12 @@ public class AMTake : MonoBehaviour {
             deleteTrack(track, deleteFromGroup);
     }
 
+	public void deleteTrack(int trackid, bool deleteFromGroup, ref List<MonoBehaviour> modifiedItems) {
+		AMTrack track = getTrack(trackid);
+		if(track)
+			deleteTrack(track, deleteFromGroup, ref modifiedItems);
+	}
+
     public void deleteTrack(AMTrack track, bool deleteFromGroup = true) {
         int id = track.id;
         int index = getTrackIndex(id);
@@ -255,6 +261,20 @@ public class AMTake : MonoBehaviour {
         trackValues.RemoveAt(index);
         if(deleteFromGroup) deleteTrackFromGroups(id);
     }
+
+	private void deleteTrack(AMTrack track, bool deleteFromGroup, ref List<MonoBehaviour> modifiedItems) {
+		int id = track.id;
+		int index = getTrackIndex(id);
+		if(track && modifiedItems != null) {
+			foreach(AMKey key in track.keys)
+				modifiedItems.Add(key);
+
+			modifiedItems.Add(track);
+		}
+		
+		trackValues.RemoveAt(index);
+		if(deleteFromGroup) deleteTrackFromGroups(id);
+	}
 
     // get track ids from range, exclusive
     public List<int> getTrackIDsForRange(int start_id, int end_id) {
@@ -394,14 +414,14 @@ public class AMTake : MonoBehaviour {
         return true;
     }
 
-    public void deleteGroup(int group_id, bool deleteContents) {
+	private void deleteGroup(int group_id, bool deleteContents, ref List<MonoBehaviour> modifiedItems) {
         if(group_id >= 0) return;
         AMGroup grp = getGroup(group_id);
         if(deleteContents) {
             // delete elements
             for(int i = 0; i < grp.elements.Count; i++) {
-                if(grp.elements[i] > 0) deleteTrack(grp.elements[i], false);
-                else if(grp.elements[i] < 0) deleteGroup(grp.elements[i], deleteContents);
+                if(grp.elements[i] > 0) deleteTrack(grp.elements[i], false, ref modifiedItems);
+                else if(grp.elements[i] < 0) deleteGroup(grp.elements[i], deleteContents, ref modifiedItems);
             }
         }
         else {
@@ -426,8 +446,8 @@ public class AMTake : MonoBehaviour {
 
     }
 
-    public void deleteSelectedGroup(bool deleteContents) {
-        deleteGroup(selectedGroup, deleteContents);
+    public void deleteSelectedGroup(bool deleteContents, ref List<MonoBehaviour> modifiedItems) {
+        deleteGroup(selectedGroup, deleteContents, ref modifiedItems);
         // select root group
         selectedGroup = 0;
 
@@ -918,9 +938,26 @@ public class AMTake : MonoBehaviour {
         if(didDeleteKeys) track.updateCache();
     }
 
-    // does take have keys beyond frame
-    public bool hasKeyAfter(int frame) {
-        foreach(AMTrack track in trackValues) {
+	public AMKey[] removeSelectedKeysFromTrack(int track_id) {
+		List<AMKey> dkeys = new List<AMKey>();
+
+		bool didDeleteKeys = false;
+		AMTrack track = getTrack(track_id);
+		for(int i = 0; i < track.keys.Count; i++) {
+			if(!isFrameInContextSelection(track.keys[i].frame)) continue;
+			dkeys.Add(track.keys[i]);
+			track.keys.Remove(track.keys[i]);
+			i--;
+			didDeleteKeys = true;
+		}
+		if(didDeleteKeys) track.updateCache();
+
+		return dkeys.ToArray();
+	}
+	
+	// does take have keys beyond frame
+	public bool hasKeyAfter(int frame) {
+		foreach(AMTrack track in trackValues) {
             if(track.keys.Count > 0) {
                 // check last key on each track
                 if(track.keys[track.keys.Count - 1].frame > frame) return true;
