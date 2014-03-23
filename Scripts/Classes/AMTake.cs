@@ -57,9 +57,38 @@ public class AMTake : MonoBehaviour {
         return newTake;
     }
 
-    void OnDestroy() {
-        if(mSequence != null) {
-            HOTween.Kill(mSequence);
+	//Only used by editor
+	public void RevertToDefault() {
+		trackValues.Clear();
+		groupValues.Clear();
+		contextSelection.Clear();
+		ghostSelection.Clear();
+		contextSelectionTracks.Clear();
+
+		rootGroup = null;
+		initGroups();
+		name = "Take 1";
+		frameRate = 24;
+		numFrames = 1440;
+		startFrame = 1f;
+		endFrame = 100f;
+		playbackSpeedIndex = 2;
+		
+		numLoop = 1;
+		loopMode = LoopType.Restart;
+		loopBackToFrame = -1;
+		
+		selectedTrack = -1;
+		selectedFrame = 1;
+		selectedGroup = 0;
+
+		track_count = 1;
+		group_count = 0;
+	}
+	
+	void OnDestroy() {
+		if(mSequence != null) {
+			HOTween.Kill(mSequence);
             mSequence = null;
         }
 
@@ -1356,8 +1385,10 @@ public class AMTake : MonoBehaviour {
         foreach(AMTrack track in trackValues) {
             track.destroy();
         }
+		trackValues.Clear();
 
-        groupValues.Clear();
+		if(groupValues != null)
+        	groupValues.Clear();
         rootGroup = null;
 
         if(mSequence != null) {

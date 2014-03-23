@@ -926,16 +926,46 @@ public class AMTimeline : EditorWindow {
         #region delete take button
         Rect rectBtnDeleteTake = new Rect(rectBtnRenameTake.x + rectBtnRenameTake.width + margin, rectBtnRenameTake.y, width_button_delete, height_button_delete);
         if(GUI.Button(rectBtnDeleteTake, new GUIContent("", "Delete Take"),/*GUI.skin.GetStyle("ButtonImage")*/EditorStyles.toolbarButton)) {
-            if((EditorUtility.DisplayDialog("Delete Take", "Are you sure you want to delete take '" + aData.getCurrentTake().name + "'?", "Delete", "Cancel"))) {
-                //registerUndo("Delete Take");
-                Undo.RegisterSceneUndo("Delete Take");
-                aData.deleteCurrentTake();
+			AMTake take = aData.getCurrentTake();
+
+			if((EditorUtility.DisplayDialog("Delete Take", "Are you sure you want to delete take '" + take.name + "'?", "Delete", "Cancel"))) {
+				string label = "Delete Take: "+take.name;
+				Undo.RegisterCompleteObjectUndo(aData, label);
+
+				if(aData.takes.Count == 1) {
+					Undo.RecordObject(take, label);
+
+					MonoBehaviour[] behaviours = getKeysAndTracks(take);
+
+					//just delete the tracks and keys
+					foreach(MonoBehaviour b in behaviours)
+						Undo.DestroyObjectImmediate(b);
+
+					take.RevertToDefault();
+
+					EditorUtility.SetDirty(take);
+				}
+				else {
+					if(take == aData.playOnStart)
+						aData.playOnStart = null;
+
+					if(aData.currentTake > 0)
+						aData.currentTake--;
+
+					List<AMTake> nTakes = new List<AMTake>(aData.takes);
+					nTakes.Remove(take);
+					aData.takes = nTakes;
+
+					MonoBehaviour[] behaviours = getKeysAndTracks(take);
+					foreach(MonoBehaviour b in behaviours)
+						Undo.DestroyObjectImmediate(b);
+
+					Undo.DestroyObjectImmediate(take);
+				}
+
                 AMCodeView.resetTrackDictionary();
                 // save data
                 EditorUtility.SetDirty(aData);
-                setDirtyTakes(aData.takes);
-                // refresh component
-                refreshGizmos();
             }
         }
         if(!GUI.enabled) GUI.color = new Color(GUI.color.r, GUI.color.g, GUI.color.b, 0.25f);
@@ -1780,6 +1810,23 @@ public class AMTimeline : EditorWindow {
 
         //Undo.RegisterSceneUndo(name);
     }
+
+	public static MonoBehaviour[] getKeysAndTracks(AMTake take) {
+		List<MonoBehaviour> behaviours = new List<MonoBehaviour>();
+
+		if(take.trackValues != null) {
+			foreach(AMTrack track in take.trackValues) {
+				if(track.keys != null) {
+					foreach(AMKey key in track.keys)
+						behaviours.Add(key);
+				}
+
+				behaviours.Add(track);
+			}
+		}
+
+		return behaviours.ToArray();
+	}
 
     public static void MessageBox(string message, MessageBoxType type) {
 

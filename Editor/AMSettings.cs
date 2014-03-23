@@ -44,33 +44,37 @@ public class AMSettings : EditorWindow {
     void OnDisable() {
         window = null;
         if((aData) && saveChanges) {
+			AMTake take = aData.getCurrentTake();
             bool saveNumFrames = true;
-            if((numFrames < aData.getCurrentTake().numFrames) && (aData.getCurrentTake().hasKeyAfter(numFrames))) {
+			if((numFrames < take.numFrames) && (take.hasKeyAfter(numFrames))) {
                 if(!EditorUtility.DisplayDialog("Data Will Be Lost", "You will lose some keys beyond frame " + numFrames + " if you continue.", "Continue Anway", "Cancel")) {
                     saveNumFrames = false;
                 }
             }
+
+			Undo.RegisterCompleteObjectUndo(take, take.name+": Modify Settings");
+
             if(saveNumFrames) {
                 // save numFrames
-                aData.getCurrentTake().numFrames = numFrames;
-                aData.getCurrentTake().deleteKeysAfter(numFrames);
+				take.numFrames = numFrames;
+				take.deleteKeysAfter(numFrames);
 
                 // save data
-                foreach(AMTrack track in aData.getCurrentTake().trackValues) {
+				foreach(AMTrack track in take.trackValues) {
                     EditorUtility.SetDirty(track);
                 }
             }
             // save frameRate
-            aData.getCurrentTake().frameRate = frameRate;
+			take.frameRate = frameRate;
 
             //save other data
-            aData.getCurrentTake().numLoop = loopCount;
-            aData.getCurrentTake().loopMode = loopMode;
-            aData.getCurrentTake().loopBackToFrame = Mathf.Clamp(loopBackFrame, -1, numFrames);
+			take.numLoop = loopCount;
+			take.loopMode = loopMode;
+			take.loopBackToFrame = Mathf.Clamp(loopBackFrame, -1, numFrames);
 
             // save data
-            EditorUtility.SetDirty(aData.getCurrentTake());
-            EditorUtility.SetDirty(aData);
+			EditorUtility.SetDirty(take);
+            //EditorUtility.SetDirty(aData);
 
             EditorWindow.GetWindow(typeof(AMTimeline)).Repaint();
         }
@@ -117,7 +121,6 @@ public class AMSettings : EditorWindow {
         GUILayout.Space(7f);
         GUILayout.BeginHorizontal();
         if(GUILayout.Button("Apply")) {
-            Undo.RegisterSceneUndo("Modify Settings");
             saveChanges = true;
             this.Close();
         }

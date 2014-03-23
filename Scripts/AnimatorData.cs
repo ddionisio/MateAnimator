@@ -305,7 +305,7 @@ public class AnimatorData : MonoBehaviour {
 
     void OnDrawGizmos() {
         if(!isAnimatorOpen) return;
-        takes[currentTake].drawGizmos(gizmo_size, inPlayMode);
+        //takes[currentTake].drawGizmos(gizmo_size, inPlayMode);
     }
 
     /*void Update() {
