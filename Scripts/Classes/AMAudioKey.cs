@@ -28,9 +28,9 @@ public class AMAudioKey : AMKey {
     }
 
     // copy properties from key
-    public override AMKey CreateClone() {
+    public override AMKey CreateClone(GameObject go) {
 
-        AMAudioKey a = gameObject.AddComponent<AMAudioKey>();
+		AMAudioKey a = go ? go.AddComponent<AMAudioKey>() : gameObject.AddComponent<AMAudioKey>();
         a.enabled = false;
         a.frame = frame;
         a.audioClip = audioClip;

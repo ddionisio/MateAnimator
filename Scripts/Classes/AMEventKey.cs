@@ -131,9 +131,9 @@ public class AMEventKey : AMKey {
         base.destroy();
     }
     // copy properties from key
-    public override AMKey CreateClone() {
+	public override AMKey CreateClone(GameObject go) {
 
-        AMEventKey a = gameObject.AddComponent<AMEventKey>();
+		AMEventKey a = go ? go.AddComponent<AMEventKey>() : gameObject.AddComponent<AMEventKey>();
         a.enabled = false;
         a.frame = frame;
         a.component = component;

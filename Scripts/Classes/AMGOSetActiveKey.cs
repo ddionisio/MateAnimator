@@ -51,9 +51,9 @@ public class AMGOSetActiveKey : AMKey {
         base.destroy();
     }
     // copy properties from key
-    public override AMKey CreateClone() {
+    public override AMKey CreateClone(GameObject go) {
 
-        AMGOSetActiveKey a = gameObject.AddComponent<AMGOSetActiveKey>();
+		AMGOSetActiveKey a = go ? go.AddComponent<AMGOSetActiveKey>() : gameObject.AddComponent<AMGOSetActiveKey>();
         a.enabled = false;
         a.frame = frame;
         a.setActive = setActive;

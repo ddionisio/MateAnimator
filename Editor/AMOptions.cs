@@ -348,7 +348,7 @@ public class AMOptions : EditorWindow {
             GUILayout.BeginVertical();
             GUILayout.Space(1f);
             if(GUILayout.Button("Import", GUILayout.Width(60f))) {
-                AMTimeline.registerUndo("Import Take(s)");
+                //TODO: undo "Import Take(s)"
                 string importTakesPath = EditorUtility.OpenFilePanel("Import Take(s)", "Assets/", "unity");
                 if(importTakesPath != "") AMTakeImport.openAdditiveAndDeDupe(importTakesPath);
             }
@@ -385,7 +385,7 @@ public class AMOptions : EditorWindow {
             GUILayout.Space(width_indent);
             GUILayout.Label("Options:", labelRight, GUILayout.Width(55f));
             if(GUILayout.Button("Import", GUILayout.Width(60f))) {
-                AMTimeline.registerUndo("Import Options");
+                //TODO: undo for "Import Options"
                 string importOptionsPath = EditorUtility.OpenFilePanel("Import Options", "Assets/Animator", "unitypackage");
                 if(importOptionsPath != "") {
                     AssetDatabase.ImportPackage(importOptionsPath, true);

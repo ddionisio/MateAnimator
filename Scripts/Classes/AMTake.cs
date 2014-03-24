@@ -866,6 +866,25 @@ public class AMTake : MonoBehaviour {
         }
 
     }
+	public AMKey[] removeKeysAfter(int frame) {
+		List<AMKey> dkeys = new List<AMKey>();
+		bool didDeleteKeys;
+		foreach(AMTrack track in trackValues) {
+			didDeleteKeys = false;
+			for(int i = 0; i < track.keys.Count; i++) {
+				if(track.keys[i].frame > frame) {
+					// destroy key
+					dkeys.Add(track.keys[i]);
+					// remove from list
+					track.keys.RemoveAt(i);
+					didDeleteKeys = true;
+					i--;
+				}
+				if(didDeleteKeys) track.updateCache();
+			}
+		}
+		return dkeys.ToArray();
+	}
 
     // delete keys after a frame
     public void deleteKeysBefore(int frame) {
@@ -886,6 +905,26 @@ public class AMTake : MonoBehaviour {
         }
 
     }
+
+	public AMKey[] removeKeysBefore(int frame) {
+		List<AMKey> dkeys = new List<AMKey>();
+		bool didDeleteKeys;
+		foreach(AMTrack track in trackValues) {
+			didDeleteKeys = false;
+			for(int i = 0; i < track.keys.Count; i++) {
+				if(track.keys[i].frame < frame) {
+					// destroy key
+					dkeys.Add(track.keys[i]);
+					// remove from list
+					track.keys.RemoveAt(i);
+					didDeleteKeys = true;
+					i--;
+				}
+				if(didDeleteKeys) track.updateCache();
+			}
+		}
+		return dkeys.ToArray();
+	}
 
     public void shiftOutOfBoundsKeysOnSelectedTrack() {
         int offset = getSelectedTrack().shiftOutOfBoundsKeys();
@@ -1128,12 +1167,16 @@ public class AMTake : MonoBehaviour {
     }*/
 
     // offset context selection frames by an amount. can be positive or negative
-    public void offsetContextSelectionFramesBy(int offset) {
-        if(offset == 0) return;
-        if(contextSelection.Count <= 0) return;
+	//returns keys that are to be deleted
+    public AMKey[] offsetContextSelectionFramesBy(int offset) {
+        if(offset == 0) return new AMKey[0];
+		if(contextSelection.Count <= 0) return new AMKey[0];
+
+		List<AMKey> rkeys = new List<AMKey>();
+		List<AMKey> keysToDelete = new List<AMKey>();
+
         foreach(int track_id in contextSelectionTracks) {
             bool shouldUpdateCache = false;
-            List<AMKey> keysToDelete = new List<AMKey>();
             AMTrack _track = getTrack(track_id);
             foreach(AMKey key in _track.keys) {
                 for(int i = 0; i < contextSelection.Count; i += 2) {
@@ -1150,7 +1193,7 @@ public class AMTake : MonoBehaviour {
                                 }
                             }
                             // if not key is not in selection, mark for deletion
-                            if(!keyToOverwriteInContextSelection) keysToDelete.Add(_track.getKeyOnFrame(key.frame + offset));
+							if(!keyToOverwriteInContextSelection) keysToDelete.Add(_track.getKeyOnFrame(key.frame + offset));
                         }
                         key.frame += offset;
                         if(!shouldUpdateCache) shouldUpdateCache = true;
@@ -1159,13 +1202,14 @@ public class AMTake : MonoBehaviour {
                 }
 
             }
-            // delete keys that were overwritten
-            foreach(AMKey key in keysToDelete) {
-                _track.keys.Remove(key);
-                key.destroy();
-            }
-            // release references
-            keysToDelete = new List<AMKey>();
+
+			// delete keys that were overwritten
+			foreach(AMKey key in keysToDelete) {
+				_track.keys.Remove(key);
+				rkeys.Add(key);
+			}
+			keysToDelete.Clear();
+
             // update cache
             if(shouldUpdateCache) {
                 _track.updateCache();
@@ -1179,6 +1223,7 @@ public class AMTake : MonoBehaviour {
         // clear ghost selection
         ghostSelection = new List<int>();
 
+		return rkeys.ToArray();
     }
 
     private int ghost_selection_total_offset = 0;

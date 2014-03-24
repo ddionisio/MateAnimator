@@ -87,9 +87,9 @@ public class AMOrientationKey : AMKey {
         return false;
     }
 
-    public override AMKey CreateClone() {
+    public override AMKey CreateClone(GameObject go) {
 
-        AMOrientationKey a = gameObject.AddComponent<AMOrientationKey>();
+		AMOrientationKey a = go ? go.AddComponent<AMOrientationKey>() : gameObject.AddComponent<AMOrientationKey>();
         a.enabled = false;
         a.frame = frame;
         a.target = target;

@@ -27,7 +27,7 @@ public class AMKey : MonoBehaviour {
         Object.DestroyImmediate(this);
     }
 
-    public virtual AMKey CreateClone() {
+    public virtual AMKey CreateClone(GameObject go) {
         Debug.LogError("Animator: No override for CreateClone()");
         return null;
     }

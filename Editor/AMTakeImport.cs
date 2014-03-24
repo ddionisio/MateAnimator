@@ -141,7 +141,7 @@ public class AMTakeImport : EditorWindow {
 			this.Close();
 			return;	// return if no changes made
 		}
-		AMTimeline.registerUndo("Resolve Duplicates");
+		//TODO: undo "Resolve Duplicates"
 		// update references
 		List<GameObject> lsFlagToKeep = aData.updateDependencies(keepReferences, replaceReferences);
 		// reset event track method info

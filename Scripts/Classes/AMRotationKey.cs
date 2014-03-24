@@ -45,9 +45,9 @@ public class AMRotationKey : AMKey {
         return false;
     }*/
     // copy properties from key
-    public override AMKey CreateClone() {
+    public override AMKey CreateClone(GameObject go) {
 
-        AMRotationKey a = gameObject.AddComponent<AMRotationKey>();
+		AMRotationKey a = go ? go.AddComponent<AMRotationKey>() : gameObject.AddComponent<AMRotationKey>();
         a.enabled = false;
         a.frame = frame;
         //a.type = type;

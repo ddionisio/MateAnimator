@@ -200,10 +200,12 @@ public class AMPropertySelect : EditorWindow {
         }
         if(changePropertyValue) {
 
-            AMTimeline.registerUndo("Set Property");
+			Undo.RegisterCompleteObjectUndo(track, "Set Property");
             // delete keys
             if(track.keys.Count > 0) {
-                track.deleteAllKeys();
+				foreach(AMKey key in track.keys)
+					Undo.DestroyObjectImmediate(key);
+				track.keys = new List<AMKey>();
                 AMCodeView.refresh();
             }
             // set fieldinfo or propertyinfo

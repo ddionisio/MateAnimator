@@ -52,15 +52,22 @@ public class AMSettings : EditorWindow {
                 }
             }
 
-			Undo.RegisterCompleteObjectUndo(take, take.name+": Modify Settings");
+			string label = take.name+": Modify Settings";
+			Undo.RegisterCompleteObjectUndo(take, label);
 
             if(saveNumFrames) {
+				Undo.RegisterCompleteObjectUndo(AMTimeline.getKeysAndTracks(take), label);
+
                 // save numFrames
 				take.numFrames = numFrames;
-				take.deleteKeysAfter(numFrames);
+				AMKey[]dkeys = take.removeKeysAfter(numFrames);
+				foreach(AMKey dkey in dkeys)
+					Undo.DestroyObjectImmediate(dkey);
 
                 // save data
 				foreach(AMTrack track in take.trackValues) {
+					foreach(AMKey key in track.keys)
+						EditorUtility.SetDirty(key);
                     EditorUtility.SetDirty(track);
                 }
             }

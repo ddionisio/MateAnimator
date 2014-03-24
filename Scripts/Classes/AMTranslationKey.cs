@@ -38,9 +38,9 @@ public class AMTranslationKey : AMKey {
     }
 
     // copy properties from key
-    public override AMKey CreateClone() {
+    public override AMKey CreateClone(GameObject go) {
 
-        AMTranslationKey a = gameObject.AddComponent<AMTranslationKey>();
+		AMTranslationKey a = go ? go.AddComponent<AMTranslationKey>() : gameObject.AddComponent<AMTranslationKey>();
         a.enabled = false;
         a.frame = frame;
         a.position = position;

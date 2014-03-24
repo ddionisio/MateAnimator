@@ -159,9 +159,9 @@ public class AMPropertyKey : AMKey {
     }
 
     // copy properties from key
-    public override AMKey CreateClone() {
+    public override AMKey CreateClone(GameObject go) {
 
-        AMPropertyKey a = gameObject.AddComponent<AMPropertyKey>();
+		AMPropertyKey a = go ? go.AddComponent<AMPropertyKey>() : gameObject.AddComponent<AMPropertyKey>();
         a.enabled = false;
         a.frame = frame;
         a.val = val;

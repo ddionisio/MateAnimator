@@ -122,6 +122,25 @@ public class AMTrack : MonoBehaviour {
         }
     }
 
+	public AMKey[] removeDuplicateKeys() {
+		List<AMKey> dkeys = new List<AMKey>();
+
+		sortKeys();
+		int lastKey = -1;
+		for(int i = 0; i < keys.Count; i++) {
+			if(keys[i].frame == lastKey) {
+				dkeys.Add(keys[i]);
+				keys.RemoveAt(i);
+				i--;
+			}
+			else {
+				lastKey = keys[i].frame;
+			}
+		}
+
+		return dkeys.ToArray();
+	}
+
     public void deleteAllKeys() {
         foreach(AMKey key in keys) {
             key.destroy();
@@ -139,6 +158,18 @@ public class AMTrack : MonoBehaviour {
             }
         }
     }
+
+	public AMKey[] removeKeysAfter(int frame) {
+		List<AMKey> dkeys = new List<AMKey>();
+		for(int i = 0; i < keys.Count; i++) {
+			if(keys[i].frame > frame) {
+				dkeys.Add(keys[i]);
+				keys.RemoveAt(i);
+				i--;
+			}
+		}
+		return dkeys.ToArray();
+	}
 
     public void destroy() {
         // destroy keys

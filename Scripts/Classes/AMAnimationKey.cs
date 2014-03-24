@@ -46,9 +46,9 @@ public class AMAnimationKey : AMKey {
     }
 
     // copy properties from key
-    public override AMKey CreateClone() {
+    public override AMKey CreateClone(GameObject go) {
 
-        AMAnimationKey a = gameObject.AddComponent<AMAnimationKey>();
+		AMAnimationKey a = go ? go.AddComponent<AMAnimationKey>() : gameObject.AddComponent<AMAnimationKey>();
         a.enabled = false;
         a.frame = frame;
         a.wrapMode = wrapMode;
