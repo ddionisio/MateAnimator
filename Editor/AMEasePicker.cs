@@ -188,22 +188,26 @@ public class AMEasePicker : EditorWindow {
 			GUILayout.Space(5f);
 			GUILayout.BeginHorizontal();
 				if(GUILayout.Button("Apply")) {
+					int nease = getSelectedEaseIndex(category,selectedIndex);
 					bool shouldUpdateCache = false;
 					if(isCustomEase) {
 						key.setCustomEase(curve);
 						shouldUpdateCache = true;
 					}
-					if(key.setEaseType(getSelectedEaseIndex(category,selectedIndex))) {
+					if(key.easeType != nease) {
 						shouldUpdateCache = true;
 					}
 					if(shouldUpdateCache) {
+						AMTimeline.recordUndoTrackAndKeys(track, false, "Change Ease");
+						key.setEaseType(nease);
 						// update cache when modifying varaibles
 						track.updateCache();
 						AMCodeView.refresh();
 						// preview new position
 						aData.getCurrentTake().previewFrame(aData.getCurrentTake().selectedFrame);
 						// save data
-						EditorUtility.SetDirty(aData);
+						EditorUtility.SetDirty(track);
+						AMTimeline.setDirtyKeys(track);
 					}
 					this.Close();
 				}

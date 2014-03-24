@@ -505,24 +505,6 @@ public class AMTimeline : EditorWindow {
 		}
 		contextSelectionKeysBuffer.Clear();
 	}
-    void ShadyRefresh() {
-		ClearKeysBuffer();
-        contextSelectionTracksBuffer.Clear();
-        cachedContextSelection.Clear();
-
-        GameObject go = _aData.gameObject;
-        _aData.isAnimatorOpen = false;
-        _aData = null;
-        Selection.activeGameObject = go;
-    }
-
-    void OnHierarchyChange() {
-        if(isPlayMode) return;
-
-        if(_aData && !_aData.CheckIntegrity()) {
-            ShadyRefresh();
-        }
-    }
     void OnAutoKey(AMTrack track, AMKey key) {
         if(key != null) {
             Undo.RegisterCreatedObjectUndo(key, "Auto Key");
@@ -1730,8 +1712,16 @@ public class AMTimeline : EditorWindow {
         if(e.alt && !isDragging) startZoomXOverFrame = mouseXOverFrame;
         e.Use();
 
-        if(doRefresh)
-            ShadyRefresh();
+        if(doRefresh) {
+			ClearKeysBuffer();
+			contextSelectionTracksBuffer.Clear();
+			cachedContextSelection.Clear();
+			
+			GameObject go = _aData.gameObject;
+			_aData.isAnimatorOpen = false;
+			_aData = null;
+			Selection.activeGameObject = go;
+		}
     }
     void ReloadOtherWindows() {
         if(AMOptions.window) AMOptions.window.reloadAnimatorData();
@@ -2719,25 +2709,29 @@ public class AMTimeline : EditorWindow {
             GUI.Label(rectLabelInterp, "Interpl.");
             Rect rectSelGrid = new Rect(rectLabelInterp.x + rectLabelInterp.width + margin, rectLabelInterp.y, width_inspector - rectLabelInterp.width - margin * 2f, rectLabelInterp.height);
             if(tKey.setInterpolation(GUI.SelectionGrid(rectSelGrid, tKey.interp, texInterpl, 2, GUI.skin.GetStyle("ButtonImage")))) {
+				recordUndoTrackAndKeys(sTrack, false, "Change Interpolation");
                 sTrack.updateCache();
                 AMCodeView.refresh();
                 // select the current frame
-                timelineSelectFrame(aData.getCurrentTake().selectedTrack, aData.getCurrentTake().selectedFrame);
+				timelineSelectFrame(_track, _frame);
                 // save data
-                setDirtyKeys(aData.getCurrentTake().getTrack(aData.getCurrentTake().selectedTrack));
+				EditorUtility.SetDirty(sTrack);
+				setDirtyKeys(sTrack);
                 // refresh component
                 refreshGizmos();
             }
             // translation position
             Rect rectPosition = new Rect(0f, rectSelGrid.y + rectSelGrid.height + height_inspector_space, width_inspector - margin, 40f);
             if(tKey.setPosition(EditorGUI.Vector3Field(rectPosition, "Position", tKey.position))) {
+				recordUndoTrackAndKeys(sTrack, false, "Change Position");
                 // update cache when modifying varaibles
                 sTrack.updateCache();
                 AMCodeView.refresh();
                 // preview new position
                 aData.getCurrentTake().previewFrame(aData.getCurrentTake().selectedFrame);
                 // save data
-                setDirtyKeys(aData.getCurrentTake().getTrack(aData.getCurrentTake().selectedTrack));
+				EditorUtility.SetDirty(sTrack);
+				setDirtyKeys(sTrack);
                 // refresh component
                 refreshGizmos();
             }
@@ -2763,13 +2757,15 @@ public class AMTimeline : EditorWindow {
             Rect rectQuaternion = new Rect(0f, start_y, width_inspector - margin, 40f);
             // quaternion
             if(rKey.setRotationQuaternion(EditorGUI.Vector4Field(rectQuaternion, "Quaternion", rKey.getRotationQuaternion()))) {
+				recordUndoTrackAndKeys(sTrack, false, "Change Position");
                 // update cache when modifying varaibles
                 sTrack.updateCache();
                 AMCodeView.refresh();
                 // preview new position
                 aData.getCurrentTake().previewFrame(aData.getCurrentTake().selectedFrame);
                 // save data
-                setDirtyKeys(aData.getCurrentTake().getTrack(aData.getCurrentTake().selectedTrack));
+				EditorUtility.SetDirty(sTrack);
+				setDirtyKeys(sTrack);
                 // refresh component
                 refreshGizmos();
             }
@@ -3552,19 +3548,25 @@ public class AMTimeline : EditorWindow {
             Rect rectLabel = new Rect(x, y - 1f, 40f, height);
             GUI.Label(rectLabel, "Ease");
             Rect rectPopup = new Rect(rectLabel.x + rectLabel.width + 2f, y + 3f, width - rectLabel.width - width_button_delete - 3f, height);
-            if(key.setEaseType(EditorGUI.Popup(rectPopup, key.easeType, easeTypeNames))) {
-                // update cache when modifying varaibles
-                track.updateCache();
-                AMCodeView.refresh();
-                // preview new position
-                aData.getCurrentTake().previewFrame(aData.getCurrentTake().selectedFrame);
-                // save data
-                EditorUtility.SetDirty(aData);
-                // refresh component
-                didUpdate = true;
-                // refresh values
-                AMEasePicker.refreshValues();
+
+			int nease = EditorGUI.Popup(rectPopup, key.easeType, easeTypeNames);
+			if(key.easeType != nease) {
+				recordUndoTrackAndKeys(track, false, "Change Ease");
+				key.setEaseType(nease);
+				// update cache when modifying varaibles
+				track.updateCache();
+				AMCodeView.refresh();
+				// preview new position
+				aData.getCurrentTake().previewFrame(aData.getCurrentTake().selectedFrame);
+				// save data
+				EditorUtility.SetDirty(track);
+				setDirtyKeys(track);
+				// refresh component
+				didUpdate = true;
+				// refresh values
+				AMEasePicker.refreshValues();
             }
+
             Rect rectButton = new Rect(width - width_button_delete + 1f, y, width_button_delete, width_button_delete);
             if(GUI.Button(rectButton, getSkinTextureStyleState("popup").background, GUI.skin.GetStyle("ButtonImage"))) {
                 AMEasePicker.setValues(/*aData,*/key, track);
@@ -3591,19 +3593,23 @@ public class AMTimeline : EditorWindow {
             GUILayout.EndVertical();
             GUILayout.BeginVertical();
             GUILayout.Space(3f);
-            if(key.setEaseType(EditorGUILayout.Popup(key.easeType, easeTypeNames))) {
-                // update cache when modifying varaibles
-                track.updateCache();
-                AMCodeView.refresh();
-                // preview new position
-                aData.getCurrentTake().previewFrame(aData.getCurrentTake().selectedFrame);
-                // save data
-                EditorUtility.SetDirty(aData);
-                // refresh component
-                didUpdate = true;
-                // refresh values
-                AMEasePicker.refreshValues();
-            }
+			int nease = EditorGUILayout.Popup(key.easeType, easeTypeNames);
+			if(key.easeType != nease) {
+				recordUndoTrackAndKeys(track, false, "Change Ease");
+				key.setEaseType(nease);
+				// update cache when modifying varaibles
+				track.updateCache();
+				AMCodeView.refresh();
+				// preview new position
+				aData.getCurrentTake().previewFrame(aData.getCurrentTake().selectedFrame);
+				// save data
+				EditorUtility.SetDirty(track);
+				setDirtyKeys(track);
+				// refresh component
+				didUpdate = true;
+				// refresh values
+				AMEasePicker.refreshValues();
+			}
             GUILayout.EndVertical();
             if(GUILayout.Button(getSkinTextureStyleState("popup").background, GUI.skin.GetStyle("ButtonImage"), GUILayout.Width(width_button_delete), GUILayout.Height(width_button_delete))) {
                 AMEasePicker.setValues(/*aData,*/key, track);
@@ -4326,18 +4332,28 @@ public class AMTimeline : EditorWindow {
         }
         return "Target" + count;
     }
-    void setDirtyKeys(AMTrack track) {
+	public static void recordUndoTrackAndKeys(AMTrack track, bool complete, string label) {
+		if(complete) {
+			Undo.RegisterCompleteObjectUndo(track, label);
+			Undo.RegisterCompleteObjectUndo(track.keys.ToArray(), label);
+		}
+		else {
+			Undo.RecordObject(track, label);
+			Undo.RecordObjects(track.keys.ToArray(), label);
+		}
+	}
+	public static void setDirtyKeys(AMTrack track) {
         foreach(AMKey key in track.keys) {
             EditorUtility.SetDirty(key);
         }
     }
-    void setDirtyTakes(List<AMTake> takes) {
+	static void setDirtyTakes(List<AMTake> takes) {
         foreach(AMTake take in takes) {
             EditorUtility.SetDirty(take);
         }
     }
-    void setDirtyTracks(AMTake take) {
-        foreach(AMTrack track in aData.getCurrentTake().trackValues) {
+	static void setDirtyTracks(AMTake take) {
+		foreach(AMTrack track in take.trackValues) {
             EditorUtility.SetDirty(track);
         }
     }
@@ -4609,12 +4625,7 @@ public class AMTimeline : EditorWindow {
         // add a key to the track number and frame, used in OnGUI. Needs to be updated for every track type.
         AMTrack amTrack = aData.getCurrentTake().getTrack(_track);
         AMKey newKey = null;
-
-		List<MonoBehaviour> stuff = new List<MonoBehaviour>(amTrack.keys.Count + 1);
-		stuff.Add(amTrack);
-		foreach(AMKey key in amTrack.keys)
-			stuff.Add(key);
-		Undo.RecordObjects(stuff.ToArray(), "New Key");
+		recordUndoTrackAndKeys(amTrack, true, "New Key");
 
         // translation
         if(amTrack is AMTranslationTrack) {
@@ -4725,12 +4736,7 @@ public class AMTimeline : EditorWindow {
     }
     void deleteKeyFromSelectedFrame() {
 		AMTrack amTrack = aData.getCurrentTake().getSelectedTrack();
-		
-		List<MonoBehaviour> stuff = new List<MonoBehaviour>(amTrack.keys.Count + 1);
-		stuff.Add(amTrack);
-		foreach(AMKey key in amTrack.keys)
-			stuff.Add(key);
-		Undo.RecordObjects(stuff.ToArray(), "Clear Frame");
+		recordUndoTrackAndKeys(amTrack, true, "Clear Frame");
 		
 		AMKey[] dkeys = amTrack.removeKeyOnFrame(aData.getCurrentTake().selectedFrame);
 		foreach(AMKey dkey in dkeys)
@@ -4759,12 +4765,7 @@ public class AMTimeline : EditorWindow {
         if(shouldClearFrames) {
             foreach(int track_id in aData.getCurrentTake().contextSelectionTracks) {
 				AMTrack amTrack = aData.getCurrentTake().getTrack(track_id);
-				List<MonoBehaviour> stuff = new List<MonoBehaviour>(amTrack.keys.Count + 1);
-				stuff.Add(amTrack);
-				foreach(AMKey key in amTrack.keys)
-					stuff.Add(key);
-
-				Undo.RegisterCompleteObjectUndo(stuff.ToArray(), "Clear Frames");
+				recordUndoTrackAndKeys(amTrack, true, "Clear Frames");
 
 				AMKey[] dkeys = aData.getCurrentTake().removeSelectedKeysFromTrack(track_id);
 				foreach(AMKey dkey in dkeys)
@@ -4960,11 +4961,7 @@ public class AMTimeline : EditorWindow {
         if(singleTrack) {
 			AMTrack track = aData.getCurrentTake().getSelectedTrack();
 
-			List<MonoBehaviour> stuffs = new List<MonoBehaviour>();
-			stuffs.Add(track);
-			foreach(AMKey k in track.keys)
-				stuffs.Add(k);
-			Undo.RegisterCompleteObjectUndo(stuffs.ToArray(), "Paste Frames");
+			recordUndoTrackAndKeys(track, true, "Paste Frames");
 
             List<AMKey> newKeys = new List<AMKey>(contextSelectionKeysBuffer[0].Count);
             foreach(AMKey a in contextSelectionKeysBuffer[0]) {
@@ -4988,12 +4985,7 @@ public class AMTimeline : EditorWindow {
 
             for(int i = 0; i < contextSelectionTracksBuffer.Count; i++) {
 				AMTrack track = contextSelectionTracksBuffer[i];
-				
-				List<MonoBehaviour> stuffs = new List<MonoBehaviour>();
-				stuffs.Add(track);
-				foreach(AMKey k in track.keys)
-					stuffs.Add(k);
-				Undo.RegisterCompleteObjectUndo(stuffs.ToArray(), "Paste Frames");
+				recordUndoTrackAndKeys(track, true, "Paste Frames");
 
                 foreach(AMKey a in contextSelectionKeysBuffer[i]) {
                     if(a != null) {
