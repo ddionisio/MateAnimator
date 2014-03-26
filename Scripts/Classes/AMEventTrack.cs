@@ -20,7 +20,6 @@ public class AMEventTrack : AMTrack {
             AMEventKey key = keys[i] as AMEventKey;
             key.version = version;
         }
-        base.updateCache();
     }
     public void setObject(GameObject obj) {
         this.obj = obj;

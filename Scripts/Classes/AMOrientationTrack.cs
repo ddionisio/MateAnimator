@@ -12,13 +12,6 @@ public class AMOrientationTrack : AMTrack {
     public override string getTrackType() {
         return "Orientation";
     }
-    public bool setObject(Transform obj) {
-        if(this.obj != obj) {
-            this.obj = obj;
-            return true;
-        }
-        return false;
-    }
     // add a new key
     public AMKey addKey(int _frame, Transform target) {
         foreach(AMOrientationKey key in keys) {
@@ -43,29 +36,23 @@ public class AMOrientationTrack : AMTrack {
         return a;
     }
     public override void updateCache() {
-        //_updateCache();
-        updateOrientationCache(parentTake);
-        base.updateCache();
-    }
-
-    public void updateOrientationCache(AMTake curTake, bool restoreRotation = false) {
-        // save rotation
-        Quaternion temp = obj.rotation;
-        // sort keys
-        sortKeys();
-        for(int i = 0; i < keys.Count; i++) {
-            AMOrientationKey key = keys[i] as AMOrientationKey;
-
-            key.version = version;
-
-            if(keys.Count > (i + 1)) key.endFrame = keys[i + 1].frame;
-            else key.endFrame = -1;
-            key.obj = obj;
-            // targets
-            if(key.endFrame != -1) key.endTarget = (keys[i + 1] as AMOrientationKey).target;
-        }
-        // restore rotation
-        if(restoreRotation) obj.rotation = temp;
+		// save rotation
+		//Quaternion temp = obj.rotation;
+		// sort keys
+		sortKeys();
+		for(int i = 0; i < keys.Count; i++) {
+			AMOrientationKey key = keys[i] as AMOrientationKey;
+			
+			key.version = version;
+			
+			if(keys.Count > (i + 1)) key.endFrame = keys[i + 1].frame;
+			else key.endFrame = -1;
+			key.obj = obj;
+			// targets
+			if(key.endFrame != -1) key.endTarget = (keys[i + 1] as AMOrientationKey).target;
+		}
+		// restore rotation
+		//if(restoreRotation) obj.rotation = temp;
     }
 
     public Transform getInitialTarget() {

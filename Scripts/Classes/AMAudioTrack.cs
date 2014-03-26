@@ -11,13 +11,6 @@ public class AMAudioTrack : AMTrack {
         return "Audio";
     }
 
-    public bool setAudioSource(AudioSource audioSource) {
-        if(this.audioSource != audioSource) {
-            this.audioSource = audioSource;
-            return true;
-        }
-        return false;
-    }
     public override void updateCache() {
         // sort keys
         sortKeys();

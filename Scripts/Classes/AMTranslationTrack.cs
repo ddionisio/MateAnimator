@@ -343,15 +343,6 @@ public class AMTranslationTrack : AMTrack {
                 i = path.endIndex - 1;
             }
         }
-        // update cache for orientation tracks with track obj as target
-        if(parentTake) {
-            foreach(AMTrack track in parentTake.trackValues) {
-                if(track is AMOrientationTrack && ((track as AMOrientationTrack).obj == _obj || (track as AMOrientationTrack).hasTarget(_obj))) {
-                    track.updateCache();
-                }
-            }
-        }
-        base.updateCache();
     }
     // get the starting translation key for the action where the frame lies
     public AMTranslationKey getKeyStartFor(int frame) {

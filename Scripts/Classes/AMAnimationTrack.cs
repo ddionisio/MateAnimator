@@ -11,13 +11,6 @@ public class AMAnimationTrack : AMTrack {
         return "Animation";
     }
 
-    public bool setObject(GameObject obj) {
-        if(this.obj != obj) {
-            this.obj = obj;
-            return true;
-        }
-        return false;
-    }
     // add a new key
     public AMKey addKey(int _frame, AnimationClip _clip, WrapMode _wrapMode) {
         foreach(AMAnimationKey key in keys) {

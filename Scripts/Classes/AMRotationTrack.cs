@@ -137,8 +137,6 @@ public class AMRotationTrack : AMTrack {
             if(key.endFrame != -1) key.endRotation = (keys[i + 1] as AMRotationKey).rotation;
 
         }
-        base.updateCache();
-
     }
     // preview a frame in the scene view
     public override void previewFrame(float frame, AMTrack extraTrack = null) {
@@ -289,4 +287,7 @@ public class AMRotationTrack : AMTrack {
 
         return ntrack;
     }
+	public bool isObjectEqual(Transform t) {
+		return _obj == t;
+	}
 }

@@ -2708,8 +2708,10 @@ public class AMTimeline : EditorWindow {
             Rect rectLabelInterp = new Rect(0f, start_y, 50f, 20f);
             GUI.Label(rectLabelInterp, "Interpl.");
             Rect rectSelGrid = new Rect(rectLabelInterp.x + rectLabelInterp.width + margin, rectLabelInterp.y, width_inspector - rectLabelInterp.width - margin * 2f, rectLabelInterp.height);
-            if(tKey.setInterpolation(GUI.SelectionGrid(rectSelGrid, tKey.interp, texInterpl, 2, GUI.skin.GetStyle("ButtonImage")))) {
+			int nInterp = GUI.SelectionGrid(rectSelGrid, tKey.interp, texInterpl, 2, GUI.skin.GetStyle("ButtonImage"));
+            if(tKey.interp != nInterp) {
 				recordUndoTrackAndKeys(sTrack, false, "Change Interpolation");
+				tKey.interp = nInterp;
                 sTrack.updateCache();
                 AMCodeView.refresh();
                 // select the current frame
@@ -2717,13 +2719,13 @@ public class AMTimeline : EditorWindow {
                 // save data
 				EditorUtility.SetDirty(sTrack);
 				setDirtyKeys(sTrack);
-                // refresh component
-                refreshGizmos();
             }
             // translation position
             Rect rectPosition = new Rect(0f, rectSelGrid.y + rectSelGrid.height + height_inspector_space, width_inspector - margin, 40f);
-            if(tKey.setPosition(EditorGUI.Vector3Field(rectPosition, "Position", tKey.position))) {
+			Vector3 nPos = EditorGUI.Vector3Field(rectPosition, "Position", tKey.position);
+            if(tKey.position != nPos) {
 				recordUndoTrackAndKeys(sTrack, false, "Change Position");
+				tKey.position = nPos;
                 // update cache when modifying varaibles
                 sTrack.updateCache();
                 AMCodeView.refresh();
@@ -2732,8 +2734,6 @@ public class AMTimeline : EditorWindow {
                 // save data
 				EditorUtility.SetDirty(sTrack);
 				setDirtyKeys(sTrack);
-                // refresh component
-                refreshGizmos();
             }
 
             // if not only key, show ease
@@ -2756,8 +2756,11 @@ public class AMTimeline : EditorWindow {
             AMRotationKey rKey = (AMRotationKey)(sTrack as AMRotationTrack).getKeyOnFrame(_frame);
             Rect rectQuaternion = new Rect(0f, start_y, width_inspector - margin, 40f);
             // quaternion
-            if(rKey.setRotationQuaternion(EditorGUI.Vector4Field(rectQuaternion, "Quaternion", rKey.getRotationQuaternion()))) {
-				recordUndoTrackAndKeys(sTrack, false, "Change Position");
+			Vector3 rot = rKey.rotation.eulerAngles;
+			Vector3 nrot = EditorGUI.Vector3Field(rectQuaternion, "Euler", rot);
+            if(rot != nrot) {
+				recordUndoTrackAndKeys(sTrack, false, "Change Rotation");
+				rKey.rotation = Quaternion.Euler(nrot);
                 // update cache when modifying varaibles
                 sTrack.updateCache();
                 AMCodeView.refresh();
@@ -2766,8 +2769,6 @@ public class AMTimeline : EditorWindow {
                 // save data
 				EditorUtility.SetDirty(sTrack);
 				setDirtyKeys(sTrack);
-                // refresh component
-                refreshGizmos();
             }
             // if not last key, show ease
             if(rKey != (sTrack as AMRotationTrack).keys[(sTrack as AMRotationTrack).keys.Count - 1]) {
@@ -2786,16 +2787,18 @@ public class AMTimeline : EditorWindow {
             Rect rectLabelTarget = new Rect(0f, start_y, 50f, 22f);
             GUI.Label(rectLabelTarget, "Target");
             Rect rectObjectTarget = new Rect(rectLabelTarget.x + rectLabelTarget.width + 3f, rectLabelTarget.y + 3f, width_inspector - rectLabelTarget.width - 3f - margin - width_button_delete, 16f);
-            if(oKey.setTarget((Transform)EditorGUI.ObjectField(rectObjectTarget, oKey.target, typeof(Transform), true))) {
+			Transform ntgt = (Transform)EditorGUI.ObjectField(rectObjectTarget, oKey.target, typeof(Transform), true);
+            if(oKey.target != ntgt) {
+				recordUndoTrackAndKeys(sTrack, false, "Change Target");
+				oKey.target = ntgt;
                 // update cache when modifying varaibles
                 (sTrack as AMOrientationTrack).updateCache();
                 AMCodeView.refresh();
                 // preview
                 aData.getCurrentTake().previewFrame(aData.getCurrentTake().selectedFrame);
                 // save data
-                setDirtyKeys(aData.getCurrentTake().getTrack(aData.getCurrentTake().selectedTrack));
-                // refresh component
-                refreshGizmos();
+				EditorUtility.SetDirty(sTrack);
+				setDirtyKeys(sTrack);
             }
             Rect rectNewTarget = new Rect(width_inspector - width_button_delete - margin, rectLabelTarget.y, width_button_delete, width_button_delete);
             if(GUI.Button(rectNewTarget, "+")) {
@@ -2822,63 +2825,60 @@ public class AMTimeline : EditorWindow {
             Rect rectLabelAnimClip = new Rect(0f, start_y, 100f, 22f);
             GUI.Label(rectLabelAnimClip, "Animation Clip");
             Rect rectObjectField = new Rect(rectLabelAnimClip.x + rectLabelAnimClip.width + 2f, rectLabelAnimClip.y + 3f, width_inspector - rectLabelAnimClip.width - margin, 16f);
-            if(aKey.setAmClip((AnimationClip)EditorGUI.ObjectField(rectObjectField, aKey.amClip, typeof(AnimationClip), false))) {
+			AnimationClip nclip = (AnimationClip)EditorGUI.ObjectField(rectObjectField, aKey.amClip, typeof(AnimationClip), false);
+            if(aKey.amClip != nclip) {
+				recordUndoTrackAndKeys(sTrack, false, "Change Animation Clip");
+				aKey.amClip = nclip;
                 // update cache when modifying varaibles
                 sTrack.updateCache();
                 AMCodeView.refresh();
                 // preview new position
                 aData.getCurrentTake().previewFrame(aData.getCurrentTake().selectedFrame);
                 // save data
-                setDirtyKeys(aData.getCurrentTake().getTrack(aData.getCurrentTake().selectedTrack));
-                // refresh component
-                refreshGizmos();
+				EditorUtility.SetDirty(sTrack);
+				setDirtyKeys(sTrack);
             }
             // wrap mode
             Rect rectLabelWrapMode = new Rect(0f, rectLabelAnimClip.y + rectLabelAnimClip.height + height_inspector_space, 85f, 22f);
             GUI.Label(rectLabelWrapMode, "Wrap Mode");
             Rect rectPopupWrapMode = new Rect(rectLabelWrapMode.x + rectLabelWrapMode.width, rectLabelWrapMode.y + 3f, 120f, 22f);
-            if(aKey.setWrapMode(indexToWrapMode(EditorGUI.Popup(rectPopupWrapMode, wrapModeToIndex(aKey.wrapMode), wrapModeNames)))) {
-                // update cache when modifying varaibles
-                sTrack.updateCache();
+			WrapMode nwrapmode = indexToWrapMode(EditorGUI.Popup(rectPopupWrapMode, wrapModeToIndex(aKey.wrapMode), wrapModeNames));
+			if(aKey.wrapMode != nwrapmode) {
+				Undo.RecordObject(aKey, "Wrap Mode");
                 AMCodeView.refresh();
                 // preview new position
                 aData.getCurrentTake().previewFrame(aData.getCurrentTake().selectedFrame);
                 // save data
-                setDirtyKeys(aData.getCurrentTake().getTrack(aData.getCurrentTake().selectedTrack));
-                // refresh component
-                refreshGizmos();
+                EditorUtility.SetDirty(aKey);
             }
             // crossfade
             Rect rectLabelCrossfade = new Rect(0f, rectLabelWrapMode.y + rectPopupWrapMode.height + height_inspector_space, 85f, 22f);
             GUI.Label(rectLabelCrossfade, "Crossfade");
             Rect rectToggleCrossfade = new Rect(rectLabelCrossfade.x + rectLabelCrossfade.width, rectLabelCrossfade.y + 2f, 20f, rectLabelCrossfade.height);
-            if(aKey.setCrossFade(EditorGUI.Toggle(rectToggleCrossfade, aKey.crossfade))) {
-                // update cache when modifying varaibles
-                sTrack.updateCache();
+			bool ncrossfade = EditorGUI.Toggle(rectToggleCrossfade, aKey.crossfade);
+            if(aKey.crossfade != ncrossfade) {
+				Undo.RecordObject(aKey, "Cross Fade");
                 AMCodeView.refresh();
                 // preview new position
                 aData.getCurrentTake().previewFrame(aData.getCurrentTake().selectedFrame);
                 // save data
-                setDirtyKeys(aData.getCurrentTake().getTrack(aData.getCurrentTake().selectedTrack));
-                // refresh component
-                refreshGizmos();
+				EditorUtility.SetDirty(aKey);
             }
             Rect rectLabelCrossFadeTime = new Rect(rectToggleCrossfade.x + rectToggleCrossfade.width + 10f, rectLabelCrossfade.y, 35f, rectToggleCrossfade.height);
             if(!aKey.crossfade) GUI.enabled = false;
             GUI.Label(rectLabelCrossFadeTime, "Time");
             Rect rectFloatFieldCrossFade = new Rect(rectLabelCrossFadeTime.x + rectLabelCrossFadeTime.width + margin, rectLabelCrossFadeTime.y + 3f, 40f, rectLabelCrossFadeTime.height);
-            if(aKey.setCrossfadeTime(EditorGUI.FloatField(rectFloatFieldCrossFade, aKey.crossfadeTime))) {
-                // update cache when modifying varaibles
-                sTrack.updateCache();
+			float ncrossfadet = EditorGUI.FloatField(rectFloatFieldCrossFade, aKey.crossfadeTime);
+            if(aKey.crossfadeTime != ncrossfadet) {
+				Undo.RecordObject(aKey, "Cross Fade Time");
                 AMCodeView.refresh();
                 // save data
-                setDirtyKeys(aData.getCurrentTake().getTrack(aData.getCurrentTake().selectedTrack));
-                // refresh component
-                refreshGizmos();
+				EditorUtility.SetDirty(aKey);
             }
             Rect rectLabelSeconds = new Rect(rectFloatFieldCrossFade.x + rectFloatFieldCrossFade.width + margin, rectLabelCrossFadeTime.y, 20f, rectLabelCrossFadeTime.height);
             GUI.Label(rectLabelSeconds, "s");
             GUI.enabled = true;
+			return;
         }
         #endregion
         #region audio inspector
@@ -2888,28 +2888,26 @@ public class AMTimeline : EditorWindow {
             Rect rectLabelAudioClip = new Rect(0f, start_y, 80f, 22f);
             GUI.Label(rectLabelAudioClip, "Audio Clip");
             Rect rectObjectField = new Rect(rectLabelAudioClip.x + rectLabelAudioClip.width + margin, rectLabelAudioClip.y + 3f, width_inspector - rectLabelAudioClip.width - margin, 16f);
-            if(auKey.setAudioClip((AudioClip)EditorGUI.ObjectField(rectObjectField, auKey.audioClip, typeof(AudioClip), false))) {
-                // update cache when modifying varaibles
-                sTrack.updateCache();
+			AudioClip nclip = (AudioClip)EditorGUI.ObjectField(rectObjectField, auKey.audioClip, typeof(AudioClip), false);
+            if(auKey.audioClip != nclip) {
+				Undo.RecordObject(auKey, "Set Audio Clip");
+				auKey.audioClip = nclip;
                 AMCodeView.refresh();
                 // save data
-                setDirtyKeys(aData.getCurrentTake().getTrack(aData.getCurrentTake().selectedTrack));
-                // refresh component
-                refreshGizmos();
+                EditorUtility.SetDirty(auKey);
 
             }
             Rect rectLabelLoop = new Rect(0f, rectLabelAudioClip.y + rectLabelAudioClip.height + height_inspector_space, 80f, 22f);
             // loop audio
             GUI.Label(rectLabelLoop, "Loop");
             Rect rectToggleLoop = new Rect(rectLabelLoop.x + rectLabelLoop.width + margin, rectLabelLoop.y + 2f, 22f, 22f);
-            if(auKey.setLoop(EditorGUI.Toggle(rectToggleLoop, auKey.loop))) {
-                // update cache when modifying varaibles
-                sTrack.updateCache();
+			bool nloop = EditorGUI.Toggle(rectToggleLoop, auKey.loop);
+            if(auKey.loop != nloop) {
+				Undo.RecordObject(auKey, "Set Audio Loop");
+				auKey.loop = nloop;
                 AMCodeView.refresh();
                 // save data
-                setDirtyKeys(aData.getCurrentTake().getTrack(aData.getCurrentTake().selectedTrack));
-                // refresh component
-                refreshGizmos();
+				EditorUtility.SetDirty(auKey);
             }
             return;
         }
@@ -2922,100 +2920,116 @@ public class AMTimeline : EditorWindow {
             Rect rectField = new Rect(0f, start_y, width_inspector - margin, 22f);
 
             if(((sTrack as AMPropertyTrack).valueType == (int)AMPropertyTrack.ValueType.Integer) || ((sTrack as AMPropertyTrack).valueType == (int)AMPropertyTrack.ValueType.Long)) {
-                if(pKey.setValue(EditorGUI.IntField(rectField, propertyLabel, Convert.ToInt32(pKey.val)))) {
+				int val = Convert.ToInt32(pKey.val);
+				int nval = EditorGUI.IntField(rectField, propertyLabel, val);
+                if(val != nval) {
+					recordUndoTrackAndKeys(sTrack, false, "Change Property Value");
+					pKey.setValue(nval);
                     // update cache when modifying varaibles
                     sTrack.updateCache();
                     AMCodeView.refresh();
                     // preview new value
                     aData.getCurrentTake().previewFrame(aData.getCurrentTake().selectedFrame);
                     // save data
-                    setDirtyKeys(aData.getCurrentTake().getTrack(aData.getCurrentTake().selectedTrack));
-                    // refresh component
-                    refreshGizmos();
+					EditorUtility.SetDirty(sTrack);
+					setDirtyKeys(sTrack);
                 }
             }
             else if(((sTrack as AMPropertyTrack).valueType == (int)AMPropertyTrack.ValueType.Float) || ((sTrack as AMPropertyTrack).valueType == (int)AMPropertyTrack.ValueType.Double)) {
-                if(pKey.setValue(EditorGUI.FloatField(rectField, propertyLabel, (float)(pKey.val)))) {
+				float val = (float)pKey.val;
+				float nval = EditorGUI.FloatField(rectField, propertyLabel, val);
+                if(val != nval) {
+					recordUndoTrackAndKeys(sTrack, false, "Change Property Value");
+					pKey.setValue(nval);
                     // update cache when modifying varaibles
                     sTrack.updateCache();
                     AMCodeView.refresh();
                     // preview new value
                     aData.getCurrentTake().previewFrame(aData.getCurrentTake().selectedFrame);
                     // save data
-                    setDirtyKeys(aData.getCurrentTake().getTrack(aData.getCurrentTake().selectedTrack));
-                    // refresh component
-                    refreshGizmos();
+					EditorUtility.SetDirty(sTrack);
+					setDirtyKeys(sTrack);
                 }
             }
             else if((sTrack as AMPropertyTrack).valueType == (int)AMPropertyTrack.ValueType.Vector2) {
                 rectField.height = 40f;
-                if(pKey.setValue(EditorGUI.Vector2Field(rectField, propertyLabel, pKey.vect2))) {
+				Vector2 nval = EditorGUI.Vector2Field(rectField, propertyLabel, pKey.vect2);
+                if(pKey.vect2 != nval) {
+					recordUndoTrackAndKeys(sTrack, false, "Change Property Value");
+					pKey.setValue(nval);
                     // update cache when modifying varaibles
                     sTrack.updateCache();
                     AMCodeView.refresh();
                     // preview new value
                     aData.getCurrentTake().previewFrame(aData.getCurrentTake().selectedFrame);
                     // save data
-                    setDirtyKeys(aData.getCurrentTake().getTrack(aData.getCurrentTake().selectedTrack));
-                    // refresh component
-                    refreshGizmos();
+					EditorUtility.SetDirty(sTrack);
+					setDirtyKeys(sTrack);
                 }
             }
             else if((sTrack as AMPropertyTrack).valueType == (int)AMPropertyTrack.ValueType.Vector3) {
                 rectField.height = 40f;
-                if(pKey.setValue(EditorGUI.Vector3Field(rectField, propertyLabel, pKey.vect3))) {
+				Vector3 nval = EditorGUI.Vector3Field(rectField, propertyLabel, pKey.vect3);
+                if(pKey.vect3 != nval) {
+					recordUndoTrackAndKeys(sTrack, false, "Change Property Value");
+					pKey.setValue(nval);
                     // update cache when modifying varaibles
                     sTrack.updateCache();
                     AMCodeView.refresh();
                     // preview new value
                     aData.getCurrentTake().previewFrame(aData.getCurrentTake().selectedFrame);
                     // save data
-                    setDirtyKeys(aData.getCurrentTake().getTrack(aData.getCurrentTake().selectedTrack));
-                    // refresh component
-                    refreshGizmos();
+					EditorUtility.SetDirty(sTrack);
+					setDirtyKeys(sTrack);
                 }
             }
             else if((sTrack as AMPropertyTrack).valueType == (int)AMPropertyTrack.ValueType.Color) {
                 rectField.height = 22f;
-                if(pKey.setValue(EditorGUI.ColorField(rectField, propertyLabel, pKey.color))) {
+				Color nclr = EditorGUI.ColorField(rectField, propertyLabel, pKey.color);
+                if(pKey.color != nclr) {
+					recordUndoTrackAndKeys(sTrack, false, "Change Property Value");
+					pKey.setValue(nclr);
                     // update cache when modifying varaibles
                     sTrack.updateCache();
                     AMCodeView.refresh();
                     // preview new value
                     aData.getCurrentTake().previewFrame(aData.getCurrentTake().selectedFrame);
                     // save data
-                    setDirtyKeys(aData.getCurrentTake().getTrack(aData.getCurrentTake().selectedTrack));
-                    // refresh component
-                    refreshGizmos();
+					EditorUtility.SetDirty(sTrack);
+					setDirtyKeys(sTrack);
                 }
             }
             else if((sTrack as AMPropertyTrack).valueType == (int)AMPropertyTrack.ValueType.Rect) {
                 rectField.height = 60f;
-                if(pKey.setValue(EditorGUI.RectField(rectField, propertyLabel, pKey.rect))) {
+				Rect nrect = EditorGUI.RectField(rectField, propertyLabel, pKey.rect);
+                if(pKey.rect != nrect) {
+					recordUndoTrackAndKeys(sTrack, false, "Change Property Value");
+					pKey.setValue(nrect);
                     // update cache when modifying varaibles
                     sTrack.updateCache();
                     AMCodeView.refresh();
                     // preview new value
                     aData.getCurrentTake().previewFrame(aData.getCurrentTake().selectedFrame);
                     // save data
-                    setDirtyKeys(aData.getCurrentTake().getTrack(aData.getCurrentTake().selectedTrack));
-                    // refresh component
-                    refreshGizmos();
+					EditorUtility.SetDirty(sTrack);
+					setDirtyKeys(sTrack);
                 }
             }
             else if((sTrack as AMPropertyTrack).valueType == (int)AMPropertyTrack.ValueType.Vector4
                 || (sTrack as AMPropertyTrack).valueType == (int)AMPropertyTrack.ValueType.Quaternion) {
                 rectField.height = 40f;
-                if(pKey.setValue(EditorGUI.Vector4Field(rectField, propertyLabel, pKey.vect4))) {
+				Vector4 nvec = EditorGUI.Vector4Field(rectField, propertyLabel, pKey.vect4);
+                if(pKey.vect4 != nvec) {
+					recordUndoTrackAndKeys(sTrack, false, "Change Property Value");
+					pKey.setValue(nvec);
                     // update cache when modifying varaibles
                     sTrack.updateCache();
                     AMCodeView.refresh();
                     // preview new value
                     aData.getCurrentTake().previewFrame(aData.getCurrentTake().selectedFrame);
                     // save data
-                    setDirtyKeys(aData.getCurrentTake().getTrack(aData.getCurrentTake().selectedTrack));
-                    // refresh component
-                    refreshGizmos();
+					EditorUtility.SetDirty(sTrack);
+					setDirtyKeys(sTrack);
                 }
             }
             // property ease, show if not last key (check for action; there is no rotation action for last key). do not show for morph channels, because it is shown before the parameters
@@ -3051,14 +3065,15 @@ public class AMTimeline : EditorWindow {
             bool newVal = EditorGUI.Toggle(rectField, sTrack.getTrackType(), pKey.setActive);
 
             if(newStartVal != goActiveTrack.startActive) {
+				Undo.RecordObject(goActiveTrack, "Set GameObject Start Active");
                 goActiveTrack.startActive = newStartVal;
-
                 EditorUtility.SetDirty(goActiveTrack);
 
                 doRefreshGizmo = true;
             }
 
             if(newVal != pKey.setActive) {
+				Undo.RecordObject(pKey, "Set GameObject Active");
                 pKey.setActive = newVal;
 
                 // update cache when modifying varaibles
@@ -3066,16 +3081,13 @@ public class AMTimeline : EditorWindow {
                 // preview new value
                 aData.getCurrentTake().previewFrame(aData.getCurrentTake().selectedFrame);
                 // save data
-                setDirtyKeys(aData.getCurrentTake().getTrack(aData.getCurrentTake().selectedTrack));
+				EditorUtility.SetDirty(pKey);
 
                 doRefreshGizmo = true;
             }
 
             if(doRefreshGizmo) {
                 AMCodeView.refresh();
-
-                // refresh component
-                refreshGizmos();
             }
 
             return;
@@ -3103,10 +3115,9 @@ public class AMTimeline : EditorWindow {
                 // process change
                 // update cache when modifying varaibles
                 if(eKey.setMethodInfo(cachedMethodInfoComponents[indexMethodInfo], cachedMethodInfo[indexMethodInfo], cachedParameterInfos, !paramMatched)) {
-                    sTrack.updateCache();
                     AMCodeView.refresh();
                     // save data
-                    setDirtyKeys(aData.getCurrentTake().getTrack(aData.getCurrentTake().selectedTrack));
+					EditorUtility.SetDirty(eKey);
                     // deselect fields
                     GUIUtility.keyboardControl = 0;
                 }
@@ -3114,10 +3125,9 @@ public class AMTimeline : EditorWindow {
             if(cachedParameterInfos.Length > 1) {
                 // if method has more than 1 parameter, set sendmessage to false, and disable toggle
                 if(eKey.setUseSendMessage(false)) {
-                    sTrack.updateCache();
                     AMCodeView.refresh();
                     // save data
-                    setDirtyKeys(aData.getCurrentTake().getTrack(aData.getCurrentTake().selectedTrack));
+					EditorUtility.SetDirty(eKey);
                 }
                 sendMessageToggleEnabled = false;	// disable sendmessage toggle
             }
@@ -3148,10 +3158,9 @@ public class AMTimeline : EditorWindow {
             GUI.Label(rectLabelFrameLimit, "Frame Limit");
             Rect rectToggleFrameLimit = new Rect(rectLabelFrameLimit.x + rectLabelFrameLimit.width + margin, rectLabelFrameLimit.y, 20f, 20f);
             if(eKey.setFrameLimit(GUI.Toggle(rectToggleFrameLimit, eKey.frameLimit, ""))) {
-                sTrack.updateCache();
                 AMCodeView.refresh();
                 // save data
-                setDirtyKeys(aData.getCurrentTake().getTrack(aData.getCurrentTake().selectedTrack));
+				EditorUtility.SetDirty(eKey);
             }
             //
             GUI.enabled = sendMessageToggleEnabled;
@@ -3162,7 +3171,7 @@ public class AMTimeline : EditorWindow {
                 sTrack.updateCache();
                 AMCodeView.refresh();
                 // save data
-                setDirtyKeys(aData.getCurrentTake().getTrack(aData.getCurrentTake().selectedTrack));
+				EditorUtility.SetDirty(eKey);
             }
             GUI.enabled = !isPlaying;
             Rect rectButtonSendMessageInfo = new Rect(width_inspector - 20f - margin, rectLabelSendMessage.y, 20f, 20f);
@@ -3188,7 +3197,7 @@ public class AMTimeline : EditorWindow {
                         sTrack.updateCache();
                         AMCodeView.refresh();
                         // save data
-                        setDirtyKeys(aData.getCurrentTake().getTrack(aData.getCurrentTake().selectedTrack));
+						EditorUtility.SetDirty(eKey);
                     }
                     rectField.y += height_field;
                     height_all_fields += height_field;
@@ -3439,40 +3448,61 @@ public class AMTimeline : EditorWindow {
         EditorGUIUtility.LookLikeControls();
         // add objectfield for every track type
         // translation
-        if(amTrack is AMTranslationTrack) {
-            (amTrack as AMTranslationTrack).obj = (Transform)EditorGUI.ObjectField(rect, amTrack.genericObj, typeof(Transform), true/*,GUILayout.Width (width_track-padding_track*2)*/);
+		if(amTrack is AMTranslationTrack) {
+			AMTranslationTrack ttrack = amTrack as AMTranslationTrack;
+			Transform nt = (Transform)EditorGUI.ObjectField(rect, amTrack.genericObj, typeof(Transform), true/*,GUILayout.Width (width_track-padding_track*2)*/);
+			if(!ttrack.isObjectEqual(nt)) {
+				Undo.RecordObject(ttrack, "Set Transform");
+				ttrack.obj = nt;
+				EditorUtility.SetDirty(ttrack);
+			}
         }
         // rotation
         else if(amTrack is AMRotationTrack) {
-            (amTrack as AMRotationTrack).obj = (Transform)EditorGUI.ObjectField(rect, amTrack.genericObj, typeof(Transform), true);
+			AMRotationTrack rtrack = amTrack as AMRotationTrack;
+			Transform nt = (Transform)EditorGUI.ObjectField(rect, amTrack.genericObj, typeof(Transform), true);
+			if(!rtrack.isObjectEqual(nt)) {
+				Undo.RecordObject(rtrack, "Set Transform");
+				rtrack.obj = nt;
+				EditorUtility.SetDirty(rtrack);
+			}
         }
         // rotation
         else if(amTrack is AMOrientationTrack) {
-            if((amTrack as AMOrientationTrack).setObject((Transform)EditorGUI.ObjectField(rect, (amTrack as AMOrientationTrack).obj, typeof(Transform), true))) {
-                amTrack.updateCache();
-                AMCodeView.refresh();
-            }
+			AMOrientationTrack otrack = amTrack as AMOrientationTrack;
+			Transform nt = (Transform)EditorGUI.ObjectField(rect, (amTrack as AMOrientationTrack).obj, typeof(Transform), true);
+			if(otrack.obj != nt) {
+				recordUndoTrackAndKeys(otrack, false, "Set Transform");
+				otrack.obj = nt;
+				otrack.updateCache();
+				AMCodeView.refresh();
+				EditorUtility.SetDirty(otrack);
+				setDirtyKeys(otrack);
+			}
         }
         // animation
         else if(amTrack is AMAnimationTrack) {
-            //GameObject _old = (amTrack as AMAnimationTrack).obj;
-            if((amTrack as AMAnimationTrack).setObject((GameObject)EditorGUI.ObjectField(rect, (amTrack as AMAnimationTrack).obj, typeof(GameObject), true))) {
-                //Animation _temp = (Animation)(amTrack as AMAnimationTrack).obj.GetComponent("Animation");
-                if((amTrack as AMAnimationTrack).obj != null) {
-                    if((amTrack as AMAnimationTrack).obj.animation == null) {
-                        (amTrack as AMAnimationTrack).obj = null;
-                        EditorUtility.DisplayDialog("No Animation Component", "You must add an Animation component to the GameObject before you can use it in an Animation Track.", "Okay");
-                    }
-                }
-            }
+			AMAnimationTrack atrack = amTrack as AMAnimationTrack;
+			GameObject nobj = (GameObject)EditorGUI.ObjectField(rect, atrack.obj, typeof(GameObject), true);
+			if(nobj != null && nobj.animation == null) {
+				EditorUtility.DisplayDialog("No Animation Component", "You must add an Animation component to the GameObject before you can use it in an Animation Track.", "Okay");
+			}
+			else if(atrack.obj != nobj) {
+				Undo.RecordObject(atrack, "Set GameObject");
+				atrack.obj = nobj;
+				EditorUtility.SetDirty(atrack);
+			}
         }
         // audio
         else if(amTrack is AMAudioTrack) {
-            if((amTrack as AMAudioTrack).setAudioSource((AudioSource)EditorGUI.ObjectField(rect, (amTrack as AMAudioTrack).audioSource, typeof(AudioSource), true))) {
-                if((amTrack as AMAudioTrack).audioSource != null) {
-                    (amTrack as AMAudioTrack).audioSource.playOnAwake = false;
-                }
-            }
+			AMAudioTrack audTrack = amTrack as AMAudioTrack;
+			AudioSource nsrc = (AudioSource)EditorGUI.ObjectField(rect, (amTrack as AMAudioTrack).audioSource, typeof(AudioSource), true);
+			if(audTrack.audioSource != nsrc) {
+				Undo.RecordObject(audTrack, "Set Audio Source");
+				if(nsrc != null) nsrc.playOnAwake = false;
+				audTrack.audioSource = nsrc;
+				EditorUtility.SetDirty(audTrack);
+			}
         }
         // property
         else if(amTrack is AMPropertyTrack) {
@@ -3529,8 +3559,13 @@ public class AMTimeline : EditorWindow {
         }
         // set go active
         else if(amTrack is AMGOSetActiveTrack) {
-            AMGOSetActiveTrack goActiveTrack = amTrack as AMGOSetActiveTrack;
-            goActiveTrack.setObject((GameObject)EditorGUI.ObjectField(rect, goActiveTrack.genericObj, typeof(GameObject), true/*,GUILayout.Width (width_track-padding_track*2)*/));
+			AMGOSetActiveTrack gtrack = amTrack as AMGOSetActiveTrack;
+			UnityEngine.Object ngo = EditorGUI.ObjectField(rect, gtrack.genericObj, typeof(GameObject), true/*,GUILayout.Width (width_track-padding_track*2)*/);
+			if(gtrack.genericObj != ngo) {
+				Undo.RecordObject(gtrack, "Set GameObject");
+				gtrack.setObject((GameObject)ngo);
+				EditorUtility.SetDirty(gtrack);
+			}
         }
 
         GUI.skin = skin;
@@ -3578,11 +3613,22 @@ public class AMTimeline : EditorWindow {
             if(!key.hasCustomEase()) {
                 y += rectButton.height + 4;
                 Rect rectAmp = new Rect(x, y, 200f, height);
-                key.amplitude = EditorGUI.FloatField(rectAmp, "Amplitude", key.amplitude);
+
+				float namp = EditorGUI.FloatField(rectAmp, "Amplitude", key.amplitude);
+				if(key.amplitude != namp) {
+					Undo.RecordObject(key, "Change Amplitude");
+                	key.amplitude = namp;
+					EditorUtility.SetDirty(key);
+				}
 
                 y += rectAmp.height + 4;
                 Rect rectPer = new Rect(x, y, 200f, height);
-                key.period = EditorGUI.FloatField(rectPer, "Period", key.period);
+                float nperiod = EditorGUI.FloatField(rectPer, "Period", key.period);
+				if(key.period != nperiod) {
+					Undo.RecordObject(key, "Change Period");
+					key.period = nperiod;
+					EditorUtility.SetDirty(key);
+				}
             }
         }
         else {
@@ -4507,21 +4553,28 @@ public class AMTimeline : EditorWindow {
         addTarget(key, false);
     }
     void addTarget(object key, bool withTranslationTrack) {
-        AMTrack sTrack = aData.getCurrentTake().getSelectedTrack();
+		AMTrack sTrack = aData.getCurrentTake().getSelectedTrack();
+		recordUndoTrackAndKeys(sTrack, false, "Add Target");
+        
         AMOrientationKey oKey = key as AMOrientationKey;
         // create target
         GameObject target = new GameObject(getNewTargetName());
+		target.transform.parent = aData.transform;
         target.transform.position = (sTrack as AMOrientationTrack).obj.position + (sTrack as AMOrientationTrack).obj.forward * 5f;
+		target.transform.rotation = Quaternion.identity;
+		target.transform.localScale = Vector3.one;
         target.AddComponent(typeof(AMTarget));
+		Undo.RegisterCreatedObjectUndo(target, "Add Target");
         // set target
-        oKey.setTarget(target.transform);
+        oKey.target = target.transform;
         // update cache
         sTrack.updateCache();
         AMCodeView.refresh();
         // preview new frame
         aData.getCurrentTake().previewFrame(aData.getCurrentTake().selectedFrame);
         // save data
-        setDirtyKeys(aData.getCurrentTake().getTrack(aData.getCurrentTake().selectedTrack));
+		EditorUtility.SetDirty(sTrack);
+        setDirtyKeys(sTrack);
 
         // add to translation track
         if(withTranslationTrack) {

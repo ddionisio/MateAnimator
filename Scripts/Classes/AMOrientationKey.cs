@@ -79,14 +79,6 @@ public class AMOrientationKey : AMKey {
     public Transform obj;
     public Transform endTarget;
     
-    public bool setTarget(Transform target) {
-        if(target != this.target) {
-            this.target = target;
-            return true;
-        }
-        return false;
-    }
-
     public override AMKey CreateClone(GameObject go) {
 
 		AMOrientationKey a = go ? go.AddComponent<AMOrientationKey>() : gameObject.AddComponent<AMOrientationKey>();

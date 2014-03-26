@@ -22,21 +22,6 @@ public class AMTranslationKey : AMKey {
     public bool isLocal;
     public Vector3[] path;
 
-    public bool setInterpolation(int _interp) {
-        if(_interp != interp) {
-            interp = _interp;
-            return true;
-        }
-        return false;
-    }
-    public bool setPosition(Vector3 position) {
-        if(position != this.position) {
-            this.position = position;
-            return true;
-        }
-        return false;
-    }
-
     // copy properties from key
     public override AMKey CreateClone(GameObject go) {
 
