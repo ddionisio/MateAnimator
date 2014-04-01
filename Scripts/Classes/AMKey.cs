@@ -6,10 +6,13 @@ using Holoville.HOTween;
 
 [AddComponentMenu("")]
 public class AMKey : MonoBehaviour {
+	public const int EaseTypeNone = -1;
+
     public int version = 0; //for upgrading/initializing
 
     public int frame;
     public int easeType = (int)0;//AMTween.EaseType.linear; 			// ease type, AMTween.EaseType enum
+	//-1 = None
     
     public float amplitude = 0.0f;
     public float period = 0.0f;
@@ -90,7 +93,7 @@ public class AMKey : MonoBehaviour {
     public bool setEaseType(int easeType) {
         if(easeType != this.easeType) {
             this.easeType = easeType;
-            if(easeType == 32 && customEase.Count <= 0) {
+			if(easeType == (int)EaseType.AnimationCurve && customEase.Count <= 0) {
                 // set up default custom ease with linear
                 customEase = new List<float>() {
 					0f,0f,1f,1f,

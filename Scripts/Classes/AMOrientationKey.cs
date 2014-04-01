@@ -93,6 +93,9 @@ public class AMOrientationKey : AMKey {
     #region action
     public override Tweener buildTweener(Sequence sequence, int frameRate) {
         if(!obj) return null;
+		if(easeType == EaseTypeNone) {
+			return HOTween.To(obj, endFrame == -1 ? 1.0f/(float)frameRate : getTime(frameRate), new TweenParms().Prop("rotation", new AMPlugOrientation(target, null)));
+		}
         if(endFrame == -1) return null;
         if(isLookFollow()) {
             return HOTween.To(obj, getTime(frameRate), new TweenParms().Prop("rotation", new AMPlugOrientation(target, null)));
@@ -121,7 +124,7 @@ public class AMOrientationKey : AMKey {
     }
 
     public Quaternion getQuaternionAtPercent(float percentage) {
-        if(isLookFollow()) {
+		if(isLookFollow() || easeType == EaseTypeNone) {
             return Quaternion.LookRotation(target.position - obj.position);
         }
 

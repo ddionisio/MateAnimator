@@ -44,7 +44,7 @@ public class AMEasePicker : EditorWindow {
 		key = _key;
 		track = _track;
 		//aData = _aData;
-		selectedIndex = key.easeType;
+		selectedIndex = key.easeType == AMKey.EaseTypeNone ? AMTimeline.easeTypeNames.Length - 1 : key.easeType;
 	}
 	
 	public static float waitPercent = 0.3f;
@@ -66,7 +66,7 @@ public class AMEasePicker : EditorWindow {
 		setupFilteredCategories();
 		selectedIndex = getCategoryIndexForEase(key.easeType);
 		if(selectedIndex < 0) {
-			selectedIndex = key.easeType;
+			selectedIndex = key.easeType == AMKey.EaseTypeNone ? AMTimeline.easeTypeNames.Length - 1 : key.easeType;
 			category = 0;
 		}
 		
@@ -121,8 +121,11 @@ public class AMEasePicker : EditorWindow {
 		if(percent > 1f+waitPercent) percent = waitPercent*-1f;
 		float x_pos_start = 50f;
 		float x_pos_end = position.width-50f-80f-200f;
-		
-		if(percent <= 1f) {
+
+		if(getSelectedEaseIndex(category,selectedIndex) == AMTimeline.easeTypeNames.Length - 1) {
+			x_pos = x_pos_start;
+		}
+		else if(percent <= 1f) {
 			if(isCustomEase) {
                 x_pos = AMUtil.EaseCustom(x_pos_start, x_pos_end - x_pos_start, percent < 0f ? 0f : percent, curve);
 			} else {
@@ -137,7 +140,6 @@ public class AMEasePicker : EditorWindow {
 
 	
 	void OnGUI() {
-		
 		this.title = "Ease: "+(oData.time_numbering ? AMTimeline.frameToTime(key.frame,(float)aData.getCurrentTake().frameRate)+" s" : key.frame.ToString());
 		AMTimeline.loadSkin(oData, ref skin, ref cachedSkinName, position);
 		bool updateEasingCurve = false;
@@ -189,6 +191,7 @@ public class AMEasePicker : EditorWindow {
 			GUILayout.BeginHorizontal();
 				if(GUILayout.Button("Apply")) {
 					int nease = getSelectedEaseIndex(category,selectedIndex);
+					if(nease == AMTimeline.easeTypeNames.Length - 1) nease = AMKey.EaseTypeNone;
 					bool shouldUpdateCache = false;
 					if(isCustomEase) {
 						key.setCustomEase(curve);
@@ -272,6 +275,10 @@ public class AMEasePicker : EditorWindow {
 		return easeTypesFiltered[_category][_index];
 	}
 	private int getCategoryIndexForEase(int _index) {
+		if(_index == AMKey.EaseTypeNone) {
+			_index = AMTimeline.easeTypeNames.Length - 1;
+		}
+
 		string ease = easeTypesFiltered[0][_index];
 		return easeTypesFiltered[category].IndexOf(ease);
 	}
@@ -295,14 +302,19 @@ public class AMEasePicker : EditorWindow {
 	}
 	
 	public void setEasingCurve() {
-		if(getSelectedEaseName(category,selectedIndex) == "Custom") {
+		string name = getSelectedEaseName(category,selectedIndex);
+		if(name == "None") {
+			curve = new AnimationCurve();
+			curve.AddKey(new Keyframe(0, 0, 1, 1));
+			curve.AddKey(new Keyframe(1, 0, 1, 1));
+		}
+		else if(name == "Custom") {
 			if(curve.length <= 0) {
 				curve = getCurve(EaseType.Linear);
 				this.Repaint();
 			}
 			return;
 		}
-		curve = new AnimationCurve();
 		curve = getCurve((EaseType)getSelectedEaseIndex(category,selectedIndex));
 		selectedCurve = getCurve((EaseType)getSelectedEaseIndex(category,selectedIndex));
 		this.Repaint();

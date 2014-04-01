@@ -51,6 +51,11 @@ public class AMTranslationKey : AMKey {
 
     public override Tweener buildTweener(Sequence sequence, int frameRate) {
         if(!obj) return null;
+
+		if(easeType == EaseTypeNone) {
+			return HOTween.To(obj, getTime(frameRate), new TweenParms().Prop(isLocal ? "localPosition" : "position", new AMPlugNoTween(position)));
+		}
+
         if(path.Length <= 1) return null;
         if(getNumberOfFrames() <= 0) return null;
 

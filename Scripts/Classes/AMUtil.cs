@@ -100,50 +100,41 @@ public struct AMUtil {
         return null;
     }
 
-    public static Vector3[] PathControlPointGenerator(Vector3[] path) {
-        Vector3[] suppliedPath;
-        Vector3[] vector3s;
-
-        //create and store path points:
-        suppliedPath = path;
-
-        //populate calculate path;
-        int offset = 2;
-        vector3s = new Vector3[suppliedPath.Length + offset];
-        System.Array.Copy(suppliedPath, 0, vector3s, 1, suppliedPath.Length);
-
-        //populate start and end control points:
-        //vector3s[0] = vector3s[1] - vector3s[2];
-        vector3s[0] = vector3s[1] + (vector3s[1] - vector3s[2]);
-        vector3s[vector3s.Length - 1] = vector3s[vector3s.Length - 2] + (vector3s[vector3s.Length - 2] - vector3s[vector3s.Length - 3]);
-
-        //is this a closed, continuous loop? yes? well then so let's make a continuous Catmull-Rom spline!
-        if(vector3s[1] == vector3s[vector3s.Length - 2]) {
-            Vector3[] tmpLoopSpline = new Vector3[vector3s.Length];
-            System.Array.Copy(vector3s, tmpLoopSpline, vector3s.Length);
-            tmpLoopSpline[0] = tmpLoopSpline[tmpLoopSpline.Length - 3];
-            tmpLoopSpline[tmpLoopSpline.Length - 1] = tmpLoopSpline[2];
-            vector3s = new Vector3[tmpLoopSpline.Length];
-            System.Array.Copy(tmpLoopSpline, vector3s, tmpLoopSpline.Length);
-        }
-
-        return (vector3s);
-    }
-
     //andeeee from the Unity forum's steller Catmull-Rom class ( http://forum.unity3d.com/viewtopic.php?p=218400#218400 ):
     public static Vector3 Interp(Vector3[] pts, float t) {
-        int numSections = pts.Length - 3;
+        int numSections = pts.Length - 1;
         int currPt = Mathf.Min(Mathf.FloorToInt(t * (float)numSections), numSections - 1);
         float u = t * (float)numSections - (float)currPt;
 
-        /*if(currPt < 0 || currPt >= pts.Length) {
-            Debug.Log("WTF: " + currPt + " t: "+t+" len: "+pts.Length);
-        }*/
+		Vector3 a,b,c,d;
 
-        Vector3 a = pts[currPt];
-        Vector3 b = pts[currPt + 1];
-        Vector3 c = pts[currPt + 2];
-        Vector3 d = pts[currPt + 3];
+		bool isLoop = pts[0] == pts[pts.Length - 1];
+
+		if(currPt == 0) {
+			if(isLoop)
+				a = pts[pts.Length - 2];
+			else
+				a = pts[0] + (pts[0] - pts[1]);
+
+			b = pts[0];
+			c = pts[1];
+
+			if(pts.Length < 3) {
+				d = isLoop ? pts[1] : pts[1] + (pts[1] - pts[0]);
+			}
+			else
+				d = pts[2];
+		}
+		else {
+			a = pts[currPt - 1];
+			b = pts[currPt];
+			c = pts[currPt + 1];
+
+			if(currPt + 2 >= pts.Length)
+				d = isLoop ? pts[1] : pts[pts.Length - 1] + (pts[pts.Length - 1] - pts[pts.Length - 2]);
+			else
+				d = pts[currPt + 2];
+		}
 
         return .5f * (
             (-a + 3f * b - 3f * c + d) * (u * u * u)
@@ -167,9 +158,9 @@ public struct AMUtil {
     /// </param>
     public static void PutOnPath(GameObject target, Vector3[] path, float percent, bool local) {
         if(local)
-            target.transform.localPosition = Interp(PathControlPointGenerator(path), percent);
+            target.transform.localPosition = Interp(path, percent);
         else
-            target.transform.position = Interp(PathControlPointGenerator(path), percent);
+            target.transform.position = Interp(path, percent);
     }
 
     /// <summary>
@@ -186,13 +177,13 @@ public struct AMUtil {
     /// </param>
     public static void PutOnPath(Transform target, Vector3[] path, float percent, bool local) {
         if(local)
-            target.localPosition = Interp(PathControlPointGenerator(path), percent);
+            target.localPosition = Interp(path, percent);
         else
-            target.position = Interp(PathControlPointGenerator(path), percent);
+            target.position = Interp(path, percent);
     }
     // get position on path
     public static Vector3 PositionOnPath(Vector3[] path, float percent) {
-        return Interp(PathControlPointGenerator(path), percent);
+        return Interp(path, percent);
     }
     /// <summary>
     /// Puts a GameObject on a path at the provided percentage 
@@ -214,9 +205,9 @@ public struct AMUtil {
         }
 
         if(local)
-            target.transform.position = Interp(PathControlPointGenerator(suppliedPath), percent);
+            target.transform.position = Interp(suppliedPath, percent);
         else
-            target.transform.localPosition = Interp(PathControlPointGenerator(suppliedPath), percent);
+            target.transform.localPosition = Interp(suppliedPath, percent);
     }
 
     /// <summary>
@@ -239,9 +230,9 @@ public struct AMUtil {
         }
 
         if(local)
-            target.localPosition = Interp(PathControlPointGenerator(suppliedPath), percent);
+            target.localPosition = Interp(suppliedPath, percent);
         else
-            target.position = Interp(PathControlPointGenerator(suppliedPath), percent);
+            target.position = Interp(suppliedPath, percent);
     }
 
     /// <summary>
@@ -262,7 +253,7 @@ public struct AMUtil {
         for(int i = 0; i < path.Length; i++) {
             suppliedPath[i] = local ? path[i].localPosition : path[i].position;
         }
-        return (Interp(PathControlPointGenerator(suppliedPath), percent));
+        return (Interp(suppliedPath, percent));
     }
 
     /// <summary>
@@ -278,6 +269,6 @@ public struct AMUtil {
     /// A <see cref="Vector3"/>
     /// </returns>
     public static Vector3 PointOnPath(Vector3[] path, float percent) {
-        return (Interp(PathControlPointGenerator(path), percent));
+        return (Interp(path, percent));
     }
 }

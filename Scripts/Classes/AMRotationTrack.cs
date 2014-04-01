@@ -130,7 +130,12 @@ public class AMRotationTrack : AMTrack {
             //a.type = (keys[i] as AMRotationKey).type;
 
             if(keys.Count > (i + 1)) key.endFrame = keys[i + 1].frame;
-            else key.endFrame = -1;
+            else {
+				if(i > 0 && keys[i-1].easeType == AMKey.EaseTypeNone)
+					key.easeType = AMKey.EaseTypeNone;
+
+				key.endFrame = -1;
+			}
             key.obj = _obj;
             key.isLocal = _isLocal;
             // quaternions
@@ -155,8 +160,8 @@ public class AMRotationTrack : AMTrack {
         // if lies on rotation action
         foreach(AMRotationKey key in keys) {
             if((frame < (float)key.frame) || (frame > (float)key.endFrame)) continue;
-            // if on startFrame
-            if(frame == (float)key.frame) {
+            // if on startFrame or is no ease
+            if(frame == (float)key.frame || (key.easeType == AMKey.EaseTypeNone && frame < (float)key.endFrame)) {
                 rotation = key.getStartQuaternion();
                 return;
             }
@@ -220,8 +225,8 @@ public class AMRotationTrack : AMTrack {
         // if lies on rotation action
         foreach(AMRotationKey key in keys) {
             if((frame < (float)key.frame) || (frame > (float)key.endFrame)) continue;
-            // if on startFrame
-            if(frame == (float)key.frame) {
+            // if on startFrame or no ease
+			if(frame == (float)key.frame || (key.easeType == AMKey.EaseTypeNone && frame < (float)key.endFrame)) {
                 return key.getStartQuaternion();
             }
             // if on endFrame

@@ -130,7 +130,8 @@ public class AMTimeline : EditorWindow {
         "easeInBounce",
         "easeOutBounce",
         "easeInOutBounce",
-		"Custom"
+		"Custom",
+		"None"
 	};
     private string[] wrapModeNames = {
 		"Once",	
@@ -1005,7 +1006,7 @@ public class AMTimeline : EditorWindow {
 			AMTake prevTake = aData.getPreviousTake(); //if(takes == null || currentTake >= takes.Count) return null;
 									            
             if(prevTake != null) {
-                List<UnityEngine.Object> ret = aData.duplicateTake(prevTake);
+                List<UnityEngine.Object> ret = aData.duplicateTake(prevTake, true);
                 foreach(UnityEngine.Object newObj in ret)
 					Undo.RegisterCreatedObjectUndo(newObj, label);
             }
@@ -3584,7 +3585,9 @@ public class AMTimeline : EditorWindow {
             GUI.Label(rectLabel, "Ease");
             Rect rectPopup = new Rect(rectLabel.x + rectLabel.width + 2f, y + 3f, width - rectLabel.width - width_button_delete - 3f, height);
 
-			int nease = EditorGUI.Popup(rectPopup, key.easeType, easeTypeNames);
+			int popInd = key.easeType == AMKey.EaseTypeNone ? easeTypeNames.Length - 1 : key.easeType;
+			int nease = EditorGUI.Popup(rectPopup, popInd, easeTypeNames);
+			if(nease == easeTypeNames.Length - 1) nease = AMKey.EaseTypeNone;
 			if(key.easeType != nease) {
 				recordUndoTrackAndKeys(track, false, "Change Ease");
 				key.setEaseType(nease);
@@ -3639,7 +3642,9 @@ public class AMTimeline : EditorWindow {
             GUILayout.EndVertical();
             GUILayout.BeginVertical();
             GUILayout.Space(3f);
-			int nease = EditorGUILayout.Popup(key.easeType, easeTypeNames);
+			int popInd = key.easeType == AMKey.EaseTypeNone ? easeTypeNames.Length - 1 : key.easeType;
+			int nease = EditorGUILayout.Popup(popInd, easeTypeNames);
+			if(nease == easeTypeNames.Length - 1) nease = AMKey.EaseTypeNone;
 			if(key.easeType != nease) {
 				recordUndoTrackAndKeys(track, false, "Change Ease");
 				key.setEaseType(nease);
@@ -4414,15 +4419,18 @@ public class AMTimeline : EditorWindow {
     }
     // timeline action info
     string getInfoTextForAction(AMTrack _track, AMKey _key, bool brief, int clamped) {
+		int easeInd = _key.easeType;
+		if(easeInd == AMKey.EaseTypeNone) easeInd = easeTypeNames.Length - 1;
+
         // get text for track type
         #region translation
         if(_key is AMTranslationKey) {
-            return easeTypeNames[(_key as AMTranslationKey).easeType];
+            return easeTypeNames[easeInd];
         #endregion
             #region rotation
         }
         else if(_key is AMRotationKey) {
-            return easeTypeNames[(_key as AMRotationKey).easeType];
+            return easeTypeNames[easeInd];
             #endregion
             #region animation
         }
@@ -4442,7 +4450,7 @@ public class AMTimeline : EditorWindow {
             string info = (_key as AMPropertyKey).getName() + "\n";
             if((_key as AMPropertyKey).targetsAreEqual()) brief = true;
             if(!brief && (_key as AMPropertyKey).endFrame != -1) {
-                info += easeTypeNames[(_key as AMPropertyKey).easeType] + ": ";
+				info += easeTypeNames[easeInd] + ": ";
             }
             string detail = (_key as AMPropertyKey).getValueString(brief);	// extra details such as integer values ex. 1 -> 12
             if(detail != null) info += detail;
@@ -4480,7 +4488,7 @@ public class AMTimeline : EditorWindow {
             }
             txtInfoOrientation = (_key as AMOrientationKey).target.gameObject.name +
             " -> " + ((_key as AMOrientationKey).endTarget ? (_key as AMOrientationKey).endTarget.gameObject.name : "No Target");
-            txtInfoOrientation += "\n" + easeTypeNames[(_key as AMOrientationKey).easeType];
+			txtInfoOrientation += "\n" + easeTypeNames[easeInd];
             return txtInfoOrientation;
             #endregion
             #region goactive

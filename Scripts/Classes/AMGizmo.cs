@@ -144,15 +144,13 @@ public struct AMGizmo {
 
     //trans = the transform where path is relative to, null if path is already in world position
     private static void DrawPathHelper(Transform trans, Vector3[] path, Color color, string method) {
-        Vector3[] vector3s = AMUtil.PathControlPointGenerator(path);
-
         //Line Draw:
-        Vector3 prevPt = trans != null ? trans.localToWorldMatrix.MultiplyPoint(AMUtil.Interp(vector3s, 0)) : AMUtil.Interp(vector3s, 0);
+		Vector3 prevPt = trans != null ? trans.localToWorldMatrix.MultiplyPoint(AMUtil.Interp(path, 0)) : AMUtil.Interp(path, 0);
         Gizmos.color = color;
         int SmoothAmount = path.Length * 20;
         for(int i = 1; i <= SmoothAmount; i++) {
             float pm = (float)i / SmoothAmount;
-            Vector3 currPt = AMUtil.Interp(vector3s, pm);
+			Vector3 currPt = AMUtil.Interp(path, pm);
             if(trans != null)
                 currPt = trans.localToWorldMatrix.MultiplyPoint(currPt);
             if(method == "gizmos") {

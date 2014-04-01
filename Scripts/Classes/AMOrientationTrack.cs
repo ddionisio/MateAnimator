@@ -46,7 +46,12 @@ public class AMOrientationTrack : AMTrack {
 			key.version = version;
 			
 			if(keys.Count > (i + 1)) key.endFrame = keys[i + 1].frame;
-			else key.endFrame = -1;
+			else {
+				if(i > 0 && keys[i-1].easeType == AMKey.EaseTypeNone)
+					key.easeType = AMKey.EaseTypeNone;
+
+				key.endFrame = -1;
+			}
 			key.obj = obj;
 			// targets
 			if(key.endFrame != -1) key.endTarget = (keys[i + 1] as AMOrientationKey).target;
@@ -65,25 +70,30 @@ public class AMOrientationTrack : AMTrack {
             return;
         }
         for(int i = 0; i < keys.Count; i++) {
+			AMOrientationKey key = keys[i] as AMOrientationKey;
+
+			if(key.easeType == AMKey.EaseTypeNone && frame == (float)key.endFrame && i < keys.Count - 1)
+				continue;
+
             // before first frame
-            if(frame <= (keys[i] as AMOrientationKey).frame) {
-                if(!(keys[i] as AMOrientationKey).target) return;
-                obj.LookAt((keys[i] as AMOrientationKey).target);
+			if(frame <= key.frame) {
+				if(!key.target) return;
+				obj.LookAt(key.target);
                 return;
                 // between first and last frame
             }
-            else if(frame <= (keys[i] as AMOrientationKey).endFrame) {
-                if(!(keys[i] as AMOrientationKey).target || !(keys[i] as AMOrientationKey).endTarget) return;
+			else if(frame <= key.endFrame) {
+				if(!key.target || !key.endTarget) return;
                 float framePositionInPath = frame - (float)keys[i].frame;
                 if(framePositionInPath < 0f) framePositionInPath = 0f;
                 float percentage = framePositionInPath / keys[i].getNumberOfFrames();
-                obj.rotation = (keys[i] as AMOrientationKey).getQuaternionAtPercent(percentage);
+				obj.rotation = key.getQuaternionAtPercent(percentage);
                 return;
                 // after last frame
             }
             else if(i == keys.Count - 2) {
-                if(!(keys[i] as AMOrientationKey).endTarget) return;
-                obj.LookAt((keys[i] as AMOrientationKey).endTarget);
+				if(!key.endTarget) return;
+				obj.LookAt(key.endTarget);
                 return;
             }
         }

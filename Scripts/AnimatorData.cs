@@ -175,61 +175,6 @@ public class AnimatorData : MonoBehaviour {
         }
     }
 
-    public object Invoker(object[] args) {
-        switch((int)args[0]) {
-            // check if is playing
-            case 0:
-                return isPlaying;
-            // get take name
-            case 1:
-                return takeName;
-            // play
-            case 2:
-                Play((string)args[1], true, 0f, (bool)args[2]);
-                break;
-            // stop
-            case 3:
-                Stop();
-                break;
-            // pause
-            case 4:
-                Pause();
-                break;
-            // resume
-            case 5:
-                Resume();
-                break;
-            // play from time
-            case 6:
-                Play((string)args[1], false, (float)args[2], (bool)args[3]);
-                break;
-            // play from frame
-            case 7:
-                Play((string)args[1], true, (float)((int)args[2]), (bool)args[3]);
-                break;
-            // preview frame
-            case 8:
-                PreviewValue((string)args[1], true, (float)args[2]);
-                break;
-            // preview time
-            case 9:
-                PreviewValue((string)args[1], false, (float)args[2]);
-                break;
-            // running time
-            case 10:
-                return runningTime;
-            // total time
-            case 11:
-                if(takeName == null) return 0f;
-                else return (float)nowPlayingTake.numFrames / (float)nowPlayingTake.frameRate;
-            case 12:
-                return isPaused;
-            default:
-                break;
-        }
-        return null;
-    }
-
     void OnDestroy() {
         if(!Application.isPlaying) {
             if(_dataHolder) {
@@ -243,13 +188,6 @@ public class AnimatorData : MonoBehaviour {
             }
         }
 
-        /*playOnStart = null;
-
-        foreach(AMTake take in takes) {
-            take.destroy();
-        }
-
-        takes.Clear();*/
         takeCompleteCallback = null;
     }
 
@@ -584,7 +522,7 @@ public class AnimatorData : MonoBehaviour {
     /// This will only duplicate the tracks and groups
     /// </summary>
     /// <param name="take"></param>
-    public List<UnityEngine.Object> duplicateTake(AMTake dupTake) {
+    public List<UnityEngine.Object> duplicateTake(AMTake dupTake, bool includeKeys) {
         List<UnityEngine.Object> ret = new List<Object>();
 
         AMTake a = AMTake.NewInstance(dataHolder);
@@ -629,6 +567,18 @@ public class AnimatorData : MonoBehaviour {
                 AMTrack dupTrack = track.duplicate(a);
 
                 a.trackValues.Add(dupTrack);
+
+				if(includeKeys) {
+					foreach(AMKey key in track.keys) {
+						AMKey dupKey = key.CreateClone(gameObject);
+						if(dupKey) {
+							dupTrack.keys.Add(dupKey);
+							ret.Add(dupKey);
+						}
+					}
+
+					dupTrack.updateCache();
+				}
 
                 ret.Add(dupTrack);
             }

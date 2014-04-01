@@ -14,7 +14,7 @@ public class AMPlugGOActive : ABSTweenPlugin {
 
     protected override object startVal { get { return _startVal; } set { _startVal = value; } }
 
-    protected override object endVal { get { return _endVal; } set { _endVal = value; } }
+	protected override object endVal { get { return _endVal; } set { _endVal = value; } }
 
     public AMPlugGOActive(bool end)
         : base(null, false) { eVal = end; }

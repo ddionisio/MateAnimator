@@ -156,19 +156,26 @@ public class AMTranslationTrack : AMTrack {
         // if before first frame
         if(frame <= (float)(keys[0] as AMTranslationKey).startFrame) {
             AMTranslationKey key = keys[0] as AMTranslationKey;
-            position = key.path.Length == 0 ? key.position : key.path[0];
+			position = key.easeType == AMKey.EaseTypeNone || key.path.Length == 0 ? key.position : key.path[0];
             return;
         }
         // if beyond last frame
         if(frame >= (float)(keys[keys.Count - 1] as AMTranslationKey).endFrame) {
             AMTranslationKey key = keys[keys.Count - 1] as AMTranslationKey;
-            position = key.path.Length == 0 ? key.position : key.path[key.path.Length - 1];
+			position = key.easeType == AMKey.EaseTypeNone || key.path.Length == 0 ? key.position : key.path[key.path.Length - 1];
             return;
         }
         // if lies on curve
         foreach(AMTranslationKey key in keys) {
-            if(key.path.Length == 0 || ((int)frame < key.startFrame) || ((int)frame > key.endFrame)) continue;
-            if(key.path.Length == 1) {
+            if(((int)frame < key.startFrame) || ((int)frame > key.endFrame)) continue;
+			if(key.easeType == AMKey.EaseTypeNone && (int)frame < key.endFrame) {
+				position = key.position;
+				return;
+			}
+			else if(key.path.Length == 0) {
+				continue;
+			}
+            else if(key.path.Length == 1) {
                 position = key.path[0];
                 return;
             }
@@ -220,19 +227,27 @@ public class AMTranslationTrack : AMTrack {
         // if before first frame
         else if(frame <= (float)(keys[0] as AMTranslationKey).startFrame) {
             AMTranslationKey key = keys[0] as AMTranslationKey;
-            ret = key.path.Length == 0 ? key.position : key.path[0];
+            ret = key.easeType == AMKey.EaseTypeNone || key.path.Length == 0 ? key.position : key.path[0];
         }
         // if beyond last frame
         else if(frame >= (float)(keys[keys.Count - 1] as AMTranslationKey).endFrame) {
             AMTranslationKey key = keys[keys.Count - 1] as AMTranslationKey;
-            ret = key.path.Length == 0 ? key.position : key.path[key.path.Length - 1];
+			ret = key.easeType == AMKey.EaseTypeNone || key.path.Length == 0 ? key.position : key.path[key.path.Length - 1];
         }
         else {
             bool retFound = false;
             // if lies on curve
             foreach(AMTranslationKey key in keys) {
-                if(key.path.Length == 0 || ((int)frame < key.startFrame) || ((int)frame > key.endFrame)) continue;
-                if(key.path.Length == 1) {
+                if(((int)frame < key.startFrame) || ((int)frame > key.endFrame)) continue;
+				if(key.easeType == AMKey.EaseTypeNone && (int)frame < key.endFrame) {
+					ret = key.position;
+					retFound = true;
+					break;
+				}
+				else if(key.path.Length == 0) {
+					continue;
+				}
+                else if(key.path.Length == 1) {
                     ret = key.path[0];
                     retFound = true;
                     break;
@@ -267,19 +282,25 @@ public class AMTranslationTrack : AMTrack {
     // draw gizmos
     public override void drawGizmos(float gizmo_size) {
         foreach(AMTranslationKey key in keys) {
-            if(key != null && key.path.Length > 1) {
-                if(_isLocal && _obj != null && _obj.parent != null) {
-                    AMGizmo.DrawPathRelative(_obj.parent, key.path, new Color(255f, 255f, 255f, .5f));
-                    Gizmos.color = Color.green;
-                    Gizmos.DrawSphere(_obj.parent.localToWorldMatrix.MultiplyPoint(key.path[0]), gizmo_size);
-                    Gizmos.DrawSphere(_obj.parent.localToWorldMatrix.MultiplyPoint(key.path[key.path.Length - 1]), gizmo_size);
-                }
-                else {
-                    AMGizmo.DrawPath(key.path, new Color(255f, 255f, 255f, .5f));
-                    Gizmos.color = Color.green;
-                    Gizmos.DrawSphere(key.path[0], gizmo_size);
-                    Gizmos.DrawSphere(key.path[key.path.Length - 1], gizmo_size);
-                }
+            if(key != null) {
+				if(key.easeType == AMKey.EaseTypeNone) {
+					Gizmos.color = Color.green;
+					Gizmos.DrawSphere(key.position, gizmo_size);
+				}
+				else if(key.path.Length > 1) {
+	                if(_isLocal && _obj != null && _obj.parent != null) {
+	                    AMGizmo.DrawPathRelative(_obj.parent, key.path, new Color(255f, 255f, 255f, .5f));
+	                    Gizmos.color = Color.green;
+	                    Gizmos.DrawSphere(_obj.parent.localToWorldMatrix.MultiplyPoint(key.path[0]), gizmo_size);
+	                    Gizmos.DrawSphere(_obj.parent.localToWorldMatrix.MultiplyPoint(key.path[key.path.Length - 1]), gizmo_size);
+	                }
+	                else {
+	                    AMGizmo.DrawPath(key.path, new Color(255f, 255f, 255f, .5f));
+	                    Gizmos.color = Color.green;
+	                    Gizmos.DrawSphere(key.path[0], gizmo_size);
+	                    Gizmos.DrawSphere(key.path[key.path.Length - 1], gizmo_size);
+	                }
+				}
             }
         }
     }
@@ -294,18 +315,23 @@ public class AMTranslationTrack : AMTrack {
 
         path.Add((keys[startIndex] as AMTranslationKey).position);
 
-
         // get path from startIndex until the next linear interpolation key (inclusive)
         for(int i = startIndex + 1; i < keys.Count; i++) {
-            path.Add((keys[i] as AMTranslationKey).position);
+			AMTranslationKey key = keys[i] as AMTranslationKey;
+            path.Add(key.position);
             endFrame = keys[i].frame;
             endIndex = i;
-            if((keys[i] as AMTranslationKey).interp == (int)AMTranslationKey.Interpolation.Linear) break;
+			if(keys[startIndex].easeType == AMKey.EaseTypeNone 
+			   || key.easeType == AMKey.EaseTypeNone 
+			   || key.interp == (int)AMTranslationKey.Interpolation.Linear) break;
         }
         return new AMPath(path.ToArray(), (keys[startIndex] as AMTranslationKey).interp, startFrame, endFrame, startIndex, endIndex);
     }
     // update cache (optimized)
     public override void updateCache() {
+		//force local, using global is useless
+		isLocal = true;
+
         AMPath path;
         // sort keys
         sortKeys();
@@ -313,18 +339,33 @@ public class AMTranslationTrack : AMTrack {
         for(int i = 0; i < keys.Count; i++) {
             AMTranslationKey key = keys[i] as AMTranslationKey;
 
+			int easeType = key.easeType;
+
             key.version = version;
-
-            //force local, using global is useless
-            isLocal = true;
-
+			            
             path = getPathFromIndex(i);
 
             key.isLocal = _isLocal;
             key.startFrame = path.startFrame;
             key.endFrame = path.endFrame;
             key.obj = _obj;
-            key.path = path.path;
+
+			if(key.easeType == AMKey.EaseTypeNone) {
+				key.path = new Vector3[0];
+
+				if(path.endIndex == keys.Count - 1) {
+					AMTranslationKey lastKey = keys[path.endIndex] as AMTranslationKey;
+					lastKey.easeType = AMKey.EaseTypeNone;
+					lastKey.isLocal = _isLocal;
+					lastKey.startFrame = path.endFrame;
+					lastKey.endFrame = path.endFrame;
+					lastKey.obj = _obj;
+					lastKey.path = new Vector3[0];
+				}
+			}
+			else {
+				key.path = path.path;
+			}
 
             //invalidate some keys in between
             if(path.startIndex < keys.Count - 1) {
@@ -332,7 +373,7 @@ public class AMTranslationTrack : AMTrack {
                     key = keys[i] as AMTranslationKey;
 
                     key.version = version;
-
+					key.easeType = easeType;
                     key.isLocal = _isLocal;
                     key.startFrame = key.frame;
                     key.endFrame = key.frame;

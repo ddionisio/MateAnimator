@@ -346,7 +346,12 @@ public class AMPropertyTrack : AMTrack {
 
             key.component = component;
             if(keys.Count > (i + 1)) key.endFrame = keys[i + 1].frame;
-            else key.endFrame = -1;
+            else {
+				if(i > 0 && keys[i-1].easeType == AMKey.EaseTypeNone)
+					key.easeType = AMKey.EaseTypeNone;
+
+				key.endFrame = -1;
+			}
             key.valueType = valueType;
             Type _type = null;
             bool showError = true;
@@ -550,8 +555,8 @@ public class AMPropertyTrack : AMTrack {
         foreach(AMPropertyKey key in keys) {
             if((frame < (float)key.frame) || (frame > (float)key.endFrame)) continue;
             if(quickPreview && !key.targetsAreEqual()) return;	// quick preview; if action will execute then skip
-            // if on startFrame
-            if(frame == (float)key.frame) {
+            // if on startFrame or is no tween
+            if(frame == (float)key.frame || (key.easeType == AMKey.EaseTypeNone && key.endFrame < (float)key.endFrame)) {
                 if(fieldInfo != null) {
                     fieldInfo.SetValue(component, key.getStartValue());
                     refreshTransform();
@@ -583,9 +588,11 @@ public class AMPropertyTrack : AMTrack {
             float framePositionInAction = frame - (float)key.frame;
             if(framePositionInAction < 0f) framePositionInAction = 0f;
 
-            float t = 0.0f;
+            float t;
 
-            if(key.hasCustomEase()) {
+			if(key.easeType == AMKey.EaseTypeNone)
+				t = 0.0f;
+            else if(key.hasCustomEase()) {
                 t = AMUtil.EaseCustom(0.0f, 1.0f, framePositionInAction / key.getNumberOfFrames(), key.easeCurve);
             }
             else {

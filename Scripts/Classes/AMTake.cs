@@ -1464,23 +1464,12 @@ public class AMTake : MonoBehaviour {
     #endregion
 
     public void destroy() {
-        foreach(AMTrack track in trackValues) {
-            track.destroy();
-        }
-		trackValues.Clear();
-
-		if(groupValues != null)
-        	groupValues.Clear();
-        rootGroup = null;
-
         if(mSequence != null) {
             HOTween.Kill(mSequence);
             mSequence = null;
         }
 
         sequenceCompleteCallback = null;
-
-        DestroyImmediate(this);
     }
 
     public List<GameObject> getDependencies() {

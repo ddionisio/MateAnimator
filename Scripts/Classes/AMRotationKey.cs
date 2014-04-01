@@ -67,8 +67,11 @@ public class AMRotationKey : AMKey {
     }
     public override Tweener buildTweener(Sequence sequence, int frameRate) {
         if(!obj) return null;
-        if(endFrame == -1) return null;
-        if(hasCustomEase()) {
+		if(easeType == EaseTypeNone) {
+			return HOTween.To(obj, getTime(frameRate), new TweenParms().Prop(isLocal ? "localRotation" : "rotation", new AMPlugNoTween(rotation)));
+		}
+		else if(endFrame == -1) return null;
+        else if(hasCustomEase()) {
             return HOTween.To(obj, getTime(frameRate), new TweenParms().Prop(isLocal ? "localRotation" : "rotation", new AMPlugQuaternionSlerp(endRotation)).Ease(easeCurve));
         }
         else {

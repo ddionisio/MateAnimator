@@ -181,7 +181,7 @@ public class AMPropertyKey : AMKey {
     }
     public override Tweener buildTweener(Sequence sequence, int frameRate) {
         if(targetsAreEqual()) return null;
-        if((endFrame == -1) || !component || ((fieldInfo == null) && (propertyInfo == null) && (methodInfo == null))) return null;
+        if((endFrame == -1 && easeType != EaseTypeNone) || !component || ((fieldInfo == null) && (propertyInfo == null) && (methodInfo == null))) return null;
 
         string varName = null;
 
@@ -193,7 +193,32 @@ public class AMPropertyKey : AMKey {
         }
         //return HOTween.To(obj, getTime(frameRate), new TweenParms().Prop(isLocal ? "localRotation" : "rotation", new AMPlugQuaternionSlerp(endRotation)).Ease(easeCurve));
         if(varName != null) {
-            if(hasCustomEase()) {
+			if(easeType == EaseTypeNone) {
+				float t = endFrame == -1 ? 1.0f/(float)frameRate : getTime(frameRate);
+				switch((AMPropertyTrack.ValueType)valueType) {
+				case AMPropertyTrack.ValueType.Integer:
+					return HOTween.To(component, t, new TweenParms().Prop(varName, new AMPlugNoTween(Convert.ToInt32(val))));
+				case AMPropertyTrack.ValueType.Float:
+					return HOTween.To(component, t, new TweenParms().Prop(varName, new AMPlugNoTween(Convert.ToSingle(end_val))));
+				case AMPropertyTrack.ValueType.Double:
+					return HOTween.To(component, t, new TweenParms().Prop(varName, new AMPlugNoTween(new AMPlugDouble(end_val))));
+				case AMPropertyTrack.ValueType.Long:
+					return HOTween.To(component, t, new TweenParms().Prop(varName, new AMPlugNoTween(Convert.ToInt64(end_val))));
+				case AMPropertyTrack.ValueType.Vector2:
+					return HOTween.To(component, t, new TweenParms().Prop(varName, new AMPlugNoTween(end_vect2)));
+				case AMPropertyTrack.ValueType.Vector3:
+					return HOTween.To(component, t, new TweenParms().Prop(varName, new AMPlugNoTween(end_vect3)));
+				case AMPropertyTrack.ValueType.Color:
+					return HOTween.To(component, t, new TweenParms().Prop(varName, new AMPlugNoTween(end_color)));
+				case AMPropertyTrack.ValueType.Rect:
+					return HOTween.To(component, t, new TweenParms().Prop(varName, new AMPlugNoTween(end_rect)));
+				case AMPropertyTrack.ValueType.Vector4:
+					return HOTween.To(component, t, new TweenParms().Prop(varName, new AMPlugNoTween(end_vect4)));
+				case AMPropertyTrack.ValueType.Quaternion:
+					return HOTween.To(component, t, new TweenParms().Prop(varName, new AMPlugNoTween(end_quat)));
+				}
+			}
+            else if(hasCustomEase()) {
                 switch((AMPropertyTrack.ValueType)valueType) {
                     case AMPropertyTrack.ValueType.Integer:
                         return HOTween.To(component, getTime(frameRate), new TweenParms().Prop(varName, Convert.ToInt32(end_val)).Ease(easeCurve));
