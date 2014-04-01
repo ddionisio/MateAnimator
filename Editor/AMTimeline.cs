@@ -2201,6 +2201,25 @@ public class AMTimeline : EditorWindow {
             }
         }
     }
+	void drawBox(int cached_action_startFrame, int cached_action_endFrame, int _startFrame, int _endFrame, Rect rectTimelineActions, float birdsEyeWidth, Texture texBox) {
+		if(cached_action_startFrame > 0 && cached_action_endFrame > 0 && cached_action_endFrame > _startFrame && cached_action_startFrame < _endFrame) {
+			if(cached_action_startFrame <= _startFrame) {
+				rectTimelineActions.x = 0f;
+			}
+			else {
+				rectTimelineActions.x = (cached_action_startFrame - _startFrame) * current_width_frame;
+			}
+			if(cached_action_endFrame >= _endFrame) {
+				rectTimelineActions.width = birdsEyeWidth;//rectFramesBirdsEye.width;
+			}
+			else {
+				rectTimelineActions.width = (cached_action_endFrame - (_startFrame >= cached_action_startFrame ? _startFrame : cached_action_startFrame) + 1) * current_width_frame;
+			}
+			// draw timeline action texture
+			
+			if(rectTimelineActions.width > 0f) GUI.DrawTexture(rectTimelineActions, texBox);
+		}
+	}
     void showFrames(AMTrack _track, ref float track_y, Event e, bool birdseye, Vector2 scrollViewBounds) {
         //string tooltip = "";
         int t = _track.id;
@@ -2407,61 +2426,106 @@ public class AMTimeline : EditorWindow {
             Rect rectTimelineActions = new Rect(0f, _current_height_frame, 0f, height_track - current_height_frame);	// used to group textures into one draw call
             if(!drawEachAction) {
                 if(_track.keys.Count > 0) {
-                    if(_track is AMTranslationTrack && _track.keys.Count > 1 && _track.keys[0] && _track.keys[_track.keys.Count - 1]) {
-                        // translation track, from first action frame to end action frame
-                        cached_action_startFrame = _track.keys[0].getStartFrame();
-                        cached_action_endFrame = (_track.keys[_track.keys.Count - 1] as AMTranslationKey).endFrame;
-                        texBox = texBoxGreen;
-                    }
-                    else if(_track is AMRotationTrack && _track.keys.Count > 1 && _track.keys[0] && _track.keys[_track.keys.Count - 1]) {
-                        // rotation track, from first action start frame to last action start frame
-                        cached_action_startFrame = _track.keys[0].getStartFrame();
-                        cached_action_endFrame = _track.keys[_track.keys.Count - 1].getStartFrame();
-                        texBox = texBoxYellow;
-                    }
-                    else if(_track is AMOrientationTrack && _track.keys.Count > 1 && _track.keys[0] && _track.keys[_track.keys.Count - 1]) {
-                        // orientation track, from first action start frame to last action start frame
-                        cached_action_startFrame = _track.keys[0].getStartFrame();
-                        cached_action_endFrame = _track.keys[_track.keys.Count - 1].getStartFrame();
-                        texBox = texBoxOrange;
-                    }
-                    else if(_track is AMPropertyTrack) {
-                        // property track, full track width
-                        cached_action_startFrame = _startFrame;
-                        cached_action_endFrame = _endFrame;
-                        texBox = texBoxLightBlue;
-                    }
-                    else if(_track is AMEventTrack && _track.keys[0]) {
-                        // event track, from first action start frame to end frame
-                        cached_action_startFrame = _track.keys[0].getStartFrame();
-                        cached_action_endFrame = _endFrame;
-                        texBox = texBoxDarkBlue;
-                    }
-                    else if(_track is AMGOSetActiveTrack && _track.keys[0]) {
-                        // go set active track, from first action start frame to end frame
-                        cached_action_startFrame = _track.keys[0].getStartFrame();
-                        cached_action_endFrame = _endFrame;
-                        texBox = texBoxDarkBlue;
-                    }
-                }
-                if(cached_action_startFrame > 0 && cached_action_endFrame > 0) {
-                    if(cached_action_startFrame <= _startFrame) {
-                        rectTimelineActions.x = 0f;
-                    }
-                    else {
-                        rectTimelineActions.x = (cached_action_startFrame - _startFrame) * current_width_frame;
-                    }
-                    if(cached_action_endFrame >= _endFrame) {
-                        rectTimelineActions.width = rectFramesBirdsEye.width;
-                    }
-                    else {
-                        rectTimelineActions.width = (cached_action_endFrame - (_startFrame >= cached_action_startFrame ? _startFrame : cached_action_startFrame) + 1) * current_width_frame;
-                    }
-                    // draw timeline action texture
+					if(_track is AMEventTrack) {
+						// event track, from first action start frame to end frame
+						cached_action_startFrame = _track.keys[0].getStartFrame();
+						cached_action_endFrame = _endFrame;
+						texBox = texBoxDarkBlue;
+						drawBox(cached_action_startFrame, cached_action_endFrame, _startFrame, _endFrame, rectTimelineActions, rectFramesBirdsEye.width, texBox);
+					}
+					else if(_track is AMGOSetActiveTrack) {
+						texBox = texBoxDarkBlue;
 
-                    if(rectTimelineActions.width > 0f) GUI.DrawTexture(rectTimelineActions, texBox);
-                }
+						int lastStartInd = -1;
+						
+						for(int i = 0; i < _track.keys.Count; i++) {
+							AMGOSetActiveKey key = _track.keys[i] as AMGOSetActiveKey;
 
+							bool draw = false;
+							
+							if(key.setActive) {
+								if(lastStartInd == -1)
+									lastStartInd = i;
+
+								if(i == _track.keys.Count - 1)
+									draw = true;
+							}
+							else if(lastStartInd != -1 || (i == 0 && (_track as AMGOSetActiveTrack).startActive)) {
+								draw = true;
+							}
+							
+							if(draw) {
+								if(i == 0 && !key.setActive) {
+									cached_action_startFrame = _startFrame;
+									cached_action_endFrame = _track.keys[i].getStartFrame() - 1;
+								}
+								else {
+									cached_action_startFrame = _track.keys[lastStartInd].getStartFrame();
+									cached_action_endFrame = i == _track.keys.Count - 1 && key.setActive ? _endFrame : _track.keys[i].getStartFrame();
+								}
+
+								drawBox(cached_action_startFrame, cached_action_endFrame, _startFrame, _endFrame, rectTimelineActions, rectFramesBirdsEye.width, texBox);
+								
+								lastStartInd = -1;
+								if(cached_action_endFrame >= _endFrame)
+									break;
+							}
+						}
+					}
+					else {
+						int lastStartInd = -1;
+
+						for(int i = 0; i < _track.keys.Count; i++) {
+							bool draw = false;
+
+							if(_track.keys[i].easeType == AMKey.EaseTypeNone) {
+								if(i == 0 || _track.keys[i - 1].easeType == AMKey.EaseTypeNone) {
+									lastStartInd = i;
+									draw = true;
+								}
+								else if(lastStartInd == -1)
+									continue;
+								else {
+									draw = true;
+								}
+							}
+							else if(lastStartInd == -1) {
+								lastStartInd = i;
+							}
+							else if(i == _track.keys.Count - 1)
+								draw = true;
+
+							if(draw) {
+								if(_track is AMTranslationTrack) {
+									// translation track, from first action frame to end action frame
+									cached_action_startFrame = _track.keys[lastStartInd].getStartFrame();
+									cached_action_endFrame = _track.keys[lastStartInd].easeType == AMKey.EaseTypeNone ? cached_action_startFrame : (_track.keys[i] as AMTranslationKey).endFrame;
+									texBox = texBoxGreen;
+								}
+								else {
+									cached_action_startFrame = _track.keys[lastStartInd].getStartFrame();
+									cached_action_endFrame = _track.keys[i].getStartFrame();
+
+									if(_track is AMRotationTrack) {
+										texBox = texBoxYellow;
+									}
+									else if(_track is AMOrientationTrack) {
+										texBox = texBoxOrange;
+									}
+									else if(_track is AMPropertyTrack) {
+										texBox = texBoxLightBlue;
+									}
+								}
+
+								drawBox(cached_action_startFrame, cached_action_endFrame, _startFrame, _endFrame, rectTimelineActions, rectFramesBirdsEye.width, texBox);
+
+								lastStartInd = -1;
+								if(cached_action_endFrame >= _endFrame)
+									break;
+							}
+						}
+					}
+                }
             }
             #endregion
             string txtInfo;
@@ -4420,16 +4484,17 @@ public class AMTimeline : EditorWindow {
     // timeline action info
     string getInfoTextForAction(AMTrack _track, AMKey _key, bool brief, int clamped) {
 		int easeInd = _key.easeType;
-		if(easeInd == AMKey.EaseTypeNone) easeInd = easeTypeNames.Length - 1;
 
         // get text for track type
         #region translation
         if(_key is AMTranslationKey) {
+			if(easeInd == AMKey.EaseTypeNone) { return ""; }
             return easeTypeNames[easeInd];
         #endregion
             #region rotation
         }
         else if(_key is AMRotationKey) {
+			if(easeInd == AMKey.EaseTypeNone) { return ""; }
             return easeTypeNames[easeInd];
             #endregion
             #region animation
@@ -4447,12 +4512,14 @@ public class AMTimeline : EditorWindow {
             #region property
         }
         else if(_key is AMPropertyKey) {
-            string info = (_key as AMPropertyKey).getName() + "\n";
-            if((_key as AMPropertyKey).targetsAreEqual()) brief = true;
-            if(!brief && (_key as AMPropertyKey).endFrame != -1) {
+			AMPropertyKey propkey = _key as AMPropertyKey;
+
+			string info = propkey.getName() + "\n";
+			if(propkey.targetsAreEqual() || easeInd == AMKey.EaseTypeNone) brief = true;
+			if(!brief && propkey.endFrame != -1 && easeInd != AMKey.EaseTypeNone) {
 				info += easeTypeNames[easeInd] + ": ";
             }
-            string detail = (_key as AMPropertyKey).getValueString(brief);	// extra details such as integer values ex. 1 -> 12
+			string detail = propkey.getValueString(brief);	// extra details such as integer values ex. 1 -> 12
             if(detail != null) info += detail;
             return info;
             #endregion
@@ -4480,6 +4547,8 @@ public class AMTimeline : EditorWindow {
             #region orientation
         }
         else if(_key is AMOrientationKey) {
+			if(easeInd == AMKey.EaseTypeNone) { return ""; }
+
             if(!(_key as AMOrientationKey).target) return "No Target";
             string txtInfoOrientation = null;
             if((_key as AMOrientationKey).isLookFollow()) {
@@ -4496,11 +4565,7 @@ public class AMTimeline : EditorWindow {
         else if(_key is AMGOSetActiveKey) {
             AMGOSetActiveKey act = _key as AMGOSetActiveKey;
             if(!act.go) return "No GameObject";
-
-            if(brief)
-                return string.Format("{0}.SetActive({1})", act.go.name, (_track as AMGOSetActiveTrack).startActive);
-            else
-                return string.Format("{0}.SetActive({1})", act.go.name, act.setActive);
+			return "";
             #endregion
         }
 

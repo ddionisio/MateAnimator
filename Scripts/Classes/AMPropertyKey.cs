@@ -199,23 +199,23 @@ public class AMPropertyKey : AMKey {
 				case AMPropertyTrack.ValueType.Integer:
 					return HOTween.To(component, t, new TweenParms().Prop(varName, new AMPlugNoTween(Convert.ToInt32(val))));
 				case AMPropertyTrack.ValueType.Float:
-					return HOTween.To(component, t, new TweenParms().Prop(varName, new AMPlugNoTween(Convert.ToSingle(end_val))));
+					return HOTween.To(component, t, new TweenParms().Prop(varName, new AMPlugNoTween(Convert.ToSingle(val))));
 				case AMPropertyTrack.ValueType.Double:
-					return HOTween.To(component, t, new TweenParms().Prop(varName, new AMPlugNoTween(new AMPlugDouble(end_val))));
+					return HOTween.To(component, t, new TweenParms().Prop(varName, new AMPlugNoTween(new AMPlugDouble(val))));
 				case AMPropertyTrack.ValueType.Long:
-					return HOTween.To(component, t, new TweenParms().Prop(varName, new AMPlugNoTween(Convert.ToInt64(end_val))));
+					return HOTween.To(component, t, new TweenParms().Prop(varName, new AMPlugNoTween(Convert.ToInt64(val))));
 				case AMPropertyTrack.ValueType.Vector2:
-					return HOTween.To(component, t, new TweenParms().Prop(varName, new AMPlugNoTween(end_vect2)));
+					return HOTween.To(component, t, new TweenParms().Prop(varName, new AMPlugNoTween(vect2)));
 				case AMPropertyTrack.ValueType.Vector3:
-					return HOTween.To(component, t, new TweenParms().Prop(varName, new AMPlugNoTween(end_vect3)));
+					return HOTween.To(component, t, new TweenParms().Prop(varName, new AMPlugNoTween(vect3)));
 				case AMPropertyTrack.ValueType.Color:
-					return HOTween.To(component, t, new TweenParms().Prop(varName, new AMPlugNoTween(end_color)));
+					return HOTween.To(component, t, new TweenParms().Prop(varName, new AMPlugNoTween(color)));
 				case AMPropertyTrack.ValueType.Rect:
-					return HOTween.To(component, t, new TweenParms().Prop(varName, new AMPlugNoTween(end_rect)));
+					return HOTween.To(component, t, new TweenParms().Prop(varName, new AMPlugNoTween(rect)));
 				case AMPropertyTrack.ValueType.Vector4:
-					return HOTween.To(component, t, new TweenParms().Prop(varName, new AMPlugNoTween(end_vect4)));
+					return HOTween.To(component, t, new TweenParms().Prop(varName, new AMPlugNoTween(vect4)));
 				case AMPropertyTrack.ValueType.Quaternion:
-					return HOTween.To(component, t, new TweenParms().Prop(varName, new AMPlugNoTween(end_quat)));
+					return HOTween.To(component, t, new TweenParms().Prop(varName, new AMPlugNoTween(quat)));
 				}
 			}
             else if(hasCustomEase()) {
