@@ -20,7 +20,9 @@ public class AMPropertyTrack : AMTrack {
         Rect = 7,
         String = 9,
         Vector4 = 10,
-        Quaternion = 11
+        Quaternion = 11,
+
+		Bool = 12,
     }
     public int valueType;
     public GameObject obj;
@@ -78,6 +80,11 @@ public class AMPropertyTrack : AMTrack {
             cachedMethodInfo = value;
         }
     }
+	public bool canTween {
+		get {
+			return !(valueType == (int)ValueType.Bool || valueType == (int)ValueType.String);
+		}
+	}
     public override string getTrackType() {
         if(fieldInfo != null) return fieldInfo.Name;
         if(propertyInfo != null) return propertyInfo.Name;
@@ -104,6 +111,10 @@ public class AMPropertyTrack : AMTrack {
     public AMKey addKey(int _frame) {
         if(isValueTypeNumeric(valueType))
             return addKey(_frame, getPropertyValueNumeric());
+		else if(valueType == (int)ValueType.Bool)
+			return addKey(_frame, getPropertyValueBool());
+		else if(valueType == (int)ValueType.String)
+			return addKey(_frame, getPropertyValueString());
         else if(valueType == (int)ValueType.Vector2)
             return addKey(_frame, getPropertyValueVector2());
         else if(valueType == (int)ValueType.Vector3)
@@ -144,6 +155,52 @@ public class AMPropertyTrack : AMTrack {
         updateCache();
         return a;
     }
+	// add key bool
+	public AMKey addKey(int _frame, bool val) {
+		foreach(AMPropertyKey key in keys) {
+			// if key exists on frame, update key
+			if(key.frame == _frame) {
+				key.setValue(val);
+				// update cache
+				updateCache();
+				return null;
+			}
+		}
+		AMPropertyKey a = gameObject.AddComponent<AMPropertyKey>();
+		a.enabled = false;
+		a.frame = _frame;
+		a.setValue(val);
+		// set default ease type to linear
+		a.easeType = (int)EaseType.Linear;
+		// add a new key
+		keys.Add(a);
+		// update cache
+		updateCache();
+		return a;
+	}
+	// add key string
+	public AMKey addKey(int _frame, string val) {
+		foreach(AMPropertyKey key in keys) {
+			// if key exists on frame, update key
+			if(key.frame == _frame) {
+				key.setValue(val);
+				// update cache
+				updateCache();
+				return null;
+			}
+		}
+		AMPropertyKey a = gameObject.AddComponent<AMPropertyKey>();
+		a.enabled = false;
+		a.frame = _frame;
+		a.setValue(val);
+		// set default ease type to linear
+		a.easeType = (int)EaseType.Linear;
+		// add a new key
+		keys.Add(a);
+		// update cache
+		updateCache();
+		return a;
+	}
     // add key vector2
     public AMKey addKey(int _frame, Vector2 val) {
         foreach(AMPropertyKey key in keys) {
@@ -397,7 +454,7 @@ public class AMPropertyTrack : AMTrack {
             else if(_type == typeof(Quaternion)) {
                 if(key.endFrame != -1) key.end_quat = (keys[i + 1] as AMPropertyKey).quat;
             }
-            else {
+            else if(key.canTween) {
                 Debug.LogError("Animator: Fatal Error, property type '" + _type.ToString() + "' not found.");
                 key.destroy();
                 return;
@@ -406,6 +463,20 @@ public class AMPropertyTrack : AMTrack {
         base.updateCache();
 
     }
+
+	public bool getPropertyValueBool() {
+		if(fieldInfo != null)
+			return Convert.ToBoolean(fieldInfo.GetValue(component));
+		else
+			return Convert.ToBoolean(propertyInfo.GetValue(component, null));
+	}
+
+	public string getPropertyValueString() {
+		if(fieldInfo != null)
+			return Convert.ToString(fieldInfo.GetValue(component));
+		else
+			return Convert.ToString(propertyInfo.GetValue(component, null));
+	}
 
     // get numeric value. unsafe, must check to see if value is numeric first
     public double getPropertyValueNumeric() {
@@ -480,7 +551,7 @@ public class AMPropertyTrack : AMTrack {
     }
 
     public static bool isValidType(Type t) {
-        if((t == typeof(int)) || (t == typeof(long)) || (t == typeof(float)) || (t == typeof(double)) || (t == typeof(Vector2)) || (t == typeof(Vector3)) || (t == typeof(Color)) || (t == typeof(Rect)) || (t == typeof(Vector4)) || (t == typeof(Quaternion)))
+		if(isNumeric(t) || (t == typeof(bool)) || (t == typeof(string)) || (t == typeof(Vector2)) || (t == typeof(Vector3)) || (t == typeof(Color)) || (t == typeof(Rect)) || (t == typeof(Vector4)) || (t == typeof(Quaternion)))
             return true;
         return false;
     }
@@ -509,6 +580,10 @@ public class AMPropertyTrack : AMTrack {
             valueType = (int)ValueType.Vector4;
         else if(t == typeof(Quaternion))
             valueType = (int)ValueType.Quaternion;
+		else if(t == typeof(bool))
+			valueType = (int)ValueType.Bool;
+		else if(t == typeof(string))
+			valueType = (int)ValueType.String;
         else {
             valueType = -1;
             Debug.LogWarning("Animator: Value type " + t.ToString() + " is unsupported.");
@@ -538,6 +613,19 @@ public class AMPropertyTrack : AMTrack {
             return;
         }
         // if beyond or equal to last frame
+		if(!canTween && frame >= (float)(keys[keys.Count - 1] as AMPropertyKey).frame) {
+			if(fieldInfo != null) {
+				fieldInfo.SetValue(component, (keys[keys.Count - 1] as AMPropertyKey).getStartValue());
+				refreshTransform();
+			}
+			else if(propertyInfo != null) {
+				propertyInfo.SetValue(component, (keys[keys.Count - 1] as AMPropertyKey).getStartValue(), null);
+				refreshTransform();
+			}
+			else if(methodInfo != null) {
+			}
+			return;
+		}
         if(frame >= (float)(keys[keys.Count - 2] as AMPropertyKey).endFrame) {
             if(fieldInfo != null) {
                 fieldInfo.SetValue(component, (keys[keys.Count - 2] as AMPropertyKey).getEndValue());
@@ -556,7 +644,7 @@ public class AMPropertyTrack : AMTrack {
             if((frame < (float)key.frame) || (frame > (float)key.endFrame)) continue;
             if(quickPreview && !key.targetsAreEqual()) return;	// quick preview; if action will execute then skip
             // if on startFrame or is no tween
-            if(frame == (float)key.frame || (key.easeType == AMKey.EaseTypeNone && key.endFrame < (float)key.endFrame)) {
+            if(frame == (float)key.frame || ((key.easeType == AMKey.EaseTypeNone || !key.canTween) && frame < (float)key.endFrame)) {
                 if(fieldInfo != null) {
                     fieldInfo.SetValue(component, key.getStartValue());
                     refreshTransform();
@@ -571,17 +659,21 @@ public class AMPropertyTrack : AMTrack {
             }
             // if on endFrame
             if(frame == (float)key.endFrame) {
-                if(fieldInfo != null) {
-                    fieldInfo.SetValue(component, key.getEndValue());
-                    refreshTransform();
-                }
-                else if(propertyInfo != null) {
-                    propertyInfo.SetValue(component, key.getEndValue(), null);
-                    refreshTransform();
-                }
-                else if(methodInfo != null) {
-                }
-                return;
+				if(key.easeType == AMKey.EaseTypeNone || !key.canTween)
+					continue;
+				else {
+	                if(fieldInfo != null) {
+	                    fieldInfo.SetValue(component, key.getEndValue());
+	                    refreshTransform();
+	                }
+	                else if(propertyInfo != null) {
+	                    propertyInfo.SetValue(component, key.getEndValue(), null);
+	                    refreshTransform();
+	                }
+	                else if(methodInfo != null) {
+	                }
+	                return;
+				}
             }
             // else find value using easing function
 

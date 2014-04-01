@@ -2461,7 +2461,7 @@ public class AMTimeline : EditorWindow {
 								}
 								else {
 									cached_action_startFrame = _track.keys[lastStartInd].getStartFrame();
-									cached_action_endFrame = i == _track.keys.Count - 1 && key.setActive ? _endFrame : _track.keys[i].getStartFrame();
+									cached_action_endFrame = i == _track.keys.Count - 1 && key.setActive ? _endFrame : _track.keys[i].getStartFrame() - 1;
 								}
 
 								drawBox(cached_action_startFrame, cached_action_endFrame, _startFrame, _endFrame, rectTimelineActions, rectFramesBirdsEye.width, texBox);
@@ -3016,6 +3016,38 @@ public class AMTimeline : EditorWindow {
 					setDirtyKeys(sTrack);
                 }
             }
+			else if((sTrack as AMPropertyTrack).valueType == (int)AMPropertyTrack.ValueType.Bool) {
+				bool val = pKey.val > 0.0;
+				bool nval = EditorGUI.Toggle(rectField, propertyLabel, val);
+				if(val != nval) {
+					recordUndoTrackAndKeys(sTrack, false, "Change Property Value");
+					pKey.setValue(nval);
+					// update cache when modifying varaibles
+					sTrack.updateCache();
+					AMCodeView.refresh();
+					// preview new value
+					aData.getCurrentTake().previewFrame(aData.getCurrentTake().selectedFrame);
+					// save data
+					EditorUtility.SetDirty(sTrack);
+					setDirtyKeys(sTrack);
+				}
+			}
+			else if((sTrack as AMPropertyTrack).valueType == (int)AMPropertyTrack.ValueType.String) {
+				string val = pKey.valString;
+				string nval = EditorGUI.TextField(rectField, propertyLabel, val);
+				if(val != nval) {
+					recordUndoTrackAndKeys(sTrack, false, "Change Property Value");
+					pKey.setValue(nval);
+					// update cache when modifying varaibles
+					sTrack.updateCache();
+					AMCodeView.refresh();
+					// preview new value
+					aData.getCurrentTake().previewFrame(aData.getCurrentTake().selectedFrame);
+					// save data
+					EditorUtility.SetDirty(sTrack);
+					setDirtyKeys(sTrack);
+				}
+			}
             else if((sTrack as AMPropertyTrack).valueType == (int)AMPropertyTrack.ValueType.Vector2) {
                 rectField.height = 40f;
 				Vector2 nval = EditorGUI.Vector2Field(rectField, propertyLabel, pKey.vect2);
@@ -3098,7 +3130,8 @@ public class AMTimeline : EditorWindow {
                 }
             }
             // property ease, show if not last key (check for action; there is no rotation action for last key). do not show for morph channels, because it is shown before the parameters
-            if(pKey != (sTrack as AMPropertyTrack).keys[(sTrack as AMPropertyTrack).keys.Count - 1]) {
+			// don't show on non-tweenable
+            if(pKey.canTween && pKey != (sTrack as AMPropertyTrack).keys[(sTrack as AMPropertyTrack).keys.Count - 1]) {
                 Rect rectEasePicker = new Rect(0f, rectField.y + rectField.height + height_inspector_space, width_inspector - margin, 0f);
                 showEasePicker(sTrack, pKey, aData, rectEasePicker.x, rectEasePicker.y, rectEasePicker.width);
             }
@@ -4515,7 +4548,7 @@ public class AMTimeline : EditorWindow {
 			AMPropertyKey propkey = _key as AMPropertyKey;
 
 			string info = propkey.getName() + "\n";
-			if(propkey.targetsAreEqual() || easeInd == AMKey.EaseTypeNone) brief = true;
+			if(propkey.targetsAreEqual() || easeInd == AMKey.EaseTypeNone || !propkey.canTween) brief = true;
 			if(!brief && propkey.endFrame != -1 && easeInd != AMKey.EaseTypeNone) {
 				info += easeTypeNames[easeInd] + ": ";
             }

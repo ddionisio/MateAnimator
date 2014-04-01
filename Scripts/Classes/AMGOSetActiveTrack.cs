@@ -66,7 +66,7 @@ public class AMGOSetActiveTrack : AMTrack {
         }
         // if lies on property action
         foreach(AMGOSetActiveKey key in keys) {
-            if((frame < (float)key.frame) || (frame > (float)key.endFrame)) continue;
+			if((frame < (float)key.frame) || (key.endFrame != -1 && frame >= (float)key.endFrame)) continue;
 
             obj.SetActive(key.setActive);
             return;

@@ -66,6 +66,7 @@ public class AMPropertyKey : AMKey {
 
     //union for single values
     public double val;	// value as double
+	public string valString; //string
 
     //union for vectors, color, rect
     public Vector4 vect4;
@@ -83,6 +84,27 @@ public class AMPropertyKey : AMKey {
     public Color end_color { get { return new Color(end_vect4.x, end_vect4.y, end_vect4.z, end_vect4.w); } set { end_vect4.Set(value.r, value.g, value.b, value.a); } }
     public Rect end_rect { get { return new Rect(end_vect4.x, end_vect4.y, end_vect4.z, end_vect4.w); } set { end_vect4.Set(value.xMin, value.yMin, value.width, value.height); } }
     public Quaternion end_quat { get { return new Quaternion(end_vect4.x, end_vect4.y, end_vect4.z, end_vect4.w); } set { end_vect4.Set(value.x, value.y, value.z, value.w); } }
+
+	public bool canTween {
+		get { return !(valueType == (int)AMPropertyTrack.ValueType.Bool || valueType == (int)AMPropertyTrack.ValueType.String); }
+	}
+
+	public bool setValue(bool val) {
+		double nval = val ? 1.0 : -1.0;
+		if(this.val != nval) {
+			this.val = nval;
+			return true;
+		}
+		return false;
+	}
+
+	public bool setValue(string val) {
+		if(this.valString != val) {
+			this.valString = val;
+			return true;
+		}
+		return false;
+	}
 
     public bool setValue(float val) {
         if(this.val != (double)val) {
@@ -165,6 +187,7 @@ public class AMPropertyKey : AMKey {
         a.enabled = false;
         a.frame = frame;
         a.val = val;
+		a.valString = valString;
         a.vect4 = vect4;
         a.easeType = easeType;
         a.customEase = new List<float>(customEase);
@@ -181,7 +204,7 @@ public class AMPropertyKey : AMKey {
     }
     public override Tweener buildTweener(Sequence sequence, int frameRate) {
         if(targetsAreEqual()) return null;
-        if((endFrame == -1 && easeType != EaseTypeNone) || !component || ((fieldInfo == null) && (propertyInfo == null) && (methodInfo == null))) return null;
+        if((endFrame == -1 && (easeType != EaseTypeNone || canTween)) || !component || ((fieldInfo == null) && (propertyInfo == null) && (methodInfo == null))) return null;
 
         string varName = null;
 
@@ -193,8 +216,17 @@ public class AMPropertyKey : AMKey {
         }
         //return HOTween.To(obj, getTime(frameRate), new TweenParms().Prop(isLocal ? "localRotation" : "rotation", new AMPlugQuaternionSlerp(endRotation)).Ease(easeCurve));
         if(varName != null) {
-			if(easeType == EaseTypeNone) {
+			if(valueType == (int)AMPropertyTrack.ValueType.Bool) {
+				return HOTween.To(component, endFrame == -1 ? 1.0f/(float)frameRate : getTime(frameRate), 
+				                  new TweenParms().Prop(varName, new AMPlugNoTween(val > 0.0)));
+			}
+			else if(valueType == (int)AMPropertyTrack.ValueType.String) {
+				return HOTween.To(component, endFrame == -1 ? 1.0f/(float)frameRate : getTime(frameRate), 
+				                  new TweenParms().Prop(varName, new AMPlugNoTween(valString)));
+			}
+			else if(easeType == EaseTypeNone) {
 				float t = endFrame == -1 ? 1.0f/(float)frameRate : getTime(frameRate);
+
 				switch((AMPropertyTrack.ValueType)valueType) {
 				case AMPropertyTrack.ValueType.Integer:
 					return HOTween.To(component, t, new TweenParms().Prop(varName, new AMPlugNoTween(Convert.ToInt32(val))));
@@ -301,6 +333,12 @@ public class AMPropertyKey : AMKey {
             if(!brief && endFrame != -1) s += " -> " + formatNumeric(end_val);
             //if(!brief && endFrame != -1) s += " -> "+end_val.ToString();
         }
+		else if(valueType == (int)AMPropertyTrack.ValueType.Bool) {
+			s += (val > 0.0 ? "(true)" : "(false)");
+		}
+		else if(valueType == (int)AMPropertyTrack.ValueType.String) {
+			s += string.Format("\"{0}\"", valString);
+		}
         else if(valueType == (int)AMPropertyTrack.ValueType.Vector2) {
             s += vect2.ToString();
             if(!brief && endFrame != -1) s += " -> " + end_vect2.ToString();
@@ -355,6 +393,8 @@ public class AMPropertyKey : AMKey {
     }
 
     public bool targetsAreEqual() {
+		if(valueType == (int)AMPropertyTrack.ValueType.String || valueType == (int)AMPropertyTrack.ValueType.Bool)
+			return false;
         if(valueType == (int)AMPropertyTrack.ValueType.Integer || valueType == (int)AMPropertyTrack.ValueType.Long || valueType == (int)AMPropertyTrack.ValueType.Float || valueType == (int)AMPropertyTrack.ValueType.Double)
             return val == end_val;
         if(valueType == (int)AMPropertyTrack.ValueType.Vector2) return (vect2 == end_vect2);
@@ -379,6 +419,8 @@ public class AMPropertyKey : AMKey {
         if(valueType == (int)AMPropertyTrack.ValueType.Rect) return rect; //return start_rect.ToString()+" -> "+end_rect.ToString();
         if(valueType == (int)AMPropertyTrack.ValueType.Vector4) return vect4;
         if(valueType == (int)AMPropertyTrack.ValueType.Quaternion) return quat;
+		if(valueType == (int)AMPropertyTrack.ValueType.Bool) return val > 0.0;
+		if(valueType == (int)AMPropertyTrack.ValueType.String) return valString;
         return "Unknown";
     }
     public object getEndValue() {
@@ -392,6 +434,8 @@ public class AMPropertyKey : AMKey {
         if(valueType == (int)AMPropertyTrack.ValueType.Rect) return end_rect; //return start_rect.ToString()+" -> "+end_rect.ToString();
         if(valueType == (int)AMPropertyTrack.ValueType.Vector4) return end_vect4;
         if(valueType == (int)AMPropertyTrack.ValueType.Quaternion) return end_quat;
+		if(valueType == (int)AMPropertyTrack.ValueType.Bool) return val > 0.0;
+		if(valueType == (int)AMPropertyTrack.ValueType.String) return valString;
         return "Unknown";
     }
     #endregion
