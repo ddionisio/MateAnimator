@@ -3135,6 +3135,25 @@ public class AMTimeline : EditorWindow {
 					setDirtyKeys(sTrack);
                 }
             }
+			else if((sTrack as AMPropertyTrack).valueType == (int)AMPropertyTrack.ValueType.Sprite) {
+				UnityEngine.Object val = pKey.valObj;
+				GUI.skin = null; EditorGUIUtility.LookLikeControls();
+				rectField.height = 16.0f;
+				UnityEngine.Object nval = EditorGUI.ObjectField(rectField, val, typeof(Sprite), false);
+				GUI.skin = skin; EditorGUIUtility.LookLikeControls();
+				if(val != nval) {
+					recordUndoTrackAndKeys(sTrack, false, "Change Property Value");
+					pKey.setValue(nval);
+					// update cache when modifying varaibles
+					sTrack.updateCache();
+					AMCodeView.refresh();
+					// preview new value
+					aData.getCurrentTake().previewFrame(aData.getCurrentTake().selectedFrame);
+					// save data
+					EditorUtility.SetDirty(sTrack);
+					setDirtyKeys(sTrack);
+				}
+			}
             // property ease, show if not last key (check for action; there is no rotation action for last key). do not show for morph channels, because it is shown before the parameters
 			// don't show on non-tweenable
             if(pKey.canTween && pKey != (sTrack as AMPropertyTrack).keys[(sTrack as AMPropertyTrack).keys.Count - 1]) {

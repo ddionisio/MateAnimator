@@ -23,6 +23,7 @@ public class AMPropertyTrack : AMTrack {
         Quaternion = 11,
 
 		Bool = 12,
+		Sprite = 13,
     }
     public int valueType;
     public GameObject obj;
@@ -82,7 +83,7 @@ public class AMPropertyTrack : AMTrack {
     }
 	public bool canTween {
 		get {
-			return !(valueType == (int)ValueType.Bool || valueType == (int)ValueType.String);
+			return !(valueType == (int)ValueType.Bool || valueType == (int)ValueType.String || valueType == (int)ValueType.Sprite);
 		}
 	}
     public override string getTrackType() {
@@ -112,7 +113,7 @@ public class AMPropertyTrack : AMTrack {
         if(isValueTypeNumeric(valueType))
             return addKey(_frame, getPropertyValueNumeric());
 		else if(valueType == (int)ValueType.Bool)
-			return addKey(_frame, getPropertyValueBool());
+			return addKey(_frame, getPropertyValueBool() ? 1.0 : -1.0);
 		else if(valueType == (int)ValueType.String)
 			return addKey(_frame, getPropertyValueString());
         else if(valueType == (int)ValueType.Vector2)
@@ -127,6 +128,8 @@ public class AMPropertyTrack : AMTrack {
             return addKey(_frame, getPropertyValueVector4());
         else if(valueType == (int)ValueType.Quaternion)
             return addKey(_frame, getPropertyValueQuaternion());
+		else if(valueType == (int)ValueType.Sprite)
+			return addKey(_frame, getPropertyValueObject());
         else {
             Debug.LogError("Animator: Invalid ValueType " + valueType.ToString());
             return null;
@@ -155,8 +158,8 @@ public class AMPropertyTrack : AMTrack {
         updateCache();
         return a;
     }
-	// add key bool
-	public AMKey addKey(int _frame, bool val) {
+	// add key object
+	public AMKey addKey(int _frame, UnityEngine.Object val) {
 		foreach(AMPropertyKey key in keys) {
 			// if key exists on frame, update key
 			if(key.frame == _frame) {
@@ -544,6 +547,14 @@ public class AMPropertyTrack : AMTrack {
             return (Rect)propertyInfo.GetValue(component, null);
 
     }
+	public UnityEngine.Object getPropertyValueObject() {
+		// field
+		if(fieldInfo != null)
+			return (UnityEngine.Object)fieldInfo.GetValue(component);
+		// property
+		else
+			return (UnityEngine.Object)propertyInfo.GetValue(component, null);
+	}
     public static bool isNumeric(Type t) {
         if((t == typeof(int)) || (t == typeof(long)) || (t == typeof(float)) || (t == typeof(double)))
             return true;
@@ -551,7 +562,7 @@ public class AMPropertyTrack : AMTrack {
     }
 
     public static bool isValidType(Type t) {
-		if(isNumeric(t) || (t == typeof(bool)) || (t == typeof(string)) || (t == typeof(Vector2)) || (t == typeof(Vector3)) || (t == typeof(Color)) || (t == typeof(Rect)) || (t == typeof(Vector4)) || (t == typeof(Quaternion)))
+		if(isNumeric(t) || (t == typeof(bool)) || (t == typeof(string)) || (t == typeof(Vector2)) || (t == typeof(Vector3)) || (t == typeof(Color)) || (t == typeof(Rect)) || (t == typeof(Vector4)) || (t == typeof(Quaternion)) || (t == typeof(Sprite)))
             return true;
         return false;
     }
@@ -584,6 +595,8 @@ public class AMPropertyTrack : AMTrack {
 			valueType = (int)ValueType.Bool;
 		else if(t == typeof(string))
 			valueType = (int)ValueType.String;
+		else if(t == typeof(Sprite))
+			valueType = (int)ValueType.Sprite;
         else {
             valueType = -1;
             Debug.LogWarning("Animator: Value type " + t.ToString() + " is unsupported.");
@@ -598,45 +611,57 @@ public class AMPropertyTrack : AMTrack {
         if(!component || !obj) return;
 
         // if before or equal to first frame, or is the only frame
-        if((frame <= (float)keys[0].frame) || ((keys[0] as AMPropertyKey).endFrame == -1)) {
+		AMPropertyKey ckey = keys[0] as AMPropertyKey;
+		if((frame <= (float)ckey.frame) || ckey.endFrame == -1) {
             //obj.rotation = (cache[0] as AMPropertyAction).getStartQuaternion();
             if(fieldInfo != null) {
-                fieldInfo.SetValue(component, (keys[0] as AMPropertyKey).getStartValue());
+				fieldInfo.SetValue(component, ckey.getStartValue());
                 refreshTransform();
             }
             else if(propertyInfo != null) {
-                propertyInfo.SetValue(component, (keys[0] as AMPropertyKey).getStartValue(), null);
+				propertyInfo.SetValue(component, ckey.getStartValue(), null);
                 refreshTransform();
             }
             else if(methodInfo != null) {
             }
+			ckey.refresh(ckey.getStartValue());
             return;
         }
-        // if beyond or equal to last frame
-		if(!canTween && frame >= (float)(keys[keys.Count - 1] as AMPropertyKey).frame) {
+        // if not tweenable and beyond last frame
+		ckey = keys[keys.Count - 1] as AMPropertyKey;
+		if(!canTween && frame >= (float)ckey.frame) {
 			if(fieldInfo != null) {
-				fieldInfo.SetValue(component, (keys[keys.Count - 1] as AMPropertyKey).getStartValue());
+				fieldInfo.SetValue(component, ckey.getStartValue());
 				refreshTransform();
 			}
 			else if(propertyInfo != null) {
-				propertyInfo.SetValue(component, (keys[keys.Count - 1] as AMPropertyKey).getStartValue(), null);
+				propertyInfo.SetValue(component, ckey.getStartValue(), null);
 				refreshTransform();
 			}
 			else if(methodInfo != null) {
 			}
+
+			if(valueType == (int)ValueType.Sprite) {
+				SpriteRenderer sprRender = component as SpriteRenderer;
+				sprRender.sprite = ckey.getStartValue() as Sprite;
+			}
+			ckey.refresh(ckey.getStartValue());
 			return;
 		}
-        if(frame >= (float)(keys[keys.Count - 2] as AMPropertyKey).endFrame) {
+		//if tweenable and beyond last tweenable
+		ckey = keys[keys.Count - 2] as AMPropertyKey;
+		if(frame >= (float)ckey.endFrame) {
             if(fieldInfo != null) {
-                fieldInfo.SetValue(component, (keys[keys.Count - 2] as AMPropertyKey).getEndValue());
+				fieldInfo.SetValue(component, ckey.getEndValue());
                 refreshTransform();
             }
             else if(propertyInfo != null) {
-                propertyInfo.SetValue(component, (keys[keys.Count - 2] as AMPropertyKey).getEndValue(), null);
+				propertyInfo.SetValue(component, ckey.getEndValue(), null);
                 refreshTransform();
             }
             else if(methodInfo != null) {
             }
+			ckey.refresh(ckey.getEndValue());
             return;
         }
         // if lies on property action
@@ -655,6 +680,7 @@ public class AMPropertyTrack : AMTrack {
                 }
                 else if(methodInfo != null) {
                 }
+				key.refresh(key.getStartValue());
                 return;
             }
             // if on endFrame
@@ -672,6 +698,7 @@ public class AMPropertyTrack : AMTrack {
 	                }
 	                else if(methodInfo != null) {
 	                }
+					key.refresh(key.getEndValue());
 	                return;
 				}
             }
@@ -699,7 +726,7 @@ public class AMPropertyTrack : AMTrack {
                 int vCurrentInteger = Mathf.RoundToInt(Mathf.Lerp(vStartInteger, vEndInteger, t));
                 if(fieldInfo != null) fieldInfo.SetValue(component, vCurrentInteger);
                 else if(propertyInfo != null) propertyInfo.SetValue(component, vCurrentInteger, null);
-                refreshTransform();
+				refreshTransform(); key.refresh(vCurrentInteger);
             }
             else if(key.valueType == (int)ValueType.Long) {
                 float vStartLong = Convert.ToSingle(key.val);
@@ -707,7 +734,7 @@ public class AMPropertyTrack : AMTrack {
                 long vCurrentLong = (long)Mathf.Lerp(vStartLong, vEndLong, t);
                 if(fieldInfo != null) fieldInfo.SetValue(component, vCurrentLong);
                 else if(propertyInfo != null) propertyInfo.SetValue(component, vCurrentLong, null);
-                refreshTransform();
+				refreshTransform(); key.refresh(vCurrentLong);
             }
             else if(key.valueType == (int)ValueType.Float) {
                 float vStartFloat = Convert.ToSingle(key.val);
@@ -715,31 +742,31 @@ public class AMPropertyTrack : AMTrack {
                 float vCurrentFloat = Mathf.Lerp(vStartFloat, vEndFloat, t);
                 if(fieldInfo != null) fieldInfo.SetValue(component, vCurrentFloat);
                 else if(propertyInfo != null) propertyInfo.SetValue(component, vCurrentFloat, null);
-                refreshTransform();
+				refreshTransform(); key.refresh(vCurrentFloat);
             }
             else if(key.valueType == (int)ValueType.Double) {
                 double vCurrentDouble = key.val + ((double)t) * (key.end_val - key.val);
                 if(fieldInfo != null) fieldInfo.SetValue(component, vCurrentDouble);
                 else if(propertyInfo != null) propertyInfo.SetValue(component, vCurrentDouble, null);
-                refreshTransform();
+				refreshTransform(); key.refresh(vCurrentDouble);
             }
             else if(key.valueType == (int)ValueType.Vector2) {
                 Vector2 vCurrentVector2 = Vector2.Lerp(key.vect2, key.end_vect2, t);
                 if(fieldInfo != null) fieldInfo.SetValue(component, vCurrentVector2);
                 else if(propertyInfo != null) propertyInfo.SetValue(component, vCurrentVector2, null);
-                refreshTransform();
+				refreshTransform(); key.refresh(vCurrentVector2);
             }
             else if(key.valueType == (int)ValueType.Vector3) {
                 Vector3 vCurrentVector3 = Vector3.Lerp(key.vect3, key.end_vect3, t);
                 if(fieldInfo != null) fieldInfo.SetValue(component, vCurrentVector3);
                 else if(propertyInfo != null) propertyInfo.SetValue(component, vCurrentVector3, null);
-                refreshTransform();
+				refreshTransform(); key.refresh(vCurrentVector3);
             }
             else if(key.valueType == (int)ValueType.Color) {
                 Color vCurrentColor = Color.Lerp(key.color, key.end_color, t);
                 if(fieldInfo != null) fieldInfo.SetValue(component, vCurrentColor);
                 else if(propertyInfo != null) propertyInfo.SetValue(component, vCurrentColor, null);
-                refreshTransform();
+				refreshTransform(); key.refresh(vCurrentColor);
             }
             else if(key.valueType == (int)ValueType.Rect) {
                 Rect vStartRect = key.rect;
@@ -751,19 +778,19 @@ public class AMPropertyTrack : AMTrack {
                 vCurrentRect.height = Mathf.Lerp(vStartRect.height, vEndRect.height, t);
                 if(fieldInfo != null) fieldInfo.SetValue(component, vCurrentRect);
                 else if(propertyInfo != null) propertyInfo.SetValue(component, vCurrentRect, null);
-                refreshTransform();
+				refreshTransform(); key.refresh(vCurrentRect);
             }
             else if(key.valueType == (int)ValueType.Vector4) {
                 Vector4 vCurrentVector4 = Vector4.Lerp(key.vect4, key.end_vect4, t);
                 if(fieldInfo != null) fieldInfo.SetValue(component, vCurrentVector4);
                 else if(propertyInfo != null) propertyInfo.SetValue(component, vCurrentVector4, null);
-                refreshTransform();
+				refreshTransform(); key.refresh(vCurrentVector4);
             }
             else if(key.valueType == (int)ValueType.Quaternion) {
                 Quaternion vCurrentQuat = Quaternion.Slerp(key.quat, key.end_quat, t);
                 if(fieldInfo != null) fieldInfo.SetValue(component, vCurrentQuat);
                 else if(propertyInfo != null) propertyInfo.SetValue(component, vCurrentQuat, null);
-                refreshTransform();
+				refreshTransform(); key.refresh(vCurrentQuat);
             }
             else {
                 Debug.LogError("Animator: Invalid ValueType " + valueType.ToString());

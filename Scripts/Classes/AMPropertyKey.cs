@@ -67,6 +67,7 @@ public class AMPropertyKey : AMKey {
     //union for single values
     public double val;	// value as double
 	public string valString; //string
+	public UnityEngine.Object valObj;
 
     //union for vectors, color, rect
     public Vector4 vect4;
@@ -86,7 +87,15 @@ public class AMPropertyKey : AMKey {
     public Quaternion end_quat { get { return new Quaternion(end_vect4.x, end_vect4.y, end_vect4.z, end_vect4.w); } set { end_vect4.Set(value.x, value.y, value.z, value.w); } }
 
 	public bool canTween {
-		get { return !(valueType == (int)AMPropertyTrack.ValueType.Bool || valueType == (int)AMPropertyTrack.ValueType.String); }
+		get { return !(valueType == (int)AMPropertyTrack.ValueType.Bool || valueType == (int)AMPropertyTrack.ValueType.String || valueType == (int)AMPropertyTrack.ValueType.Sprite); }
+	}
+
+	public bool setValue(UnityEngine.Object val) {
+		if(this.valObj != val) {
+			this.valObj = val;
+			return true;
+		}
+		return false;
 	}
 
 	public bool setValue(bool val) {
@@ -187,6 +196,7 @@ public class AMPropertyKey : AMKey {
         a.enabled = false;
         a.frame = frame;
         a.val = val;
+		a.valObj = valObj;
 		a.valString = valString;
         a.vect4 = vect4;
         a.easeType = easeType;
@@ -194,6 +204,14 @@ public class AMPropertyKey : AMKey {
 
         return a;
     }
+
+	//use in preview for specific refresh after setting the property with given obj
+	//e.g. Sprite
+	public void refresh(object obj) {
+		if(valueType == (int)AMPropertyTrack.ValueType.Sprite) {
+			(component as SpriteRenderer).sprite = obj as Sprite;
+		}
+	}
 
     #region action
     public override int getNumberOfFrames() {
@@ -223,6 +241,10 @@ public class AMPropertyKey : AMKey {
 			else if(valueType == (int)AMPropertyTrack.ValueType.String) {
 				return HOTween.To(component, endFrame == -1 ? 1.0f/(float)frameRate : getTime(frameRate), 
 				                  new TweenParms().Prop(varName, new AMPlugNoTween(valString)));
+			}
+			else if(valueType == (int)AMPropertyTrack.ValueType.Sprite) {
+				return HOTween.To(component, endFrame == -1 ? 1.0f/(float)frameRate : getTime(frameRate), 
+				                  new TweenParms().Prop(varName, new AMPlugNoTween(valObj ? valObj : null)));
 			}
 			else if(easeType == EaseTypeNone) {
 				float t = endFrame == -1 ? 1.0f/(float)frameRate : getTime(frameRate);
@@ -365,6 +387,9 @@ public class AMPropertyKey : AMKey {
             s += quat.ToString();
             if(!brief && endFrame != -1) s += " -> " + end_quat.ToString();
         }
+		else if(valueType == (int)AMPropertyTrack.ValueType.Sprite) {
+			s += string.Format("\"{0}\"", valObj ? valObj.name : "none");
+		}
         return s;
     }
     // use for floats
@@ -393,7 +418,7 @@ public class AMPropertyKey : AMKey {
     }
 
     public bool targetsAreEqual() {
-		if(valueType == (int)AMPropertyTrack.ValueType.String || valueType == (int)AMPropertyTrack.ValueType.Bool)
+		if(valueType == (int)AMPropertyTrack.ValueType.String || valueType == (int)AMPropertyTrack.ValueType.Bool || valueType == (int)AMPropertyTrack.ValueType.Sprite)
 			return false;
         if(valueType == (int)AMPropertyTrack.ValueType.Integer || valueType == (int)AMPropertyTrack.ValueType.Long || valueType == (int)AMPropertyTrack.ValueType.Float || valueType == (int)AMPropertyTrack.ValueType.Double)
             return val == end_val;
@@ -421,6 +446,7 @@ public class AMPropertyKey : AMKey {
         if(valueType == (int)AMPropertyTrack.ValueType.Quaternion) return quat;
 		if(valueType == (int)AMPropertyTrack.ValueType.Bool) return val > 0.0;
 		if(valueType == (int)AMPropertyTrack.ValueType.String) return valString;
+		if(valueType == (int)AMPropertyTrack.ValueType.Sprite) return (valObj ? valObj : null);
         return "Unknown";
     }
     public object getEndValue() {
@@ -436,6 +462,7 @@ public class AMPropertyKey : AMKey {
         if(valueType == (int)AMPropertyTrack.ValueType.Quaternion) return end_quat;
 		if(valueType == (int)AMPropertyTrack.ValueType.Bool) return val > 0.0;
 		if(valueType == (int)AMPropertyTrack.ValueType.String) return valString;
+		if(valueType == (int)AMPropertyTrack.ValueType.Sprite) return valObj;
         return "Unknown";
     }
     #endregion
