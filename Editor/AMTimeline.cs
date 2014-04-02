@@ -1542,7 +1542,7 @@ public class AMTimeline : EditorWindow {
         GUILayout.EndHorizontal();
         GUILayout.EndVertical();
         GUILayout.EndHorizontal();
-        GUILayout.EndScrollView();
+		GUI.EndScrollView();
         #endregion
         #region inspector
         Texture inspectorArrow;
@@ -1711,7 +1711,8 @@ public class AMTimeline : EditorWindow {
         }
         #endregion
         if(e.alt && !isDragging) startZoomXOverFrame = mouseXOverFrame;
-        e.Use();
+		if(isDragging && dragType != (int)DragType.None)
+        	e.Use();
 
         if(doRefresh) {
 			ClearKeysBuffer();
@@ -2499,7 +2500,9 @@ public class AMTimeline : EditorWindow {
 								if(_track is AMTranslationTrack) {
 									// translation track, from first action frame to end action frame
 									cached_action_startFrame = _track.keys[lastStartInd].getStartFrame();
-									cached_action_endFrame = _track.keys[lastStartInd].easeType == AMKey.EaseTypeNone ? cached_action_startFrame : (_track.keys[i] as AMTranslationKey).endFrame;
+									cached_action_endFrame = _track.keys[lastStartInd].easeType == AMKey.EaseTypeNone ? cached_action_startFrame : 
+										_track.keys[i].easeType == AMKey.EaseTypeNone ? (_track.keys[i] as AMTranslationKey).startFrame : 
+											(_track.keys[i] as AMTranslationKey).endFrame;
 									texBox = texBoxGreen;
 								}
 								else {
@@ -3206,10 +3209,11 @@ public class AMTimeline : EditorWindow {
             }
             bool sendMessageToggleEnabled = true;
             Rect rectPopup = new Rect(0f, start_y, width_inspector - margin, 22f);
-            indexMethodInfo = EditorGUI.Popup(rectPopup, indexMethodInfo, getMethodNames());
+			int curIndexMethod = indexMethodInfo;
+			indexMethodInfo = EditorGUI.Popup(rectPopup, curIndexMethod, getMethodNames());
             // if index out of range
             bool paramMatched = eKey.isMatch(cachedParameterInfos);
-            if((indexMethodInfo < cachedMethodInfo.Count) || !paramMatched) {
+			if((indexMethodInfo != curIndexMethod && indexMethodInfo < cachedMethodInfo.Count) || !paramMatched) {
                 // process change
                 // update cache when modifying varaibles
                 if(eKey.setMethodInfo(cachedMethodInfoComponents[indexMethodInfo], cachedMethodInfo[indexMethodInfo], cachedParameterInfos, !paramMatched)) {

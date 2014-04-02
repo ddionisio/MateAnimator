@@ -26,7 +26,7 @@ public class AMEventKey : AMKey {
             if(component == null) return null;
             if(cachedMethodInfo != null) return cachedMethodInfo;
             if(methodName == null) return null;
-            cachedMethodInfo = component.GetType().GetMethod(methodName);
+			cachedMethodInfo = component.GetType().GetMethod(methodName, GetParamTypes());
             return cachedMethodInfo;
         }
         set {
@@ -271,6 +271,14 @@ public class AMEventKey : AMKey {
 
         return arrParams;
     }
+
+	System.Type[] GetParamTypes() {
+		List<System.Type> ret = new List<System.Type>(parameters.Count);
+		foreach(AMEventParameter param in parameters) {
+			ret.Add(param.getParamType());
+		}
+		return ret.ToArray();
+	}
 
     public override Tweener buildTweener(Sequence sequence, int frameRate) {
         if(component == null || methodName == null) return null;
