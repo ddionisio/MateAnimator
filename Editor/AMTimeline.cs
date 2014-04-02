@@ -451,6 +451,7 @@ public class AMTimeline : EditorWindow {
 
         this.title = "Animator";
         this.minSize = new Vector2(width_track + width_playback_controls + width_inspector_open + 70f, 190f);
+		this.wantsMouseMove = true;
         window = this;
         //this.wantsMouseMove = true;
         // find component
@@ -1713,6 +1714,8 @@ public class AMTimeline : EditorWindow {
         if(e.alt && !isDragging) startZoomXOverFrame = mouseXOverFrame;
 		if(isDragging && dragType != (int)DragType.None)
         	e.Use();
+		else if(e.type == EventType.MouseMove || e.commandName == "UndoRedoPerformed")
+			Repaint();
 
         if(doRefresh) {
 			ClearKeysBuffer();

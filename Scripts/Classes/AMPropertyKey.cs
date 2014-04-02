@@ -204,7 +204,7 @@ public class AMPropertyKey : AMKey {
     }
     public override Tweener buildTweener(Sequence sequence, int frameRate) {
         if(targetsAreEqual()) return null;
-        if((endFrame == -1 && (easeType != EaseTypeNone || canTween)) || !component || ((fieldInfo == null) && (propertyInfo == null) && (methodInfo == null))) return null;
+        if((endFrame == -1 && easeType != EaseTypeNone && canTween) || !component || ((fieldInfo == null) && (propertyInfo == null) && (methodInfo == null))) return null;
 
         string varName = null;
 
