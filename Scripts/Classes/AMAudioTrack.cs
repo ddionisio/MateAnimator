@@ -11,17 +11,6 @@ public class AMAudioTrack : AMTrack {
         return "Audio";
     }
 
-    public override void updateCache() {
-        // sort keys
-        sortKeys();
-        // add all clips to list
-        for(int i = 0; i < keys.Count; i++) {
-            AMAudioKey key = keys[i] as AMAudioKey;
-            key.version = version;
-            key.audioSource = audioSource;
-        }
-        base.updateCache();
-    }
     // add a new key
     public AMKey addKey(int _frame, AudioClip _clip, bool _loop) {
         foreach(AMAudioKey key in keys) {

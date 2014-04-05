@@ -37,8 +37,9 @@ public class AMKey : MonoBehaviour {
 
     /// <summary>
     /// Use sequence to insert callbacks, or some other crap, just don't insert the tweener you are returning!
+	/// target is set if required.
     /// </summary>
-    public virtual Tweener buildTweener(Sequence sequence, int frameRate) {
+    public virtual Tweener buildTweener(Sequence sequence, UnityEngine.Object target, int frameRate) {
         Debug.LogError("Animator: No override for buildTweener.");
         return null;
     }

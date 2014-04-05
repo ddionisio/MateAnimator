@@ -7,7 +7,6 @@ using Holoville.HOTween.Core;
 [AddComponentMenu("")]
 public class AMAudioKey : AMKey {
 
-    public AudioSource audioSource;
     public AudioClip audioClip;
     public bool loop;
 
@@ -25,9 +24,10 @@ public class AMAudioKey : AMKey {
 
     #region action
     void OnMethodCallbackParams(TweenEvent dat) {
+		AudioSource audioSource = dat.parms[0] as AudioSource;
         if(audioSource) {
             float elapsed = dat.tween.elapsed;
-            float frameRate = (float)dat.parms[0];
+            float frameRate = (float)dat.parms[1];
             float curFrame = frameRate * elapsed;
             float endFrame = frame + getNumberOfFrames(Mathf.RoundToInt(frameRate));
 
@@ -50,8 +50,8 @@ public class AMAudioKey : AMKey {
         }
     }
 
-    public override Tweener buildTweener(Sequence sequence, int frameRate) {
-        sequence.InsertCallback(getWaitTime(frameRate, 0.0f), OnMethodCallbackParams, (float)frameRate);
+    public override Tweener buildTweener(Sequence sequence, UnityEngine.Object target, int frameRate) {
+        sequence.InsertCallback(getWaitTime(frameRate, 0.0f), OnMethodCallbackParams, target, (float)frameRate);
 
         return null;
     }

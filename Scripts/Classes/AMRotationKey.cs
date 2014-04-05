@@ -12,7 +12,6 @@ public class AMRotationKey : AMKey {
     public Quaternion rotation;
 
     public int endFrame;
-    public Transform obj;
     public bool isLocal;
     public Quaternion endRotation;
 
@@ -65,7 +64,7 @@ public class AMRotationKey : AMKey {
     public float getTime(int frameRate) {
         return (float)getNumberOfFrames() / (float)frameRate;
     }
-    public override Tweener buildTweener(Sequence sequence, int frameRate) {
+    public override Tweener buildTweener(Sequence sequence, UnityEngine.Object obj, int frameRate) {
         if(!obj) return null;
 		if(easeType == EaseTypeNone) {
 			return HOTween.To(obj, getTime(frameRate), new TweenParms().Prop(isLocal ? "localRotation" : "rotation", new AMPlugNoTween(rotation)));

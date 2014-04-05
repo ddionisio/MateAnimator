@@ -12,7 +12,7 @@ public class AMGOSetActiveTrack : AMTrack {
 
     public bool startActive = true;
 
-    public override UnityEngine.Object genericObj {
+    public override UnityEngine.Object target {
         get { return obj; }
     }
 
@@ -21,8 +21,8 @@ public class AMGOSetActiveTrack : AMTrack {
     }
     // update cache
     public override void updateCache() {
-        // sort keys
-        sortKeys();
+		base.updateCache();
+
         // add all clips to list
         for(int i = 0; i < keys.Count; i++) {
             AMGOSetActiveKey key = keys[i] as AMGOSetActiveKey;
@@ -31,10 +31,7 @@ public class AMGOSetActiveTrack : AMTrack {
 
             if(keys.Count > (i + 1)) key.endFrame = keys[i + 1].frame;
             else key.endFrame = -1;
-
-            key.go = obj;
         }
-        base.updateCache();
     }
     public void setObject(GameObject obj) {
         if(this.obj != obj && obj != null)

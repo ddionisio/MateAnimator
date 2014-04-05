@@ -23,7 +23,7 @@ public class AMTranslationTrack : AMTrack {
         }
     }
 
-    public override UnityEngine.Object genericObj {
+    public override UnityEngine.Object target {
         get { return _obj; }
     }
 
@@ -329,12 +329,13 @@ public class AMTranslationTrack : AMTrack {
     }
     // update cache (optimized)
     public override void updateCache() {
+		base.updateCache();
+
 		//force local, using global is useless
 		isLocal = true;
 
         AMPath path;
-        // sort keys
-        sortKeys();
+
         // get all paths and add them to the action list
         for(int i = 0; i < keys.Count; i++) {
             AMTranslationKey key = keys[i] as AMTranslationKey;
@@ -348,7 +349,6 @@ public class AMTranslationTrack : AMTrack {
             key.isLocal = _isLocal;
             key.startFrame = path.startFrame;
             key.endFrame = path.endFrame;
-            key.obj = _obj;
 
 			if(key.easeType == AMKey.EaseTypeNone) {
 				key.path = new Vector3[0];
@@ -359,7 +359,6 @@ public class AMTranslationTrack : AMTrack {
 					lastKey.isLocal = _isLocal;
 					lastKey.startFrame = path.endFrame;
 					lastKey.endFrame = path.endFrame;
-					lastKey.obj = _obj;
 					lastKey.path = new Vector3[0];
 				}
 			}
@@ -377,7 +376,6 @@ public class AMTranslationTrack : AMTrack {
                     key.isLocal = _isLocal;
                     key.startFrame = key.frame;
                     key.endFrame = key.frame;
-                    key.obj = _obj;
                     key.path = new Vector3[0];
                 }
 

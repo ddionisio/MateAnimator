@@ -280,7 +280,7 @@ public class AMEventKey : AMKey {
 		return ret.ToArray();
 	}
 
-    public override Tweener buildTweener(Sequence sequence, int frameRate) {
+    public override Tweener buildTweener(Sequence sequence, UnityEngine.Object target, int frameRate) {
         if(component == null || methodName == null) return null;
 
         if(frameLimit) {

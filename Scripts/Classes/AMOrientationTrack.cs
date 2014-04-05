@@ -36,10 +36,11 @@ public class AMOrientationTrack : AMTrack {
         return a;
     }
     public override void updateCache() {
+		base.updateCache();
+
 		// save rotation
 		//Quaternion temp = obj.rotation;
-		// sort keys
-		sortKeys();
+
 		for(int i = 0; i < keys.Count; i++) {
 			AMOrientationKey key = keys[i] as AMOrientationKey;
 			
@@ -52,7 +53,7 @@ public class AMOrientationTrack : AMTrack {
 
 				key.endFrame = -1;
 			}
-			key.obj = obj;
+
 			// targets
 			if(key.endFrame != -1) key.endTarget = (keys[i + 1] as AMOrientationKey).target;
 		}
@@ -87,7 +88,7 @@ public class AMOrientationTrack : AMTrack {
                 float framePositionInPath = frame - (float)keys[i].frame;
                 if(framePositionInPath < 0f) framePositionInPath = 0f;
                 float percentage = framePositionInPath / keys[i].getNumberOfFrames();
-				obj.rotation = key.getQuaternionAtPercent(percentage);
+				obj.rotation = key.getQuaternionAtPercent(obj, percentage);
                 return;
                 // after last frame
             }

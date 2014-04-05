@@ -11,16 +11,11 @@ public class AMEventTrack : AMTrack {
     public override string getTrackType() {
         return "Event";
     }
-    // update cache
-    public override void updateCache() {
-        // sort keys
-        sortKeys();
-        // add all clips to list
-        for(int i = 0; i < keys.Count; i++) {
-            AMEventKey key = keys[i] as AMEventKey;
-            key.version = version;
-        }
-    }
+	public override UnityEngine.Object target {
+		get {
+			return obj;
+		}
+	}
     public void setObject(GameObject obj) {
         this.obj = obj;
     }

@@ -19,7 +19,7 @@ public class AMTrack : MonoBehaviour {
 
     public virtual int order { get { return 0; } }
 
-    public virtual UnityEngine.Object genericObj {
+    public virtual UnityEngine.Object target {
         get { return null; }
     }
 
@@ -58,6 +58,7 @@ public class AMTrack : MonoBehaviour {
 
     // update cache
     public virtual void updateCache() {
+		sortKeys();
     }
 
     public virtual void buildSequenceStart(Sequence s, int frameRate) {

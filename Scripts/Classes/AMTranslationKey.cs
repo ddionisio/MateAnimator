@@ -18,7 +18,6 @@ public class AMTranslationKey : AMKey {
 
     public int startFrame;
     public int endFrame;
-    public Transform obj;
     public bool isLocal;
     public Vector3[] path;
 
@@ -49,7 +48,7 @@ public class AMTranslationKey : AMKey {
         return (float)getNumberOfFrames() / (float)frameRate;
     }
 
-    public override Tweener buildTweener(Sequence sequence, int frameRate) {
+    public override Tweener buildTweener(Sequence sequence, UnityEngine.Object obj, int frameRate) {
         if(!obj) return null;
 
 		if(easeType == EaseTypeNone) {

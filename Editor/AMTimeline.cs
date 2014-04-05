@@ -3574,7 +3574,7 @@ public class AMTimeline : EditorWindow {
         // translation
 		if(amTrack is AMTranslationTrack) {
 			AMTranslationTrack ttrack = amTrack as AMTranslationTrack;
-			Transform nt = (Transform)EditorGUI.ObjectField(rect, amTrack.genericObj, typeof(Transform), true/*,GUILayout.Width (width_track-padding_track*2)*/);
+			Transform nt = (Transform)EditorGUI.ObjectField(rect, amTrack.target, typeof(Transform), true/*,GUILayout.Width (width_track-padding_track*2)*/);
 			if(!ttrack.isObjectEqual(nt)) {
 				Undo.RecordObject(ttrack, "Set Transform");
 				ttrack.obj = nt;
@@ -3584,7 +3584,7 @@ public class AMTimeline : EditorWindow {
         // rotation
         else if(amTrack is AMRotationTrack) {
 			AMRotationTrack rtrack = amTrack as AMRotationTrack;
-			Transform nt = (Transform)EditorGUI.ObjectField(rect, amTrack.genericObj, typeof(Transform), true);
+			Transform nt = (Transform)EditorGUI.ObjectField(rect, amTrack.target, typeof(Transform), true);
 			if(!rtrack.isObjectEqual(nt)) {
 				Undo.RecordObject(rtrack, "Set Transform");
 				rtrack.obj = nt;
@@ -3684,8 +3684,8 @@ public class AMTimeline : EditorWindow {
         // set go active
         else if(amTrack is AMGOSetActiveTrack) {
 			AMGOSetActiveTrack gtrack = amTrack as AMGOSetActiveTrack;
-			UnityEngine.Object ngo = EditorGUI.ObjectField(rect, gtrack.genericObj, typeof(GameObject), true/*,GUILayout.Width (width_track-padding_track*2)*/);
-			if(gtrack.genericObj != ngo) {
+			UnityEngine.Object ngo = EditorGUI.ObjectField(rect, gtrack.target, typeof(GameObject), true/*,GUILayout.Width (width_track-padding_track*2)*/);
+			if(gtrack.target != ngo) {
 				Undo.RecordObject(gtrack, "Set GameObject");
 				gtrack.setObject((GameObject)ngo);
 				EditorUtility.SetDirty(gtrack);
@@ -4444,10 +4444,10 @@ public class AMTimeline : EditorWindow {
     void timelineSelectObjectFor(AMTrack track) {
         // translation obj
         if(track.GetType() == typeof(AMTranslationTrack))
-            Selection.activeObject = track.genericObj;
+            Selection.activeObject = track.target;
         // rotation obj
         else if(track.GetType() == typeof(AMRotationTrack))
-            Selection.activeObject = track.genericObj;
+            Selection.activeObject = track.target;
         else if(track.GetType() == typeof(AMAnimationTrack))
             Selection.activeObject = (track as AMAnimationTrack).obj;
     }
@@ -4622,8 +4622,6 @@ public class AMTimeline : EditorWindow {
             #region goactive
         }
         else if(_key is AMGOSetActiveKey) {
-            AMGOSetActiveKey act = _key as AMGOSetActiveKey;
-            if(!act.go) return "No GameObject";
 			return "";
             #endregion
         }
@@ -4815,7 +4813,7 @@ public class AMTimeline : EditorWindow {
         // translation
         if(amTrack is AMTranslationTrack) {
             // if missing object, return
-            if(!amTrack.genericObj) {
+            if(!amTrack.target) {
                 showAlertMissingObjectType("Transform");
                 return;
             }
@@ -4825,7 +4823,7 @@ public class AMTimeline : EditorWindow {
             // rotation
 
             // if missing object, return
-            if(!amTrack.genericObj) {
+            if(!amTrack.target) {
                 showAlertMissingObjectType("Transform");
                 return;
             }
@@ -4903,7 +4901,7 @@ public class AMTimeline : EditorWindow {
             // go set active
 
             // if missing object, return
-            if(!amTrack.genericObj) {
+            if(!amTrack.target) {
                 showAlertMissingObjectType("GameObject");
                 return;
             }

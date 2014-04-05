@@ -108,6 +108,12 @@ public class AMPropertyTrack : AMTrack {
         return false;
     }
 
+	public override UnityEngine.Object target {
+		get {
+			return obj;
+		}
+	}
+
     // add key
     public AMKey addKey(int _frame) {
         if(isValueTypeNumeric(valueType))

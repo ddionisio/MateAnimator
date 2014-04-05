@@ -1353,7 +1353,7 @@ public class AMTake : MonoBehaviour {
                 track.buildSequenceStart(mSequence, frameRate);
 
                 foreach(AMKey key in track.keys) {
-                    Tweener tween = key.buildTweener(mSequence, frameRate);
+					Tweener tween = key.buildTweener(mSequence, track.target, frameRate);
                     if(tween != null) {
                         mSequence.Insert(key.getWaitTime(frameRate, 0.0f), tween);
                         numTweensAdded++;

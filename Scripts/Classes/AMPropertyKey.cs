@@ -194,6 +194,7 @@ public class AMPropertyKey : AMKey {
 
 		AMPropertyKey a = go ? go.AddComponent<AMPropertyKey>() : gameObject.AddComponent<AMPropertyKey>();
         a.enabled = false;
+		a.component = component;
         a.frame = frame;
         a.val = val;
 		a.valObj = valObj;
@@ -220,7 +221,7 @@ public class AMPropertyKey : AMKey {
     public float getTime(int frameRate) {
         return (float)getNumberOfFrames() / (float)frameRate;
     }
-    public override Tweener buildTweener(Sequence sequence, int frameRate) {
+    public override Tweener buildTweener(Sequence sequence, UnityEngine.Object target, int frameRate) {
         if(targetsAreEqual()) return null;
         if((endFrame == -1 && easeType != EaseTypeNone && canTween) || !component || ((fieldInfo == null) && (propertyInfo == null) && (methodInfo == null))) return null;
 

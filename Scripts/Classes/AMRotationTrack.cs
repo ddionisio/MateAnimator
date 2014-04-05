@@ -21,7 +21,7 @@ public class AMRotationTrack : AMTrack {
         }
     }
 
-    public override UnityEngine.Object genericObj {
+    public override UnityEngine.Object target {
         get { return _obj; }
     }
 
@@ -117,9 +117,8 @@ public class AMRotationTrack : AMTrack {
 
     // update cache (optimized)
     public override void updateCache() {
+		base.updateCache();
 
-        // sort keys
-        sortKeys();
         for(int i = 0; i < keys.Count; i++) {
             AMRotationKey key = keys[i] as AMRotationKey;
 
@@ -136,7 +135,6 @@ public class AMRotationTrack : AMTrack {
 
 				key.endFrame = -1;
 			}
-            key.obj = _obj;
             key.isLocal = _isLocal;
             // quaternions
             if(key.endFrame != -1) key.endRotation = (keys[i + 1] as AMRotationKey).rotation;

@@ -11,6 +11,12 @@ public class AMAnimationTrack : AMTrack {
         return "Animation";
     }
 
+	public override UnityEngine.Object target {
+		get {
+			return obj;
+		}
+	}
+
     // add a new key
     public AMKey addKey(int _frame, AnimationClip _clip, WrapMode _wrapMode) {
         foreach(AMAnimationKey key in keys) {
@@ -34,17 +40,6 @@ public class AMAnimationTrack : AMTrack {
         updateCache();
 
         return a;
-    }
-    // update cache
-    public override void updateCache() {
-        // sort keys
-        sortKeys();
-        for(int i = 0; i < keys.Count; i++) {
-            AMAnimationKey key = keys[i] as AMAnimationKey;
-            key.version = version;
-            key.obj = obj;
-        }
-        base.updateCache();
     }
     // preview a frame in the scene view
     public void previewFrame(float frame, float frameRate) {

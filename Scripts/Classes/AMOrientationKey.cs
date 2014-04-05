@@ -76,7 +76,6 @@ public class AMOrientationKey : AMKey {
     public Transform target;
 
     public int endFrame;
-    public Transform obj;
     public Transform endTarget;
     
     public override AMKey CreateClone(GameObject go) {
@@ -91,7 +90,7 @@ public class AMOrientationKey : AMKey {
     }
 
     #region action
-    public override Tweener buildTweener(Sequence sequence, int frameRate) {
+    public override Tweener buildTweener(Sequence sequence, UnityEngine.Object obj, int frameRate) {
         if(!obj) return null;
 		if(easeType == EaseTypeNone) {
 			return HOTween.To(obj, endFrame == -1 ? 1.0f/(float)frameRate : getTime(frameRate), new TweenParms().Prop("rotation", new AMPlugOrientation(target, null)));
@@ -123,7 +122,7 @@ public class AMOrientationKey : AMKey {
         return true;
     }
 
-    public Quaternion getQuaternionAtPercent(float percentage) {
+    public Quaternion getQuaternionAtPercent(Transform obj, float percentage) {
 		if(isLookFollow() || easeType == EaseTypeNone) {
             return Quaternion.LookRotation(target.position - obj.position);
         }

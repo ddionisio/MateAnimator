@@ -44,7 +44,6 @@ public class AMPlugGOActive : ABSTweenPlugin {
 public class AMGOSetActiveKey : AMKey {
     public bool setActive;
 
-    public GameObject go;
     public int endFrame;
 
     public override void destroy() {
@@ -68,7 +67,9 @@ public class AMGOSetActiveKey : AMKey {
         return (float)getNumberOfFrames() / (float)frameRate;
     }
 
-    public override Tweener buildTweener(Sequence sequence, int frameRate) {
+    public override Tweener buildTweener(Sequence sequence, UnityEngine.Object target, int frameRate) {
+		GameObject go = target as GameObject;
+
         if(go == null) return null;
 
         //active won't really be set, it's just a filler along with ease
