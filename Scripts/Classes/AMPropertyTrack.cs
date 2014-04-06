@@ -875,8 +875,8 @@ public class AMPropertyTrack : AMTrack {
         return lsFlagToKeep;
     }
 
-    protected override AMTrack doDuplicate(AMTake newTake) {
-        AMPropertyTrack ntrack = newTake.gameObject.AddComponent<AMPropertyTrack>();
+	protected override AMTrack doDuplicate(GameObject holder) {
+        AMPropertyTrack ntrack = holder.AddComponent<AMPropertyTrack>();
         ntrack.enabled = false;
         ntrack.valueType = valueType;
         ntrack.obj = obj;

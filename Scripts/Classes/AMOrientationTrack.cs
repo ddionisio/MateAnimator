@@ -175,7 +175,7 @@ public class AMOrientationTrack : AMTrack {
         Transform _target = getInitialTarget();
         int start_frame = keys[0].frame;
         AMTrack _translation_track = null;
-        if(start_frame > 0) _translation_track = parentTake.getTranslationTrackForTransform(_target);
+        //if(start_frame > 0) _translation_track = parentTake.getTranslationTrackForTransform(_target);
         Vector3 _lookv3 = _target.transform.position;
         if(_translation_track) _lookv3 = (_translation_track as AMTranslationTrack).getPositionAtFrame(start_frame, true);
         AnimatorTimeline.JSONVector3 v = new AnimatorTimeline.JSONVector3();
@@ -209,8 +209,8 @@ public class AMOrientationTrack : AMTrack {
         return new List<GameObject>();
     }
 
-    protected override AMTrack doDuplicate(AMTake newTake) {
-        AMOrientationTrack ntrack = newTake.gameObject.AddComponent<AMOrientationTrack>();
+	protected override AMTrack doDuplicate(GameObject holder) {
+        AMOrientationTrack ntrack = holder.AddComponent<AMOrientationTrack>();
         ntrack.enabled = false;
         ntrack.obj = obj;
 

@@ -95,8 +95,8 @@ public class AMEventTrack : AMTrack {
         return new List<GameObject>();
     }
 
-    protected override AMTrack doDuplicate(AMTake newTake) {
-        AMEventTrack ntrack = newTake.gameObject.AddComponent<AMEventTrack>();
+	protected override AMTrack doDuplicate(GameObject holder) {
+        AMEventTrack ntrack = holder.AddComponent<AMEventTrack>();
         ntrack.enabled = false;
         ntrack.obj = obj;
 

@@ -532,7 +532,6 @@ public class AMTake : MonoBehaviour {
     private void addTrack(AMTrack track) {
         trackValues.Add(track);
         addToGroup(track.id, selectedGroup);
-        track.parentTake = this;
     }
 
     // move element to group, just after the destination track
@@ -1262,9 +1261,6 @@ public class AMTake : MonoBehaviour {
     #region Other Fns
 
     public void maintainTake() {
-        foreach(AMTrack track in trackValues) {
-            if(!track.parentTake) track.parentTake = this;
-        }
     }
 
     public void sampleAudio(float frame, float speed) {

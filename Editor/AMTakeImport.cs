@@ -190,7 +190,7 @@ public class AMTakeImport : EditorWindow {
 		}
 		int numTakes = 0;
 		foreach (AnimatorData _a in newAnimatorData) {
-			numTakes += _a.takes.Count;	
+			numTakes += _a.takeData.Count;	
 		}
 		int numGOs = (newGOs.Count-newAnimatorData.Count);
 		Debug.Log ("Animator: Imported "+numTakes+" Take"+(numTakes > 1 ? "s" : "")+". Added "+numGOs+" GameObject"+(numGOs > 1 ? "s" : "")+".");

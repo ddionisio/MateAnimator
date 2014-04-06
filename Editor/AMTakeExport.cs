@@ -14,7 +14,7 @@ public class AMTakeExport : EditorWindow {
 
     Vector2 scrollPos = new Vector2(0f, 0f);
 
-    public static AMTake take = null;
+    public static AMTakeData take = null;
 
     private AMOptionsFile oData;
     private AnimatorData aData;

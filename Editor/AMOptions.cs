@@ -128,8 +128,9 @@ public class AMOptions : EditorWindow {
             GUILayout.FlexibleSpace();
             GUILayout.EndVertical();
             if(setPlayOnStartIndex(EditorGUILayout.Popup(playOnStartIndex, takeNamesWithNone.ToArray(), GUILayout.Width(200f)))) {
-                if(playOnStartIndex == 0) aData.playOnStart = null;
-                else aData.playOnStart = aData.getTake(takeNames[playOnStartIndex - 1]);
+				if(playOnStartIndex == 0) aData.playOnStartIndex = -1;
+				else aData.playOnStartIndex = playOnStartIndex - 1;
+				EditorUtility.SetDirty(aData);
             }
             GUILayout.EndHorizontal();
             // gizmo size
@@ -420,13 +421,14 @@ public class AMOptions : EditorWindow {
 
     List<string> getTakeNames() {
         List<string> takeNames = new List<string>();
-        foreach(AMTake take in aData.takes) {
+        foreach(AMTakeData take in aData.takeData) {
             takeNames.Add(take.name);
         }
         return takeNames;
     }
     bool setPlayOnStartIndex(int index) {
         if(playOnStartIndex != index) {
+			Undo.RecordObject(aData, "Set Play On Start");
             playOnStartIndex = index;
             return true;
         }
@@ -466,7 +468,7 @@ public class AMOptions : EditorWindow {
         if(AMTimeline.window != null) {
             __aData = AMTimeline.window.aData;
             if(__aData) {
-                if(__aData.playOnStart != null) playOnStartIndex = __aData.getTakeIndex(__aData.playOnStart) + 1;
+				if(__aData.playOnStartIndex != -1) playOnStartIndex = __aData.playOnStartIndex + 1;
                 exportTakeIndex = __aData.getTakeIndex(__aData.getCurrentTake());
             }
         }

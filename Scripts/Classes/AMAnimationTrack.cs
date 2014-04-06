@@ -98,8 +98,8 @@ public class AMAnimationTrack : AMTrack {
         return lsFlagToKeep;
     }
 
-    protected override AMTrack doDuplicate(AMTake newTake) {
-        AMAnimationTrack ntrack = newTake.gameObject.AddComponent<AMAnimationTrack>();
+	protected override AMTrack doDuplicate(GameObject holder) {
+		AMAnimationTrack ntrack = holder.AddComponent<AMAnimationTrack>();
         ntrack.enabled = false;
         ntrack.obj = obj;
 

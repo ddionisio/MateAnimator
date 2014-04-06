@@ -13,8 +13,6 @@ public class AMTrack : MonoBehaviour {
     public List<AMKey> keys = new List<AMKey>();
     public bool foldout = true;							// whether or not to foldout track in timeline GUI
 
-    public AMTake parentTake;
-
     public virtual int version { get { return 1; } } //must be at least 1
 
     public virtual int order { get { return 0; } }
@@ -184,8 +182,6 @@ public class AMTrack : MonoBehaviour {
             keys = null;
         }
 
-        parentTake = null;
-
         // destroy track
         Object.DestroyImmediate(this);
     }
@@ -292,15 +288,14 @@ public class AMTrack : MonoBehaviour {
         return lsKeyRatios.ToArray();
     }
 
-    protected virtual AMTrack doDuplicate(AMTake newTake) {
+	protected virtual AMTrack doDuplicate(GameObject holder) {
         return null;
     }
 
-    public AMTrack duplicate(AMTake newTake) {
-        AMTrack ntrack = doDuplicate(newTake);
-        if(ntrack != null) {
+	public AMTrack duplicate(GameObject holder) {
+		AMTrack ntrack = doDuplicate(holder);
+		if(ntrack != null) {
             ntrack.id = id;
-            ntrack.parentTake = newTake;
             ntrack.name = name;
         }
 

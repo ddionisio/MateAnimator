@@ -120,8 +120,8 @@ public class AMAudioTrack : AMTrack {
         return lsFlagToKeep;
     }
 
-    protected override AMTrack doDuplicate(AMTake newTake) {
-        AMAudioTrack ntrack = newTake.gameObject.AddComponent<AMAudioTrack>();
+    protected override AMTrack doDuplicate(GameObject holder) {
+        AMAudioTrack ntrack = holder.AddComponent<AMAudioTrack>();
         ntrack.enabled = false;
         ntrack.audioSource = audioSource;
 

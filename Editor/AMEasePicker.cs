@@ -94,7 +94,7 @@ public class AMEasePicker : EditorWindow {
 	public void reloadAnimatorData() {
 		aData = null;
 		loadAnimatorData();
-		AMTake take = aData.getCurrentTake();
+		AMTakeData take = aData.getCurrentTake();
 		// update references for track and key
 		bool shouldClose = true;
 		foreach(AMTrack _track in take.trackValues) {

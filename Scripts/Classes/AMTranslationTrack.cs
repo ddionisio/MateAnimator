@@ -425,8 +425,8 @@ public class AMTranslationTrack : AMTrack {
         return new List<GameObject>();
     }
 
-    protected override AMTrack doDuplicate(AMTake newTake) {
-        AMTranslationTrack ntrack = newTake.gameObject.AddComponent<AMTranslationTrack>();
+	protected override AMTrack doDuplicate(GameObject holder) {
+        AMTranslationTrack ntrack = holder.AddComponent<AMTranslationTrack>();
         ntrack.enabled = false;
         ntrack._obj = _obj;
         ntrack._isLocal = _isLocal;

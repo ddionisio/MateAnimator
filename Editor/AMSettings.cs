@@ -44,7 +44,7 @@ public class AMSettings : EditorWindow {
     void OnDisable() {
         window = null;
         if((aData) && saveChanges) {
-			AMTake take = aData.getCurrentTake();
+			AMTakeData take = aData.getCurrentTake();
             bool saveNumFrames = true;
 			if((numFrames < take.numFrames) && (take.hasKeyAfter(numFrames))) {
                 if(!EditorUtility.DisplayDialog("Data Will Be Lost", "You will lose some keys beyond frame " + numFrames + " if you continue.", "Continue Anway", "Cancel")) {
@@ -53,7 +53,7 @@ public class AMSettings : EditorWindow {
             }
 
 			string label = take.name+": Modify Settings";
-			Undo.RegisterCompleteObjectUndo(take, label);
+			Undo.RegisterCompleteObjectUndo(aData, label);
 
             if(saveNumFrames) {
 				Undo.RegisterCompleteObjectUndo(AMTimeline.getKeysAndTracks(take), label);
@@ -80,8 +80,7 @@ public class AMSettings : EditorWindow {
 			take.loopBackToFrame = Mathf.Clamp(loopBackFrame, -1, numFrames);
 
             // save data
-			EditorUtility.SetDirty(take);
-            //EditorUtility.SetDirty(aData);
+			EditorUtility.SetDirty(aData);
 
             EditorWindow.GetWindow(typeof(AMTimeline)).Repaint();
         }

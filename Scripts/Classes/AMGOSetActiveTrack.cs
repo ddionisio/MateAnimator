@@ -126,8 +126,8 @@ public class AMGOSetActiveTrack : AMTrack {
         return new List<GameObject>();
     }
 
-    protected override AMTrack doDuplicate(AMTake newTake) {
-        AMGOSetActiveTrack ntrack = newTake.gameObject.AddComponent<AMGOSetActiveTrack>();
+	protected override AMTrack doDuplicate(GameObject holder) {
+        AMGOSetActiveTrack ntrack = holder.AddComponent<AMGOSetActiveTrack>();
         ntrack.enabled = false;
         ntrack.obj = obj;
         ntrack.startActive = startActive;
