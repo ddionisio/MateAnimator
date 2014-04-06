@@ -515,6 +515,7 @@ public class AnimatorData : MonoBehaviour {
         a.trackValues = new List<AMTrack>();
         takes.Add(a);
         selectTake(takes.Count - 1);
+
         return a;
     }
 
@@ -570,7 +571,7 @@ public class AnimatorData : MonoBehaviour {
 
 				if(includeKeys) {
 					foreach(AMKey key in track.keys) {
-						AMKey dupKey = key.CreateClone(gameObject);
+						AMKey dupKey = key.CreateClone(dataHolder);
 						if(dupKey) {
 							dupTrack.keys.Add(dupKey);
 							ret.Add(dupKey);
