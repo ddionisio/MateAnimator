@@ -74,7 +74,7 @@ public class AMGOSetActiveTrack : AMTrack {
         //need to add activate game object on start to 'reset' properly during reverse
         if(keys.Count > 0 && keys[0].frame > 0) {
             s.Insert(0.0f, HOTween.To(obj, ((float)keys[0].frame) / ((float)frameRate),
-                new TweenParms().Prop("active", new AMPlugGOActive(startActive)).Ease(EaseType.Linear)));
+                new TweenParms().Prop("active", new AMPlugGOActive(obj, startActive)).Ease(EaseType.Linear)));
         }
     }
 

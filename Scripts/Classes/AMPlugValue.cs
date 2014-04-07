@@ -30,6 +30,36 @@ public class AMPlugNoTween : ABSTweenPlugin {
 	}
 }
 
+public class AMPlugSprite : ABSTweenPlugin {
+
+	private SpriteRenderer mRender;
+	private Sprite mSprite;
+
+	protected override object startVal { get { return _startVal; } set { _startVal = value; } }
+	
+	protected override object endVal { get { return _endVal; } set { _endVal = value; } }
+	
+	public AMPlugSprite(SpriteRenderer renderer, Sprite val)
+	: base(null, false) {  mRender = renderer; mSprite = val; }
+	
+	protected override float GetSpeedBasedDuration(float p_speed) {
+		return p_speed;
+	}
+	
+	protected override void SetChangeVal() {
+		mRender.sprite = mSprite;
+	}
+	
+	protected override void SetIncremental(int p_diffIncr) {}
+	
+	protected override void DoUpdate(float p_totElapsed) {
+		mRender.sprite = mSprite;
+	}
+
+	protected override void SetValue(object p_value) { }
+	protected override object GetValue() { return mSprite; }
+}
+
 public class AMPlugDouble : ABSTweenPlugin {
     internal static Type[] validPropTypes = { typeof(double) };
     internal static Type[] validValueTypes = { typeof(double) };

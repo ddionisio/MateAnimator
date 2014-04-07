@@ -245,7 +245,7 @@ public class AMPropertyKey : AMKey {
 			}
 			else if(valueType == (int)AMPropertyTrack.ValueType.Sprite) {
 				return HOTween.To(component, endFrame == -1 ? 1.0f/(float)frameRate : getTime(frameRate), 
-				                  new TweenParms().Prop(varName, new AMPlugNoTween(valObj ? valObj : null)));
+				                  new TweenParms().Prop(varName, new AMPlugSprite(component as SpriteRenderer, valObj ? valObj as Sprite : null)));
 			}
 			else if(easeType == EaseTypeNone) {
 				float t = endFrame == -1 ? 1.0f/(float)frameRate : getTime(frameRate);

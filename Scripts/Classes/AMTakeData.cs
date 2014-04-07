@@ -1300,6 +1300,9 @@ public class AMTakeData {
 	}
 	
 	public Sequence BuildSequence(string goName, bool autoKill, UpdateType updateType, OnSequenceDone endCallback) {
+		if(loopBackToFrame >= 0 && numLoop <= 0)
+			numLoop = 1;
+
 		Sequence sequence = new Sequence(
 			new SequenceParms()
 			.Id(string.Format("{0}:{1}", goName, name))
@@ -1337,7 +1340,9 @@ public class AMTakeData {
 		stopAnimations();
 		
 		if(!dat.tween.autoKillOnComplete) {
-			if(loopBackToFrame >= 0 && dat.tween.loops == 1 && dat.tween.loopType == LoopType.Restart) {
+			if(loopBackToFrame >= 0) {
+				if(dat.tween.isReversed)
+					dat.tween.Reverse();
 				dat.tween.GoTo(((float)loopBackToFrame) / ((float)frameRate));
 				dat.tween.Play();
 				return;
@@ -1350,11 +1355,7 @@ public class AMTakeData {
 				cb(this);
 		}
 	}
-	
-	public void executeActions(float fromFrame = 0f) {
-		Debug.LogError("need implement");
-	}
-	
+
 	public float getElementsHeight(int group_id, float height_track, float height_track_foldin, float height_group) {
 		initGroups();
 		float height = 0;
