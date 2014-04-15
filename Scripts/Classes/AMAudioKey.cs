@@ -50,7 +50,7 @@ public class AMAudioKey : AMKey {
         }
     }
 
-    public override Tweener buildTweener(Sequence sequence, UnityEngine.Object target, int frameRate) {
+	public override Tweener buildTweener(AMITarget itarget, Sequence sequence, UnityEngine.Object target, int frameRate) {
         sequence.InsertCallback(getWaitTime(frameRate, 0.0f), OnMethodCallbackParams, target, (float)frameRate);
 
         return null;

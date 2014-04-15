@@ -1,11 +1,11 @@
 using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
-
+using System.Text;
 using Holoville.HOTween;
 
 [AddComponentMenu("")]
-public class AMTrack : MonoBehaviour {
+public abstract class AMTrack : MonoBehaviour {
     public delegate void OnKey(AMTrack track, AMKey key);
 
     public int id;
@@ -13,18 +13,75 @@ public class AMTrack : MonoBehaviour {
     public List<AMKey> keys = new List<AMKey>();
     public bool foldout = true;							// whether or not to foldout track in timeline GUI
 
+	[SerializeField]
+	protected string _targetPath; //for animations saved as meta
+
     public virtual int version { get { return 1; } } //must be at least 1
 
     public virtual int order { get { return 0; } }
 
-    public virtual UnityEngine.Object target {
-        get { return null; }
-    }
+	public string targetPath { get { return _targetPath; } }
 
     // set name based on index
     public void setName(int index) {
         name = "Track" + (index + 1);
     }
+
+	/// <summary>
+	/// Stores the target to serialized field based on track type, this is called if SetTarget 'serialize' parameter is true
+	/// </summary>
+	/// <param name="target">Target.</param>
+	protected abstract void SetSerializeObject(UnityEngine.Object obj);
+
+	/// <summary>
+	/// Gets the serialize object. If targetGO is not null, return the appropriate object from targetGO (e.g. if it's a specific component).
+	/// Otherwise, if go is null, grab from serialized field
+	/// </summary>
+	/// <returns>The serialize object.</returns>
+	/// <param name="go">Go.</param>
+	protected abstract UnityEngine.Object GetSerializeObject(GameObject targetGO);
+
+	/// <summary>
+	/// Gets the target relative to animator's hierarchy if we are referencing via AnimatorMeta
+	/// </summary>
+	public UnityEngine.Object GetTarget(AMITarget target) {
+		UnityEngine.Object ret = null;
+
+		if(target.TargetIsMeta()) {
+			ret = target.TargetGetCache(_targetPath) as UnityEngine.Object;
+			if(ret == null) {
+				Transform holder = target.TargetGetHolder();
+
+				GameObject go = AMUtil.GetTarget(holder, _targetPath);
+				if(go) {
+					ret = GetSerializeObject(go);
+					target.TargetSetCache(_targetPath, ret);
+				}
+				else {
+					Debug.LogError("Unable to find target: "+_targetPath);
+				}
+			}
+		}
+		else {
+			ret = GetSerializeObject(null);
+		}
+
+		return ret;
+	}
+
+	public void SetTarget(AMITarget target, UnityEngine.Object item) {
+		_targetPath = AMUtil.GetPath(target.TargetGetHolder(), item);
+		target.TargetSetCache(_targetPath, item);
+
+		if(target.TargetIsMeta())
+			SetSerializeObject(null);
+		else
+			SetSerializeObject(item);
+	}
+
+	public virtual bool isTargetEqual(AMITarget target, UnityEngine.Object obj) {
+		return GetTarget(target) == obj;
+	}
 
     // set name from string
     public void setName(string name) {
@@ -39,30 +96,21 @@ public class AMTrack : MonoBehaviour {
         return false;
     }
 
-    public bool CheckNullKeys() {
-        if(keys == null) return false;
-
-        foreach(AMKey key in keys) {
-            if(key == null) return false;
-        }
-        return true;
-    }
-    
     // draw track gizmos
-    public virtual void drawGizmos(float gizmo_size) { }
+	public virtual void drawGizmos(AMITarget target, float gizmo_size) { }
 
     // preview frame
-    public virtual void previewFrame(float frame, AMTrack extraTrack = null) { }
+	public virtual void previewFrame(AMITarget target, float frame, AMTrack extraTrack = null) { }
 
     // update cache
-    public virtual void updateCache() {
+    public virtual void updateCache(AMITarget target) {
 		sortKeys();
     }
 
-    public virtual void buildSequenceStart(Sequence s, int frameRate) {
+	public virtual void buildSequenceStart(AMITarget target, Sequence s, int frameRate) {
     }
 
-    public virtual AnimatorTimeline.JSONInit getJSONInit() {
+	public virtual AnimatorTimeline.JSONInit getJSONInit(AMITarget target) {
         Debug.LogWarning("Animator: No override for getJSONInit()");
         return new AnimatorTimeline.JSONInit();
     }
@@ -186,24 +234,24 @@ public class AMTrack : MonoBehaviour {
         Object.DestroyImmediate(this);
     }
 
-    public virtual List<GameObject> getDependencies() {
+	public virtual List<GameObject> getDependencies(AMITarget target) {
         return new List<GameObject>();
     }
 
-    public virtual List<GameObject> updateDependencies(List<GameObject> newReferences, List<GameObject> oldReferences) {
+	public virtual List<GameObject> updateDependencies(AMITarget target, List<GameObject> newReferences, List<GameObject> oldReferences) {
         return new List<GameObject>();
     }
 
-    public void offsetKeysFromBy(int frame, int amount) {
+	public void offsetKeysFromBy(AMITarget target, int frame, int amount) {
         if(keys.Count <= 0) return;
         for(int i = 0; i < keys.Count; i++) {
             if(frame <= 0 || keys[i].frame >= frame) keys[i].frame += amount;
         }
-        updateCache();
+		updateCache(target);
     }
 
     // returns the offset
-    public int shiftOutOfBoundsKeys() {
+	public int shiftOutOfBoundsKeys(AMITarget target) {
         if(keys.Count <= 0) return 0;
         sortKeys();
         if(keys[0].frame >= 1) return 0;
@@ -212,7 +260,7 @@ public class AMTrack : MonoBehaviour {
         foreach(AMKey key in keys) {
             key.frame += offset;
         }
-        updateCache();
+		updateCache(target);
         return offset;
     }
 
@@ -297,6 +345,7 @@ public class AMTrack : MonoBehaviour {
 		if(ntrack != null) {
             ntrack.id = id;
             ntrack.name = name;
+			ntrack._targetPath = _targetPath;
         }
 
         return ntrack;

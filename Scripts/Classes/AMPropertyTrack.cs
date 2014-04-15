@@ -26,129 +26,143 @@ public class AMPropertyTrack : AMTrack {
 		Sprite = 13,
     }
     public int valueType;
-    public GameObject obj;
-    public Component component;
-    public string propertyName;
-    public string fieldName;
-    public string methodName;
-    public string[] methodParameterTypes;
+
+	[SerializeField]
+    GameObject obj;
+	[SerializeField]
+    Component component;
+	[SerializeField]
+	string componentName;
+	[SerializeField]
+    string propertyName;
+	[SerializeField]
+    string fieldName;
+	[SerializeField]
+    string methodName;
+	[SerializeField]
+    string[] methodParameterTypes;
+
     private PropertyInfo cachedPropertyInfo;
     private FieldInfo cachedFieldInfo;
     private MethodInfo cachedMethodInfo;
-    public PropertyInfo propertyInfo {
-        get {
-            if(cachedPropertyInfo != null) {
-                return cachedPropertyInfo;
-            }
-            if(!obj || !component || propertyName == null) {
-                return null;
-            }
-            cachedPropertyInfo = component.GetType().GetProperty(propertyName);
-            return cachedPropertyInfo;
-        }
-        set {
-            if(value != null) propertyName = value.Name;
-            else propertyName = null;
-            cachedPropertyInfo = value;
 
-        }
-    }
-    public FieldInfo fieldInfo {
-        get {
-            if(cachedFieldInfo != null) return cachedFieldInfo;
-            if(!obj || !component || fieldName == null) return null;
-            cachedFieldInfo = component.GetType().GetField(fieldName);
-            return cachedFieldInfo;
-        }
-        set {
-            if(value != null) fieldName = value.Name;
-            else fieldName = null;
-            cachedFieldInfo = value;
-        }
-    }		// holds a field such as variables for user scripts, should be null if property is used
-    public MethodInfo methodInfo {
-        get {
-            if(cachedMethodInfo != null) return cachedMethodInfo;
-            if(!obj || !component || methodName == null) return null;
-            Type[] t = new Type[methodParameterTypes.Length];
-            for(int i = 0; i < methodParameterTypes.Length; i++) t[i] = Type.GetType(methodParameterTypes[i]);
-            cachedMethodInfo = component.GetType().GetMethod(methodName, t);
-            return cachedMethodInfo;
-        }
-        set {
-            if(value != null) methodName = value.Name;
-            else methodName = null;
-            cachedMethodInfo = value;
-        }
-    }
+	protected override void SetSerializeObject(UnityEngine.Object obj) {
+		this.obj = obj as GameObject;
+
+		propertyName = "";
+		fieldName = "";
+		methodName = "";
+		methodParameterTypes = new string[0];
+		
+		cachedPropertyInfo = null;
+		cachedFieldInfo = null;
+		cachedMethodInfo = null;
+	}
+	
+	protected override UnityEngine.Object GetSerializeObject(GameObject targetGO) {
+		return targetGO ? targetGO : obj;
+	}
+
+	Component GetTargetComp(AMITarget target) {
+		Component comp;
+		if(target.TargetIsMeta()) {
+			component = null;
+			GameObject go = GetTarget(target) as GameObject;
+			comp = go.GetComponent(componentName);
+		}
+		else {
+			comp = component;
+		}
+		return comp;
+	}
+
+	void RefreshData(Component comp) {
+		if(!string.IsNullOrEmpty(propertyName)) {
+			if(cachedPropertyInfo == null) cachedPropertyInfo = comp.GetType().GetProperty(propertyName);
+			cachedFieldInfo = null;
+			cachedMethodInfo = null;
+		}
+		else if(!string.IsNullOrEmpty(fieldName)) {
+			if(cachedFieldInfo == null) cachedFieldInfo = comp.GetType().GetField(fieldName);
+			cachedPropertyInfo = null;
+			cachedMethodInfo = null;
+		}
+		else if(!string.IsNullOrEmpty(methodName)) {
+			if(cachedMethodInfo == null) {
+				Type[] t = new Type[methodParameterTypes.Length];
+				for(int i = 0; i < methodParameterTypes.Length; i++) t[i] = Type.GetType(methodParameterTypes[i]);
+				cachedMethodInfo = component.GetType().GetMethod(methodName, t);
+			}
+			cachedFieldInfo = null;
+			cachedPropertyInfo = null;
+		}
+	}
+
 	public bool canTween {
 		get {
 			return !(valueType == (int)ValueType.Bool || valueType == (int)ValueType.String || valueType == (int)ValueType.Sprite);
 		}
 	}
     public override string getTrackType() {
-        if(fieldInfo != null) return fieldInfo.Name;
-        if(propertyInfo != null) return propertyInfo.Name;
-        if(methodInfo != null) {
+		if(!string.IsNullOrEmpty(fieldName)) return fieldName;
+		if(!string.IsNullOrEmpty(propertyName)) return propertyName;
+		if(!string.IsNullOrEmpty(methodName)) {
 
         }
         return "Not Set";
     }
     public string getMemberInfoTypeName() {
-        if(fieldInfo != null) return "FieldInfo";
-        if(propertyInfo != null) return "PropertyInfo";
-        if(methodInfo != null) return "MethodInfo";
+		if(!string.IsNullOrEmpty(fieldName)) return "FieldInfo";
+		if(!string.IsNullOrEmpty(propertyName)) return "PropertyInfo";
+		if(!string.IsNullOrEmpty(methodName)) return "MethodInfo";
         return "Undefined";
     }
     public bool isPropertySet() {
-        if(fieldInfo != null) return true;
-        if(propertyInfo != null) return true;
-        if(methodInfo != null) {
+		if(!string.IsNullOrEmpty(fieldName)) return true;
+		if(!string.IsNullOrEmpty(propertyName)) return true;
+		if(!string.IsNullOrEmpty(methodName)) {
         }
         return false;
     }
 
-	public override UnityEngine.Object target {
-		get {
-			return obj;
-		}
-	}
-
     // add key
-    public AMKey addKey(int _frame) {
+    public AMKey addKey(AMITarget target, int _frame) {
+		Component comp = GetTargetComp(target);
+		RefreshData(comp);
+
         if(isValueTypeNumeric(valueType))
-            return addKey(_frame, getPropertyValueNumeric());
+			return addKey(target, _frame, getPropertyValueNumeric());
 		else if(valueType == (int)ValueType.Bool)
-			return addKey(_frame, getPropertyValueBool() ? 1.0 : -1.0);
+			return addKey(target, _frame, getPropertyValueBool() ? 1.0 : -1.0);
 		else if(valueType == (int)ValueType.String)
-			return addKey(_frame, getPropertyValueString());
+			return addKey(target, _frame, getPropertyValueString());
         else if(valueType == (int)ValueType.Vector2)
-            return addKey(_frame, getPropertyValueVector2());
+			return addKey(target, _frame, getPropertyValueVector2());
         else if(valueType == (int)ValueType.Vector3)
-            return addKey(_frame, getPropertyValueVector3());
+			return addKey(target, _frame, getPropertyValueVector3());
         else if(valueType == (int)ValueType.Color)
-            return addKey(_frame, getPropertyValueColor());
+			return addKey(target, _frame, getPropertyValueColor());
         else if(valueType == (int)ValueType.Rect)
-            return addKey(_frame, getPropertyValueRect());
+			return addKey(target, _frame, getPropertyValueRect());
         else if(valueType == (int)ValueType.Vector4)
-            return addKey(_frame, getPropertyValueVector4());
+			return addKey(target, _frame, getPropertyValueVector4());
         else if(valueType == (int)ValueType.Quaternion)
-            return addKey(_frame, getPropertyValueQuaternion());
+			return addKey(target, _frame, getPropertyValueQuaternion());
 		else if(valueType == (int)ValueType.Sprite)
-			return addKey(_frame, getPropertyValueObject());
+			return addKey(target, _frame, getPropertyValueObject());
         else {
             Debug.LogError("Animator: Invalid ValueType " + valueType.ToString());
             return null;
         }
     }
     // add key numeric
-    public AMKey addKey(int _frame, double val) {
+	AMKey addKey(AMITarget target, int _frame, double val) {
         foreach(AMPropertyKey key in keys) {
             // if key exists on frame, update key
             if(key.frame == _frame) {
                 key.setValue(val);
                 // update cache
-                updateCache();
+				updateCache(target);
                 return null;
             }
         }
@@ -161,17 +175,17 @@ public class AMPropertyTrack : AMTrack {
         // add a new key
         keys.Add(a);
         // update cache
-        updateCache();
+		updateCache(target);
         return a;
     }
 	// add key object
-	public AMKey addKey(int _frame, UnityEngine.Object val) {
+	AMKey addKey(AMITarget target, int _frame, UnityEngine.Object val) {
 		foreach(AMPropertyKey key in keys) {
 			// if key exists on frame, update key
 			if(key.frame == _frame) {
 				key.setValue(val);
 				// update cache
-				updateCache();
+				updateCache(target);
 				return null;
 			}
 		}
@@ -184,17 +198,17 @@ public class AMPropertyTrack : AMTrack {
 		// add a new key
 		keys.Add(a);
 		// update cache
-		updateCache();
+		updateCache(target);
 		return a;
 	}
 	// add key string
-	public AMKey addKey(int _frame, string val) {
+	AMKey addKey(AMITarget target, int _frame, string val) {
 		foreach(AMPropertyKey key in keys) {
 			// if key exists on frame, update key
 			if(key.frame == _frame) {
 				key.setValue(val);
 				// update cache
-				updateCache();
+				updateCache(target);
 				return null;
 			}
 		}
@@ -207,17 +221,17 @@ public class AMPropertyTrack : AMTrack {
 		// add a new key
 		keys.Add(a);
 		// update cache
-		updateCache();
+		updateCache(target);
 		return a;
 	}
     // add key vector2
-    public AMKey addKey(int _frame, Vector2 val) {
+	AMKey addKey(AMITarget target, int _frame, Vector2 val) {
         foreach(AMPropertyKey key in keys) {
             // if key exists on frame, update key
             if(key.frame == _frame) {
                 key.setValue(val);
                 // update cache
-                updateCache();
+				updateCache(target);
                 return null;
             }
         }
@@ -230,17 +244,17 @@ public class AMPropertyTrack : AMTrack {
         // add a new key
         keys.Add(a);
         // update cache
-        updateCache();
+		updateCache(target);
         return a;
     }
     // add key vector3
-    public AMKey addKey(int _frame, Vector3 val) {
+	AMKey addKey(AMITarget target, int _frame, Vector3 val) {
         foreach(AMPropertyKey key in keys) {
             // if key exists on frame, update key
             if(key.frame == _frame) {
                 key.setValue(val);
                 // update cache
-                updateCache();
+				updateCache(target);
                 return null;
             }
         }
@@ -253,17 +267,17 @@ public class AMPropertyTrack : AMTrack {
         // add a new key
         keys.Add(a);
         // update cache
-        updateCache();
+		updateCache(target);
         return a;
     }
     // add key color
-    public AMKey addKey(int _frame, Color val) {
+	AMKey addKey(AMITarget target, int _frame, Color val) {
         foreach(AMPropertyKey key in keys) {
             // if key exists on frame, update key
             if(key.frame == _frame) {
                 key.setValue(val);
                 // update cache
-                updateCache();
+				updateCache(target);
                 return null;
             }
         }
@@ -276,17 +290,17 @@ public class AMPropertyTrack : AMTrack {
         // add a new key
         keys.Add(a);
         // update cache
-        updateCache();
+		updateCache(target);
         return a;
     }
     // add key rect
-    public AMKey addKey(int _frame, Rect val) {
+	AMKey addKey(AMITarget target, int _frame, Rect val) {
         foreach(AMPropertyKey key in keys) {
             // if key exists on frame, update key
             if(key.frame == _frame) {
                 key.setValue(val);
                 // update cache
-                updateCache();
+				updateCache(target);
                 return null;
             }
         }
@@ -299,17 +313,17 @@ public class AMPropertyTrack : AMTrack {
         // add a new key
         keys.Add(a);
         // update cache
-        updateCache();
+		updateCache(target);
         return a;
     }
     // add key vector4
-    public AMKey addKey(int _frame, Vector4 val) {
+	AMKey addKey(AMITarget target, int _frame, Vector4 val) {
         foreach(AMPropertyKey key in keys) {
             // if key exists on frame, update key
             if(key.frame == _frame) {
                 key.setValue(val);
                 // update cache
-                updateCache();
+				updateCache(target);
                 return null;
             }
         }
@@ -322,17 +336,17 @@ public class AMPropertyTrack : AMTrack {
         // add a new key
         keys.Add(a);
         // update cache
-        updateCache();
+		updateCache(target);
         return a;
     }
     // add key quaternion
-    public AMKey addKey(int _frame, Quaternion val) {
+	AMKey addKey(AMITarget target, int _frame, Quaternion val) {
         foreach(AMPropertyKey key in keys) {
             // if key exists on frame, update key
             if(key.frame == _frame) {
                 key.setValue(val);
                 // update cache
-                updateCache();
+				updateCache(target);
                 return null;
             }
         }
@@ -345,72 +359,90 @@ public class AMPropertyTrack : AMTrack {
         // add a new key
         keys.Add(a);
         // update cache
-        updateCache();
+		updateCache(target);
         return a;
     }
-    // determines whether the supplied object is equal to the object in this instance
-    public bool isObjectUnique(GameObject obj) {
-        if(this.obj != obj) return true;
-        return false;
-    }
-    public bool setObject(GameObject obj) {
-        if(this.obj != obj) {
-            this.obj = obj;
-            fieldInfo = null;
-            propertyInfo = null;
-            methodInfo = null;
-            return true;
-        }
-        return false;
-    }
-    public bool setComponent(Component component) {
-        if(this.component != component) {
-            this.component = component;
-            return true;
-        }
+    
+	public bool setComponent(AMITarget target, Component component) {
+		if(target.TargetIsMeta()) {
+			string cname = component.GetType().Name;
+			this.component = null;
+			if(componentName != cname) {
+				componentName = cname;
+				return true;
+			}
+		}
+		else {
+			if(this.component != component) {
+				this.component = component;
+				componentName = component.GetType().Name;
+				return true;
+			}
+		}
         return false;
     }
     public bool setPropertyInfo(PropertyInfo propertyInfo) {
-        if(this.propertyInfo != propertyInfo) {
+		string n = propertyInfo.Name;
+        if(propertyName != n) {
             // set the property value type
             setValueType(propertyInfo.PropertyType);
-            this.propertyInfo = propertyInfo;
-            fieldInfo = null;
+            cachedPropertyInfo = propertyInfo;
+			propertyName = n;
+            
+			cachedFieldInfo = null;
+			fieldName = "";
+			cachedMethodInfo = null;
+			methodName = "";
             return true;
         }
         return false;
     }
     public bool setFieldInfo(FieldInfo fieldInfo) {
-        if(this.fieldInfo != fieldInfo) {
+		string n = fieldInfo.Name;
+        if(fieldName != n) {
             setValueType(fieldInfo.FieldType);
-            this.fieldInfo = fieldInfo;
-            propertyInfo = null;
+            cachedFieldInfo = fieldInfo;
+			fieldName = n;
+
+            cachedPropertyInfo = null;
+			propertyName = "";
+			cachedMethodInfo = null;
+			methodName = "";
             return true;
         }
         return false;
     }
 
     public bool setMethodInfo(MethodInfo methodInfo, string[] parameterTypes, ValueType valueType) {
-        if(this.valueType != (int)valueType || this.methodParameterTypes != parameterTypes || this.methodInfo != methodInfo) {
+		string n = methodInfo.Name;
+        if(this.valueType != (int)valueType || this.methodParameterTypes != parameterTypes || methodName != n) {
             setValueType((int)valueType);
+			methodName = n;
             methodParameterTypes = parameterTypes;
-            this.methodInfo = methodInfo;
-            propertyInfo = null;
-            fieldInfo = null;
+            cachedMethodInfo = methodInfo;
+            
+			cachedFieldInfo = null;
+			fieldName = "";
+			cachedPropertyInfo = null;
+			propertyName = "";
             return true;
         }
         return false;
     }
     // update cache (optimized)
-    public override void updateCache() {
-        // sort keys
-        sortKeys();
+    public override void updateCache(AMITarget target) {
+        base.updateCache(target);
+
+		Component comp = GetTargetComp(target);
+		RefreshData(comp);
+
         for(int i = 0; i < keys.Count; i++) {
             AMPropertyKey key = keys[i] as AMPropertyKey;
 
             key.version = version;
 
-            key.component = component;
+			key.SetComponent(comp, target.TargetIsMeta());
+
             if(keys.Count > (i + 1)) key.endFrame = keys[i + 1].frame;
             else {
 				if(i > 0 && keys[i-1].easeType == AMKey.EaseTypeNone)
@@ -422,19 +454,18 @@ public class AMPropertyTrack : AMTrack {
             Type _type = null;
             bool showError = true;
             //int methodInfoType = -1;
-            if(fieldInfo != null) {
-                key.fieldInfo = fieldInfo;
-                _type = fieldInfo.FieldType;
+            if(cachedFieldInfo != null) {
+				key.SetFieldInfo(cachedFieldInfo);
+				_type = cachedFieldInfo.FieldType;
                 showError = false;
             }
-            else if(propertyInfo != null) {
-                key.propertyInfo = propertyInfo;
-                _type = propertyInfo.PropertyType;
+            else if(cachedPropertyInfo != null) {
+				key.SetPropertyInfo(cachedPropertyInfo);
+				_type = cachedPropertyInfo.PropertyType;
                 showError = false;
             }
-            else if(methodInfo != null) {
-                key.methodInfo = methodInfo;
-                key.methodParameterTypes = methodParameterTypes;
+            else if(cachedMethodInfo != null) {
+				key.SetMethodInfo(cachedMethodInfo, methodParameterTypes);
             }
             if(showError) {
                 Debug.LogError("Animator: Fatal Error; fieldInfo, propertyInfo and methodInfo are unset for Value Type " + valueType);
@@ -469,97 +500,95 @@ public class AMPropertyTrack : AMTrack {
                 return;
             }
         }
-        base.updateCache();
-
     }
 
-	public bool getPropertyValueBool() {
-		if(fieldInfo != null)
-			return Convert.ToBoolean(fieldInfo.GetValue(component));
+	bool getPropertyValueBool() {
+		if(cachedFieldInfo != null)
+			return Convert.ToBoolean(cachedFieldInfo.GetValue(component));
 		else
-			return Convert.ToBoolean(propertyInfo.GetValue(component, null));
+			return Convert.ToBoolean(cachedPropertyInfo.GetValue(component, null));
 	}
 
-	public string getPropertyValueString() {
-		if(fieldInfo != null)
-			return Convert.ToString(fieldInfo.GetValue(component));
+	string getPropertyValueString() {
+		if(cachedFieldInfo != null)
+			return Convert.ToString(cachedFieldInfo.GetValue(component));
 		else
-			return Convert.ToString(propertyInfo.GetValue(component, null));
+			return Convert.ToString(cachedPropertyInfo.GetValue(component, null));
 	}
 
     // get numeric value. unsafe, must check to see if value is numeric first
-    public double getPropertyValueNumeric() {
+    double getPropertyValueNumeric() {
         // field
-        if(fieldInfo != null)
-            return Convert.ToDouble(fieldInfo.GetValue(component));
+		if(cachedFieldInfo != null)
+			return Convert.ToDouble(cachedFieldInfo.GetValue(component));
         // property
         else {
-            return Convert.ToDouble(propertyInfo.GetValue(component, null));
+			return Convert.ToDouble(cachedPropertyInfo.GetValue(component, null));
         }
 
     }
     // get Vector2 value. unsafe, must check to see if value is Vector2 first
-    public Vector2 getPropertyValueVector2() {
+    Vector2 getPropertyValueVector2() {
         // field
-        if(fieldInfo != null)
-            return (Vector2)fieldInfo.GetValue(component);
+		if(cachedFieldInfo != null)
+			return (Vector2)cachedFieldInfo.GetValue(component);
         // property
         else
-            return (Vector2)propertyInfo.GetValue(component, null);
+			return (Vector2)cachedPropertyInfo.GetValue(component, null);
 
     }
-    public Vector3 getPropertyValueVector3() {
+    Vector3 getPropertyValueVector3() {
         // field
-        if(fieldInfo != null)
-            return (Vector3)fieldInfo.GetValue(component);
+		if(cachedFieldInfo != null)
+			return (Vector3)cachedFieldInfo.GetValue(component);
         // property
         else
-            return (Vector3)propertyInfo.GetValue(component, null);
+			return (Vector3)cachedPropertyInfo.GetValue(component, null);
 
     }
-    public Vector4 getPropertyValueVector4() {
+    Vector4 getPropertyValueVector4() {
         // field
-        if(fieldInfo != null)
-            return (Vector4)fieldInfo.GetValue(component);
+		if(cachedFieldInfo != null)
+			return (Vector4)cachedFieldInfo.GetValue(component);
         // property
         else
-            return (Vector4)propertyInfo.GetValue(component, null);
+			return (Vector4)cachedPropertyInfo.GetValue(component, null);
 
     }
-    public Quaternion getPropertyValueQuaternion() {
+    Quaternion getPropertyValueQuaternion() {
         // field
-        if(fieldInfo != null)
-            return (Quaternion)fieldInfo.GetValue(component);
+		if(cachedFieldInfo != null)
+			return (Quaternion)cachedFieldInfo.GetValue(component);
         // property
         else
-            return (Quaternion)propertyInfo.GetValue(component, null);
+			return (Quaternion)cachedPropertyInfo.GetValue(component, null);
 
     }
-    public Color getPropertyValueColor() {
+    Color getPropertyValueColor() {
         // field
-        if(fieldInfo != null)
-            return (Color)fieldInfo.GetValue(component);
+		if(cachedFieldInfo != null)
+			return (Color)cachedFieldInfo.GetValue(component);
         // property
         else
-            return (Color)propertyInfo.GetValue(component, null);
+			return (Color)cachedPropertyInfo.GetValue(component, null);
 
     }
-    public Rect getPropertyValueRect() {
+    Rect getPropertyValueRect() {
         // field
-        if(fieldInfo != null)
-            return (Rect)fieldInfo.GetValue(component);
+		if(cachedFieldInfo != null)
+			return (Rect)cachedFieldInfo.GetValue(component);
         // property
         else
-            return (Rect)propertyInfo.GetValue(component, null);
+			return (Rect)cachedPropertyInfo.GetValue(component, null);
 
     }
-	public UnityEngine.Object getPropertyValueObject() {
+	UnityEngine.Object getPropertyValueObject() {
 		// field
-		if(fieldInfo != null)
-			return (UnityEngine.Object)fieldInfo.GetValue(component);
+		if(cachedFieldInfo != null)
+			return (UnityEngine.Object)cachedFieldInfo.GetValue(component);
 		// property
 		else
-			return (UnityEngine.Object)propertyInfo.GetValue(component, null);
+			return (UnityEngine.Object)cachedPropertyInfo.GetValue(component, null);
 	}
     public static bool isNumeric(Type t) {
         if((t == typeof(int)) || (t == typeof(long)) || (t == typeof(float)) || (t == typeof(double)))
@@ -610,64 +639,70 @@ public class AMPropertyTrack : AMTrack {
 
     }
     // preview a frame in the scene view
-    public void previewFrame(float frame, bool quickPreview = false) {
+    public void previewFrame(AMITarget target, float frame, bool quickPreview = false) {
         if(keys == null || keys.Count <= 0) {
             return;
         }
-        if(!component || !obj) return;
+
+		GameObject go = GetTarget(target) as GameObject;
+		Component comp = GetTargetComp(target);
+
+		if(!comp || !go) return;
+
+		RefreshData(comp);
 
         // if before or equal to first frame, or is the only frame
 		AMPropertyKey ckey = keys[0] as AMPropertyKey;
 		if((frame <= (float)ckey.frame) || ckey.endFrame == -1) {
-            //obj.rotation = (cache[0] as AMPropertyAction).getStartQuaternion();
-            if(fieldInfo != null) {
-				fieldInfo.SetValue(component, ckey.getStartValue());
-                refreshTransform();
+			//go.rotation = (cache[0] as AMPropertyAction).getStartQuaternion();
+            if(cachedFieldInfo != null) {
+				cachedFieldInfo.SetValue(comp, ckey.getStartValue());
+                refreshTransform(go);
             }
-            else if(propertyInfo != null) {
-				propertyInfo.SetValue(component, ckey.getStartValue(), null);
-                refreshTransform();
+            else if(cachedPropertyInfo != null) {
+				cachedPropertyInfo.SetValue(comp, ckey.getStartValue(), null);
+				refreshTransform(go);
             }
-            else if(methodInfo != null) {
+            else if(cachedMethodInfo != null) {
             }
-			ckey.refresh(ckey.getStartValue());
+			ckey.refresh(go, ckey.getStartValue());
             return;
         }
         // if not tweenable and beyond last frame
 		ckey = keys[keys.Count - 1] as AMPropertyKey;
 		if(!canTween && frame >= (float)ckey.frame) {
-			if(fieldInfo != null) {
-				fieldInfo.SetValue(component, ckey.getStartValue());
-				refreshTransform();
+			if(cachedFieldInfo != null) {
+				cachedFieldInfo.SetValue(comp, ckey.getStartValue());
+				refreshTransform(go);
 			}
-			else if(propertyInfo != null) {
-				propertyInfo.SetValue(component, ckey.getStartValue(), null);
-				refreshTransform();
+			else if(cachedPropertyInfo != null) {
+				cachedPropertyInfo.SetValue(comp, ckey.getStartValue(), null);
+				refreshTransform(go);
 			}
-			else if(methodInfo != null) {
+			else if(cachedMethodInfo != null) {
 			}
 
 			if(valueType == (int)ValueType.Sprite) {
-				SpriteRenderer sprRender = component as SpriteRenderer;
+				SpriteRenderer sprRender = comp as SpriteRenderer;
 				sprRender.sprite = ckey.getStartValue() as Sprite;
 			}
-			ckey.refresh(ckey.getStartValue());
+			ckey.refresh(go, ckey.getStartValue());
 			return;
 		}
 		//if tweenable and beyond last tweenable
 		ckey = keys[keys.Count - 2] as AMPropertyKey;
 		if(frame >= (float)ckey.endFrame) {
-            if(fieldInfo != null) {
-				fieldInfo.SetValue(component, ckey.getEndValue());
-                refreshTransform();
+			if(cachedFieldInfo != null) {
+				cachedFieldInfo.SetValue(comp, ckey.getEndValue());
+				refreshTransform(go);
             }
-            else if(propertyInfo != null) {
-				propertyInfo.SetValue(component, ckey.getEndValue(), null);
-                refreshTransform();
+			else if(cachedPropertyInfo != null) {
+				cachedPropertyInfo.SetValue(comp, ckey.getEndValue(), null);
+				refreshTransform(go);
             }
-            else if(methodInfo != null) {
+			else if(cachedMethodInfo != null) {
             }
-			ckey.refresh(ckey.getEndValue());
+			ckey.refresh(go, ckey.getEndValue());
             return;
         }
         // if lies on property action
@@ -676,17 +711,17 @@ public class AMPropertyTrack : AMTrack {
             if(quickPreview && !key.targetsAreEqual()) return;	// quick preview; if action will execute then skip
             // if on startFrame or is no tween
             if(frame == (float)key.frame || ((key.easeType == AMKey.EaseTypeNone || !key.canTween) && frame < (float)key.endFrame)) {
-                if(fieldInfo != null) {
-                    fieldInfo.SetValue(component, key.getStartValue());
-                    refreshTransform();
+				if(cachedFieldInfo != null) {
+					cachedFieldInfo.SetValue(comp, key.getStartValue());
+					refreshTransform(go);
                 }
-                else if(propertyInfo != null) {
-                    propertyInfo.SetValue(component, key.getStartValue(), null);
-                    refreshTransform();
+				else if(cachedPropertyInfo != null) {
+					cachedPropertyInfo.SetValue(comp, key.getStartValue(), null);
+					refreshTransform(go);
                 }
-                else if(methodInfo != null) {
+				else if(cachedMethodInfo != null) {
                 }
-				key.refresh(key.getStartValue());
+				key.refresh(go, key.getStartValue());
                 return;
             }
             // if on endFrame
@@ -694,17 +729,17 @@ public class AMPropertyTrack : AMTrack {
 				if(key.easeType == AMKey.EaseTypeNone || !key.canTween)
 					continue;
 				else {
-	                if(fieldInfo != null) {
-	                    fieldInfo.SetValue(component, key.getEndValue());
-	                    refreshTransform();
+					if(cachedFieldInfo != null) {
+						cachedFieldInfo.SetValue(comp, key.getEndValue());
+						refreshTransform(go);
 	                }
-	                else if(propertyInfo != null) {
-	                    propertyInfo.SetValue(component, key.getEndValue(), null);
-	                    refreshTransform();
+					else if(cachedPropertyInfo != null) {
+						cachedPropertyInfo.SetValue(comp, key.getEndValue(), null);
+						refreshTransform(go);
 	                }
-	                else if(methodInfo != null) {
+					else if(cachedMethodInfo != null) {
 	                }
-					key.refresh(key.getEndValue());
+					key.refresh(go, key.getEndValue());
 	                return;
 				}
             }
@@ -730,49 +765,49 @@ public class AMPropertyTrack : AMTrack {
                 float vStartInteger = Convert.ToSingle(key.val);
                 float vEndInteger = Convert.ToSingle(key.end_val);
                 int vCurrentInteger = Mathf.RoundToInt(Mathf.Lerp(vStartInteger, vEndInteger, t));
-                if(fieldInfo != null) fieldInfo.SetValue(component, vCurrentInteger);
-                else if(propertyInfo != null) propertyInfo.SetValue(component, vCurrentInteger, null);
-				refreshTransform(); key.refresh(vCurrentInteger);
+				if(cachedFieldInfo != null) cachedFieldInfo.SetValue(comp, vCurrentInteger);
+				else if(cachedPropertyInfo != null) cachedPropertyInfo.SetValue(comp, vCurrentInteger, null);
+				refreshTransform(go); key.refresh(go, vCurrentInteger);
             }
             else if(key.valueType == (int)ValueType.Long) {
                 float vStartLong = Convert.ToSingle(key.val);
                 float vEndLong = Convert.ToSingle(key.end_val);
                 long vCurrentLong = (long)Mathf.Lerp(vStartLong, vEndLong, t);
-                if(fieldInfo != null) fieldInfo.SetValue(component, vCurrentLong);
-                else if(propertyInfo != null) propertyInfo.SetValue(component, vCurrentLong, null);
-				refreshTransform(); key.refresh(vCurrentLong);
+				if(cachedFieldInfo != null) cachedFieldInfo.SetValue(comp, vCurrentLong);
+				else if(cachedPropertyInfo != null) cachedPropertyInfo.SetValue(comp, vCurrentLong, null);
+				refreshTransform(go); key.refresh(go, vCurrentLong);
             }
             else if(key.valueType == (int)ValueType.Float) {
                 float vStartFloat = Convert.ToSingle(key.val);
                 float vEndFloat = Convert.ToSingle(key.end_val);
                 float vCurrentFloat = Mathf.Lerp(vStartFloat, vEndFloat, t);
-                if(fieldInfo != null) fieldInfo.SetValue(component, vCurrentFloat);
-                else if(propertyInfo != null) propertyInfo.SetValue(component, vCurrentFloat, null);
-				refreshTransform(); key.refresh(vCurrentFloat);
+				if(cachedFieldInfo != null) cachedFieldInfo.SetValue(comp, vCurrentFloat);
+				else if(cachedPropertyInfo != null) cachedPropertyInfo.SetValue(comp, vCurrentFloat, null);
+				refreshTransform(go); key.refresh(go, vCurrentFloat);
             }
             else if(key.valueType == (int)ValueType.Double) {
                 double vCurrentDouble = key.val + ((double)t) * (key.end_val - key.val);
-                if(fieldInfo != null) fieldInfo.SetValue(component, vCurrentDouble);
-                else if(propertyInfo != null) propertyInfo.SetValue(component, vCurrentDouble, null);
-				refreshTransform(); key.refresh(vCurrentDouble);
+				if(cachedFieldInfo != null) cachedFieldInfo.SetValue(comp, vCurrentDouble);
+				else if(cachedPropertyInfo != null) cachedPropertyInfo.SetValue(comp, vCurrentDouble, null);
+				refreshTransform(go); key.refresh(go, vCurrentDouble);
             }
             else if(key.valueType == (int)ValueType.Vector2) {
                 Vector2 vCurrentVector2 = Vector2.Lerp(key.vect2, key.end_vect2, t);
-                if(fieldInfo != null) fieldInfo.SetValue(component, vCurrentVector2);
-                else if(propertyInfo != null) propertyInfo.SetValue(component, vCurrentVector2, null);
-				refreshTransform(); key.refresh(vCurrentVector2);
+				if(cachedFieldInfo != null) cachedFieldInfo.SetValue(comp, vCurrentVector2);
+				else if(cachedPropertyInfo != null) cachedPropertyInfo.SetValue(comp, vCurrentVector2, null);
+				refreshTransform(go); key.refresh(go, vCurrentVector2);
             }
             else if(key.valueType == (int)ValueType.Vector3) {
                 Vector3 vCurrentVector3 = Vector3.Lerp(key.vect3, key.end_vect3, t);
-                if(fieldInfo != null) fieldInfo.SetValue(component, vCurrentVector3);
-                else if(propertyInfo != null) propertyInfo.SetValue(component, vCurrentVector3, null);
-				refreshTransform(); key.refresh(vCurrentVector3);
+				if(cachedFieldInfo != null) cachedFieldInfo.SetValue(comp, vCurrentVector3);
+				else if(cachedPropertyInfo != null) cachedPropertyInfo.SetValue(comp, vCurrentVector3, null);
+				refreshTransform(go); key.refresh(go, vCurrentVector3);
             }
             else if(key.valueType == (int)ValueType.Color) {
                 Color vCurrentColor = Color.Lerp(key.color, key.end_color, t);
-                if(fieldInfo != null) fieldInfo.SetValue(component, vCurrentColor);
-                else if(propertyInfo != null) propertyInfo.SetValue(component, vCurrentColor, null);
-				refreshTransform(); key.refresh(vCurrentColor);
+				if(cachedFieldInfo != null) cachedFieldInfo.SetValue(comp, vCurrentColor);
+				else if(cachedPropertyInfo != null) cachedPropertyInfo.SetValue(comp, vCurrentColor, null);
+				refreshTransform(go); key.refresh(go, vCurrentColor);
             }
             else if(key.valueType == (int)ValueType.Rect) {
                 Rect vStartRect = key.rect;
@@ -782,21 +817,21 @@ public class AMPropertyTrack : AMTrack {
                 vCurrentRect.y = Mathf.Lerp(vStartRect.y, vEndRect.y, t);
                 vCurrentRect.width = Mathf.Lerp(vStartRect.width, vEndRect.width, t);
                 vCurrentRect.height = Mathf.Lerp(vStartRect.height, vEndRect.height, t);
-                if(fieldInfo != null) fieldInfo.SetValue(component, vCurrentRect);
-                else if(propertyInfo != null) propertyInfo.SetValue(component, vCurrentRect, null);
-				refreshTransform(); key.refresh(vCurrentRect);
+				if(cachedFieldInfo != null) cachedFieldInfo.SetValue(comp, vCurrentRect);
+				else if(cachedPropertyInfo != null) cachedPropertyInfo.SetValue(comp, vCurrentRect, null);
+				refreshTransform(go); key.refresh(go, vCurrentRect);
             }
             else if(key.valueType == (int)ValueType.Vector4) {
                 Vector4 vCurrentVector4 = Vector4.Lerp(key.vect4, key.end_vect4, t);
-                if(fieldInfo != null) fieldInfo.SetValue(component, vCurrentVector4);
-                else if(propertyInfo != null) propertyInfo.SetValue(component, vCurrentVector4, null);
-				refreshTransform(); key.refresh(vCurrentVector4);
+				if(cachedFieldInfo != null) cachedFieldInfo.SetValue(comp, vCurrentVector4);
+				else if(cachedPropertyInfo != null) cachedPropertyInfo.SetValue(comp, vCurrentVector4, null);
+				refreshTransform(go); key.refresh(go, vCurrentVector4);
             }
             else if(key.valueType == (int)ValueType.Quaternion) {
                 Quaternion vCurrentQuat = Quaternion.Slerp(key.quat, key.end_quat, t);
-                if(fieldInfo != null) fieldInfo.SetValue(component, vCurrentQuat);
-                else if(propertyInfo != null) propertyInfo.SetValue(component, vCurrentQuat, null);
-				refreshTransform(); key.refresh(vCurrentQuat);
+				if(cachedFieldInfo != null) cachedFieldInfo.SetValue(comp, vCurrentQuat);
+				else if(cachedPropertyInfo != null) cachedPropertyInfo.SetValue(comp, vCurrentQuat, null);
+				refreshTransform(go); key.refresh(go, vCurrentQuat);
             }
             else {
                 Debug.LogError("Animator: Invalid ValueType " + valueType.ToString());
@@ -805,17 +840,14 @@ public class AMPropertyTrack : AMTrack {
             return;
         }
     }
-    public void refreshTransform() {
-        if(Application.isPlaying || !obj) return;
-        obj.transform.position = new Vector3(obj.transform.position.x, obj.transform.position.y, obj.transform.position.z);
+    public void refreshTransform(GameObject targetGO) {
+		if(Application.isPlaying || !targetGO) return;
+		Vector3 p = targetGO.transform.position;
+		targetGO.transform.position = p;
     }
 
     public string getComponentName() {
-        if(fieldInfo != null) return fieldInfo.DeclaringType.Name;
-        if(propertyInfo != null) return propertyInfo.DeclaringType.Name;
-        if(methodInfo != null) {
-        }
-        return "Unknown";
+		return componentName;
     }
     public string getValueInitialization(int codeLanguage, string varName) {
         string s = "";
@@ -829,46 +861,47 @@ public class AMPropertyTrack : AMTrack {
         if(valueType == (int)ValueType.Double) return true;
         return false;
     }
-    public bool hasSamePropertyAs(AMPropertyTrack _track) {
-        if(_track.obj == obj && _track.component == component && _track.getTrackType() == getTrackType())
+    public bool hasSamePropertyAs(AMITarget target, AMPropertyTrack _track) {
+		if(_track.GetTarget(target) == GetTarget(target) && _track.GetTargetComp(target) == GetTargetComp(target) && _track.getTrackType() == getTrackType())
             return true;
         return false;
     }
 
-    public override AnimatorTimeline.JSONInit getJSONInit() {
+	public override AnimatorTimeline.JSONInit getJSONInit(AMITarget target) {
         Debug.LogError("need implement");
         return null;
     }
 
-    public override List<GameObject> getDependencies() {
+    public override List<GameObject> getDependencies(AMITarget target) {
+		GameObject go = GetTarget(target) as GameObject;
         List<GameObject> ls = new List<GameObject>();
-        if(obj) ls.Add(obj);
+		if(go) ls.Add(go);
         return ls;
     }
 
-    public override List<GameObject> updateDependencies(List<GameObject> newReferences, List<GameObject> oldReferences) {
+	public override List<GameObject> updateDependencies(AMITarget target, List<GameObject> newReferences, List<GameObject> oldReferences) {
+		GameObject go = GetTarget(target) as GameObject;
         List<GameObject> lsFlagToKeep = new List<GameObject>();
-        if(!obj) return lsFlagToKeep;
+		if(!go) return lsFlagToKeep;
         for(int i = 0; i < oldReferences.Count; i++) {
-            if(oldReferences[i] == obj) {
-                string componentName = component.GetType().Name;
+			if(oldReferences[i] == go) {
                 Component _component = newReferences[i].GetComponent(componentName);
 
                 // missing component
                 if(!_component) {
-                    Debug.LogWarning("Animator: Property Track component '" + componentName + "' not found on new reference for GameObject '" + obj.name + "'. Duplicate not replaced.");
+					Debug.LogWarning("Animator: Property Track component '" + componentName + "' not found on new reference for GameObject '" + go.name + "'. Duplicate not replaced.");
                     lsFlagToKeep.Add(oldReferences[i]);
                     return lsFlagToKeep;
                 }
                 // missing property
                 if(_component.GetType().GetProperty(propertyName) == null) {
-                    Debug.LogWarning("Animator: Property Track property '" + propertyName + "' not found on new reference for GameObject '" + obj.name + "'. Duplicate not replaced.");
+					Debug.LogWarning("Animator: Property Track property '" + propertyName + "' not found on new reference for GameObject '" + go.name + "'. Duplicate not replaced.");
                     lsFlagToKeep.Add(oldReferences[i]);
                     return lsFlagToKeep;
                 }
 
-                obj = newReferences[i];
-                component = _component;
+				SetTarget(target, newReferences[i]);
+				setComponent(target, _component);
                 break;
             }
         }
@@ -881,6 +914,7 @@ public class AMPropertyTrack : AMTrack {
         ntrack.valueType = valueType;
         ntrack.obj = obj;
         ntrack.component = component;
+		ntrack.componentName = componentName;
         ntrack.propertyName = propertyName;
         ntrack.fieldName = fieldName;
         ntrack.methodName = methodName;

@@ -94,7 +94,7 @@ public class AMEasePicker : EditorWindow {
 	public void reloadAnimatorData() {
 		aData = null;
 		loadAnimatorData();
-		AMTakeData take = aData.getCurrentTake();
+		AMTakeData take = aData.e_getCurrentTake();
 		// update references for track and key
 		bool shouldClose = true;
 		foreach(AMTrack _track in take.trackValues) {
@@ -140,7 +140,7 @@ public class AMEasePicker : EditorWindow {
 
 	
 	void OnGUI() {
-		this.title = "Ease: "+(oData.time_numbering ? AMTimeline.frameToTime(key.frame,(float)aData.getCurrentTake().frameRate)+" s" : key.frame.ToString());
+		this.title = "Ease: "+(oData.time_numbering ? AMTimeline.frameToTime(key.frame,(float)aData.e_getCurrentTake().frameRate)+" s" : key.frame.ToString());
 		AMTimeline.loadSkin(oData, ref skin, ref cachedSkinName, position);
 		bool updateEasingCurve = false;
 		
@@ -204,10 +204,10 @@ public class AMEasePicker : EditorWindow {
 						AMTimeline.recordUndoTrackAndKeys(track, false, "Change Ease");
 						key.setEaseType(nease);
 						// update cache when modifying varaibles
-						track.updateCache();
+						track.updateCache(aData);
 						AMCodeView.refresh();
 						// preview new position
-						aData.getCurrentTake().previewFrame(aData.getCurrentTake().selectedFrame);
+						aData.e_getCurrentTake().previewFrame(aData, aData.e_getCurrentTake().selectedFrame);
 						// save data
 						EditorUtility.SetDirty(track);
 						AMTimeline.setDirtyKeys(track);

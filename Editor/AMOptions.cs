@@ -23,7 +23,6 @@ public class AMOptions : EditorWindow {
 
     string version = "1.53";
     Vector2 scrollView = new Vector2(0f, 0f);
-    private int playOnStartIndex = 0;
     private int exportTakeIndex = 0;
     private bool exportAllTakes = false;
     public static int tabIndex = 0;
@@ -65,7 +64,7 @@ public class AMOptions : EditorWindow {
             }
         }
 
-        if(aData) exportTakeIndex = aData.getTakeIndex(aData.getCurrentTake());
+        if(aData) exportTakeIndex = aData.e_getTakeIndex(aData.e_getCurrentTake());
     }
     void OnDisable() {
         window = null;
@@ -119,20 +118,7 @@ public class AMOptions : EditorWindow {
         if(tabIndex == (int)tabType.General) {
             List<string> takeNamesWithNone = new List<string>(takeNames);
             takeNamesWithNone.Insert(0, "None");
-            // play on start
-            GUILayout.BeginHorizontal();
-            GUILayout.Space(width_indent);
-            GUILayout.BeginVertical(GUILayout.Height(26f));
-            GUILayout.Space(1f);
-            GUILayout.Label("Play On Start");
-            GUILayout.FlexibleSpace();
-            GUILayout.EndVertical();
-            if(setPlayOnStartIndex(EditorGUILayout.Popup(playOnStartIndex, takeNamesWithNone.ToArray(), GUILayout.Width(200f)))) {
-				if(playOnStartIndex == 0) aData.playOnStartIndex = -1;
-				else aData.playOnStartIndex = playOnStartIndex - 1;
-				EditorUtility.SetDirty(aData);
-            }
-            GUILayout.EndHorizontal();
+            
             // gizmo size
             GUILayout.BeginHorizontal();
             GUILayout.Space(width_indent);
@@ -141,13 +127,13 @@ public class AMOptions : EditorWindow {
             GUILayout.Label("Gizmo size", GUILayout.Width(80f));
             GUILayout.FlexibleSpace();
             GUILayout.EndVertical();
-            if(aData.setGizmoSize(GUILayout.HorizontalSlider(aData.gizmo_size, 0f, 0.1f, GUILayout.ExpandWidth(true)))) {
+            if(aData.e_setGizmoSize(GUILayout.HorizontalSlider(aData.gizmo_size, 0f, 0.1f, GUILayout.ExpandWidth(true)))) {
                 GUIUtility.keyboardControl = 0;
                 EditorUtility.SetDirty(aData);
             }
             GUILayout.BeginVertical(GUILayout.Height(26f), GUILayout.Width(75f));
             GUILayout.FlexibleSpace();
-            if(aData.setGizmoSize(EditorGUILayout.FloatField(aData.gizmo_size, GUI.skin.textField, GUILayout.Width(75f)))) {
+            if(aData.e_setGizmoSize(EditorGUILayout.FloatField(aData.gizmo_size, GUI.skin.textField, GUILayout.Width(75f)))) {
                 EditorUtility.SetDirty(aData);
             }
             GUILayout.FlexibleSpace();
@@ -274,10 +260,7 @@ public class AMOptions : EditorWindow {
             GUILayout.FlexibleSpace();
             GUILayout.EndVertical();
             skinIndex = EditorGUILayout.Popup(skinIndex, skin_names, GUILayout.Width(200f));
-            if(oData.setSkin(skin_ids[skinIndex])) {
-                //if(playOnStartIndex == 0) aData.playOnStart = null;
-                //else aData.playOnStart = aData.getTake(takeNames[playOnStartIndex-1]);
-            }
+			oData.setSkin(skin_ids[skinIndex]);
             GUILayout.EndHorizontal();
         }
         #endregion
@@ -357,7 +340,7 @@ public class AMOptions : EditorWindow {
             GUILayout.BeginVertical();
             GUILayout.Space(1f);
             if(GUILayout.Button("Export:", GUILayout.Width(60f))) {
-                if(!exportAllTakes) AMTakeExport.take = aData.getTake(takeNames[exportTakeIndex]);
+                if(!exportAllTakes) AMTakeExport.take = aData.e_getTake(takeNames[exportTakeIndex]);
                 else AMTakeExport.take = null;
                 //AMTakeExport.aData = aData;
                 //EditorWindow.GetWindow (typeof (AMTakeExport)).ShowUtility();
@@ -421,19 +404,12 @@ public class AMOptions : EditorWindow {
 
     List<string> getTakeNames() {
         List<string> takeNames = new List<string>();
-        foreach(AMTakeData take in aData.takeData) {
+        foreach(AMTakeData take in aData._takes) {
             takeNames.Add(take.name);
         }
         return takeNames;
     }
-    bool setPlayOnStartIndex(int index) {
-        if(playOnStartIndex != index) {
-			Undo.RecordObject(aData, "Set Play On Start");
-            playOnStartIndex = index;
-            return true;
-        }
-        return false;
-    }
+    
     bool setExportTakeIndex(int index) {
         if(exportTakeIndex != index) {
             exportTakeIndex = index;
@@ -468,8 +444,7 @@ public class AMOptions : EditorWindow {
         if(AMTimeline.window != null) {
             __aData = AMTimeline.window.aData;
             if(__aData) {
-				if(__aData.playOnStartIndex != -1) playOnStartIndex = __aData.playOnStartIndex + 1;
-                exportTakeIndex = __aData.getTakeIndex(__aData.getCurrentTake());
+                exportTakeIndex = __aData.e_getTakeIndex(__aData.e_getCurrentTake());
             }
         }
     }

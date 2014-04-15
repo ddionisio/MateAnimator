@@ -4,7 +4,97 @@ using System.Collections.Generic;
 using System.Reflection;
 using System;
 
+/// <summary>
+/// Animator timeline.  Use for interacting with a global animator data.  Make sure to set 'global' to true in AnimatorData.
+/// </summary>
 public class AnimatorTimeline {
+	#region Runtime
+	private static AnimatorData mAnim;
+
+	public static AnimatorData animator {
+		get {
+			if(mAnim == null) {
+				AnimatorData[]anims = UnityEngine.Object.FindObjectsOfType<AnimatorData>();
+				for(int i = 0; i < anims.Length; i++) {
+					if(anims[i].isGlobal) {
+						mAnim = anims[i];
+						break;
+					}
+				}
+				if(mAnim == null && anims.Length > 0)
+					mAnim = anims[0];
+				else {
+					Debug.LogError("No AnimatorData in scene");
+				}
+			}
+
+			return mAnim;
+		}
+	}
+
+	public static bool isPlaying {
+		get {
+			return animator.isPlaying;
+		}
+	}
+
+	public static bool isPaused {
+		get {
+			return animator.isPaused;
+		}
+	}
+
+	public static string nowPlayingTake {
+		get {
+			return animator.currentPlayingTakeName;
+		}
+	}
+
+	public static float runningTime {
+		get {
+			return animator.runningTime;
+		}
+	}
+
+	public static float totalTime {
+		get {
+			return animator.totalTime;
+		}
+	}
+
+	public static void Play(string take, bool loop = false) {
+		animator.Play(take, loop);
+	}
+
+	public static void PlayFromTime(string take, float time, bool loop = false) {
+		animator.PlayAtTime(take, time, loop);
+	}
+
+	public static void PlayFromFrame(string take, float frame, bool loop = false) {
+		animator.PlayAtFrame(take, frame, loop);
+	}
+
+	public static void Stop() {
+		animator.Stop();
+	}
+
+	public static void Pause() {
+		animator.Pause();
+	}
+
+	public static void Resume() {
+		animator.Resume();
+	}
+
+	public static void PreviewFrame(string take, float frame) {
+		animator.PreviewFrame(take, frame);
+	}
+
+	public static void PreviewTime(string take, float time) {
+		animator.PreviewTime(take, time);
+	}
+	#endregion
+
 	#region JSON parser
 	public static void ParseJSON(string textAssetName) {
 		TextAsset t = (TextAsset) Resources.Load(textAssetName);

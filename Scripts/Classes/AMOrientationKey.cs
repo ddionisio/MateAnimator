@@ -73,74 +73,143 @@ public class AMPlugOrientation : ABSTweenPlugin {
 [AddComponentMenu("")]
 public class AMOrientationKey : AMKey {
 
-    public Transform target;
+	[SerializeField]
+    Transform target;
+	[SerializeField]
+	string targetPath;
+	[SerializeField]
+	Transform endTarget;
+	[SerializeField]
+	string endTargetPath;
 
     public int endFrame;
-    public Transform endTarget;
-    
+
+	public void SetTarget(AMITarget itarget, Transform t) {
+		targetPath = AMUtil.GetPath(itarget.TargetGetHolder(), t);
+		if(itarget.TargetIsMeta()) {
+			target = null;
+			itarget.TargetSetCache(targetPath, t);
+		}
+		else {
+			target = t;
+		}
+	}
+	public Transform GetTarget(AMITarget itarget) {
+		Transform ret = null;
+		if(itarget.TargetIsMeta()) {
+			ret = itarget.TargetGetCache(targetPath) as Transform;
+			if(ret == null) {
+				GameObject go = AMUtil.GetTarget(itarget.TargetGetHolder(), targetPath);
+				if(go) {
+					ret = go.transform;
+					itarget.TargetSetCache(targetPath, ret);
+				}
+			}
+		}
+		else
+			ret = target;
+		return ret;
+	}
+
+	public void SetTargetEnd(AMITarget itarget, Transform t) {
+		endTargetPath = AMUtil.GetPath(itarget.TargetGetHolder(), t);
+		if(itarget.TargetIsMeta()) {
+			endTarget = null;
+			itarget.TargetSetCache(endTargetPath, t);
+		}
+		else {
+			endTarget = t;
+		}
+	}
+	public void SetTargetEnd(AMOrientationKey nextKey) {
+		endTarget = nextKey.target;
+		endTargetPath = nextKey.targetPath;
+	}
+	public Transform GetTargetEnd(AMITarget itarget) {
+		Transform ret = null;
+		if(itarget.TargetIsMeta()) {
+			ret = itarget.TargetGetCache(endTargetPath) as Transform;
+			if(ret == null) {
+				GameObject go = AMUtil.GetTarget(itarget.TargetGetHolder(), endTargetPath);
+				if(go) {
+					ret = go.transform;
+					itarget.TargetSetCache(endTargetPath, ret);
+				}
+			}
+		}
+		else
+			ret = endTarget;
+		return ret;
+	}
+        
     public override AMKey CreateClone(GameObject go) {
 
 		AMOrientationKey a = go ? go.AddComponent<AMOrientationKey>() : gameObject.AddComponent<AMOrientationKey>();
         a.enabled = false;
         a.frame = frame;
         a.target = target;
+		a.targetPath = targetPath;
         a.easeType = easeType;
         a.customEase = new List<float>(customEase);
         return a;
     }
 
+	public override int getNumberOfFrames() {
+		return endFrame - frame;
+	}
+	
+	public float getTime(int frameRate) {
+		return (float)getNumberOfFrames() / (float)frameRate;
+	}
+	
+	public bool isLookFollow(AMITarget itarget) {
+		Transform tgt = GetTarget(itarget);
+		Transform tgte = GetTargetEnd(itarget);
+		return tgt == tgte;
+	}
+	
+	public Quaternion getQuaternionAtPercent(AMITarget itarget, Transform obj, float percentage) {
+		Transform tgt = GetTarget(itarget);
+		Transform tgte = GetTargetEnd(itarget);
+		if(tgt == tgte || easeType == EaseTypeNone) {
+			return Quaternion.LookRotation(tgt.position - obj.position);
+		}
+		
+		Quaternion s = Quaternion.LookRotation(tgt.position - obj.position);
+		Quaternion e = Quaternion.LookRotation(tgte.position - obj.position);
+		
+		float time = 0.0f;
+		
+		if(hasCustomEase()) {
+			time = AMUtil.EaseCustom(0.0f, 1.0f, percentage, easeCurve);
+		}
+		else {
+			TweenDelegate.EaseFunc ease = AMUtil.GetEasingFunction((EaseType)easeType);
+			time = ease(percentage, 0.0f, 1.0f, 1.0f, amplitude, period);
+		}
+		
+		return Quaternion.Slerp(s, e, time);
+	}
+
     #region action
-    public override Tweener buildTweener(Sequence sequence, UnityEngine.Object obj, int frameRate) {
+    public override Tweener buildTweener(AMITarget itarget, Sequence sequence, UnityEngine.Object obj, int frameRate) {
         if(!obj) return null;
 		if(easeType == EaseTypeNone) {
-			return HOTween.To(obj, endFrame == -1 ? 1.0f/(float)frameRate : getTime(frameRate), new TweenParms().Prop("rotation", new AMPlugOrientation(target, null)));
+			return HOTween.To(obj, endFrame == -1 ? 1.0f/(float)frameRate : getTime(frameRate), new TweenParms().Prop("rotation", new AMPlugOrientation(GetTarget(itarget), null)));
 		}
         if(endFrame == -1) return null;
-        if(isLookFollow()) {
-            return HOTween.To(obj, getTime(frameRate), new TweenParms().Prop("rotation", new AMPlugOrientation(target, null)));
+		Transform tgt = GetTarget(itarget), tgte = GetTargetEnd(itarget);
+		if(tgt == tgte) {
+			return HOTween.To(obj, getTime(frameRate), new TweenParms().Prop("rotation", new AMPlugOrientation(tgt, null)));
         }
         else {
             if(hasCustomEase()) {
-                return HOTween.To(obj, getTime(frameRate), new TweenParms().Prop("rotation", new AMPlugOrientation(target, endTarget)).Ease(easeCurve));
+				return HOTween.To(obj, getTime(frameRate), new TweenParms().Prop("rotation", new AMPlugOrientation(tgt, tgte)).Ease(easeCurve));
             }
             else {
-                return HOTween.To(obj, getTime(frameRate), new TweenParms().Prop("rotation", new AMPlugOrientation(target, endTarget)).Ease((EaseType)easeType, amplitude, period));
+				return HOTween.To(obj, getTime(frameRate), new TweenParms().Prop("rotation", new AMPlugOrientation(tgt, tgte)).Ease((EaseType)easeType, amplitude, period));
             }
         }
-    }
-
-    public override int getNumberOfFrames() {
-        return endFrame - frame;
-    }
-
-    public float getTime(int frameRate) {
-        return (float)getNumberOfFrames() / (float)frameRate;
-    }
-
-    public bool isLookFollow() {
-        if(target != endTarget) return false;
-        return true;
-    }
-
-    public Quaternion getQuaternionAtPercent(Transform obj, float percentage) {
-		if(isLookFollow() || easeType == EaseTypeNone) {
-            return Quaternion.LookRotation(target.position - obj.position);
-        }
-
-        Quaternion s = Quaternion.LookRotation(target.position - obj.position);
-        Quaternion e = Quaternion.LookRotation(endTarget.position - obj.position);
-
-        float time = 0.0f;
-
-        if(hasCustomEase()) {
-            time = AMUtil.EaseCustom(0.0f, 1.0f, percentage, easeCurve);
-        }
-        else {
-            TweenDelegate.EaseFunc ease = AMUtil.GetEasingFunction((EaseType)easeType);
-            time = ease(percentage, 0.0f, 1.0f, 1.0f, amplitude, period);
-        }
-
-        return Quaternion.Slerp(s, e, time);
     }
     #endregion
 }

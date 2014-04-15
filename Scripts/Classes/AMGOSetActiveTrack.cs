@@ -8,20 +8,24 @@ using Holoville.HOTween;
 [AddComponentMenu("")]
 public class AMGOSetActiveTrack : AMTrack {
     [SerializeField]
-    protected GameObject obj;
+    GameObject obj;
 
     public bool startActive = true;
 
-    public override UnityEngine.Object target {
-        get { return obj; }
-    }
+	protected override void SetSerializeObject(UnityEngine.Object obj) {
+		this.obj = obj as GameObject;
+	}
+	
+	protected override UnityEngine.Object GetSerializeObject(GameObject targetGO) {
+		return targetGO ? targetGO : obj;
+	}
 
     public override string getTrackType() {
         return "GOSetActive";
     }
     // update cache
-    public override void updateCache() {
-		base.updateCache();
+    public override void updateCache(AMITarget target) {
+		base.updateCache(target);
 
         // add all clips to list
         for(int i = 0; i < keys.Count; i++) {
@@ -33,58 +37,52 @@ public class AMGOSetActiveTrack : AMTrack {
             else key.endFrame = -1;
         }
     }
-    public void setObject(GameObject obj) {
-        if(this.obj != obj && obj != null)
-            this.startActive = obj.activeSelf;
-
-        this.obj = obj;
-    }
-    public bool isObjectUnique(GameObject obj) {
-        if(this.obj != obj) return true;
-        return false;
-    }
     // preview a frame in the scene view
-    public override void previewFrame(float frame, AMTrack extraTrack = null) {
+	public override void previewFrame(AMITarget target, float frame, AMTrack extraTrack = null) {
+		GameObject go = GetTarget(target) as GameObject;
+
         if(keys == null || keys.Count <= 0) {
             return;
         }
-        if(!obj) return;
+		if(!go) return;
 
         // if before the first frame
         if(frame < (float)keys[0].frame) {
-            //obj.rotation = (cache[0] as AMPropertyAction).getStartQuaternion();
-            obj.SetActive(startActive);
+			//go.rotation = (cache[0] as AMPropertyAction).getStartQuaternion();
+			go.SetActive(startActive);
             return;
         }
         // if beyond or equal to last frame
         if(frame >= (float)(keys[keys.Count - 1] as AMGOSetActiveKey).frame) {
-            obj.SetActive((keys[keys.Count - 1] as AMGOSetActiveKey).setActive);
+			go.SetActive((keys[keys.Count - 1] as AMGOSetActiveKey).setActive);
             return;
         }
         // if lies on property action
         foreach(AMGOSetActiveKey key in keys) {
 			if((frame < (float)key.frame) || (key.endFrame != -1 && frame >= (float)key.endFrame)) continue;
 
-            obj.SetActive(key.setActive);
+			go.SetActive(key.setActive);
             return;
         }
     }
 
-    public override void buildSequenceStart(Sequence s, int frameRate) {
+	public override void buildSequenceStart(AMITarget target, Sequence s, int frameRate) {
+		GameObject go = GetTarget(target) as GameObject;
+
         //need to add activate game object on start to 'reset' properly during reverse
         if(keys.Count > 0 && keys[0].frame > 0) {
-            s.Insert(0.0f, HOTween.To(obj, ((float)keys[0].frame) / ((float)frameRate),
-                new TweenParms().Prop("active", new AMPlugGOActive(obj, startActive)).Ease(EaseType.Linear)));
+			s.Insert(0.0f, HOTween.To(go, ((float)keys[0].frame) / ((float)frameRate),
+			                          new TweenParms().Prop("active", new AMPlugGOActive(go, startActive))));
         }
     }
 
     // add a new key
-    public AMKey addKey(int _frame) {
+	public AMKey addKey(AMITarget target, int _frame) {
         foreach(AMGOSetActiveKey key in keys) {
             // if key exists on frame, update
             if(key.frame == _frame) {
                 key.setActive = true;
-                updateCache();
+				updateCache(target);
                 return null;
             }
         }
@@ -94,34 +92,36 @@ public class AMGOSetActiveTrack : AMTrack {
         // add a new key
         keys.Add(a);
         // update cache
-        updateCache();
+		updateCache(target);
         return a;
     }
 
-    public override AnimatorTimeline.JSONInit getJSONInit() {
+	public override AnimatorTimeline.JSONInit getJSONInit(AMITarget target) {
         // no initial values to set
         return null;
     }
 
-    public override List<GameObject> getDependencies() {
+	public override List<GameObject> getDependencies(AMITarget target) {
+		GameObject go = GetTarget(target) as GameObject;
         List<GameObject> ls = new List<GameObject>();
-        if(obj) ls.Add(obj);
+		if(go) ls.Add(go);
         return ls;
     }
 
-    public override List<GameObject> updateDependencies(List<GameObject> newReferences, List<GameObject> oldReferences) {
+	public override List<GameObject> updateDependencies(AMITarget target, List<GameObject> newReferences, List<GameObject> oldReferences) {
+		GameObject go = GetTarget(target) as GameObject;
         bool didUpdateObj = false;
-        if(obj) {
+		if(go) {
             for(int i = 0; i < oldReferences.Count; i++) {
-                if(oldReferences[i] == obj) {
-                    obj = newReferences[i];
+				if(oldReferences[i] == go) {
+					SetTarget(target, newReferences[i]);
                     didUpdateObj = true;
                     break;
                 }
 
             }
         }
-        if(didUpdateObj) updateCache();
+        if(didUpdateObj) updateCache(target);
 
         return new List<GameObject>();
     }

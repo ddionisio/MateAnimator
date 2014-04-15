@@ -6,25 +6,23 @@ using System.Linq;
 [AddComponentMenu("")]
 public class AMEventTrack : AMTrack {
 
-    public GameObject obj;
+	[SerializeField]
+    GameObject obj;
+
+	protected override void SetSerializeObject(UnityEngine.Object obj) {
+		this.obj = obj as GameObject;
+	}
+	
+	protected override UnityEngine.Object GetSerializeObject(GameObject targetGO) {
+		return targetGO ? targetGO : obj;
+	}
 
     public override string getTrackType() {
         return "Event";
     }
-	public override UnityEngine.Object target {
-		get {
-			return obj;
-		}
-	}
-    public void setObject(GameObject obj) {
-        this.obj = obj;
-    }
-    public bool isObjectUnique(GameObject obj) {
-        if(this.obj != obj) return true;
-        return false;
-    }
+
     // add a new key
-    public AMKey addKey(int _frame) {
+    public AMKey addKey(AMITarget itarget, int _frame) {
         foreach(AMEventKey key in keys) {
             // if key exists on frame, do nothing
             if(key.frame == _frame) {
@@ -33,45 +31,44 @@ public class AMEventTrack : AMTrack {
         }
         AMEventKey a = gameObject.AddComponent<AMEventKey>();
         a.frame = _frame;
-        a.component = null;
-        a.methodName = null;
-        a.parameters = null;
         // add a new key
         keys.Add(a);
         // update cache
-        updateCache();
+		updateCache(itarget);
         return a;
     }
-    public bool hasSameEventsAs(AMEventTrack _track) {
-        if(_track.obj == obj)
+	public bool hasSameEventsAs(AMITarget target, AMEventTrack _track) {
+		if(_track.GetTarget(target) == GetTarget(target))
             return true;
         return false;
     }
 
-    public override AnimatorTimeline.JSONInit getJSONInit() {
+	public override AnimatorTimeline.JSONInit getJSONInit(AMITarget target) {
         // no initial values to set
         return null;
     }
 
-    public override List<GameObject> getDependencies() {
+    public override List<GameObject> getDependencies(AMITarget target) {
+		GameObject go = GetTarget(target) as GameObject;
         List<GameObject> ls = new List<GameObject>();
-        if(obj) ls.Add(obj);
+		if(go) ls.Add(go);
         foreach(AMEventKey key in keys) {
             ls = ls.Union(key.getDependencies()).ToList();
         }
         return ls;
     }
 
-    public override List<GameObject> updateDependencies(List<GameObject> newReferences, List<GameObject> oldReferences) {
+	public override List<GameObject> updateDependencies(AMITarget target, List<GameObject> newReferences, List<GameObject> oldReferences) {
+		GameObject go = GetTarget(target) as GameObject;
         bool didUpdateObj = false;
         bool didUpdateParameter = false;
-        if(obj) {
+		if(go) {
             for(int i = 0; i < oldReferences.Count; i++) {
-                if(oldReferences[i] == obj) {
+				if(oldReferences[i] == go) {
                     // check if new GameObject has all the required components
                     foreach(AMEventKey key in keys) {
-                        string componentName = key.component.GetType().Name;
-                        if(key.component && newReferences[i].GetComponent(componentName) == null) {
+                        string componentName = key.getComponentName();
+                        if(key.getComponent() && newReferences[i].GetComponent(componentName) == null) {
                             // missing component
                             Debug.LogWarning("Animator: Event Track component '" + componentName + "' not found on new reference for GameObject '" + obj.name + "'. Duplicate not replaced.");
                             List<GameObject> lsFlagToKeep = new List<GameObject>();
@@ -79,7 +76,7 @@ public class AMEventTrack : AMTrack {
                             return lsFlagToKeep;
                         }
                     }
-                    obj = newReferences[i];
+					SetTarget(target, newReferences[i]);
                     didUpdateObj = true;
                     break;
                 }
@@ -87,10 +84,10 @@ public class AMEventTrack : AMTrack {
             }
         }
         foreach(AMEventKey key in keys) {
-            if(key.updateDependencies(newReferences, oldReferences, didUpdateObj, obj) && !didUpdateParameter) didUpdateParameter = true;
+			if(key.updateDependencies(newReferences, oldReferences, didUpdateObj, go) && !didUpdateParameter) didUpdateParameter = true;
         }
 
-        if(didUpdateObj || didUpdateParameter) updateCache();
+        if(didUpdateObj || didUpdateParameter) updateCache(target);
 
         return new List<GameObject>();
     }

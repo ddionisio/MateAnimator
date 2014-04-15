@@ -9,26 +9,26 @@ using Holoville.HOTween;
 public class AMRotationTrack : AMTrack {
     [SerializeField]
     private Transform _obj;
-    public Transform obj {
-        set {
-            if(_obj != value) {
-                if(value != null && keys.Count <= 0) cachedInitialRotation = _isLocal ? value.localRotation : value.rotation;
-                _obj = value;
+    
+	protected override void SetSerializeObject(UnityEngine.Object obj) {
+		_obj = obj as Transform;
+	}
+	
+	protected override UnityEngine.Object GetSerializeObject(GameObject targetGO) {
+		return targetGO ? targetGO.transform : _obj;
+	}
 
-                updateCache();
-            }
+	public new void SetTarget(AMITarget target, UnityEngine.Object item) {
+		base.SetTarget(target, item);
 
-        }
-    }
-
-    public override UnityEngine.Object target {
-        get { return _obj; }
-    }
+		Transform _t = item as Transform;
+		if(_t != null && keys.Count <= 0) cachedInitialRotation = _isLocal ? _t.localRotation : _t.rotation;
+	}
 
     public override int version { get { return 2; } }
 
     [SerializeField]
-    private bool _isLocal;
+    private bool _isLocal = true;
     public bool isLocal {
         get { return _isLocal; }
         set {
@@ -68,15 +68,19 @@ public class AMRotationTrack : AMTrack {
         }
     }
 
-    public Quaternion rotation {
-        get { return _isLocal ? _obj.localRotation : _obj.rotation; }
-        set {
-            if(_isLocal)
-                _obj.localRotation = value;
-            else
-                _obj.rotation = value;
-        }
-    }
+	void SetRotation(Transform t, Quaternion r) {
+		if(t) {
+			if(_isLocal) t.localRotation = r;
+			else t.rotation = r;
+		}
+	}
+
+	Quaternion GetRotation(Transform t) {
+		if(t) {
+			return _isLocal ? t.localRotation : t.rotation;
+		}
+		return Quaternion.identity;
+	}
 
     public Quaternion cachedInitialRotation;
 
@@ -84,7 +88,7 @@ public class AMRotationTrack : AMTrack {
         return _isLocal ? "Local Rotation" : "Rotation";
     }
     // add a new key
-    public AMKey addKey(int _frame, Quaternion _rotation, OnKey addCallback) {
+    public AMKey addKey(AMITarget target, int _frame, Quaternion _rotation, OnKey addCallback) {
         foreach(AMRotationKey key in keys) {
             // if key exists on frame, update key
             if(key.frame == _frame) {
@@ -93,7 +97,7 @@ public class AMRotationTrack : AMTrack {
 
                 key.rotation = _rotation;
                 // update cache
-                updateCache();
+                updateCache(target);
                 return null;
             }
         }
@@ -110,20 +114,20 @@ public class AMRotationTrack : AMTrack {
         // add a new key
         keys.Add(a);
         // update cache
-        updateCache();
+		updateCache(target);
 
         return a;
     }
 
     // update cache (optimized)
-    public override void updateCache() {
-		base.updateCache();
+    public override void updateCache(AMITarget target) {
+		base.updateCache(target);
+
+		isLocal = true;
 
         for(int i = 0; i < keys.Count; i++) {
             AMRotationKey key = keys[i] as AMRotationKey;
-
-            isLocal = true;
-
+			            
             key.version = version;
 
             //a.type = (keys[i] as AMRotationKey).type;
@@ -142,17 +146,19 @@ public class AMRotationTrack : AMTrack {
         }
     }
     // preview a frame in the scene view
-    public override void previewFrame(float frame, AMTrack extraTrack = null) {
-        if(!_obj) return;
+	public override void previewFrame(AMITarget target, float frame, AMTrack extraTrack = null) {
+		Transform t = GetTarget(target) as Transform;
+
+        if(!t) return;
         if(keys == null || keys.Count <= 0) return;
         // if before or equal to first frame, or is the only frame
         if((frame <= (float)keys[0].frame) || ((keys[0] as AMRotationKey).endFrame == -1)) {
-            rotation = (keys[0] as AMRotationKey).getStartQuaternion();
+			SetRotation(t, (keys[0] as AMRotationKey).getStartQuaternion());
             return;
         }
         // if beyond or equal to last frame
         if(frame >= (float)(keys[keys.Count - 2] as AMRotationKey).endFrame) {
-            rotation = (keys[keys.Count - 2] as AMRotationKey).getEndQuaternion();
+			SetRotation(t, (keys[keys.Count - 2] as AMRotationKey).getEndQuaternion());
             return;
         }
         // if lies on rotation action
@@ -160,12 +166,12 @@ public class AMRotationTrack : AMTrack {
             if((frame < (float)key.frame) || (frame > (float)key.endFrame)) continue;
             // if on startFrame or is no ease
             if(frame == (float)key.frame || (key.easeType == AMKey.EaseTypeNone && frame < (float)key.endFrame)) {
-                rotation = key.getStartQuaternion();
+				SetRotation(t, key.getStartQuaternion());
                 return;
             }
             // if on endFrame
             if(frame == (float)key.endFrame) {
-                rotation = key.getEndQuaternion();
+				SetRotation(t, key.getEndQuaternion());
                 return;
             }
             // else find Quaternion using easing function
@@ -177,33 +183,34 @@ public class AMRotationTrack : AMTrack {
             Quaternion qEnd = key.getEndQuaternion();
 
             if(key.hasCustomEase()) {
-                rotation = Quaternion.Slerp(qStart, qEnd, AMUtil.EaseCustom(0.0f, 1.0f, framePositionInAction / key.getNumberOfFrames(), key.easeCurve));
+				SetRotation(t, Quaternion.Slerp(qStart, qEnd, AMUtil.EaseCustom(0.0f, 1.0f, framePositionInAction / key.getNumberOfFrames(), key.easeCurve)));
             }
             else {
                 TweenDelegate.EaseFunc ease = AMUtil.GetEasingFunction((EaseType)key.easeType);
-                rotation = Quaternion.Slerp(qStart, qEnd, ease(framePositionInAction, 0.0f, 1.0f, key.getNumberOfFrames(), key.amplitude, key.period));
+				SetRotation(t, Quaternion.Slerp(qStart, qEnd, ease(framePositionInAction, 0.0f, 1.0f, key.getNumberOfFrames(), key.amplitude, key.period)));
             }
 
             return;
         }
     }
     // returns true if autoKey successful, sets output key
-    public bool autoKey(Transform aObj, int frame, OnKey addCallback) {
-        if(!_obj || _obj != aObj) { return false; }
-
+    public bool autoKey(AMITarget itarget, Transform aObj, int frame, OnKey addCallback) {
+		Transform t = GetTarget(itarget) as Transform;
+        if(!t || t != aObj) { return false; }
+		Quaternion r = GetRotation(t);
         if(keys.Count <= 0) {
-            if(rotation != cachedInitialRotation) {
+            if(r != cachedInitialRotation) {
                 // if updated position, addkey
-                addKey(frame, rotation, addCallback);
+                addKey(itarget, frame, r, addCallback);
                 return true;
             }
 
             return false;
         }
         Quaternion oldRot = getRotationAtFrame((float)frame);
-        if(rotation != oldRot) {
+        if(r != oldRot) {
             // if updated position, addkey
-            addKey(frame, rotation, addCallback);
+			addKey(itarget, frame, r, addCallback);
             return true;
         }
 
@@ -247,14 +254,14 @@ public class AMRotationTrack : AMTrack {
                 return Quaternion.Slerp(qStart, qEnd, ease(framePositionInAction, 0.0f, 1.0f, key.getNumberOfFrames(), 0.0f, 0.0f));
             }
         }
-        Debug.LogError("Animator: Could not get " + _obj.name + " rotation at frame '" + frame + "'");
+        Debug.LogError("Animator: Could not get rotation at frame '" + frame + "'");
         return Quaternion.identity;
     }
     public Vector4 getInitialRotation() {
         return (keys[0] as AMRotationKey).getRotationQuaternion();
     }
 
-    public override AnimatorTimeline.JSONInit getJSONInit() {
+	public override AnimatorTimeline.JSONInit getJSONInit(AMITarget target) {
         if(!_obj || keys.Count <= 0) return null;
         AnimatorTimeline.JSONInit init = new AnimatorTimeline.JSONInit();
         init.type = "rotation";
@@ -265,16 +272,18 @@ public class AMRotationTrack : AMTrack {
         return init;
     }
 
-    public override List<GameObject> getDependencies() {
+    public override List<GameObject> getDependencies(AMITarget itarget) {
+		Transform t = GetTarget(itarget) as Transform;
         List<GameObject> ls = new List<GameObject>();
-        if(_obj) ls.Add(_obj.gameObject);
+        if(t) ls.Add(t.gameObject);
         return ls;
     }
-    public override List<GameObject> updateDependencies(List<GameObject> newReferences, List<GameObject> oldReferences) {
-        if(!_obj) return new List<GameObject>();
+	public override List<GameObject> updateDependencies(AMITarget itarget, List<GameObject> newReferences, List<GameObject> oldReferences) {
+		Transform t = GetTarget(itarget) as Transform;
+        if(!t) return new List<GameObject>();
         for(int i = 0; i < oldReferences.Count; i++) {
-            if(oldReferences[i] == _obj.gameObject) {
-                obj = newReferences[i].transform;
+            if(oldReferences[i] == t.gameObject) {
+				SetTarget(itarget, newReferences[i].transform);
                 break;
             }
         }
@@ -290,7 +299,4 @@ public class AMRotationTrack : AMTrack {
 
         return ntrack;
     }
-	public bool isObjectEqual(Transform t) {
-		return _obj == t;
-	}
 }

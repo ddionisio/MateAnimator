@@ -133,7 +133,7 @@ public class AMCodeView : EditorWindow {
         #region code vertical
         GUILayout.BeginVertical(GUILayout.Height(position.height));
         GUILayout.Space(3f);
-        if(aData.setCodeLanguage(GUILayout.SelectionGrid(aData.codeLanguage, selStrings, 2/*,styleSelGrid*/))) {
+        if(aData.e_setCodeLanguage(GUILayout.SelectionGrid(aData.codeLanguage, selStrings, 2/*,styleSelGrid*/))) {
             // save data	
             EditorUtility.SetDirty(aData);
             refreshCode();
@@ -200,8 +200,8 @@ public class AMCodeView : EditorWindow {
             GUILayout.BeginHorizontal();
             //GUILayout.Space(inspector_space);
             scrollPos = EditorGUILayout.BeginScrollView(scrollPos/*,styleScrollView*/);
-            for(int i = 0; i < aData.getCurrentTake().rootGroup.elements.Count; i++) {
-                int id = aData.getCurrentTake().rootGroup.elements[i];
+            for(int i = 0; i < aData.e_getCurrentTake().rootGroup.elements.Count; i++) {
+                int id = aData.e_getCurrentTake().rootGroup.elements[i];
                 //float height_group_elements = 0f;
                 showGroupElement(id, 0);
             }
@@ -247,7 +247,7 @@ public class AMCodeView : EditorWindow {
     void showGroupElement(int id, int group_lvl) {
         // returns true if mouse over track
         if(id >= 0) {
-            AMTrack _track = aData.getCurrentTake().getTrack(id);
+            AMTrack _track = aData.e_getCurrentTake().getTrack(id);
             showTrack(_track, id, group_lvl);
         }
         else {
@@ -261,7 +261,7 @@ public class AMCodeView : EditorWindow {
 
         //Rect rectGroup = new Rect(group_x,track_y,width_track-group_x,height_group);
         if(!dictGroups.ContainsKey(id)) dictGroups.Add(id, true);
-        AMGroup grp = aData.getCurrentTake().getGroup(id);
+        AMGroup grp = aData.e_getCurrentTake().getGroup(id);
         GUILayout.BeginHorizontal();
         GUILayout.Space(width_indent * (group_lvl));	// indent
         // foldout
@@ -311,13 +311,13 @@ public class AMCodeView : EditorWindow {
     bool hasTracks(AMGroup grp) {
         foreach(int id in grp.elements) {
             if(id >= 0) return true;
-            else if(hasTracks(aData.getCurrentTake().getGroup(id))) return true;
+            else if(hasTracks(aData.e_getCurrentTake().getGroup(id))) return true;
         }
         return false;
     }
     void toggleChildren(AMGroup grp, ref bool? newValue) {
         foreach(int _id in grp.elements) {
-            if(_id < 0) toggleChildren(aData.getCurrentTake().getGroup(_id), ref newValue);
+            if(_id < 0) toggleChildren(aData.e_getCurrentTake().getGroup(_id), ref newValue);
             else {
                 if(newValue == null) newValue = !dictTracks[_id];
                 dictTracks[_id] = (bool)newValue;
@@ -345,9 +345,9 @@ public class AMCodeView : EditorWindow {
     string getCode() {
         if(!aData) return "";
         varNameDictionary = new Dictionary<string, string>();
-        string code = "// " + aData.getCurrentTake().name;
+        string code = "// " + aData.e_getCurrentTake().name;
         code += "\n";
-        appendGroupCode(aData.getCurrentTake().getGroup(0), ref code);
+        appendGroupCode(aData.e_getCurrentTake().getGroup(0), ref code);
         return code;
     }
 
@@ -372,13 +372,13 @@ public class AMCodeView : EditorWindow {
             if(element_id > 0) {
                 if(!dictTracks.ContainsKey(element_id)) dictTracks.Add(element_id, true);
                 if(dictTracks[element_id] == true) {
-                    AMTrack track = aData.getCurrentTake().getTrack(element_id);
+                    AMTrack track = aData.e_getCurrentTake().getTrack(element_id);
                     appendTrackCode(track, ref code);
                 }
             }
             // group
             else if(element_id < 0) {
-                AMGroup grp = aData.getCurrentTake().getGroup(element_id);
+                AMGroup grp = aData.e_getCurrentTake().getGroup(element_id);
                 //code += "\n// "+grp.group_name+"\n";
                 appendGroupCode(grp, ref code);
             }
@@ -402,15 +402,15 @@ public class AMCodeView : EditorWindow {
             if(codeLanguage == 0) return varName + ".transform.rotation = new Quaternion(" + _rotation.x + "f, " + _rotation.y + "f, " + _rotation.z + "f, " + _rotation.w + "f); // Set Initial Rotation\n";
             else return varName + ".transform.rotation = Quaternion(" + _rotation.x + ", " + _rotation.y + ", " + _rotation.z + ", " + _rotation.w + "); // Set Initial Rotation\n";
         }
-        else if(_track is AMOrientationTrack && (_track as AMOrientationTrack).getInitialTarget()) {
+        else if(_track is AMOrientationTrack && (_track as AMOrientationTrack).getInitialTarget(aData)) {
             // orientation, set initial look
-            Transform _target = (_track as AMOrientationTrack).getInitialTarget();
+			Transform _target = (_track as AMOrientationTrack).getInitialTarget(aData);
             int start_frame = 0;
             AMTrack _translation_track = null;
             if((_track as AMOrientationTrack).keys.Count > 0) start_frame = (_track as AMOrientationTrack).keys[0].frame;
-            if(start_frame > 0) _translation_track = aData.getCurrentTake().getTranslationTrackForTransform(_target);
+			if(start_frame > 0) _translation_track = aData.e_getCurrentTake().getTranslationTrackForTransform(aData, _target);
             Vector3 _lookv3 = _target.transform.position;
-            if(_translation_track) _lookv3 = (_translation_track as AMTranslationTrack).getPositionAtFrame(start_frame, false);
+			if(_translation_track) _lookv3 = (_translation_track as AMTranslationTrack).getPositionAtFrame((_translation_track as AMTranslationTrack).GetTarget(aData) as Transform, start_frame, false);
 
             if(codeLanguage == 0) return varName + ".transform.LookAt (new Vector3(" + _lookv3.x + "f, " + _lookv3.y + "f, " + _lookv3.z + "f)); // Set Initial Orientation\n";
             else return varName + ".transform.LookAt (Vector3(" + _lookv3.x + ", " + _lookv3.y + ", " + _lookv3.z + ")); // Set Initial Orientation\n";

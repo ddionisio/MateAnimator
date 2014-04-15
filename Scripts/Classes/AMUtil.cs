@@ -1,7 +1,69 @@
 using UnityEngine;
 using System.Collections;
+using System.Text;
 
 public struct AMUtil {
+	public static GameObject GetTarget(Transform root, string path) {
+		GameObject go = null;
+		
+		if(!string.IsNullOrEmpty(path)) {
+			if(path[0] == '.') {
+				go = root.gameObject;
+			}
+			else if(path[0] == '/') {
+				go = GameObject.Find(path);
+			}
+			else {
+				Transform t = root.FindChild(path);
+				if(t) go = t.gameObject;
+			}
+		}
+
+		return go;
+	}
+
+	public static string GetPath(Transform root, UnityEngine.Object target) {
+		Transform tgt;
+		if(target is GameObject) {
+			tgt = (target as GameObject).transform;
+		}
+		else if(target is Component) {
+			tgt = (target as Component).transform;
+		}
+		else {
+			tgt = null;
+		}
+		
+		if(tgt) {
+			if(tgt == root) {
+				return ".";
+			}
+			else {
+				bool _targetPathAbsolute = true;
+				StringBuilder strBuff = new StringBuilder(tgt.name, 128);
+				Transform tgtParent = tgt.parent;
+				while(tgtParent) {
+					if(tgtParent == root) {
+						_targetPathAbsolute = false;
+						break;
+					}
+					
+					strBuff.Insert(0, '/');
+					strBuff.Insert(0, tgtParent.name);
+					tgtParent = tgtParent.parent;
+				}
+				
+				if(_targetPathAbsolute)
+					strBuff.Insert(0, '/');
+				
+				return strBuff.ToString();
+			}
+		}
+		else {
+			return "";
+		}
+	}
+
     public static float EaseCustom(float startValue, float changeValue, float time, AnimationCurve curve) {
         return startValue + changeValue * curve.Evaluate(time);
     }

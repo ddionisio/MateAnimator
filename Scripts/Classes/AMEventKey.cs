@@ -15,27 +15,19 @@ public class AMEventKey : AMKey {
         public object val;
     }
 
-    public Component component;
+	[SerializeField]
+    Component component = null;
+	[SerializeField]
+	string componentName = "";
+
     public bool frameLimit = true;
     public bool useSendMessage = true;
     public List<AMEventParameter> parameters = new List<AMEventParameter>();
     public string methodName;
     private MethodInfo cachedMethodInfo;
-    public MethodInfo methodInfo {
-        get {
-            if(component == null) return null;
-            if(cachedMethodInfo != null) return cachedMethodInfo;
-            if(methodName == null) return null;
-			cachedMethodInfo = component.GetType().GetMethod(methodName, GetParamTypes());
-            return cachedMethodInfo;
-        }
-        set {
-            if(value != null) methodName = value.Name;
-            else methodName = null;
-            cachedMethodInfo = value;
-
-        }
-    }
+    
+	public Component getComponent() { return component; }
+	public string getComponentName() { return componentName; }
 
     public bool isMatch(ParameterInfo[] cachedParameterInfos) {
         if(cachedParameterInfos != null && parameters != null && cachedParameterInfos.Length == parameters.Count) {
@@ -54,11 +46,35 @@ public class AMEventKey : AMKey {
         return true;
     }
 
-    public bool setMethodInfo(Component component, MethodInfo methodInfo, ParameterInfo[] cachedParameterInfos, bool restoreValues) {
+	//set target to a valid ref. for meta
+	public MethodInfo getMethodInfo(GameObject target) {
+		if(target) {
+			if(string.IsNullOrEmpty(componentName)) return null;
+			if(cachedMethodInfo != null) return cachedMethodInfo;
+			if(methodName == null) return null;
+			Component comp = target.GetComponent(componentName);
+			cachedMethodInfo = comp.GetType().GetMethod(methodName, GetParamTypes());
+			return cachedMethodInfo;
+		}
+		else {
+			if(component == null) return null;
+			if(cachedMethodInfo != null) return cachedMethodInfo;
+			if(methodName == null) return null;
+			cachedMethodInfo = component.GetType().GetMethod(methodName, GetParamTypes());
+			return cachedMethodInfo;
+		}
+	}
+
+	//set target to a valid ref. for meta
+	public bool setMethodInfo(GameObject target, Component component, MethodInfo methodInfo, ParameterInfo[] cachedParameterInfos, bool restoreValues) {
+		MethodInfo _methodInfo = getMethodInfo(target);
+
         // if different component or methodinfo
-        if((this.methodInfo != methodInfo) || (this.component != component) || !isMatch(cachedParameterInfos)) {
+		if((_methodInfo != methodInfo) || (this.component != component) || !isMatch(cachedParameterInfos)) {
             this.component = component;
-            this.methodInfo = methodInfo;
+			this.componentName = component.GetType().Name;
+			methodName = methodInfo.Name;
+			cachedMethodInfo = methodInfo;
             //this.parameters = new object[numParameters];
 
             Dictionary<string, ParamKeep> oldParams = null;
@@ -137,11 +153,12 @@ public class AMEventKey : AMKey {
         a.enabled = false;
         a.frame = frame;
         a.component = component;
+		a.componentName = componentName;
         a.useSendMessage = useSendMessage;
         a.frameLimit = frameLimit;
         // parameters
         a.methodName = methodName;
-        a.methodInfo = methodInfo;
+        a.cachedMethodInfo = cachedMethodInfo;
         foreach(AMEventParameter e in parameters) {
             a.parameters.Add(e.CreateClone());
         }
@@ -158,7 +175,6 @@ public class AMEventKey : AMKey {
 
     public bool updateDependencies(List<GameObject> newReferences, List<GameObject> oldReferences, bool didUpdateObj, GameObject obj) {
         if(didUpdateObj && component) {
-            string componentName = component.GetType().Name;
             component = obj.GetComponent(componentName);
             if(!component) Debug.LogError("Animator: Component '" + componentName + "' not found on new reference for GameObject '" + obj.name + "'. Some event track data may be lost.");
             cachedMethodInfo = null;
@@ -258,6 +274,9 @@ public class AMEventKey : AMKey {
     }
 
     object[] buildParams() {
+		if(parameters == null)
+			return new object[0];
+
         object[] arrParams = new object[parameters.Count];
         for(int i = 0; i < parameters.Count; i++) {
             if(parameters[i].isArray()) {
@@ -267,8 +286,6 @@ public class AMEventKey : AMKey {
                 arrParams[i] = parameters[i].toObject();
             }
         }
-        if(arrParams.Length <= 0) arrParams = null;
-
         return arrParams;
     }
 
@@ -280,75 +297,73 @@ public class AMEventKey : AMKey {
 		return ret.ToArray();
 	}
 
-    public override Tweener buildTweener(Sequence sequence, UnityEngine.Object target, int frameRate) {
-        if(component == null || methodName == null) return null;
+    public override Tweener buildTweener(AMITarget itarget, Sequence sequence, UnityEngine.Object target, int frameRate) {
+		if(methodName == null) return null;
+
+		//get component and fill the cached method info
+		Component comp;
+		if(itarget.TargetIsMeta()) {
+			if(string.IsNullOrEmpty(componentName)) return null;
+			comp = (target as GameObject).GetComponent(componentName);
+
+		}
+		else {
+			if(component == null) return null;
+			comp = component;
+		}
+		if(cachedMethodInfo == null)
+			cachedMethodInfo = comp.GetType().GetMethod(methodName, GetParamTypes());
 
         if(frameLimit) {
-            float fr = frameRate;
-
-            if(parameters == null || parameters.Count <= 0)
-                sequence.InsertCallback(getWaitTime(frameRate, 0.0f), OnMethodCallbackLimitFrame, fr);
-            else {
-                object[] arrParams = buildParams();
-
-                if(arrParams != null)
-                    sequence.InsertCallback(getWaitTime(frameRate, 0.0f), OnMethodCallbackLimitFrame, fr, (object)arrParams);
-                else
-                    sequence.InsertCallback(getWaitTime(frameRate, 0.0f), OnMethodCallbackLimitFrame, fr);
-            }
+			sequence.InsertCallback(getWaitTime(frameRate, 0.0f), OnMethodCallbackLimitFrame, comp, frameRate, (object)buildParams());
         }
         else {
             if(useSendMessage) {
                 if(parameters == null || parameters.Count <= 0)
-                    sequence.InsertCallback(getWaitTime(frameRate, 0.0f), component.gameObject, methodName, null, SendMessageOptions.DontRequireReceiver);
+					sequence.InsertCallback(getWaitTime(frameRate, 0.0f), comp.gameObject, methodName, null, SendMessageOptions.DontRequireReceiver);
                 else
-                    sequence.InsertCallback(getWaitTime(frameRate, 0.0f), component.gameObject, methodName, parameters[0].toObject(), SendMessageOptions.DontRequireReceiver);
+					sequence.InsertCallback(getWaitTime(frameRate, 0.0f), comp.gameObject, methodName, parameters[0].toObject(), SendMessageOptions.DontRequireReceiver);
             }
             else {
-                object[] arrParams = buildParams();
-
-                if(arrParams != null)
-                    sequence.InsertCallback(getWaitTime(frameRate, 0.0f), OnMethodCallbackParams, arrParams);
-                else
-                    sequence.InsertCallback(getWaitTime(frameRate, 0.0f), OnMethodCallbackNoParams);
+				sequence.InsertCallback(getWaitTime(frameRate, 0.0f), OnMethodCallbackParams, comp, (object)buildParams());
             }
         }
 
         return null;
     }
 
-    void OnMethodCallbackNoParams() {
-        if(component == null) return;
-
-        methodInfo.Invoke(component, null);
-    }
-
     void OnMethodCallbackParams(TweenEvent dat) {
-        if(component == null) return;
+		Component comp = dat.parms[0] as Component;
+		object[] parms = dat.parms[1] as object[];
 
-        methodInfo.Invoke(component, dat.parms);
+        if(comp == null) return;
+
+		cachedMethodInfo.Invoke(comp, parms);
     }
 
     //only call method if elapse is within frame
     void OnMethodCallbackLimitFrame(TweenEvent dat) {
-        if(component == null) return;
+		Component comp = dat.parms[0] as Component;
+
+		if(comp == null) return;
+
+		float frameRate = (float)dat.parms[1];
+		object[] parms = dat.parms[2] as object[];
 
         float elapsed = dat.tween.elapsed;
-        float frameRate = (float)dat.parms[0];
         float curFrame = frameRate * elapsed;
 
         if(curFrame > frame + getNumberOfFrames()) return;
 
-        object[] parms = dat.parms.Length > 1 ? (object[])dat.parms[1] : null;
-
+        
         if(useSendMessage) {
-            if(parms == null || parms.Length == 0)
-                component.gameObject.SendMessage(methodName, null, SendMessageOptions.DontRequireReceiver);
+            if(parms.Length == 0)
+				comp.gameObject.SendMessage(methodName, null, SendMessageOptions.DontRequireReceiver);
             else
-                component.gameObject.SendMessage(methodName, parms[0], SendMessageOptions.DontRequireReceiver);
+				comp.gameObject.SendMessage(methodName, parms[0], SendMessageOptions.DontRequireReceiver);
         }
         else {
-            methodInfo.Invoke(component, parms);
+			cachedMethodInfo.Invoke(comp, parms);
         }
     }
     #endregion

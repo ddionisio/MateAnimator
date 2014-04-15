@@ -7,36 +7,45 @@ public class AMOrientationTrack : AMTrack {
 
     public override int order { get { return 1; } }
 
-    public Transform obj;
+	[SerializeField]
+    Transform obj;
+
+	protected override void SetSerializeObject(UnityEngine.Object obj) {
+		this.obj = obj as Transform;
+	}
+	
+	protected override UnityEngine.Object GetSerializeObject(GameObject targetGO) {
+		return targetGO ? targetGO.transform : obj;
+	}
 
     public override string getTrackType() {
         return "Orientation";
     }
     // add a new key
-    public AMKey addKey(int _frame, Transform target) {
+    public AMKey addKey(AMITarget itarget, int _frame, Transform target) {
         foreach(AMOrientationKey key in keys) {
             // if key exists on frame, update key
             if(key.frame == _frame) {
-                key.target = target;
+				key.SetTarget(itarget, target);
                 // update cache
-                updateCache();
+				updateCache(itarget);
                 return null;
             }
         }
         AMOrientationKey a = gameObject.AddComponent<AMOrientationKey>();
         a.enabled = false;
         a.frame = _frame;
-        a.target = target;
+		a.SetTarget(itarget, target);
         // set default ease type to linear
         a.easeType = (int)0;// AMTween.EaseType.linear;
         // add a new key
         keys.Add(a);
         // update cache
-        updateCache();
+		updateCache(itarget);
         return a;
     }
-    public override void updateCache() {
-		base.updateCache();
+	public override void updateCache(AMITarget target) {
+		base.updateCache(target);
 
 		// save rotation
 		//Quaternion temp = obj.rotation;
@@ -55,68 +64,71 @@ public class AMOrientationTrack : AMTrack {
 			}
 
 			// targets
-			if(key.endFrame != -1) key.endTarget = (keys[i + 1] as AMOrientationKey).target;
+			if(key.endFrame != -1) key.SetTargetEnd(keys[i + 1] as AMOrientationKey);
 		}
 		// restore rotation
 		//if(restoreRotation) obj.rotation = temp;
     }
 
-    public Transform getInitialTarget() {
-        return (keys[0] as AMOrientationKey).target;
+    public Transform getInitialTarget(AMITarget itarget) {
+		return (keys[0] as AMOrientationKey).GetTarget(itarget);
     }
 
-    public override void previewFrame(float frame, AMTrack extraTrack = null) {
+	public override void previewFrame(AMITarget itarget, float frame, AMTrack extraTrack = null) {
+		Transform t = GetTarget(itarget) as Transform;
 
         if(keys == null || keys.Count <= 0) {
             return;
         }
         for(int i = 0; i < keys.Count; i++) {
 			AMOrientationKey key = keys[i] as AMOrientationKey;
+			Transform keyt = key.GetTarget(itarget);
+			Transform keyet = key.GetTargetEnd(itarget);
 
 			if(key.easeType == AMKey.EaseTypeNone && frame == (float)key.endFrame && i < keys.Count - 1)
 				continue;
 
             // before first frame
 			if(frame <= key.frame) {
-				if(!key.target) return;
-				obj.LookAt(key.target);
+				if(!keyt) return;
+				t.LookAt(keyt);
                 return;
                 // between first and last frame
             }
 			else if(frame <= key.endFrame) {
-				if(!key.target || !key.endTarget) return;
+				if(!keyt || !keyet) return;
                 float framePositionInPath = frame - (float)keys[i].frame;
                 if(framePositionInPath < 0f) framePositionInPath = 0f;
                 float percentage = framePositionInPath / keys[i].getNumberOfFrames();
-				obj.rotation = key.getQuaternionAtPercent(obj, percentage);
+				t.rotation = key.getQuaternionAtPercent(itarget, t, percentage);
                 return;
                 // after last frame
             }
             else if(i == keys.Count - 2) {
-				if(!key.endTarget) return;
-				obj.LookAt(key.endTarget);
+				if(!keyet) return;
+				t.LookAt(keyet);
                 return;
             }
         }
     }
 
-    public Transform getStartTargetForFrame(float frame) {
+	public Transform getStartTargetForFrame(AMITarget itarget, float frame) {
         foreach(AMOrientationKey key in keys) {
             if(/*((int)frame<action.startFrame)||*/((int)frame > key.endFrame)) continue;
-            return key.target;
+            return key.GetTarget(itarget);
         }
         return null;
     }
-    public Transform getEndTargetForFrame(float frame) {
-        if(keys.Count > 1) return (keys[keys.Count - 2] as AMOrientationKey).endTarget;
+	public Transform getEndTargetForFrame(AMITarget itarget, float frame) {
+		if(keys.Count > 1) return (keys[keys.Count - 2] as AMOrientationKey).GetTargetEnd(itarget);
         return null;
     }
-    public Transform getTargetForFrame(float frame) {
-        if(isFrameBeyondLastKeyFrame(frame)) return getEndTargetForFrame(frame);
-        else return getStartTargetForFrame(frame);
+	public Transform getTargetForFrame(AMITarget itarget, float frame) {
+		if(isFrameBeyondLastKeyFrame(frame)) return getEndTargetForFrame(itarget, frame);
+		else return getStartTargetForFrame(itarget, frame);
     }
     // draw gizmos
-    public void drawGizmos(float gizmo_size, bool inPlayMode, int frame) {
+    public void drawGizmos(AMITarget itarget, float gizmo_size, bool inPlayMode, int frame) {
         if(!obj) return;
         // draw line to target
         if(!inPlayMode) {
@@ -126,9 +138,10 @@ public class AMOrientationTrack : AMTrack {
 
                 if(key.frame > frame) break;
                 if(frame >= key.frame && frame <= key.endFrame) {
-                    if(key.isLookFollow() && key.target) {
+					Transform t = key.GetTarget(itarget);
+					if(key.isLookFollow(itarget) && t) {
                         Gizmos.color = new Color(245f / 255f, 107f / 255f, 30f / 255f, 0.2f);
-                        Gizmos.DrawLine(obj.transform.position, key.target.transform.position);
+						Gizmos.DrawLine(obj.transform.position, t.position);
                     }
                     break;
                 }
@@ -159,49 +172,53 @@ public class AMOrientationTrack : AMTrack {
     }
 
 
-    public bool hasTarget(Transform obj) {
+	public bool hasTarget(AMITarget itarget, Transform obj) {
         foreach(AMOrientationKey key in keys) {
-            if(key.target == obj || key.endTarget == obj) return true;
+            if(key.GetTarget(itarget) == obj || key.GetTargetEnd(itarget) == obj) return true;
         }
         return false;
     }
 
 
-    public override AnimatorTimeline.JSONInit getJSONInit() {
+	public override AnimatorTimeline.JSONInit getJSONInit(AMITarget target) {
         if(!obj || keys.Count <= 0) return null;
         AnimatorTimeline.JSONInit init = new AnimatorTimeline.JSONInit();
         init.type = "orientation";
         init.go = obj.gameObject.name;
-        Transform _target = getInitialTarget();
+		Transform _target = getInitialTarget(target);
         int start_frame = keys[0].frame;
         AMTrack _translation_track = null;
         //if(start_frame > 0) _translation_track = parentTake.getTranslationTrackForTransform(_target);
         Vector3 _lookv3 = _target.transform.position;
-        if(_translation_track) _lookv3 = (_translation_track as AMTranslationTrack).getPositionAtFrame(start_frame, true);
+		if(_translation_track) _lookv3 = (_translation_track as AMTranslationTrack).getPositionAtFrame((_translation_track as AMTranslationTrack).GetTarget(target) as Transform, start_frame, true);
         AnimatorTimeline.JSONVector3 v = new AnimatorTimeline.JSONVector3();
         v.setValue(_lookv3);
         init.position = v;
         return init;
     }
 
-    public override List<GameObject> getDependencies() {
+	public override List<GameObject> getDependencies(AMITarget itarget) {
+		Transform tgt = GetTarget(itarget) as Transform;
         List<GameObject> ls = new List<GameObject>();
-        if(obj) ls.Add(obj.gameObject);
+		if(tgt) ls.Add(tgt.gameObject);
         foreach(AMOrientationKey key in keys) {
-            if(key.target) ls.Add(key.target.gameObject);
+			Transform t = key.GetTarget(itarget);
+            if(t) ls.Add(t.gameObject);
         }
         return ls;
     }
-    public override List<GameObject> updateDependencies(List<GameObject> newReferences, List<GameObject> oldReferences) {
+	public override List<GameObject> updateDependencies(AMITarget itarget, List<GameObject> newReferences, List<GameObject> oldReferences) {
+		Transform tgt = GetTarget(itarget) as Transform;
         bool didUpdateObj = false;
         for(int i = 0; i < oldReferences.Count; i++) {
-            if(!didUpdateObj && obj && oldReferences[i] == obj.gameObject) {
-                obj = newReferences[i].transform;
+			if(!didUpdateObj && tgt && oldReferences[i] == tgt.gameObject) {
+				SetTarget(itarget, newReferences[i].transform);
                 didUpdateObj = true;
             }
             foreach(AMOrientationKey key in keys) {
-                if(key.target && oldReferences[i] == key.target.gameObject) {
-                    key.target = newReferences[i].transform;
+				Transform t = key.GetTarget(itarget);
+                if(t && oldReferences[i] == t.gameObject) {
+                    key.SetTarget(itarget, newReferences[i].transform);
                 }
             }
         }

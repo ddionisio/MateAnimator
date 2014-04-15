@@ -12,18 +12,21 @@ using Holoville.HOTween;
 public class AMTranslationTrack : AMTrack {
     [SerializeField]
     private Transform _obj;
-    public Transform obj {
-        set {
-            if(_obj != value) {
-                if(value != null && keys.Count <= 0) cachedInitialPosition = _isLocal ? value.localPosition : value.position;
-                _obj = value;
-            }
-        }
-    }
 
-    public override UnityEngine.Object target {
-        get { return _obj; }
-    }
+	protected override void SetSerializeObject(UnityEngine.Object obj) {
+		_obj = obj as Transform;
+	}
+	
+	protected override UnityEngine.Object GetSerializeObject(GameObject targetGO) {
+		return targetGO ? targetGO.transform : _obj;
+	}
+	
+	public new void SetTarget(AMITarget target, UnityEngine.Object item) {
+		base.SetTarget(target, item);
+		
+		Transform _t = item as Transform;
+		if(_t != null && keys.Count <= 0) cachedInitialPosition = _isLocal ? _t.localPosition : _t.position;
+	}
 
     public override int version { get { return 2; } }
 
@@ -65,15 +68,19 @@ public class AMTranslationTrack : AMTrack {
         }
     }
 
-    public Vector3 position {
-        get { return _isLocal ? _obj.localPosition : _obj.position; }
-        set {
-            if(_isLocal)
-                _obj.localPosition = value;
-            else
-                _obj.position = value;
-        }
-    }
+	void SetPosition(Transform t, Vector3 p) {
+		if(t) {
+			if(_isLocal) t.localPosition = p;
+			else t.position = p;
+		}
+	}
+
+	Vector3 GetPosition(Transform t) {
+		if(t) {
+			return _isLocal ? t.localPosition : t.position;
+		}
+		return Vector3.zero;
+	}
 
     public Vector3 cachedInitialPosition;
 
@@ -81,12 +88,8 @@ public class AMTranslationTrack : AMTrack {
         return _isLocal ? "Local Translation" : "Translation";
     }
 
-    public bool isObjectEqual(Transform t) {
-        return _obj == t;
-    }
-
     // add a new key
-    public AMKey addKey(int _frame, Vector3 _position, int _interp, int _easeType, OnKey addCallback) {
+    public AMKey addKey(AMITarget itarget, int _frame, Vector3 _position, int _interp, int _easeType, OnKey addCallback) {
         foreach(AMTranslationKey key in keys) {
             // if key exists on frame, update key
             if(key.frame == _frame) {
@@ -97,7 +100,7 @@ public class AMTranslationTrack : AMTrack {
                 key.interp = _interp;
                 key.easeType = _easeType;
                 // update cache
-                updateCache();
+				updateCache(itarget);
                 return null;
             }
         }
@@ -114,11 +117,11 @@ public class AMTranslationTrack : AMTrack {
         // add a new key
         keys.Add(a);
         // update cache
-        updateCache();
+		updateCache(itarget);
         return a;
     }
     // add a new key, default interpolation and easeType
-    public AMKey addKey(int _frame, Vector3 _position, OnKey addCallback) {
+	public AMKey addKey(AMITarget itarget, int _frame, Vector3 _position, OnKey addCallback) {
         foreach(AMTranslationKey key in keys) {
             // if key exists on frame, update key
             if(key.frame == _frame) {
@@ -127,7 +130,7 @@ public class AMTranslationTrack : AMTrack {
 
                 key.position = _position;
                 // update cache
-                updateCache();
+				updateCache(itarget);
                 return null;
             }
         }
@@ -143,38 +146,39 @@ public class AMTranslationTrack : AMTrack {
         // add a new key
         keys.Add(a);
         // update cache
-        updateCache();
+		updateCache(itarget);
         return a;
     }
 
     // preview a frame in the scene view
-    public override void previewFrame(float frame, AMTrack extraTrack = null) {
-        if(!_obj) return;
+	public override void previewFrame(AMITarget itarget, float frame, AMTrack extraTrack = null) {
+		Transform t = GetTarget(itarget) as Transform;
+        if(!t) return;
         if(keys == null || keys.Count <= 0) return;
         // if before first frame
         if(frame <= (float)(keys[0] as AMTranslationKey).startFrame) {
             AMTranslationKey key = keys[0] as AMTranslationKey;
-			position = key.easeType == AMKey.EaseTypeNone || key.path.Length == 0 ? key.position : key.path[0];
+			SetPosition(t, key.easeType == AMKey.EaseTypeNone || key.path.Length == 0 ? key.position : key.path[0]);
             return;
         }
         // if beyond last frame
         if(frame >= (float)(keys[keys.Count - 1] as AMTranslationKey).endFrame) {
             AMTranslationKey key = keys[keys.Count - 1] as AMTranslationKey;
-			position = key.easeType == AMKey.EaseTypeNone || key.path.Length == 0 ? key.position : key.path[key.path.Length - 1];
+			SetPosition(t, key.easeType == AMKey.EaseTypeNone || key.path.Length == 0 ? key.position : key.path[key.path.Length - 1]);
             return;
         }
         // if lies on curve
         foreach(AMTranslationKey key in keys) {
             if(((int)frame < key.startFrame) || ((int)frame > key.endFrame)) continue;
 			if(key.easeType == AMKey.EaseTypeNone && (int)frame < key.endFrame) {
-				position = key.position;
+				SetPosition(t, key.position);
 				return;
 			}
 			else if(key.path.Length == 0) {
 				continue;
 			}
             else if(key.path.Length == 1) {
-                position = key.path[0];
+				SetPosition(t, key.path[0]);
                 return;
             }
             float _value;
@@ -192,36 +196,37 @@ public class AMTranslationTrack : AMTrack {
                 }
             }
 
-            AMUtil.PutOnPath(_obj, key.path, Mathf.Clamp(_value, 0f, 1f), _isLocal);
+            AMUtil.PutOnPath(t, key.path, Mathf.Clamp(_value, 0f, 1f), _isLocal);
             return;
         }
 
     }
     // returns true if autoKey successful
-    public bool autoKey(Transform aobj, int frame, OnKey addCallback) {
-        if(!_obj || aobj != _obj) { return false; }
+    public bool autoKey(AMITarget itarget, Transform aobj, int frame, OnKey addCallback) {
+		Transform t = GetTarget(itarget) as Transform;
+        if(!t || aobj != t) { return false; }
 
         if(keys.Count <= 0) {
-            if(position != cachedInitialPosition) {
+            if(GetPosition(t) != cachedInitialPosition) {
                 // if updated position, addkey
-                addKey(frame, position, addCallback);
+				addKey(itarget, frame, GetPosition(t), addCallback);
                 return true;
             }
             return false;
         }
-        Vector3 oldPos = getPositionAtFrame((float)frame, false);
-        if(position != oldPos) {
+        Vector3 oldPos = getPositionAtFrame(t, (float)frame, false);
+		if(GetPosition(t) != oldPos) {
             // if updated position, addkey
-            addKey(frame, position, addCallback);
+			addKey(itarget, frame, GetPosition(t), addCallback);
             return true;
         }
 
         return false;
     }
-    public Vector3 getPositionAtFrame(float frame, bool forceWorld) {
+	public Vector3 getPositionAtFrame(Transform t, float frame, bool forceWorld) {
         Vector3 ret = Vector3.zero;
 
-        if(keys.Count <= 0) ret = position;
+        if(keys.Count <= 0) ret = GetPosition(t);
         // if before first frame
         else if(frame <= (float)(keys[0] as AMTranslationKey).startFrame) {
             AMTranslationKey key = keys[0] as AMTranslationKey;
@@ -269,16 +274,18 @@ public class AMTranslationTrack : AMTrack {
             }
 
             if(!retFound)
-                Debug.LogError("Animator: Could not get " + _obj.name + " position at frame '" + frame + "'");
+                Debug.LogError("Animator: Could not get " + t.name + " position at frame '" + frame + "'");
         }
 
-        if(forceWorld && _isLocal && _obj != null && _obj.parent != null)
-            ret = _obj.parent.localToWorldMatrix.MultiplyPoint(ret);
+        if(forceWorld && _isLocal && t != null && t.parent != null)
+            ret = t.parent.localToWorldMatrix.MultiplyPoint(ret);
 
         return ret;
     }
     // draw gizmos
-    public override void drawGizmos(float gizmo_size) {
+    public override void drawGizmos(AMITarget target, float gizmo_size) {
+		Transform t = GetTarget(target) as Transform;
+
         foreach(AMTranslationKey key in keys) {
             if(key != null) {
 				if(key.easeType == AMKey.EaseTypeNone) {
@@ -286,11 +293,11 @@ public class AMTranslationTrack : AMTrack {
 					Gizmos.DrawSphere(key.position, gizmo_size);
 				}
 				else if(key.path.Length > 1) {
-	                if(_isLocal && _obj != null && _obj.parent != null) {
-	                    AMGizmo.DrawPathRelative(_obj.parent, key.path, new Color(255f, 255f, 255f, .5f));
+	                if(_isLocal && t != null && t.parent != null) {
+	                    AMGizmo.DrawPathRelative(t.parent, key.path, new Color(255f, 255f, 255f, .5f));
 	                    Gizmos.color = Color.green;
-	                    Gizmos.DrawSphere(_obj.parent.localToWorldMatrix.MultiplyPoint(key.path[0]), gizmo_size);
-	                    Gizmos.DrawSphere(_obj.parent.localToWorldMatrix.MultiplyPoint(key.path[key.path.Length - 1]), gizmo_size);
+	                    Gizmos.DrawSphere(t.parent.localToWorldMatrix.MultiplyPoint(key.path[0]), gizmo_size);
+	                    Gizmos.DrawSphere(t.parent.localToWorldMatrix.MultiplyPoint(key.path[key.path.Length - 1]), gizmo_size);
 	                }
 	                else {
 	                    AMGizmo.DrawPath(key.path, new Color(255f, 255f, 255f, .5f));
@@ -326,8 +333,8 @@ public class AMTranslationTrack : AMTrack {
         return new AMPath(path.ToArray(), (keys[startIndex] as AMTranslationKey).interp, startFrame, endFrame, startIndex, endIndex);
     }
     // update cache (optimized)
-    public override void updateCache() {
-		base.updateCache();
+    public override void updateCache(AMITarget target) {
+		base.updateCache(target);
 
 		//force local, using global is useless
 		isLocal = true;
@@ -395,7 +402,7 @@ public class AMTranslationTrack : AMTrack {
         return (keys[0] as AMTranslationKey).position;
     }
 
-    public override AnimatorTimeline.JSONInit getJSONInit() {
+	public override AnimatorTimeline.JSONInit getJSONInit(AMITarget target) {
         if(!_obj || keys.Count <= 0) return null;
         AnimatorTimeline.JSONInit init = new AnimatorTimeline.JSONInit();
         init.type = "position";
@@ -406,17 +413,19 @@ public class AMTranslationTrack : AMTrack {
         return init;
     }
 
-    public override List<GameObject> getDependencies() {
+    public override List<GameObject> getDependencies(AMITarget target) {
+		Transform t = GetTarget(target) as Transform;
         List<GameObject> ls = new List<GameObject>();
-        if(_obj) ls.Add(_obj.gameObject);
+        if(t) ls.Add(t.gameObject);
         return ls;
     }
 
-    public override List<GameObject> updateDependencies(List<GameObject> newReferences, List<GameObject> oldReferences) {
-        if(!_obj) return new List<GameObject>();
+	public override List<GameObject> updateDependencies(AMITarget target, List<GameObject> newReferences, List<GameObject> oldReferences) {
+		Transform t = GetTarget(target) as Transform;
+        if(!t) return new List<GameObject>();
         for(int i = 0; i < oldReferences.Count; i++) {
-            if(oldReferences[i] == _obj.gameObject) {
-                obj = newReferences[i].transform;
+            if(oldReferences[i] == t.gameObject) {
+				SetTarget(target, newReferences[i].transform);
                 break;
             }
         }

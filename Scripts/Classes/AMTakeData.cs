@@ -129,91 +129,97 @@ public class AMTakeData {
 	}
 	
 	// add translation track
-	public AMTrack addTranslationTrack(GameObject holder, GameObject obj) {
-		AMTranslationTrack a = holder.AddComponent<AMTranslationTrack>();
+	public AMTrack addTranslationTrack(AMITarget target, GameObject obj) {
+		AMTranslationTrack a = target.TargetGetHolder().gameObject.AddComponent<AMTranslationTrack>();
 		a.enabled = false;
 		a.setName(getTrackCount());
 		a.id = getUniqueTrackID();
-		if(obj) a.obj = obj.transform;
+		if(obj) a.SetTarget(target, obj.transform);
 		a.isLocal = true;
 		addTrack(a);
 		return a;
 	}
 	
 	// add rotation track
-	public AMTrack addRotationTrack(GameObject holder, GameObject obj) {
-		AMRotationTrack a = holder.AddComponent<AMRotationTrack>();
+	public AMTrack addRotationTrack(AMITarget target, GameObject obj) {
+		AMRotationTrack a = target.TargetGetHolder().gameObject.AddComponent<AMRotationTrack>();
 		a.enabled = false;
 		a.setName(getTrackCount());
 		a.id = getUniqueTrackID();
-		if(obj) a.obj = obj.transform;
+		if(obj) a.SetTarget(target, obj.transform);
 		a.isLocal = true;
 		addTrack(a);
 		return a;
 	}
 	
 	// add orientation track
-	public AMTrack addOrientationTrack(GameObject holder, GameObject obj) {
-		AMOrientationTrack a = holder.AddComponent<AMOrientationTrack>();
+	public AMTrack addOrientationTrack(AMITarget target, GameObject obj) {
+		AMOrientationTrack a = target.TargetGetHolder().gameObject.AddComponent<AMOrientationTrack>();
 		a.enabled = false;
 		a.setName(getTrackCount());
 		a.id = getUniqueTrackID();
-		if(obj) a.obj = obj.transform;
+		if(obj) a.SetTarget(target, obj.transform);
 		addTrack(a);
 		return a;
 	}
 	
 	// add animation track
-	public AMTrack addAnimationTrack(GameObject holder, GameObject obj) {
-		AMAnimationTrack a = holder.AddComponent<AMAnimationTrack>();
+	public AMTrack addAnimationTrack(AMITarget target, GameObject obj) {
+		AMAnimationTrack a = target.TargetGetHolder().gameObject.AddComponent<AMAnimationTrack>();
 		a.enabled = false;
 		a.setName(getTrackCount());
 		a.id = getUniqueTrackID();
-		if(obj && obj.GetComponent(typeof(Animation))) a.obj = obj;
+		if(obj) {
+			Animation anm = obj.animation;
+			if(anm != null) a.SetTarget(target, obj);
+		}
 		addTrack(a);
 		return a;
 	}
 	
 	// add audio track
-	public AMTrack addAudioTrack(GameObject holder, GameObject obj) {
-		AMAudioTrack a = holder.AddComponent<AMAudioTrack>();
+	public AMTrack addAudioTrack(AMITarget target, GameObject obj) {
+		AMAudioTrack a = target.TargetGetHolder().gameObject.AddComponent<AMAudioTrack>();
 		a.enabled = false;
 		a.setName(getTrackCount());
 		a.id = getUniqueTrackID();
-		if(obj && obj.GetComponent(typeof(AudioSource))) a.audioSource = (AudioSource)obj.GetComponent(typeof(AudioSource));
+		if(obj) {
+			AudioSource aud = obj.audio;
+			if(aud != null) a.SetTarget(target, aud);
+		}
 		addTrack(a);
 		return a;
 	}
 	
 	// add property track
-	public AMTrack addPropertyTrack(GameObject holder, GameObject obj) {
-		AMPropertyTrack a = holder.AddComponent<AMPropertyTrack>();
+	public AMTrack addPropertyTrack(AMITarget target, GameObject obj) {
+		AMPropertyTrack a = target.TargetGetHolder().gameObject.AddComponent<AMPropertyTrack>();
 		a.enabled = false;
 		a.setName(getTrackCount());
 		a.id = getUniqueTrackID();
-		if(obj) a.obj = obj;
+		if(obj) a.SetTarget(target, obj);
 		addTrack(a);
 		return a;
 	}
 	
 	// add event track
-	public AMTrack addEventTrack(GameObject holder, GameObject obj) {
-		AMEventTrack a = holder.AddComponent<AMEventTrack>();
+	public AMTrack addEventTrack(AMITarget target, GameObject obj) {
+		AMEventTrack a = target.TargetGetHolder().gameObject.AddComponent<AMEventTrack>();
 		a.enabled = false;
 		a.setName(getTrackCount());
 		a.id = getUniqueTrackID();
-		if(obj) a.obj = obj;
+		if(obj) a.SetTarget(target, obj);
 		addTrack(a);
 		return a;
 	}
 	
 	// add go set active track
-	public AMTrack addGOSetActiveTrack(GameObject holder, GameObject obj) {
-		AMGOSetActiveTrack a = holder.AddComponent<AMGOSetActiveTrack>();
+	public AMTrack addGOSetActiveTrack(AMITarget target, GameObject obj) {
+		AMGOSetActiveTrack a = target.TargetGetHolder().gameObject.AddComponent<AMGOSetActiveTrack>();
 		a.enabled = false;
 		a.setName(getTrackCount());
 		a.id = getUniqueTrackID();
-		if(obj) a.setObject(obj);
+		if(obj) a.SetTarget(target, obj);
 		addTrack(a);
 		return a;
 	}
@@ -779,7 +785,7 @@ public class AMTakeData {
 	}
 	
 	// preview a frame
-	public void previewFrame(float _frame, bool orientationOnly = false, bool quickPreview = false /* do not preview properties to execute */) {
+	public void previewFrame(AMITarget itarget, float _frame, bool orientationOnly = false, bool quickPreview = false /* do not preview properties to execute */) {
 		#if UNITY_EDITOR
 		if(!Application.isPlaying)
 			mTracksSorted = false;
@@ -793,54 +799,35 @@ public class AMTakeData {
 		if(orientationOnly) {
 			foreach(AMTrack track in trackValues) {
 				if(track is AMOrientationTrack || track is AMRotationTrack)
-					track.previewFrame(_frame);
+					track.previewFrame(itarget, _frame);
 			}
 		}
 		else {
 			foreach(AMTrack track in trackValues) {
-				if(track is AMAnimationTrack) (track as AMAnimationTrack).previewFrame(_frame, frameRate);
-				else if(track is AMPropertyTrack) (track as AMPropertyTrack).previewFrame(_frame, quickPreview);
-				else track.previewFrame(_frame);
+				if(track is AMAnimationTrack) (track as AMAnimationTrack).previewFrame(itarget, _frame, frameRate);
+				else if(track is AMPropertyTrack) (track as AMPropertyTrack).previewFrame(itarget, _frame, quickPreview);
+				else track.previewFrame(itarget, _frame);
 			}
 		}
 	}
 	
-	public void sampleAudioAtFrame(int frame, float speed) {
+	public void sampleAudioAtFrame(AMITarget itarget, int frame, float speed) {
 		foreach(AMTrack track in trackValues) {
 			if(!(track is AMAudioTrack)) continue;
-			(track as AMAudioTrack).sampleAudioAtFrame(frame, speed, frameRate);
+			(track as AMAudioTrack).sampleAudioAtFrame(itarget, frame, speed, frameRate);
 		}
 	}
 	
-	public AMTranslationTrack getTranslationTrackForTransform(Transform obj) {
+	public AMTranslationTrack getTranslationTrackForTransform(AMITarget itarget, Transform obj) {
 		if(!obj) return null;
 		foreach(AMTrack track in trackValues) {
-			if((track is AMTranslationTrack) && (track as AMTranslationTrack).isObjectEqual(obj))
+			if((track is AMTranslationTrack) && track.isTargetEqual(itarget, obj))
 				return track as AMTranslationTrack;
 		}
 		return null;
 	}
-	
-	// delete keys after a frame
-	public void deleteKeysAfter(int frame) {
-		bool didDeleteKeys;
-		foreach(AMTrack track in trackValues) {
-			didDeleteKeys = false;
-			for(int i = 0; i < track.keys.Count; i++) {
-				if(track.keys[i].frame > frame) {
-					// destroy key
-					track.keys[i].destroy();
-					// remove from list
-					track.keys.RemoveAt(i);
-					didDeleteKeys = true;
-					i--;
-				}
-				if(didDeleteKeys) track.updateCache();
-			}
-		}
-		
-	}
-	public AMKey[] removeKeysAfter(int frame) {
+
+	public AMKey[] removeKeysAfter(AMITarget itarget, int frame) {
 		List<AMKey> dkeys = new List<AMKey>();
 		bool didDeleteKeys;
 		foreach(AMTrack track in trackValues) {
@@ -854,33 +841,13 @@ public class AMTakeData {
 					didDeleteKeys = true;
 					i--;
 				}
-				if(didDeleteKeys) track.updateCache();
+				if(didDeleteKeys) track.updateCache(itarget);
 			}
 		}
 		return dkeys.ToArray();
 	}
-	
-	// delete keys after a frame
-	public void deleteKeysBefore(int frame) {
-		bool didDeleteKeys;
-		foreach(AMTrack track in trackValues) {
-			didDeleteKeys = false;
-			for(int i = 0; i < track.keys.Count; i++) {
-				if(track.keys[i].frame < frame) {
-					// destroy key
-					track.keys[i].destroy();
-					// remove from list
-					track.keys.RemoveAt(i);
-					didDeleteKeys = true;
-					i--;
-				}
-				if(didDeleteKeys) track.updateCache();
-			}
-		}
-		
-	}
-	
-	public AMKey[] removeKeysBefore(int frame) {
+
+	public AMKey[] removeKeysBefore(AMITarget itarget, int frame) {
 		List<AMKey> dkeys = new List<AMKey>();
 		bool didDeleteKeys;
 		foreach(AMTrack track in trackValues) {
@@ -894,14 +861,14 @@ public class AMTakeData {
 					didDeleteKeys = true;
 					i--;
 				}
-				if(didDeleteKeys) track.updateCache();
+				if(didDeleteKeys) track.updateCache(itarget);
 			}
 		}
 		return dkeys.ToArray();
 	}
 	
-	public void shiftOutOfBoundsKeysOnSelectedTrack() {
-		int offset = getSelectedTrack().shiftOutOfBoundsKeys();
+	public void shiftOutOfBoundsKeysOnSelectedTrack(AMITarget itarget) {
+		int offset = getSelectedTrack().shiftOutOfBoundsKeys(itarget);
 		if(contextSelection.Count <= 0) return;
 		for(int i = 0; i < contextSelection.Count; i++) {
 			contextSelection[i] += offset;
@@ -909,12 +876,12 @@ public class AMTakeData {
 		// shift all keys on all tracks
 		foreach(AMTrack track in trackValues) {
 			if(track.id == selectedTrack) continue;
-			track.offsetKeysFromBy(1, offset);
+			track.offsetKeysFromBy(itarget, 1, offset);
 		}
 	}
 	
-	public void shiftOutOfBoundsKeysOnTrack(AMTrack _track) {
-		int offset = _track.shiftOutOfBoundsKeys();
+	public void shiftOutOfBoundsKeysOnTrack(AMITarget itarget, AMTrack _track) {
+		int offset = _track.shiftOutOfBoundsKeys(itarget);
 		if(contextSelection.Count <= 0) return;
 		for(int i = 0; i < contextSelection.Count; i++) {
 			contextSelection[i] += offset;
@@ -922,36 +889,11 @@ public class AMTakeData {
 		// shift all keys on all tracks
 		foreach(AMTrack track in trackValues) {
 			if(track.id == _track.id) continue;
-			track.offsetKeysFromBy(0, offset);
+			track.offsetKeysFromBy(itarget, 0, offset);
 		}
 	}
-	
-	/*public void deleteSelectedKeys() {
-        bool didDeleteKeys = false;
-        AMTrack track = getSelectedTrack();
-        for(int i=0; i<track.keys.Count;i++) {
-            if(!isFrameInContextSelection(track.keys[i].frame)) continue;
-            track.keys[i].destroy();
-            track.keys.Remove(track.keys[i]);
-            i--;
-            didDeleteKeys = true;
-        }
-        if(didDeleteKeys) getSelectedTrack().updateCache();
-    }*/
-	public void deleteSelectedKeysFromTrack(int track_id) {
-		bool didDeleteKeys = false;
-		AMTrack track = getTrack(track_id);
-		for(int i = 0; i < track.keys.Count; i++) {
-			if(!isFrameInContextSelection(track.keys[i].frame)) continue;
-			track.keys[i].destroy();
-			track.keys.Remove(track.keys[i]);
-			i--;
-			didDeleteKeys = true;
-		}
-		if(didDeleteKeys) track.updateCache();
-	}
-	
-	public AMKey[] removeSelectedKeysFromTrack(int track_id) {
+
+	public AMKey[] removeSelectedKeysFromTrack(AMITarget itarget, int track_id) {
 		List<AMKey> dkeys = new List<AMKey>();
 		
 		bool didDeleteKeys = false;
@@ -963,7 +905,7 @@ public class AMTakeData {
 			i--;
 			didDeleteKeys = true;
 		}
-		if(didDeleteKeys) track.updateCache();
+		if(didDeleteKeys) track.updateCache(itarget);
 		
 		return dkeys.ToArray();
 	}
@@ -980,19 +922,19 @@ public class AMTakeData {
 	}
 	
 	// returns true if autokey successful
-	public bool autoKey(Transform obj, int frame, AMTrack.OnKey addCallback) {
+	public bool autoKey(AMITarget itarget, Transform obj, int frame, AMTrack.OnKey addCallback) {
 		if(!obj) return false;
 		bool didKey = false;
 		foreach(AMTrack track in trackValues) {
 			// for each track, if rotation or translation then autokey
 			if(track is AMTranslationTrack) {
-				if((track as AMTranslationTrack).autoKey(obj, frame, addCallback)) {
+				if((track as AMTranslationTrack).autoKey(itarget, obj, frame, addCallback)) {
 					if(!didKey) didKey = true;
 					//track.updateCache();
 				}
 			}
 			else if(track is AMRotationTrack) {
-				if((track as AMRotationTrack).autoKey(obj, frame, addCallback)) {
+				if((track as AMRotationTrack).autoKey(itarget, obj, frame, addCallback)) {
 					if(!didKey) didKey = true;
 				}
 			}
@@ -1142,7 +1084,7 @@ public class AMTakeData {
 	
 	// offset context selection frames by an amount. can be positive or negative
 	//returns keys that are to be deleted
-	public AMKey[] offsetContextSelectionFramesBy(int offset) {
+	public AMKey[] offsetContextSelectionFramesBy(AMITarget itarget, int offset) {
 		if(offset == 0) return new AMKey[0];
 		if(contextSelection.Count <= 0) return new AMKey[0];
 		
@@ -1186,7 +1128,7 @@ public class AMTakeData {
 			
 			// update cache
 			if(shouldUpdateCache) {
-				_track.updateCache();
+				_track.updateCache(itarget);
 			}
 		}
 		// update context selection
@@ -1238,48 +1180,48 @@ public class AMTakeData {
 	public void maintainTake() {
 	}
 	
-	public void sampleAudio(float frame, float speed) {
+	public void sampleAudio(AMITarget itarget, float frame, float speed) {
 		foreach(AMTrack track in trackValues) {
 			if(!(track is AMAudioTrack)) continue;
-			(track as AMAudioTrack).sampleAudio(frame, speed, frameRate);
+			(track as AMAudioTrack).sampleAudio(itarget, frame, speed, frameRate);
 		}
 	}
 	
-	public void stopAudio() {
+	public void stopAudio(AMITarget itarget) {
 		foreach(AMTrack track in trackValues) {
 			if(!(track is AMAudioTrack)) continue;
-			(track as AMAudioTrack).stopAudio();
+			(track as AMAudioTrack).stopAudio(itarget);
 		}
 	}
 	
-	public void stopAnimations() {
+	public void stopAnimations(AMITarget itarget) {
 		foreach(AMTrack track in trackValues) {
 			if(!(track is AMAnimationTrack)) continue;
-			if((track as AMAnimationTrack).obj) {
-				(track as AMAnimationTrack).obj.animation.Stop();
-			}
+			GameObject go = track.GetTarget(itarget) as GameObject;
+			if(go && go.animation) go.animation.Stop();
 		}
 	}
 	
-	public void resetScene() {
+	public void resetScene(AMITarget itarget) {
 		// reset scene, equivalent to previewFrame(1f) without previewing animation
 		foreach(AMTrack track in trackValues) {
 			if(track is AMAnimationTrack) continue;
-			if(track is AMOrientationTrack) track.previewFrame(1f, getTranslationTrackForTransform((track as AMOrientationTrack).getTargetForFrame(1f)));
-			else track.previewFrame(1f);
+			if(track is AMOrientationTrack) 
+				track.previewFrame(itarget, 1f, getTranslationTrackForTransform(itarget, (track as AMOrientationTrack).getTargetForFrame(itarget, 1f)));
+			else track.previewFrame(itarget, 1f);
 		}
 	}
 	
-	public void drawGizmos(float gizmo_size, bool inPlayMode) {
+	public void drawGizmos(AMITarget itarget, float gizmo_size, bool inPlayMode) {
 		foreach(AMTrack track in trackValues) {
 			if(track is AMTranslationTrack)
-				track.drawGizmos(gizmo_size);
+				track.drawGizmos(itarget, gizmo_size);
 			else if(track is AMOrientationTrack)
-				(track as AMOrientationTrack).drawGizmos(gizmo_size, inPlayMode, selectedFrame);
+				(track as AMOrientationTrack).drawGizmos(itarget, gizmo_size, inPlayMode, selectedFrame);
 		}
 	}
 	
-	public void maintainCaches() {
+	public void maintainCaches(AMITarget itarget) {
 		// re-updates cache if there are null values
 		if(trackValues != null) {
 			foreach(AMTrack track in trackValues) {
@@ -1292,14 +1234,14 @@ public class AMTakeData {
 						}
 					}
 					if(shouldUpdateCache) {
-						track.updateCache();
+						track.updateCache(itarget);
 					}
 				}
 			}
 		}
 	}
 	
-	public Sequence BuildSequence(string goName, bool autoKill, UpdateType updateType, OnSequenceDone endCallback) {
+	public Sequence BuildSequence(AMITarget itarget, string goName, bool autoKill, UpdateType updateType, OnSequenceDone endCallback) {
 		if(loopBackToFrame >= 0 && numLoop <= 0)
 			numLoop = 1;
 
@@ -1309,17 +1251,17 @@ public class AMTakeData {
 			.UpdateType(updateType)
 			.AutoKill(autoKill)
 			.Loops(numLoop, loopMode)
-			.OnComplete(OnSequenceComplete, endCallback));
+			.OnComplete(OnSequenceComplete, itarget, endCallback));
 		
-		maintainCaches();
+		maintainCaches(itarget);
 
 		int numTweensAdded = 0;
 		
 		foreach(AMTrack track in trackValues) {
-			track.buildSequenceStart(sequence, frameRate);
-			
+			track.buildSequenceStart(itarget, sequence, frameRate);
+			Object tgt = track.GetTarget(itarget);
 			foreach(AMKey key in track.keys) {
-				Tweener tween = key.buildTweener(sequence, track.target, frameRate);
+				Tweener tween = key.buildTweener(itarget, sequence, tgt, frameRate);
 				if(tween != null) {
 					sequence.Insert(key.getWaitTime(frameRate, 0.0f), tween);
 					numTweensAdded++;
@@ -1336,8 +1278,9 @@ public class AMTakeData {
 	}
 	
 	void OnSequenceComplete(TweenEvent dat) {
-		stopAudio();
-		stopAnimations();
+		AMITarget itgt = dat.parms[0] as AMITarget;
+		stopAudio(itgt);
+		stopAnimations(itgt);
 		
 		if(!dat.tween.autoKillOnComplete) {
 			if(loopBackToFrame >= 0) {
@@ -1349,8 +1292,8 @@ public class AMTakeData {
 			}
 		}
 
-		if(dat.parms != null && dat.parms.Length > 0) {
-			OnSequenceDone cb = dat.parms[0] as OnSequenceDone;
+		if(dat.parms != null && dat.parms.Length > 1) {
+			OnSequenceDone cb = dat.parms[1] as OnSequenceDone;
 			if(cb != null)
 				cb(this);
 		}
@@ -1430,38 +1373,22 @@ public class AMTakeData {
 	}
 	#endregion
 		
-	public List<GameObject> getDependencies() {
+	public List<GameObject> getDependencies(AMITarget itarget) {
 		List<GameObject> ls = new List<GameObject>();
 		
 		foreach(AMTrack track in trackValues) {
-			ls = ls.Union(track.getDependencies()).ToList();
+			ls = ls.Union(track.getDependencies(itarget)).ToList();
 		}
 		return ls;
 	}
 	
 	// returns list of GameObjects to not delete due to issues resolving references
-	public List<GameObject> updateDependencies(List<GameObject> newReferences, List<GameObject> oldReferences) {
+	public List<GameObject> updateDependencies(AMITarget itarget, List<GameObject> newReferences, List<GameObject> oldReferences) {
 		List<GameObject> lsFlagToKeep = new List<GameObject>();
 		foreach(AMTrack track in trackValues) {
-			lsFlagToKeep = lsFlagToKeep.Union(track.updateDependencies(newReferences, oldReferences)).ToList();
-			track.updateCache();
+			lsFlagToKeep = lsFlagToKeep.Union(track.updateDependencies(itarget, newReferences, oldReferences)).ToList();
+			track.updateCache(itarget);
 		}
 		return lsFlagToKeep;
-	}
-	
-	public bool CheckNulls(ref int numKeys) {
-		foreach(AMTrack track in trackValues) {
-			if(track) {
-				if(!track.CheckNullKeys())
-					return false;
-				
-				numKeys += track.keys.Count;
-			}
-			else {
-				return false;
-			}
-		}
-		
-		return true;
 	}
 }

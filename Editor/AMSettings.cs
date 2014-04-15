@@ -44,7 +44,7 @@ public class AMSettings : EditorWindow {
     void OnDisable() {
         window = null;
         if((aData) && saveChanges) {
-			AMTakeData take = aData.getCurrentTake();
+			AMTakeData take = aData.e_getCurrentTake();
             bool saveNumFrames = true;
 			if((numFrames < take.numFrames) && (take.hasKeyAfter(numFrames))) {
                 if(!EditorUtility.DisplayDialog("Data Will Be Lost", "You will lose some keys beyond frame " + numFrames + " if you continue.", "Continue Anway", "Cancel")) {
@@ -53,14 +53,14 @@ public class AMSettings : EditorWindow {
             }
 
 			string label = take.name+": Modify Settings";
-			Undo.RegisterCompleteObjectUndo(aData, label);
+			AMTimeline.registerTakesUndo(aData, label, true);
 
             if(saveNumFrames) {
 				Undo.RegisterCompleteObjectUndo(AMTimeline.getKeysAndTracks(take), label);
 
                 // save numFrames
 				take.numFrames = numFrames;
-				AMKey[]dkeys = take.removeKeysAfter(numFrames);
+				AMKey[]dkeys = take.removeKeysAfter(aData, numFrames);
 				foreach(AMKey dkey in dkeys)
 					Undo.DestroyObjectImmediate(dkey);
 
@@ -80,7 +80,7 @@ public class AMSettings : EditorWindow {
 			take.loopBackToFrame = Mathf.Clamp(loopBackFrame, -1, numFrames);
 
             // save data
-			EditorUtility.SetDirty(aData);
+			AMTimeline.setDirtyTakes(aData);
 
             EditorWindow.GetWindow(typeof(AMTimeline)).Repaint();
         }
@@ -147,11 +147,11 @@ public class AMSettings : EditorWindow {
     void loadAnimatorData() {
         if(AMTimeline.window) {
             __aData = AMTimeline.window.aData;
-            numFrames = __aData.getCurrentTake().numFrames;
-            frameRate = __aData.getCurrentTake().frameRate;
-            loopCount = __aData.getCurrentTake().numLoop;
-            loopMode = __aData.getCurrentTake().loopMode;
-            loopBackFrame = __aData.getCurrentTake().loopBackToFrame;
+            numFrames = __aData.e_getCurrentTake().numFrames;
+            frameRate = __aData.e_getCurrentTake().frameRate;
+            loopCount = __aData.e_getCurrentTake().numLoop;
+            loopMode = __aData.e_getCurrentTake().loopMode;
+            loopBackFrame = __aData.e_getCurrentTake().loopBackToFrame;
         }
     }
 }

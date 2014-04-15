@@ -66,7 +66,7 @@ public class AMGOSetActiveKey : AMKey {
         return (float)getNumberOfFrames() / (float)frameRate;
     }
 
-    public override Tweener buildTweener(Sequence sequence, UnityEngine.Object target, int frameRate) {
+    public override Tweener buildTweener(AMITarget itarget, Sequence sequence, UnityEngine.Object target, int frameRate) {
 		GameObject go = target as GameObject;
 
         if(go == null) return null;

@@ -58,7 +58,7 @@ public class AMTakeExport : EditorWindow {
     void loadAnimatorData() {
         if(AMTimeline.window) {
             aData = AMTimeline.window.aData;
-            dependencies = aData.getDependencies(take);
+            dependencies = aData.e_getDependencies(take);
         }
         else {
             this.Close();
@@ -133,7 +133,7 @@ public class AMTakeExport : EditorWindow {
             if(!go) continue;
             AnimatorData dat = go.GetComponent<AnimatorData>();
             if(dat) {
-                if(take != null) dat.deleteAllTakesExcept(take);
+                if(take != null) dat.e_deleteAllTakesExcept(take);
                 continue;
             }
             int index = gameObjs.IndexOf(go);

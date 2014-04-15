@@ -143,7 +143,7 @@ public class AMTakeImport : EditorWindow {
 		}
 		//TODO: undo "Resolve Duplicates"
 		// update references
-		List<GameObject> lsFlagToKeep = aData.updateDependencies(keepReferences, replaceReferences);
+		List<GameObject> lsFlagToKeep = aData.e_updateDependencies(keepReferences, replaceReferences);
 		// reset event track method info
 		AMTimeline.resetIndexMethodInfo();
 		AMTimeline.shouldCheckDependencies = false;
@@ -190,13 +190,13 @@ public class AMTakeImport : EditorWindow {
 		}
 		int numTakes = 0;
 		foreach (AnimatorData _a in newAnimatorData) {
-			numTakes += _a.takeData.Count;	
+			numTakes += _a._takes.Count;	
 		}
 		int numGOs = (newGOs.Count-newAnimatorData.Count);
 		Debug.Log ("Animator: Imported "+numTakes+" Take"+(numTakes > 1 ? "s" : "")+". Added "+numGOs+" GameObject"+(numGOs > 1 ? "s" : "")+".");
 		// merge new animator data together
 		for(int i=1;i<newAnimatorData.Count;i++) {
-			newAnimatorData[0].mergeWith(newAnimatorData[i]);
+			newAnimatorData[0].e_mergeWith(newAnimatorData[i]);
 			newGOs.Remove(newAnimatorData[i].gameObject);
 			DestroyImmediate(newAnimatorData[i].gameObject);
 			newAnimatorData.RemoveAt(i);
@@ -204,7 +204,7 @@ public class AMTakeImport : EditorWindow {
 		}
 		// merge old animator data together
 		for(int i=1;i<origAnimatorData.Count;i++) {
-			origAnimatorData[0].mergeWith(origAnimatorData[i]);
+			origAnimatorData[0].e_mergeWith(origAnimatorData[i]);
 			origGOs.Remove(origAnimatorData[i].gameObject);
 			DestroyImmediate(origAnimatorData[i].gameObject);
 			origAnimatorData.RemoveAt(i);
@@ -213,7 +213,7 @@ public class AMTakeImport : EditorWindow {
 		
 		// merge old with new
 		if(origAnimatorData.Count >= 1 && newAnimatorData.Count >= 1) {
-			origAnimatorData[0].mergeWith(newAnimatorData[0]);
+			origAnimatorData[0].e_mergeWith(newAnimatorData[0]);
 			newGOs.Remove(newAnimatorData[0].gameObject);
 			DestroyImmediate(newAnimatorData[0].gameObject);
 			newAnimatorData.RemoveAt(0);

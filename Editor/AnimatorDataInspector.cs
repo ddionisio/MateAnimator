@@ -1,9 +1,22 @@
 using UnityEngine;
 using UnityEditor;
 using System.Collections;
+using System.Collections.Generic;
 
 [CustomEditor(typeof(AnimatorData))]
 public class AnimatorDataInspector : Editor {
+	private string[] mTakeLabels;
+
+	void OnEnable() {
+		AnimatorData dat = target as AnimatorData;
+
+		mTakeLabels = new string[dat._takes.Count + 1];
+		mTakeLabels[0] = "None";
+		for(int i = 0; i < dat._takes.Count; i++) {
+			mTakeLabels[i+1] = dat._takes[i].name;
+		}
+	}
+
     public override void OnInspectorGUI() {
         serializedObject.Update();
 
@@ -26,13 +39,38 @@ public class AnimatorDataInspector : Editor {
             dat.playOnStart = null;
         else
             dat.playOnStart = dat.takes[playOnStartInd - 1];*/
+		List<AMTakeData> takes = dat._takes;
+		string playTakeName = dat.defaultTakeName;
+		int playTakeInd = 0;
+		if(!string.IsNullOrEmpty(playTakeName)) {
+			for(int i = 0; i < takes.Count; i++) {
+				if(takes[i].name == dat.defaultTakeName) {
+					playTakeInd = i+1;
+					break;
+				}
+			}
+		}
 
-        if(dat.playOnStartIndex != -1) {
-            GUILayout.Label("Play On Start: " + dat.takeData[dat.playOnStartIndex].name);
-        }
-        else {
-            GUILayout.Label("Play On Start: None");
-        }
+		int newPlayTakeInd = EditorGUILayout.IntPopup("Play On Start", playTakeInd, mTakeLabels, null);
+		if(newPlayTakeInd != playTakeInd) {
+			Undo.RecordObject(dat, "Set Play On Start");
+			dat.defaultTakeName = newPlayTakeInd <= 0 ? "" : takes[newPlayTakeInd - 1].name;
+		}
+
+		bool isglobal = GUILayout.Toggle(dat.isGlobal, "Global");
+		if(dat.isGlobal != isglobal) {
+			dat.isGlobal = isglobal;
+			if(isglobal) {
+				//uncheck isGlobal to any other animator data on scene
+				AnimatorData[] anims = FindObjectsOfType<AnimatorData>();
+				for(int i = 0; i < anims.Length; i++) {
+					if(dat != anims[i] && anims[i].isGlobal) {
+						anims[i].isGlobal = false;
+						EditorUtility.SetDirty(anims[i]);
+					}
+				}
+			}
+		}
 
         /*GUILayout.Label("Take Count: "+dat.takes.Count);
         if(AMTimeline.window && AMTimeline.window.aData) {

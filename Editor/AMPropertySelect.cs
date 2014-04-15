@@ -60,7 +60,7 @@ public class AMPropertySelect : EditorWindow {
         if(AMTimeline.window) {
             __aData = AMTimeline.window.aData;
             if(track) {
-                _go = track.obj;
+                _go = track.GetTarget(__aData) as GameObject;
                 // refresh	
                 updateComponentArray();
             }
@@ -79,7 +79,7 @@ public class AMPropertySelect : EditorWindow {
         if(!track) {
             return;
         }
-        if(!(track).obj) {
+        if(!(track.GetTarget(aData) as GameObject)) {
             AMTimeline.MessageBox("Assign a GameObject to the track first.", AMTimeline.MessageBoxType.Warning);
             return;
         }
@@ -214,8 +214,8 @@ public class AMPropertySelect : EditorWindow {
             else if(propertyInfo != null)
                 track.setPropertyInfo(propertyInfo);
             // set component
-            track.setComponent(propertyComponent);
-            track.updateCache();
+            track.setComponent(aData, propertyComponent);
+			track.updateCache(aData);
         }
         this.Close();
     }

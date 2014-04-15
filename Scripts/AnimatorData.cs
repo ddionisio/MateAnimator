@@ -8,7 +8,7 @@ using Holoville.HOTween;
 
 [ExecuteInEditMode]
 [AddComponentMenu("M8/Animator")]
-public class AnimatorData : MonoBehaviour {
+public class AnimatorData : MonoBehaviour, AMITarget {
     public enum DisableAction {
         None,
         Pause,
@@ -24,14 +24,24 @@ public class AnimatorData : MonoBehaviour {
     List<AMTake> takes = new List<AMTake>();
 	[SerializeField]
     AMTake playOnStart = null;
+	//
 
-	public List<AMTakeData> takeData = new List<AMTakeData>();
-	public int playOnStartIndex = -1;
+	[SerializeField]
+	List<AMTakeData> takeData = new List<AMTakeData>();
+	[SerializeField]
+	int playOnStartIndex = -1;
+
+	[SerializeField]
+	AnimatorMeta meta; //
+	[SerializeField]
+	string playOnStartMeta; //used for playing a take from AnimatorMeta
 
     public bool sequenceLoadAll = true;
     public bool sequenceKillWhenDone = false;
 
     public bool playOnEnable = false;
+
+	public bool isGlobal = false;
 
     public DisableAction onDisableAction = DisableAction.Pause;
 
@@ -39,6 +49,35 @@ public class AnimatorData : MonoBehaviour {
     // hide
 
     public event OnTake takeCompleteCallback;
+
+	public string defaultTakeName {
+		get {
+			if(meta)
+				return playOnStartMeta;
+			else
+				return playOnStartIndex == -1 ? "" : takeData[playOnStartIndex].name;
+		}
+		set {
+			if(meta) {
+				playOnStartMeta = value;
+				playOnStartIndex = -1;
+			}
+			else {
+				playOnStartMeta = "";
+				playOnStartIndex = -1;
+				if(!string.IsNullOrEmpty(value)) {
+					List<AMTakeData> _ts = _takes;
+					for(int i = 0; i < _ts.Count; i++) {
+						if(_ts[i].name == value) {
+							playOnStartIndex = i;
+							break;
+						}
+					}
+				}
+				//
+			}
+		}
+	}
 
     public bool isPlaying {
         get {
@@ -77,7 +116,7 @@ public class AnimatorData : MonoBehaviour {
 
     public string takeName {
         get {
-			AMTakeData take = currentPlayingTake;
+			AMTakeData take = mCurrentPlayingTake;
 			if(take != null) return take.name;
             return "";
         }
@@ -91,7 +130,7 @@ public class AnimatorData : MonoBehaviour {
     }
     public float totalTime {
         get {
-			AMTakeData take = currentPlayingTake;
+			AMTakeData take = mCurrentPlayingTake;
 			if(take == null) return 0f;
 			else return (float)take.numFrames / (float)take.frameRate;
         }
@@ -133,10 +172,12 @@ public class AnimatorData : MonoBehaviour {
 
     private float mAnimScale = 1.0f; //NOTE: this is reset during disable
 
-	public AMTakeData currentPlayingTake { get { return mNowPlayingTakeIndex == -1 ? null : takeData[mNowPlayingTakeIndex]; } }
-	public Sequence currentPlayingSequence { get { return mNowPlayingTakeIndex == -1 ? null : mSequences[mNowPlayingTakeIndex]; } }
+	private Dictionary<string, object> mCache;
 
-    public int prevTake { get { return _prevTake; } }
+	private AMTakeData mCurrentPlayingTake { get { return mNowPlayingTakeIndex == -1 ? null : _takes[mNowPlayingTakeIndex]; } }
+
+	public string currentPlayingTakeName { get { return mNowPlayingTakeIndex == -1 ? "" : mCurrentPlayingTake.name; } }
+	public Sequence currentPlayingSequence { get { return mNowPlayingTakeIndex == -1 ? null : mSequences[mNowPlayingTakeIndex]; } }
 
     public float animScale {
         get { return mAnimScale; }
@@ -152,172 +193,40 @@ public class AnimatorData : MonoBehaviour {
 
     public GameObject dataHolder {
         get {
-            if(_dataHolder == null) {
-                foreach(Transform child in transform) {
-                    if(child.gameObject.name == "_animdata") {
-                        _dataHolder = child.gameObject;
-                        break;
-                    }
-                }
+			if(meta) {
+				return meta.gameObject;
+			}
+			else {
+	            if(_dataHolder == null) {
+	                foreach(Transform child in transform) {
+	                    if(child.gameObject.name == "_animdata") {
+	                        _dataHolder = child.gameObject;
+	                        break;
+	                    }
+	                }
 
-                if(_dataHolder) {
-                    //refresh data?
-                }
-                else {
-                    _dataHolder = new GameObject("_animdata");
-                    _dataHolder.transform.parent = transform;
-                    _dataHolder.SetActive(false);
-                }
-            }
+	                if(_dataHolder) {
+	                    //refresh data?
+	                }
+	                else {
+	                    _dataHolder = new GameObject("_animdata");
+	                    _dataHolder.transform.parent = transform;
+	                    _dataHolder.SetActive(false);
+	                }
+	            }
 
-            return _dataHolder;
-        }
-    }
-
-    void OnDestroy() {
-        if(!Application.isPlaying) {
-            if(_dataHolder) {
-                DestroyImmediate(_dataHolder);
-                _dataHolder = null;
-            }
-        }
-        else {
-			for(int i = 0; i < mSequences.Length; i++) {
-				HOTween.Kill(mSequences[i]);
-				mSequences[i] = null;
+	            return _dataHolder;
 			}
         }
-
-        takeCompleteCallback = null;
     }
 
-    void OnEnable() {
-        if(mStarted) {
-            if(playOnEnable) {
-                if(mNowPlayingTakeIndex == -1 && playOnStartIndex != -1)
-					Play(playOnStartIndex, true, 0f, false);
-                else
-                    Resume();
-            }
-            //else if(playOnStart) {
-            //Play(playOnStart.name, true, 0f, false);
-            //}
-        }
-    }
-
-    void OnDisable() {
-        switch(onDisableAction) {
-            case DisableAction.Pause:
-                Pause();
-                break;
-            case DisableAction.Stop:
-                Stop();
-                break;
-        }
-
-        mAnimScale = 1.0f;
-    }
-
-    void Awake() {
-		Upgrade();
-
-        if(!Application.isPlaying)
-            return;
-
-		mSequences = new Sequence[takeData.Count];
-    }
-
-    void Start() {
-        if(!Application.isPlaying)
-            return;
-
-        mStarted = true;
-		if(sequenceLoadAll && takeData != null) {
-			string goName = gameObject.name;
-			for(int i = 0; i < takeData.Count; i++) {
-				mSequences[i] = takeData[i].BuildSequence(goName, sequenceKillWhenDone, updateType, OnTakeSequenceDone);
-			}
-        }
-
-		if(playOnStartIndex != -1) {
-			Play(playOnStartIndex, true, 0.0f, false);
-        }
-    }
-
-    void OnDrawGizmos() {
-        if(!isAnimatorOpen) return;
-        takeData[currentTake].drawGizmos(gizmo_size, inPlayMode);
-    }
-
-	//returns true if upgraded
-	public bool Upgrade() {
-		//convert AMTakes
-		if(takes != null && takes.Count > 0) {
-			if(playOnStart != null) {
-				playOnStartIndex = takes.IndexOf(playOnStart);
-				playOnStart = null;
-			}
-
-			takeData = new List<AMTakeData>(takes.Count);
-			foreach(AMTake take in takes) {
-				AMTakeData ntake = new AMTakeData();
-				ntake.name = take.name;
-				ntake.frameRate = take.frameRate;
-				ntake.numFrames = take.numFrames;
-				ntake.startFrame = take.startFrame;
-				ntake.endFrame = take.endFrame;
-				ntake.playbackSpeedIndex = take.playbackSpeedIndex;
-				ntake.numLoop = take.numLoop;
-				ntake.loopMode = take.loopMode;
-				ntake.loopBackToFrame = take.loopBackToFrame;
-				ntake.selectedTrack = take.selectedTrack;
-				ntake.selectedFrame = take.selectedFrame;
-				ntake.selectedGroup = take.selectedGroup;
-				ntake.trackValues = new List<AMTrack>(take.trackValues.Count);
-				foreach(AMTrack track in take.trackValues) ntake.trackValues.Add(track);
-				ntake.contextSelection = new List<int>(take.contextSelection);
-				ntake.ghostSelection = new List<int>(take.ghostSelection);
-				ntake.contextSelectionTracks = new List<int>(take.contextSelectionTracks);
-				ntake.track_count = take.track_count;
-				ntake.group_count = take.group_count;
-				ntake.rootGroup = take.rootGroup != null ? take.rootGroup.duplicate() : null;
-				ntake.groupValues = new List<AMGroup>(take.groupValues.Count);
-				foreach(AMGroup grp in take.groupValues) ntake.groupValues.Add(grp.duplicate());
-
-				DestroyImmediate(take);
-
-				takeData.Add(ntake);
-			}
-
-			takes = null;
-
-			return true;
-		}
-
-		return false;
+	public List<AMTakeData> _takes {
+		get { return meta ? meta.e_getTakes() : takeData; }
 	}
-
-    public string[] GenerateTakeNames(bool firstIndexNone = true) {
-		if(takeData != null) {
-			string[] ret = firstIndexNone ? new string[takeData.Count + 1] : new string[takeData.Count];
-
-            if(firstIndexNone)
-                ret[0] = "None";
-
-			for(int i = 0; i < takeData.Count; i++) {
-				ret[firstIndexNone ? i + 1 : i] = takeData[i].name;
-			}
-
-            return ret;
-        }
-        else {
-            return firstIndexNone ? new string[] { "None" } : null;
-        }
-    }
 
     public void PlayDefault(bool loop = false) {
         if(playOnStartIndex != -1) {
-			Play(takeData[playOnStartIndex].name, loop);
+			Play(_takes[playOnStartIndex].name, loop);
 		}
     }
 
@@ -340,9 +249,9 @@ public class AnimatorData : MonoBehaviour {
 
 
     public void Pause() {
-		AMTakeData take = currentPlayingTake;
+		AMTakeData take = mCurrentPlayingTake;
 		if(take == null) return;
-		take.stopAudio();
+		take.stopAudio(this);
 
 		Sequence seq = currentPlayingSequence;
 		if(seq != null)
@@ -356,10 +265,10 @@ public class AnimatorData : MonoBehaviour {
     }
 
     public void Stop() {
-		AMTakeData take = currentPlayingTake;
+		AMTakeData take = mCurrentPlayingTake;
 		if(take == null) return;
-		take.stopAudio();
-		take.stopAnimations();
+		take.stopAudio(this);
+		take.stopAnimations(this);
 
 		Sequence seq = currentPlayingSequence;
 		if(seq != null) {
@@ -371,7 +280,7 @@ public class AnimatorData : MonoBehaviour {
     }
 
     public void GotoFrame(float frame) {
-		AMTakeData take = currentPlayingTake;
+		AMTakeData take = mCurrentPlayingTake;
 		Sequence seq = currentPlayingSequence;
 		if(take != null && seq != null) {
             float t = frame / take.frameRate;
@@ -399,7 +308,7 @@ public class AnimatorData : MonoBehaviour {
     }
 
     void Play(int index, bool isFrame, float value, bool loop) {
-        AMTakeData newPlayTake = takeData[index];
+		AMTakeData newPlayTake = _takes[index];
 
         if(newPlayTake == null) {
             Stop();
@@ -415,19 +324,16 @@ public class AnimatorData : MonoBehaviour {
         float startTime = value;
 		if(isFrame) startTime /= newPlayTake.frameRate;
 
-        float startFrame = 0;//isFrame ? value : nowPlayingTake.frameRate * value;
+        //float startFrame = 0;//isFrame ? value : nowPlayingTake.frameRate * value;
 
 		Sequence seq = mSequences[index];
 
 		if(seq == null) {
-			newPlayTake.previewFrame(startFrame, false, true);
-			seq = mSequences[index] = newPlayTake.BuildSequence(gameObject.name, sequenceKillWhenDone, updateType, OnTakeSequenceDone);
+			//newPlayTake.previewFrame(startFrame, false, true);
+			seq = mSequences[index] = newPlayTake.BuildSequence(this, gameObject.name, sequenceKillWhenDone, updateType, OnTakeSequenceDone);
 		}
-		else {
-			//TODO: make this more efficient
-			if(value == 0.0f)
-				newPlayTake.previewFrame(0, false, true);
-		}
+
+		newPlayTake.previewFrame(this, isFrame ? value : newPlayTake.frameRate * value, false, true);
 
 		if(seq != null) {
             if(loop) {
@@ -444,67 +350,258 @@ public class AnimatorData : MonoBehaviour {
     }
 
     void PreviewValue(string take_name, bool isFrame, float value) {
-		AMTakeData curTake = currentPlayingTake;
-		AMTakeData take = curTake != null && curTake.name == takeName ? curTake : getTake(take_name);
+		AMTakeData curTake = mCurrentPlayingTake;
+		AMTakeData take = curTake != null && curTake.name == takeName ? curTake : takeData[getTakeIndex(take_name)];
 		if(take == null) return;
 		float startFrame = value;
 		if(!isFrame) startFrame *= take.frameRate;	// convert time to frame
-		take.previewFrame(startFrame);
+		take.previewFrame(this, startFrame);
+	}
+	    
+	void OnDestroy() {
+#if UNITY_EDITOR
+		if(!Application.isPlaying) {
+			if(_dataHolder) {
+				UnityEditor.Undo.DestroyObjectImmediate(_dataHolder);
+			}
+		}
+#endif
+
+		if(mSequences != null) {
+			for(int i = 0; i < mSequences.Length; i++) {
+				HOTween.Kill(mSequences[i]);
+				mSequences[i] = null;
+			}
+		}
+		
+		takeCompleteCallback = null;
+	}
+	
+	void OnEnable() {
+		if(mStarted) {
+			if(playOnEnable) {
+				if(mNowPlayingTakeIndex == -1 && playOnStartIndex != -1)
+					Play(playOnStartIndex, true, 0f, false);
+				else
+					Resume();
+			}
+			//else if(playOnStart) {
+			//Play(playOnStart.name, true, 0f, false);
+			//}
+		}
+	}
+	
+	void OnDisable() {
+		switch(onDisableAction) {
+		case DisableAction.Pause:
+			Pause();
+			break;
+		case DisableAction.Stop:
+			Stop();
+			break;
+		}
+		
+		mAnimScale = 1.0f;
+	}
+	
+	void Awake() {
+		Upgrade();
+		
+		if(!Application.isPlaying)
+			return;
+		
+		mSequences = new Sequence[_takes.Count];
+	}
+	
+	void Start() {
+		if(!Application.isPlaying)
+			return;
+
+		List<AMTakeData> _ts = _takes;
+
+		mStarted = true;
+		if(sequenceLoadAll && _ts != null) {
+			string goName = gameObject.name;
+			for(int i = 0; i < _ts.Count; i++) {
+				mSequences[i] = _ts[i].BuildSequence(this, goName, sequenceKillWhenDone, updateType, OnTakeSequenceDone);
+			}
+		}
+		
+		if(playOnStartIndex != -1) {
+			Play(playOnStartIndex, true, 0.0f, false);
+		}
+	}
+			
+	//returns true if upgraded
+	public bool Upgrade() {
+		//convert AMTakes
+		if(takes != null && takes.Count > 0) {
+			if(playOnStart != null) {
+				playOnStartIndex = takes.IndexOf(playOnStart);
+				playOnStart = null;
+			}
+			
+			takeData = new List<AMTakeData>(takes.Count);
+			foreach(AMTake take in takes) {
+				AMTakeData ntake = new AMTakeData();
+				ntake.name = take.name;
+				ntake.frameRate = take.frameRate;
+				ntake.numFrames = take.numFrames;
+				ntake.startFrame = take.startFrame;
+				ntake.endFrame = take.endFrame;
+				ntake.playbackSpeedIndex = take.playbackSpeedIndex;
+				ntake.numLoop = take.numLoop;
+				ntake.loopMode = take.loopMode;
+				ntake.loopBackToFrame = take.loopBackToFrame;
+				ntake.selectedTrack = take.selectedTrack;
+				ntake.selectedFrame = take.selectedFrame;
+				ntake.selectedGroup = take.selectedGroup;
+				ntake.trackValues = new List<AMTrack>(take.trackValues.Count);
+				foreach(AMTrack track in take.trackValues) ntake.trackValues.Add(track);
+				ntake.contextSelection = new List<int>(take.contextSelection);
+				ntake.ghostSelection = new List<int>(take.ghostSelection);
+				ntake.contextSelectionTracks = new List<int>(take.contextSelectionTracks);
+				ntake.track_count = take.track_count;
+				ntake.group_count = take.group_count;
+				ntake.rootGroup = take.rootGroup != null ? take.rootGroup.duplicate() : null;
+				ntake.groupValues = new List<AMGroup>(take.groupValues.Count);
+				foreach(AMGroup grp in take.groupValues) ntake.groupValues.Add(grp.duplicate());
+				
+				DestroyImmediate(take);
+				
+				takeData.Add(ntake);
+			}
+			
+			takes = null;
+			
+			return true;
+		}
+		
+		return false;
 	}
 
-    public int getTakeCount() {
-		return takeData.Count;
-    }
-
-    public bool setCurrentTakeValue(int _take) {
-        if(_take != currentTake) {
-            _prevTake = currentTake;
-
-            // reset preview to frame 1
-            getCurrentTake().previewFrame(1f);
-            // change take
-            currentTake = _take;
-            return true;
-        }
-        return false;
-    }
-
-    public AMTakeData getCurrentTake() {
-		if(takeData == null || currentTake >= takeData.Count || currentTake < 0) return null;
-		return takeData[currentTake];
-    }
-
-    public AMTakeData getPreviousTake() {
-		return takeData != null && _prevTake >= 0 && _prevTake < takeData.Count ? takeData[_prevTake] : null;
-    }
-
-	public int getTakeIndex(string takeName) {
-		for(int i = 0; i < takeData.Count; i++) {
-			if(takeData[i].name == takeName)
+	int getTakeIndex(string takeName) {
+		List<AMTakeData> _ts = _takes;
+		for(int i = 0; i < _ts.Count; i++) {
+			if(_ts[i].name == takeName)
 				return i;
 		}
 		return -1;
 	}
 
-    public AMTakeData getTake(string takeName) {
+	void OnTakeSequenceDone(AMTakeData aTake) {
+		if(takeCompleteCallback != null)
+			takeCompleteCallback(this, aTake);
+	}
+
+	public Transform TargetGetHolder() {
+		return meta != null ? meta.transform : dataHolder.transform;
+	}
+
+	public bool TargetIsMeta() {
+		return meta != null;
+	}
+
+	public object TargetGetCache(string path) {
+		object ret = null;
+		if(mCache != null) {
+			mCache.TryGetValue(path, out ret);
+		}
+		return ret;
+	}
+
+	public void TargetSetCache(string path, object obj) {
+		if(mCache == null) mCache = new Dictionary<string, object>();
+		if(mCache.ContainsKey(path))
+			mCache[path] = obj;
+		else
+			mCache.Add(path, obj);
+	}
+
+	//Editor stuff
+#if UNITY_EDITOR
+	void OnDrawGizmos() {
+		if(!isAnimatorOpen) return;
+		_takes[currentTake].drawGizmos(this, gizmo_size, inPlayMode);
+	}
+
+	public bool e_isCurrentTakePlayOnStart {
+		get {
+			if(meta) {
+				AMTakeData cur = e_getCurrentTake();
+				if(cur != null) {
+					return playOnStartMeta == cur.name;
+				}
+			}
+			else
+				return playOnStartIndex == currentTake;
+
+			return false;
+		}
+	}
+
+	public AnimatorMeta e_meta { get { return meta; } }
+
+	public int e_takeCount { get { return _takes.Count; } }
+	
+	public int e_prevTake { get { return _prevTake; } }
+
+	public int e_getPlayOnStartIndex() {
+		return playOnStartIndex;
+	}
+
+	public AMTakeData e_getTake(string takeName) {
 		int ind = getTakeIndex(takeName);
 		if(ind == -1) {
-        	Debug.LogError("Animator: Take '" + takeName + "' not found.");
-        	return null;
+			Debug.LogError("Animator: Take '" + takeName + "' not found.");
+			return null;
 		}
+		
+		return _takes[ind];
+	}
 
-		return takeData[ind];
+	public int e_getTakeIndex(AMTakeData take) {
+		List<AMTakeData> _ts = _takes;
+		for(int i = 0; i < _ts.Count; i++) {
+			if(_ts[i] == take) return i;
+		}
+		return -1;
+	}
+		
+	public bool e_setCurrentTakeValue(int _take) {
+		if(_take != currentTake) {
+			_prevTake = currentTake;
+			
+			// reset preview to frame 1
+			e_getCurrentTake().previewFrame(this, 1f);
+			// change take
+			currentTake = _take;
+			return true;
+		}
+		return false;
+	}
+	
+	public AMTakeData e_getCurrentTake() {
+		List<AMTakeData> _ts = _takes;
+		if(_ts == null || currentTake >= _ts.Count || currentTake < 0) return null;
+		return _ts[currentTake];
     }
 
-    public AMTakeData addTake() {
-        string name = "Take" + (takeData.Count + 1);
+    public AMTakeData e_getPreviousTake() {
+		List<AMTakeData> _ts = _takes;
+		return _ts != null && _prevTake >= 0 && _prevTake < _ts.Count ? _ts[_prevTake] : null;
+    }
+
+    public AMTakeData e_addTake() {
+		List<AMTakeData> _ts = _takes;
+		string name = "Take" + (_ts.Count + 1);
         AMTakeData a = new AMTakeData();
         // set defaults
         a.name = name;
-        makeTakeNameUnique(a);
+        e_makeTakeNameUnique(a);
         
-        takeData.Add(a);
-		selectTake(takeData.Count - 1);
+		_ts.Add(a);
+		e_selectTake(_ts.Count - 1);
 
         return a;
     }
@@ -513,13 +610,13 @@ public class AnimatorData : MonoBehaviour {
     /// This will only duplicate the tracks and groups
     /// </summary>
     /// <param name="take"></param>
-    public List<UnityEngine.Object> duplicateTake(AMTakeData dupTake, bool includeKeys) {
+    public List<UnityEngine.Object> e_duplicateTake(AMTakeData dupTake, bool includeKeys) {
 		List<UnityEngine.Object> ret = new List<UnityEngine.Object>();
 
 		AMTakeData a = new AMTakeData();
 
         a.name = dupTake.name;
-        makeTakeNameUnique(a);
+        e_makeTakeNameUnique(a);
         a.numLoop = dupTake.numLoop;
         a.loopMode = dupTake.loopMode;
         a.frameRate = dupTake.frameRate;
@@ -566,7 +663,7 @@ public class AnimatorData : MonoBehaviour {
 						}
 					}
 
-					dupTrack.updateCache();
+					dupTrack.updateCache(this);
 				}
 
                 ret.Add(dupTrack);
@@ -576,45 +673,47 @@ public class AnimatorData : MonoBehaviour {
         a.ghostSelection = new List<int>();
         a.contextSelectionTracks = new List<int>();
 
-		takeData.Add(a);
-		selectTake(takeData.Count - 1);
+		List<AMTakeData> _ts = _takes;
+		_ts.Add(a);
+		e_selectTake(_ts.Count - 1);
 
         return ret;
     }
 
-    public void deleteTake(int index) {
+    public void e_deleteTake(int index) {
         //if(shouldCheckDependencies) shouldCheckDependencies = false;
 		if(playOnStartIndex != -1) {
 			if(playOnStartIndex == index) playOnStartIndex = -1;
 			else if(index < playOnStartIndex) playOnStartIndex--;
 		}
 		//TODO: destroy tracks, keys
-		//takeData[index].destroy();
-		takeData.RemoveAt(index);
+		//_takes[index].destroy();
+		_takes.RemoveAt(index);
         if((currentTake >= index) && (currentTake > 0)) currentTake--;
     }
 
-    public void selectTake(int index) {
+    public void e_selectTake(int index) {
         if(currentTake != index)
             _prevTake = currentTake;
 
         currentTake = index;
     }
 
-    public void selectTake(string name) {
-		for(int i = 0; i < takeData.Count; i++) {
-			if(takeData[i].name == name) {
-                selectTake(i);
+    public void e_selectTake(string name) {
+		List<AMTakeData> _ts = _takes;
+		for(int i = 0; i < _ts.Count; i++) {
+			if(_ts[i].name == name) {
+                e_selectTake(i);
                 break;
             }
 		}
     }
-    public void makeTakeNameUnique(AMTakeData take) {
+    public void e_makeTakeNameUnique(AMTakeData take) {
         bool loop = false;
         int count = 0;
         do {
             if(loop) loop = false;
-			foreach(AMTakeData _take in takeData) {
+			foreach(AMTakeData _take in _takes) {
                 if(_take != take && _take.name == take.name) {
                     if(count > 0) take.name = take.name.Substring(0, take.name.Length - 3);
                     count++;
@@ -626,30 +725,25 @@ public class AnimatorData : MonoBehaviour {
         } while(loop);
     }
 
-    public string[] getTakeNames() {
-		string[] names = new string[takeData.Count + 2];
-		for(int i = 0; i < takeData.Count; i++) {
-			names[i] = takeData[i].name;
+    public string[] e_getTakeNames() {
+		List<AMTakeData> _ts = _takes;
+		string[] names = new string[_ts.Count + 2];
+		for(int i = 0; i < _ts.Count; i++) {
+			names[i] = _ts[i].name;
         }
         names[names.Length - 2] = "Create new...";
         names[names.Length - 1] = "Duplicate current...";
         return names;
     }
-
-    public int getTakeIndex(AMTakeData take) {
-		for(int i = 0; i < takeData.Count; i++) {
-			if(takeData[i] == take) return i;
-        }
-        return -1;
-    }
-    public bool setCodeLanguage(int codeLanguage) {
+	    
+    public bool e_setCodeLanguage(int codeLanguage) {
         if(this.codeLanguage != codeLanguage) {
             this.codeLanguage = codeLanguage;
             return true;
         }
         return false;
     }
-    public bool setGizmoSize(float gizmo_size) {
+    public bool e_setGizmoSize(float gizmo_size) {
         if(this.gizmo_size != gizmo_size) {
             this.gizmo_size = gizmo_size;
             // update target gizmo size
@@ -669,43 +763,42 @@ public class AnimatorData : MonoBehaviour {
         return false;
     }*/
 
-    public void deleteAllTakesExcept(AMTakeData take) {
-		for(int index = 0; index < takeData.Count; index++) {
-			if(takeData[index] == take) continue;
-            deleteTake(index);
+    public void e_deleteAllTakesExcept(AMTakeData take) {
+		List<AMTakeData> _ts = _takes;
+		for(int index = 0; index < _ts.Count; index++) {
+			if(_ts[index] == take) continue;
+            e_deleteTake(index);
             index--;
         }
     }
 
-    public void mergeWith(AnimatorData _aData) {
-		foreach(AMTakeData take in _aData.takeData) {
-			takeData.Add(take);
-            makeTakeNameUnique(take);
-        }
+    public void e_mergeWith(AnimatorData _aData) {
+		if(meta == null && _aData.meta == null) {
+			foreach(AMTakeData take in _aData._takes) {
+				_takes.Add(take);
+	            e_makeTakeNameUnique(take);
+	        }
+		}
     }
 
-    public List<GameObject> getDependencies(AMTakeData _take = null) {
+    public List<GameObject> e_getDependencies(AMTakeData _take = null) {
         // if only one take
-        if(_take != null) return _take.getDependencies().ToList();
+        if(_take != null) return _take.getDependencies(this).ToList();
 
         // if all takes
         List<GameObject> ls = new List<GameObject>();
-        foreach(AMTakeData take in takeData) {
-            ls = ls.Union(take.getDependencies()).ToList();
+        foreach(AMTakeData take in _takes) {
+            ls = ls.Union(take.getDependencies(this)).ToList();
         }
         return ls;
     }
 
-    public List<GameObject> updateDependencies(List<GameObject> newReferences, List<GameObject> oldReferences) {
+    public List<GameObject> e_updateDependencies(List<GameObject> newReferences, List<GameObject> oldReferences) {
         List<GameObject> lsFlagToKeep = new List<GameObject>();
-        foreach(AMTakeData take in takeData) {
-            lsFlagToKeep = lsFlagToKeep.Union(take.updateDependencies(newReferences, oldReferences)).ToList();
+		foreach(AMTakeData take in _takes) {
+            lsFlagToKeep = lsFlagToKeep.Union(take.updateDependencies(this, newReferences, oldReferences)).ToList();
         }
         return lsFlagToKeep;
     }
-
-    void OnTakeSequenceDone(AMTakeData aTake) {
-        if(takeCompleteCallback != null)
-            takeCompleteCallback(this, aTake);
-    }
+#endif
 }
