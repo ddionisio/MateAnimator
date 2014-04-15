@@ -347,11 +347,11 @@ public class AMEventKey : AMKey {
 
 		if(comp == null) return;
 
-		float frameRate = (float)dat.parms[1];
+		int frameRate = (int)dat.parms[1];
 		object[] parms = dat.parms[2] as object[];
 
         float elapsed = dat.tween.elapsed;
-        float curFrame = frameRate * elapsed;
+        float curFrame = ((float)frameRate) * elapsed;
 
         if(curFrame > frame + getNumberOfFrames()) return;
 
