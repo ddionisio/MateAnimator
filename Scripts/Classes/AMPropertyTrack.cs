@@ -68,7 +68,7 @@ public class AMPropertyTrack : AMTrack {
 		if(target.TargetIsMeta()) {
 			component = null;
 			GameObject go = GetTarget(target) as GameObject;
-			comp = go.GetComponent(componentName);
+			comp = go ? go.GetComponent(componentName) : null;
 		}
 		else {
 			comp = component;
@@ -91,7 +91,7 @@ public class AMPropertyTrack : AMTrack {
 			if(cachedMethodInfo == null) {
 				Type[] t = new Type[methodParameterTypes.Length];
 				for(int i = 0; i < methodParameterTypes.Length; i++) t[i] = Type.GetType(methodParameterTypes[i]);
-				cachedMethodInfo = component.GetType().GetMethod(methodName, t);
+				cachedMethodInfo = comp.GetType().GetMethod(methodName, t);
 			}
 			cachedFieldInfo = null;
 			cachedPropertyInfo = null;
@@ -131,25 +131,25 @@ public class AMPropertyTrack : AMTrack {
 		RefreshData(comp);
 
         if(isValueTypeNumeric(valueType))
-			return addKey(target, _frame, getPropertyValueNumeric());
+			return addKey(target, _frame, getPropertyValueNumeric(target));
 		else if(valueType == (int)ValueType.Bool)
-			return addKey(target, _frame, getPropertyValueBool() ? 1.0 : -1.0);
+			return addKey(target, _frame, getPropertyValueBool(target) ? 1.0 : -1.0);
 		else if(valueType == (int)ValueType.String)
-			return addKey(target, _frame, getPropertyValueString());
+			return addKey(target, _frame, getPropertyValueString(target));
         else if(valueType == (int)ValueType.Vector2)
-			return addKey(target, _frame, getPropertyValueVector2());
+			return addKey(target, _frame, getPropertyValueVector2(target));
         else if(valueType == (int)ValueType.Vector3)
-			return addKey(target, _frame, getPropertyValueVector3());
+			return addKey(target, _frame, getPropertyValueVector3(target));
         else if(valueType == (int)ValueType.Color)
-			return addKey(target, _frame, getPropertyValueColor());
+			return addKey(target, _frame, getPropertyValueColor(target));
         else if(valueType == (int)ValueType.Rect)
-			return addKey(target, _frame, getPropertyValueRect());
+			return addKey(target, _frame, getPropertyValueRect(target));
         else if(valueType == (int)ValueType.Vector4)
-			return addKey(target, _frame, getPropertyValueVector4());
+			return addKey(target, _frame, getPropertyValueVector4(target));
         else if(valueType == (int)ValueType.Quaternion)
-			return addKey(target, _frame, getPropertyValueQuaternion());
+			return addKey(target, _frame, getPropertyValueQuaternion(target));
 		else if(valueType == (int)ValueType.Sprite)
-			return addKey(target, _frame, getPropertyValueObject());
+			return addKey(target, _frame, getPropertyValueObject(target));
         else {
             Debug.LogError("Animator: Invalid ValueType " + valueType.ToString());
             return null;
@@ -502,93 +502,93 @@ public class AMPropertyTrack : AMTrack {
         }
     }
 
-	bool getPropertyValueBool() {
+	bool getPropertyValueBool(AMITarget itarget) {
 		if(cachedFieldInfo != null)
-			return Convert.ToBoolean(cachedFieldInfo.GetValue(component));
+			return Convert.ToBoolean(cachedFieldInfo.GetValue(GetTargetComp(itarget)));
 		else
-			return Convert.ToBoolean(cachedPropertyInfo.GetValue(component, null));
+			return Convert.ToBoolean(cachedPropertyInfo.GetValue(GetTargetComp(itarget), null));
 	}
 
-	string getPropertyValueString() {
+	string getPropertyValueString(AMITarget itarget) {
 		if(cachedFieldInfo != null)
-			return Convert.ToString(cachedFieldInfo.GetValue(component));
+			return Convert.ToString(cachedFieldInfo.GetValue(GetTargetComp(itarget)));
 		else
-			return Convert.ToString(cachedPropertyInfo.GetValue(component, null));
+			return Convert.ToString(cachedPropertyInfo.GetValue(GetTargetComp(itarget), null));
 	}
 
     // get numeric value. unsafe, must check to see if value is numeric first
-    double getPropertyValueNumeric() {
+	double getPropertyValueNumeric(AMITarget itarget) {
         // field
 		if(cachedFieldInfo != null)
-			return Convert.ToDouble(cachedFieldInfo.GetValue(component));
+			return Convert.ToDouble(cachedFieldInfo.GetValue(GetTargetComp(itarget)));
         // property
         else {
-			return Convert.ToDouble(cachedPropertyInfo.GetValue(component, null));
+			return Convert.ToDouble(cachedPropertyInfo.GetValue(GetTargetComp(itarget), null));
         }
 
     }
     // get Vector2 value. unsafe, must check to see if value is Vector2 first
-    Vector2 getPropertyValueVector2() {
+	Vector2 getPropertyValueVector2(AMITarget itarget) {
         // field
 		if(cachedFieldInfo != null)
-			return (Vector2)cachedFieldInfo.GetValue(component);
+			return (Vector2)cachedFieldInfo.GetValue(GetTargetComp(itarget));
         // property
         else
-			return (Vector2)cachedPropertyInfo.GetValue(component, null);
+			return (Vector2)cachedPropertyInfo.GetValue(GetTargetComp(itarget), null);
 
     }
-    Vector3 getPropertyValueVector3() {
+	Vector3 getPropertyValueVector3(AMITarget itarget) {
         // field
 		if(cachedFieldInfo != null)
-			return (Vector3)cachedFieldInfo.GetValue(component);
+			return (Vector3)cachedFieldInfo.GetValue(GetTargetComp(itarget));
         // property
         else
-			return (Vector3)cachedPropertyInfo.GetValue(component, null);
+			return (Vector3)cachedPropertyInfo.GetValue(GetTargetComp(itarget), null);
 
     }
-    Vector4 getPropertyValueVector4() {
+	Vector4 getPropertyValueVector4(AMITarget itarget) {
         // field
 		if(cachedFieldInfo != null)
-			return (Vector4)cachedFieldInfo.GetValue(component);
+			return (Vector4)cachedFieldInfo.GetValue(GetTargetComp(itarget));
         // property
         else
-			return (Vector4)cachedPropertyInfo.GetValue(component, null);
+			return (Vector4)cachedPropertyInfo.GetValue(GetTargetComp(itarget), null);
 
     }
-    Quaternion getPropertyValueQuaternion() {
+	Quaternion getPropertyValueQuaternion(AMITarget itarget) {
         // field
 		if(cachedFieldInfo != null)
-			return (Quaternion)cachedFieldInfo.GetValue(component);
+			return (Quaternion)cachedFieldInfo.GetValue(GetTargetComp(itarget));
         // property
         else
-			return (Quaternion)cachedPropertyInfo.GetValue(component, null);
+			return (Quaternion)cachedPropertyInfo.GetValue(GetTargetComp(itarget), null);
 
     }
-    Color getPropertyValueColor() {
+	Color getPropertyValueColor(AMITarget itarget) {
         // field
 		if(cachedFieldInfo != null)
-			return (Color)cachedFieldInfo.GetValue(component);
+			return (Color)cachedFieldInfo.GetValue(GetTargetComp(itarget));
         // property
         else
-			return (Color)cachedPropertyInfo.GetValue(component, null);
+			return (Color)cachedPropertyInfo.GetValue(GetTargetComp(itarget), null);
 
     }
-    Rect getPropertyValueRect() {
+	Rect getPropertyValueRect(AMITarget itarget) {
         // field
 		if(cachedFieldInfo != null)
-			return (Rect)cachedFieldInfo.GetValue(component);
+			return (Rect)cachedFieldInfo.GetValue(GetTargetComp(itarget));
         // property
         else
-			return (Rect)cachedPropertyInfo.GetValue(component, null);
+			return (Rect)cachedPropertyInfo.GetValue(GetTargetComp(itarget), null);
 
     }
-	UnityEngine.Object getPropertyValueObject() {
+	UnityEngine.Object getPropertyValueObject(AMITarget itarget) {
 		// field
 		if(cachedFieldInfo != null)
-			return (UnityEngine.Object)cachedFieldInfo.GetValue(component);
+			return (UnityEngine.Object)cachedFieldInfo.GetValue(GetTargetComp(itarget));
 		// property
 		else
-			return (UnityEngine.Object)cachedPropertyInfo.GetValue(component, null);
+			return (UnityEngine.Object)cachedPropertyInfo.GetValue(GetTargetComp(itarget), null);
 	}
     public static bool isNumeric(Type t) {
         if((t == typeof(int)) || (t == typeof(long)) || (t == typeof(float)) || (t == typeof(double)))

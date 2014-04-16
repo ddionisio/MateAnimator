@@ -58,7 +58,6 @@ public class AMTimeline : EditorWindow {
                 if(_aData) {
 					if(_aData.Upgrade()) {
 						EditorUtility.SetDirty(_aData);
-						EditorUtility.SetDirty(_aData.dataHolder);
 					}
 
                     if(window != null) {
@@ -674,6 +673,8 @@ public class AMTimeline : EditorWindow {
 				}
 
 				//meta stuff
+				GUILayout.Label("Use AnimatorMeta to create a shared animation data. Leave it blank to have the data stored to the AnimatorData.");
+
 				GUILayout.BeginHorizontal();
 
 				bool createNewMeta = false;
@@ -693,7 +694,7 @@ public class AMTimeline : EditorWindow {
 					mMetaPath = AssetDatabase.GetAssetPath(mMeta);
 				}
 				else if(!string.IsNullOrEmpty(mMetaName)) {
-					mMetaPath = GetSelectionFolder() + mMetaName + ".prefab";
+					mMetaPath = AMEditorUtil.GetSelectionFolder() + mMetaName + ".prefab";
 				}
 				
 				if(createNewMeta && !string.IsNullOrEmpty(mMetaName)) {
@@ -721,7 +722,7 @@ public class AMTimeline : EditorWindow {
 					GUILayout.Label("Path: <none>");
 				}
 
-				DrawSeparator();
+				AMEditorUtil.DrawSeparator();
 				//
 
 				if(GUILayout.Button(go ? "Add Component" : "Create AnimatorData")) {
@@ -4443,7 +4444,7 @@ public class AMTimeline : EditorWindow {
         // select track
         aData.e_getCurrentTake().selectTrack(_track, isShiftDown, isControlDown);
         // set active object
-        timelineSelectObjectFor(aData.e_getCurrentTake().getTrack(_track));
+        timelineSelectObjectFor(aData.e_getCurrentTake().getTrack(_track), true);
     }
     void timelineSelectGroup(int group_id, bool undo = true) {
         cancelTextEditting();
@@ -4468,10 +4469,17 @@ public class AMTimeline : EditorWindow {
         if(deselectKeyboardFocus)
             GUIUtility.keyboardControl = 0;
     }
-    void timelineSelectObjectFor(AMTrack track) {
-        // translation/rot/anim obj
-		if(track.GetType() == typeof(AMTranslationTrack) || track.GetType() == typeof(AMRotationTrack) || track.GetType() == typeof(AMAnimationTrack))
-            Selection.activeObject = track.GetTarget(aData);
+    void timelineSelectObjectFor(AMTrack track, bool showMissingLog = false) {
+		UnityEngine.Object obj = track.GetTarget(aData);
+		if(obj) {
+			// translation/rot/anim obj
+			if(track.GetType() == typeof(AMTranslationTrack) || track.GetType() == typeof(AMRotationTrack) || track.GetType() == typeof(AMAnimationTrack))
+				Selection.activeObject = obj;
+		}
+		else if(showMissingLog) {
+			Selection.activeObject = aData.gameObject;
+			Debug.LogWarning("Missing target: "+track.GetTargetPath(aData));
+		}
     }
     void timelineSelectNextKey() {
         // select next key
@@ -5443,31 +5451,6 @@ public class AMTimeline : EditorWindow {
         // reset all object transforms to frame 1
 		aData.e_getCurrentTake().previewFrame(aData, 1f);
     }
-	public static void DrawSeparator() {
-		GUILayout.Space(12f);
-		
-		if(Event.current.type == EventType.Repaint) {
-			Texture2D tex = EditorGUIUtility.whiteTexture;
-			Rect rect = GUILayoutUtility.GetLastRect();
-			GUI.color = new Color(0f, 0f, 0f, 0.25f);
-			GUI.DrawTexture(new Rect(0f, rect.yMin + 6f, Screen.width, 4f), tex);
-			GUI.DrawTexture(new Rect(0f, rect.yMin + 6f, Screen.width, 1f), tex);
-			GUI.DrawTexture(new Rect(0f, rect.yMin + 9f, Screen.width, 1f), tex);
-			GUI.color = Color.white;
-		}
-	}
-	public static string GetSelectionFolder() {
-		if(Selection.activeObject != null) {
-			string path = AssetDatabase.GetAssetPath(Selection.activeObject.GetInstanceID());
-			
-			if(!string.IsNullOrEmpty(path)) {
-				int dot = path.LastIndexOf('.');
-				int slash = Mathf.Max(path.LastIndexOf('/'), path.LastIndexOf('\\'));
-				if(slash > 0) return (dot > slash) ? path.Substring(0, slash + 1) : path + "/";
-			}
-		}
-		return "Assets/";
-	}
     void cancelTextEditting(bool toggleIsRenamingTake = false) {
         if(!isChangingTimeControl && !isChangingFrameControl) {
             try {

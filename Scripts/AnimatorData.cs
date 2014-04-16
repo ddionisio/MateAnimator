@@ -191,35 +191,6 @@ public class AnimatorData : MonoBehaviour, AMITarget {
         }
     }
 
-    public GameObject dataHolder {
-        get {
-			if(meta) {
-				return meta.gameObject;
-			}
-			else {
-	            if(_dataHolder == null) {
-	                foreach(Transform child in transform) {
-	                    if(child.gameObject.name == "_animdata") {
-	                        _dataHolder = child.gameObject;
-	                        break;
-	                    }
-	                }
-
-	                if(_dataHolder) {
-	                    //refresh data?
-	                }
-	                else {
-	                    _dataHolder = new GameObject("_animdata");
-	                    _dataHolder.transform.parent = transform;
-	                    _dataHolder.SetActive(false);
-	                }
-	            }
-
-	            return _dataHolder;
-			}
-        }
-    }
-
 	public List<AMTakeData> _takes {
 		get { return meta ? meta.e_getTakes() : takeData; }
 	}
@@ -499,27 +470,75 @@ public class AnimatorData : MonoBehaviour, AMITarget {
 	}
 
 	public Transform TargetGetDataHolder() {
-		return meta != null ? meta.transform : dataHolder.transform;
+		if(meta) {
+			return meta.transform;
+		}
+		else {
+			if(_dataHolder == null) {
+				foreach(Transform child in transform) {
+					if(child.gameObject.name == "_animdata") {
+						_dataHolder = child.gameObject;
+						break;
+					}
+				}
+				
+				if(_dataHolder) {
+					//refresh data?
+				}
+				else {
+					_dataHolder = new GameObject("_animdata");
+					_dataHolder.transform.parent = transform;
+					_dataHolder.SetActive(false);
+				}
+			}
+			
+			return _dataHolder.transform;
+		}
 	}
 
 	public bool TargetIsMeta() {
 		return meta != null;
 	}
 
+#if UNITY_EDITOR
+	private HashSet<string> mTargetMissing;
+	public void TargetMissing(string path, bool isMissing) {
+		if(mTargetMissing == null) mTargetMissing = new HashSet<string>();
+		if(isMissing)
+			mTargetMissing.Add(path);
+		else
+			mTargetMissing.Remove(path);
+	}
+#else
+	public void TargetMissing(string path, bool isMissing) {
+		if(isMissing)
+			Debug.LogWarning("Missing Target: "+path);
+	}
+#endif
+
 	public object TargetGetCache(string path) {
 		object ret = null;
 		if(mCache != null) {
-			mCache.TryGetValue(path, out ret);
+			if(mCache.TryGetValue(path, out ret)) {
+#if UNITY_EDITOR
+				if(mTargetMissing != null)
+					mTargetMissing.Remove(path);
+#endif
+			}
 		}
 		return ret;
 	}
-
+	
 	public void TargetSetCache(string path, object obj) {
 		if(mCache == null) mCache = new Dictionary<string, object>();
 		if(mCache.ContainsKey(path))
 			mCache[path] = obj;
 		else
 			mCache.Add(path, obj);
+#if UNITY_EDITOR
+		if(mTargetMissing != null)
+			mTargetMissing.Remove(path);
+#endif
 	}
 
 	//Editor stuff
@@ -529,10 +548,20 @@ public class AnimatorData : MonoBehaviour, AMITarget {
 		_takes[currentTake].drawGizmos(this, gizmo_size, inPlayMode);
 	}
 
+	public string[] e_getMissingTargets() {
+		if(mTargetMissing != null)
+			return mTargetMissing.ToArray();
+		else
+			return new string[0];
+	}
+
 	public void e_maintainTakes() {
 		foreach(AMTakeData take in _takes) {
 			take.maintainTake(this);
 		}
+
+		if(mCache != null)
+			mCache.Clear();
 	}
 
 	public bool e_isCurrentTakePlayOnStart {
@@ -555,27 +584,32 @@ public class AnimatorData : MonoBehaviour, AMITarget {
 	}
 
 	/// <summary>
-	/// if newMeta == null, and copyTakes == true, then duplicate all the data in meta to this data.
+	/// if copyTakes is true, overrides all takes in newMeta (if null, then to our dataholder) with current data
 	/// </summary>
 	public List<UnityEngine.Object> e_setMeta(AnimatorMeta newMeta, bool copyTakes) {
 		List<UnityEngine.Object> newItems = new List<UnityEngine.Object>();
 
 		if(meta != newMeta) {
-			AnimatorMeta prevMeta = meta;
 			List<AMTakeData> prevTakes = _takes;
 			string prevPlayOnStartName = defaultTakeName;
 
 			meta = newMeta;
 
 			if(meta) {
-				if(!prevMeta) {
-					if(_dataHolder) {
-						UnityEditor.Undo.DestroyObjectImmediate(_dataHolder);
-						_dataHolder = null;
-					}
+				if(copyTakes) {
+					meta.e_getTakes().Clear();
 
-					takeData.Clear();
+					foreach(AMTakeData take in prevTakes) {
+						newItems.AddRange(e_duplicateTake(take, true));
+					}
 				}
+
+				//clear out non-meta stuff
+				if(_dataHolder) {
+					UnityEditor.Undo.DestroyObjectImmediate(_dataHolder);
+					_dataHolder = null;
+				}
+				takeData.Clear();
 			}
 			else {
 				//create data holder
@@ -589,9 +623,10 @@ public class AnimatorData : MonoBehaviour, AMITarget {
 						newItems.AddRange(e_duplicateTake(take, true));
 					}
 				}
-				else if(_takes == null || _takes.Count == 0) { //add at least one take
-					e_addTake();
-				}
+			}
+
+			if(_takes == null || _takes.Count == 0) { //add at least one take
+				e_addTake();
 			}
 
 			//get new play on start
@@ -609,8 +644,11 @@ public class AnimatorData : MonoBehaviour, AMITarget {
 
 				defaultTakeName = newPlayOnStart;
 			}
+			//
 
 			//reset editor data
+			if(mTargetMissing != null)
+				mTargetMissing.Clear();
 
 			e_maintainTakes();
 		}
@@ -726,13 +764,13 @@ public class AnimatorData : MonoBehaviour, AMITarget {
         if(dupTake.trackValues != null) {
             a.trackValues = new List<AMTrack>();
             foreach(AMTrack track in dupTake.trackValues) {
-                AMTrack dupTrack = track.duplicate(dataHolder);
+                AMTrack dupTrack = track.duplicate(TargetGetDataHolder().gameObject);
 
                 a.trackValues.Add(dupTrack);
 
 				if(includeKeys) {
 					foreach(AMKey key in track.keys) {
-						AMKey dupKey = key.CreateClone(dataHolder);
+						AMKey dupKey = key.CreateClone(TargetGetDataHolder().gameObject);
 						if(dupKey) {
 							dupTrack.keys.Add(dupKey);
 							ret.Add(dupKey);

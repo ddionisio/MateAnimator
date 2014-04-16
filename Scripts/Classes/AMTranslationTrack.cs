@@ -85,7 +85,7 @@ public class AMTranslationTrack : AMTrack {
     public Vector3 cachedInitialPosition;
 
     public override string getTrackType() {
-        return _isLocal ? "Local Translation" : "Translation";
+        return "Local Position";
     }
 
     // add a new key

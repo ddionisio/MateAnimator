@@ -58,23 +58,9 @@ public abstract class AMTrack : MonoBehaviour {
 					target.TargetSetCache(_targetPath, ret);
 				}
 				else {
-					Debug.LogError("Unable to find target: "+_targetPath);
+					target.TargetMissing(_targetPath, true);
 				}
 			}
-#if UNITY_EDITOR
-			else if(!Application.isPlaying) {
-				//check if object is renamed
-				int slashInd = _targetPath.LastIndexOf('/');
-				if(slashInd != -1) {
-					if(_targetPath.Substring(slashInd+1) != ret.name) {
-						target.TargetSetCache(_targetPath, null);
-						_targetPath = AMUtil.GetPath(target.TargetGetRoot(), ret);
-						target.TargetSetCache(_targetPath, ret);
-						UnityEditor.EditorUtility.SetDirty(this);
-					}
-				}
-			}
-#endif
 		}
 		else {
 			ret = GetSerializeObject(null);
@@ -83,8 +69,16 @@ public abstract class AMTrack : MonoBehaviour {
 		return ret;
 	}
 
+	public string GetTargetPath(AMITarget target) {
+		if(target.TargetIsMeta())
+			return _targetPath;
+		else
+			return AMUtil.GetPath(target.TargetGetRoot(), GetSerializeObject(null));
+	}
+
 	public void SetTarget(AMITarget target, UnityEngine.Object item) {
 		if(target.TargetIsMeta()) {
+			target.TargetMissing(_targetPath, false);
 			_targetPath = AMUtil.GetPath(target.TargetGetRoot(), item);
 			target.TargetSetCache(_targetPath, item);
 			SetSerializeObject(null);
@@ -106,7 +100,7 @@ public abstract class AMTrack : MonoBehaviour {
 		if(itarget.TargetIsMeta()) {
 			if(string.IsNullOrEmpty(_targetPath)) {
 				obj = GetSerializeObject(null);
-				if(!obj) {
+				if(obj) {
 					_targetPath = AMUtil.GetPath(itarget.TargetGetRoot(), obj);
 					itarget.TargetSetCache(_targetPath, obj);
 				}

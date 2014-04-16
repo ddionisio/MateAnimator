@@ -87,6 +87,7 @@ public class AMOrientationKey : AMKey {
 	public void SetTarget(AMITarget itarget, Transform t) {
 		targetPath = AMUtil.GetPath(itarget.TargetGetRoot(), t);
 		if(itarget.TargetIsMeta()) {
+			itarget.TargetMissing(targetPath, false);
 			target = null;
 			itarget.TargetSetCache(targetPath, t);
 		}
@@ -105,21 +106,9 @@ public class AMOrientationKey : AMKey {
 					ret = go.transform;
 					itarget.TargetSetCache(targetPath, ret);
 				}
+				else
+					itarget.TargetMissing(targetPath, true);
 			}
-#if UNITY_EDITOR
-			else if(!Application.isPlaying) {
-				//check if object is renamed
-				int slashInd = targetPath.LastIndexOf('/');
-				if(slashInd != -1) {
-					if(targetPath.Substring(slashInd+1) != ret.name) {
-						itarget.TargetSetCache(targetPath, null);
-						targetPath = AMUtil.GetPath(itarget.TargetGetRoot(), ret);
-						itarget.TargetSetCache(targetPath, ret);
-						UnityEditor.EditorUtility.SetDirty(this);
-					}
-				}
-			}
-#endif
 		}
 		else
 			ret = target;
@@ -140,21 +129,9 @@ public class AMOrientationKey : AMKey {
 					ret = go.transform;
 					itarget.TargetSetCache(endTargetPath, ret);
 				}
+				else
+					itarget.TargetMissing(endTargetPath, true);
 			}
-#if UNITY_EDITOR
-			else if(!Application.isPlaying) {
-				//check if object is renamed
-				int slashInd = endTargetPath.LastIndexOf('/');
-				if(slashInd != -1) {
-					if(endTargetPath.Substring(slashInd+1) != ret.name) {
-						itarget.TargetSetCache(endTargetPath, null);
-						endTargetPath = AMUtil.GetPath(itarget.TargetGetRoot(), ret);
-						itarget.TargetSetCache(endTargetPath, ret);
-						UnityEditor.EditorUtility.SetDirty(this);
-					}
-				}
-			}
-#endif
 		}
 		else
 			ret = endTarget;

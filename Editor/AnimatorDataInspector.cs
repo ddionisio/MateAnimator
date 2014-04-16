@@ -6,6 +6,7 @@ using System.Collections.Generic;
 [CustomEditor(typeof(AnimatorData))]
 public class AnimatorDataInspector : Editor {
 	private string[] mTakeLabels;
+	private bool mMissingsFoldout = true;
 
 	void OnEnable() {
 		AnimatorData dat = target as AnimatorData;
@@ -15,6 +16,8 @@ public class AnimatorDataInspector : Editor {
 		for(int i = 0; i < dat._takes.Count; i++) {
 			mTakeLabels[i+1] = dat._takes[i].name;
 		}
+
+		mMissingsFoldout = true;
 	}
 
     public override void OnInspectorGUI() {
@@ -24,21 +27,45 @@ public class AnimatorDataInspector : Editor {
 
         GUILayout.BeginVertical();
 
-        /*string[] takeNames = dat.GenerateTakeNames();
-        int[] takeInds = new int[takeNames.Length];
-        for(int i = 0; i < takeNames.Length; i++)
-            takeInds[i] = i;
+		//meta
+		AnimatorMeta curMeta = dat.e_meta;
+		AnimatorMeta newMeta = EditorGUILayout.ObjectField("Meta", curMeta, typeof(AnimatorMeta), false) as AnimatorMeta;
 
-        int playOnStartInd = dat.playOnStart != null ? System.Array.IndexOf(takeNames, dat.playOnStart.name) : 0;
-        if(playOnStartInd == -1)
-            playOnStartInd = 0;
+		if(curMeta != newMeta) {
+			bool doIt = true;
+			if(curMeta == null) {
+				doIt = EditorUtility.DisplayDialog("Set Meta", "Setting the Meta will replace the current animation data, proceed?", "Yes", "No");
+			}
 
-        playOnStartInd = EditorGUILayout.IntPopup("Play On Start", playOnStartInd, takeNames, takeInds);
+			if(doIt) {
+				Undo.RecordObject(dat, "Set Meta");
+				List<UnityEngine.Object> newObjs = dat.e_setMeta(newMeta, false);
+				if(newObjs != null && newObjs.Count > 0) {
+					foreach(UnityEngine.Object newObj in newObjs)
+						Undo.RegisterCreatedObjectUndo(newObj, "Set Meta");
+				}
+			}
+		}
 
-        if(playOnStartInd == 0)
-            dat.playOnStart = null;
-        else
-            dat.playOnStart = dat.takes[playOnStartInd - 1];*/
+		bool doMetaSave = false, doInstantiate = false;
+
+		GUILayout.BeginHorizontal();
+
+		GUI.backgroundColor = Color.green;
+		doMetaSave = GUILayout.Button("Save As...", GUILayout.Width(100f));
+		GUI.backgroundColor = Color.white;
+
+		GUILayout.Space(8);
+
+		GUI.enabled = dat.e_meta;
+		doInstantiate = GUILayout.Button("Instantiate", GUILayout.Width(100f));
+		GUI.enabled = true;
+
+		GUILayout.EndHorizontal();
+
+		AMEditorUtil.DrawSeparator();
+		//
+
 		List<AMTakeData> takes = dat._takes;
 		string playTakeName = dat.defaultTakeName;
 		int playTakeInd = 0;
@@ -72,14 +99,6 @@ public class AnimatorDataInspector : Editor {
 			}
 		}
 
-        /*GUILayout.Label("Take Count: "+dat.takes.Count);
-        if(AMTimeline.window && AMTimeline.window.aData) {
-            if(dat.takes.Count != AMTimeline.window.aData.takes.Count) {
-                AMTimeline.window.aData = null;
-            }
-            //GUILayout.Label("Take Count e: " + AMTimeline.window.aData.takes.Count);
-        }*/
-
         dat.sequenceLoadAll = GUILayout.Toggle(dat.sequenceLoadAll, "Build All Sequence On Start");
         dat.sequenceKillWhenDone = GUILayout.Toggle(dat.sequenceKillWhenDone, "Kill Sequence When Done");
         dat.playOnEnable = GUILayout.Toggle(dat.playOnEnable, "Play On Enable");
@@ -112,10 +131,37 @@ public class AnimatorDataInspector : Editor {
             }
         }
 
-        if(GUI.changed)
-            EditorUtility.SetDirty(dat);
-
+		//display missings
+		string[] missings = dat.e_getMissingTargets();
+		if(missings != null && missings.Length > 0) {
+			AMEditorUtil.DrawSeparator();
+			mMissingsFoldout = EditorGUILayout.Foldout(mMissingsFoldout, string.Format("Missing Targets [{0}]", missings.Length));
+			if(mMissingsFoldout) {
+				for(int i = 0; i < missings.Length; i++) {
+					GUILayout.Label(missings[i]);
+				}
+			}
+		}
+		        
         GUILayout.EndVertical();
+
+		if(doMetaSave) {
+			string path = EditorUtility.SaveFilePanelInProject("Save AnimatorMeta", dat.name + ".prefab", "prefab", "Please enter a file name to save the animator data to");
+			if(!string.IsNullOrEmpty(path)) {
+				GameObject metago = new GameObject("_meta");
+				metago.AddComponent<AnimatorMeta>();
+				UnityEngine.Object pref = PrefabUtility.CreateEmptyPrefab(path);
+				GameObject metagopref = PrefabUtility.ReplacePrefab(metago, pref);
+				UnityEngine.Object.DestroyImmediate(metago);
+				dat.e_setMeta(metagopref.GetComponent<AnimatorMeta>(), true);
+			}
+		}
+		else if(doInstantiate) {
+			dat.e_setMeta(null, true);
+		}
+
+		if(GUI.changed)
+			EditorUtility.SetDirty(dat);
 
         serializedObject.ApplyModifiedProperties();
     }

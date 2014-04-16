@@ -85,7 +85,7 @@ public class AMRotationTrack : AMTrack {
     public Quaternion cachedInitialRotation;
 
     public override string getTrackType() {
-        return _isLocal ? "Local Rotation" : "Rotation";
+        return "Local Rotation";
     }
     // add a new key
     public AMKey addKey(AMITarget target, int _frame, Quaternion _rotation, OnKey addCallback) {
