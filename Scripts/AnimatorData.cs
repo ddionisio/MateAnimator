@@ -494,7 +494,11 @@ public class AnimatorData : MonoBehaviour, AMITarget {
 			takeCompleteCallback(this, aTake);
 	}
 
-	public Transform TargetGetHolder() {
+	public Transform TargetGetRoot() {
+		return transform;
+	}
+
+	public Transform TargetGetDataHolder() {
 		return meta != null ? meta.transform : dataHolder.transform;
 	}
 
@@ -525,6 +529,12 @@ public class AnimatorData : MonoBehaviour, AMITarget {
 		_takes[currentTake].drawGizmos(this, gizmo_size, inPlayMode);
 	}
 
+	public void e_maintainTakes() {
+		foreach(AMTakeData take in _takes) {
+			take.maintainTake(this);
+		}
+	}
+
 	public bool e_isCurrentTakePlayOnStart {
 		get {
 			if(meta) {
@@ -540,7 +550,73 @@ public class AnimatorData : MonoBehaviour, AMITarget {
 		}
 	}
 
-	public AnimatorMeta e_meta { get { return meta; } }
+	public AnimatorMeta e_meta { 
+		get { return meta; }
+	}
+
+	/// <summary>
+	/// if newMeta == null, and copyTakes == true, then duplicate all the data in meta to this data.
+	/// </summary>
+	public List<UnityEngine.Object> e_setMeta(AnimatorMeta newMeta, bool copyTakes) {
+		List<UnityEngine.Object> newItems = new List<UnityEngine.Object>();
+
+		if(meta != newMeta) {
+			AnimatorMeta prevMeta = meta;
+			List<AMTakeData> prevTakes = _takes;
+			string prevPlayOnStartName = defaultTakeName;
+
+			meta = newMeta;
+
+			if(meta) {
+				if(!prevMeta) {
+					if(_dataHolder) {
+						UnityEditor.Undo.DestroyObjectImmediate(_dataHolder);
+						_dataHolder = null;
+					}
+
+					takeData.Clear();
+				}
+			}
+			else {
+				//create data holder
+				_dataHolder = new GameObject("_animdata");
+				_dataHolder.transform.parent = transform;
+				_dataHolder.SetActive(false);
+				newItems.Add(_dataHolder);
+
+				if(copyTakes) { //duplicate meta to takeData
+					foreach(AMTakeData take in prevTakes) {
+						newItems.AddRange(e_duplicateTake(take, true));
+					}
+				}
+				else if(_takes == null || _takes.Count == 0) { //add at least one take
+					e_addTake();
+				}
+			}
+
+			//get new play on start
+			playOnStartMeta = "";
+			playOnStartIndex = -1;
+
+			if(!string.IsNullOrEmpty(prevPlayOnStartName)) {
+				string newPlayOnStart = "";
+				foreach(AMTakeData take in _takes) {
+					if(take.name == prevPlayOnStartName) {
+						newPlayOnStart = take.name;
+						break;
+					}
+				}
+
+				defaultTakeName = newPlayOnStart;
+			}
+
+			//reset editor data
+
+			e_maintainTakes();
+		}
+
+		return newItems;
+	}
 
 	public int e_takeCount { get { return _takes.Count; } }
 	
@@ -607,7 +683,7 @@ public class AnimatorData : MonoBehaviour, AMITarget {
     }
 
     /// <summary>
-    /// This will only duplicate the tracks and groups
+    /// This will only duplicate the tracks and groups, includeKeys=true to also duplicate keys
     /// </summary>
     /// <param name="take"></param>
     public List<UnityEngine.Object> e_duplicateTake(AMTakeData dupTake, bool includeKeys) {

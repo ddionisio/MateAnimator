@@ -26,7 +26,6 @@ public class AMEventKey : AMKey {
     public string methodName;
     private MethodInfo cachedMethodInfo;
     
-	public Component getComponent() { return component; }
 	public string getComponentName() { return componentName; }
 
     public bool isMatch(ParameterInfo[] cachedParameterInfos) {
@@ -45,6 +44,23 @@ public class AMEventKey : AMKey {
 
         return true;
     }
+
+	public override void maintainKey(AMITarget itarget, UnityEngine.Object targetObj) {
+		if(string.IsNullOrEmpty(componentName)) {
+			if(component) {
+				componentName = component.GetType().Name;
+			}
+		}
+
+		if(itarget.TargetIsMeta()) {
+			component = null;
+		}
+		else if(!component && !string.IsNullOrEmpty(componentName)) {
+			component = ((GameObject)targetObj).GetComponent(componentName);
+		}
+
+		cachedMethodInfo = null;
+	}
 
 	//set target to a valid ref. for meta
 	public MethodInfo getMethodInfo(GameObject target) {

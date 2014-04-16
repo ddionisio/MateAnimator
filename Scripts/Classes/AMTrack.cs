@@ -28,14 +28,14 @@ public abstract class AMTrack : MonoBehaviour {
     }
 
 	/// <summary>
-	/// Stores the target to serialized field based on track type, this is called if SetTarget 'serialize' parameter is true
+	/// Stores the obj to serialized field based on track type, obj is null if _targetPath is used
 	/// </summary>
 	/// <param name="target">Target.</param>
 	protected abstract void SetSerializeObject(UnityEngine.Object obj);
 
 	/// <summary>
 	/// Gets the serialize object. If targetGO is not null, return the appropriate object from targetGO (e.g. if it's a specific component).
-	/// Otherwise, if go is null, grab from serialized field
+	/// Otherwise, if targetGO is null, grab from serialized field
 	/// </summary>
 	/// <returns>The serialize object.</returns>
 	/// <param name="go">Go.</param>
@@ -50,9 +50,9 @@ public abstract class AMTrack : MonoBehaviour {
 		if(target.TargetIsMeta()) {
 			ret = target.TargetGetCache(_targetPath) as UnityEngine.Object;
 			if(ret == null) {
-				Transform holder = target.TargetGetHolder();
+				Transform root = target.TargetGetRoot();
 
-				GameObject go = AMUtil.GetTarget(holder, _targetPath);
+				GameObject go = AMUtil.GetTarget(root, _targetPath);
 				if(go) {
 					ret = GetSerializeObject(go);
 					target.TargetSetCache(_targetPath, ret);
@@ -61,6 +61,20 @@ public abstract class AMTrack : MonoBehaviour {
 					Debug.LogError("Unable to find target: "+_targetPath);
 				}
 			}
+#if UNITY_EDITOR
+			else if(!Application.isPlaying) {
+				//check if object is renamed
+				int slashInd = _targetPath.LastIndexOf('/');
+				if(slashInd != -1) {
+					if(_targetPath.Substring(slashInd+1) != ret.name) {
+						target.TargetSetCache(_targetPath, null);
+						_targetPath = AMUtil.GetPath(target.TargetGetRoot(), ret);
+						target.TargetSetCache(_targetPath, ret);
+						UnityEditor.EditorUtility.SetDirty(this);
+					}
+				}
+			}
+#endif
 		}
 		else {
 			ret = GetSerializeObject(null);
@@ -70,17 +84,55 @@ public abstract class AMTrack : MonoBehaviour {
 	}
 
 	public void SetTarget(AMITarget target, UnityEngine.Object item) {
-		_targetPath = AMUtil.GetPath(target.TargetGetHolder(), item);
-		target.TargetSetCache(_targetPath, item);
-
-		if(target.TargetIsMeta())
+		if(target.TargetIsMeta()) {
+			_targetPath = AMUtil.GetPath(target.TargetGetRoot(), item);
+			target.TargetSetCache(_targetPath, item);
 			SetSerializeObject(null);
-		else
+		}
+		else {
+			_targetPath = "";
 			SetSerializeObject(item);
+		}
 	}
 
 	public virtual bool isTargetEqual(AMITarget target, UnityEngine.Object obj) {
 		return GetTarget(target) == obj;
+	}
+
+	public void maintainTrack(AMITarget itarget) {
+		Object obj = null;
+
+		//fix the target info
+		if(itarget.TargetIsMeta()) {
+			if(string.IsNullOrEmpty(_targetPath)) {
+				obj = GetSerializeObject(null);
+				if(!obj) {
+					_targetPath = AMUtil.GetPath(itarget.TargetGetRoot(), obj);
+					itarget.TargetSetCache(_targetPath, obj);
+				}
+			}
+			SetSerializeObject(null);
+		}
+		else {
+			obj = GetSerializeObject(null);
+			if(!obj) {
+				if(!string.IsNullOrEmpty(_targetPath)) {
+					obj = itarget.TargetGetCache(_targetPath) as UnityEngine.Object;
+					if(!obj) {
+						GameObject go = AMUtil.GetTarget(itarget.TargetGetRoot(), _targetPath);
+						if(go) {
+							obj = GetSerializeObject(go);
+						}
+					}
+					SetSerializeObject(obj);
+				}
+			}
+			_targetPath = "";
+		}
+
+		//maintain keys
+		foreach(AMKey key in keys)
+			key.maintainKey(itarget, obj);
 	}
 
     // set name from string

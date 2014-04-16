@@ -130,7 +130,7 @@ public class AMTakeData {
 	
 	// add translation track
 	public AMTrack addTranslationTrack(AMITarget target, GameObject obj) {
-		AMTranslationTrack a = target.TargetGetHolder().gameObject.AddComponent<AMTranslationTrack>();
+		AMTranslationTrack a = target.TargetGetDataHolder().gameObject.AddComponent<AMTranslationTrack>();
 		a.enabled = false;
 		a.setName(getTrackCount());
 		a.id = getUniqueTrackID();
@@ -142,7 +142,7 @@ public class AMTakeData {
 	
 	// add rotation track
 	public AMTrack addRotationTrack(AMITarget target, GameObject obj) {
-		AMRotationTrack a = target.TargetGetHolder().gameObject.AddComponent<AMRotationTrack>();
+		AMRotationTrack a = target.TargetGetDataHolder().gameObject.AddComponent<AMRotationTrack>();
 		a.enabled = false;
 		a.setName(getTrackCount());
 		a.id = getUniqueTrackID();
@@ -154,7 +154,7 @@ public class AMTakeData {
 	
 	// add orientation track
 	public AMTrack addOrientationTrack(AMITarget target, GameObject obj) {
-		AMOrientationTrack a = target.TargetGetHolder().gameObject.AddComponent<AMOrientationTrack>();
+		AMOrientationTrack a = target.TargetGetDataHolder().gameObject.AddComponent<AMOrientationTrack>();
 		a.enabled = false;
 		a.setName(getTrackCount());
 		a.id = getUniqueTrackID();
@@ -165,7 +165,7 @@ public class AMTakeData {
 	
 	// add animation track
 	public AMTrack addAnimationTrack(AMITarget target, GameObject obj) {
-		AMAnimationTrack a = target.TargetGetHolder().gameObject.AddComponent<AMAnimationTrack>();
+		AMAnimationTrack a = target.TargetGetDataHolder().gameObject.AddComponent<AMAnimationTrack>();
 		a.enabled = false;
 		a.setName(getTrackCount());
 		a.id = getUniqueTrackID();
@@ -179,7 +179,7 @@ public class AMTakeData {
 	
 	// add audio track
 	public AMTrack addAudioTrack(AMITarget target, GameObject obj) {
-		AMAudioTrack a = target.TargetGetHolder().gameObject.AddComponent<AMAudioTrack>();
+		AMAudioTrack a = target.TargetGetDataHolder().gameObject.AddComponent<AMAudioTrack>();
 		a.enabled = false;
 		a.setName(getTrackCount());
 		a.id = getUniqueTrackID();
@@ -193,7 +193,7 @@ public class AMTakeData {
 	
 	// add property track
 	public AMTrack addPropertyTrack(AMITarget target, GameObject obj) {
-		AMPropertyTrack a = target.TargetGetHolder().gameObject.AddComponent<AMPropertyTrack>();
+		AMPropertyTrack a = target.TargetGetDataHolder().gameObject.AddComponent<AMPropertyTrack>();
 		a.enabled = false;
 		a.setName(getTrackCount());
 		a.id = getUniqueTrackID();
@@ -204,7 +204,7 @@ public class AMTakeData {
 	
 	// add event track
 	public AMTrack addEventTrack(AMITarget target, GameObject obj) {
-		AMEventTrack a = target.TargetGetHolder().gameObject.AddComponent<AMEventTrack>();
+		AMEventTrack a = target.TargetGetDataHolder().gameObject.AddComponent<AMEventTrack>();
 		a.enabled = false;
 		a.setName(getTrackCount());
 		a.id = getUniqueTrackID();
@@ -215,7 +215,7 @@ public class AMTakeData {
 	
 	// add go set active track
 	public AMTrack addGOSetActiveTrack(AMITarget target, GameObject obj) {
-		AMGOSetActiveTrack a = target.TargetGetHolder().gameObject.AddComponent<AMGOSetActiveTrack>();
+		AMGOSetActiveTrack a = target.TargetGetDataHolder().gameObject.AddComponent<AMGOSetActiveTrack>();
 		a.enabled = false;
 		a.setName(getTrackCount());
 		a.id = getUniqueTrackID();
@@ -1177,7 +1177,9 @@ public class AMTakeData {
 	#endregion
 	#region Other Fns
 	
-	public void maintainTake() {
+	public void maintainTake(AMITarget itarget) {
+		foreach(AMTrack track in trackValues)
+			track.maintainTrack(itarget);
 	}
 	
 	public void sampleAudio(AMITarget itarget, float frame, float speed) {

@@ -74,7 +74,7 @@ public class AMTimeline : EditorWindow {
 						EditorUtility.SetDirty(_aData);
 					}
 					else {
-                        _aData.e_getCurrentTake().maintainTake();	// upgrade take to current version if necessary
+                        _aData.e_maintainTakes();	// upgrade takes to current version if necessary
                         // save data
                         EditorUtility.SetDirty(_aData);
                         // preview last selected frame
@@ -399,6 +399,10 @@ public class AMTimeline : EditorWindow {
     //KeyCode key_zoom = KeyCode.Z;
     private float height_event_parameters = 0f;
 
+	private AnimatorMeta mMeta = null;
+	private string mMetaName = "";
+	private string mMetaPath = "";
+
 	private GameObject mTempHolder;
 
     #endregion
@@ -638,8 +642,7 @@ public class AMTimeline : EditorWindow {
         if(!oData) {
             oData = AMOptionsFile.loadFile();
         }
-
-        AMTimeline.loadSkin(oData, ref skin, ref cachedSkinName, position);
+		        
         if(EditorApplication.isPlayingOrWillChangePlaymode) {
             this.ShowNotification(new GUIContent("Play Mode"));
             return;
@@ -660,17 +663,74 @@ public class AMTimeline : EditorWindow {
                     go = null;
             }
             if(!aData) {
-                // no data component message
-                if(go)
-                    MessageBox("Animator requires an AnimatorData component in your game object.", MessageBoxType.Info);
-                else
-                    MessageBox("Animator requires an AnimatorData in scene.", MessageBoxType.Info);
+				GUI.skin = null;
 
-                if(GUILayout.Button(go ? "Add Component" : "Create AnimatorData")) {
-                    // create component
-                    if(!go) go = new GameObject("AnimatorData");
-                    aData = go.AddComponent<AnimatorData>();
-                }
+                // no data component message
+                if(go) {
+                    MessageBox("Animator requires an AnimatorData component in your game object.", MessageBoxType.Info);
+				}
+                else {
+                    MessageBox("Animator requires an AnimatorData in scene.", MessageBoxType.Info);
+				}
+
+				//meta stuff
+				GUILayout.BeginHorizontal();
+
+				bool createNewMeta = false;
+				
+				if(mMeta == null) {
+					GUI.backgroundColor = Color.green;
+					createNewMeta = GUILayout.Button("New Meta", GUILayout.Width(100f));
+					
+					GUI.backgroundColor = Color.white;
+					mMetaName = GUILayout.TextField(mMetaName);
+				}
+				
+				GUILayout.EndHorizontal();
+				
+				if(mMeta != null) {
+					mMetaName = mMeta.name;
+					mMetaPath = AssetDatabase.GetAssetPath(mMeta);
+				}
+				else if(!string.IsNullOrEmpty(mMetaName)) {
+					mMetaPath = GetSelectionFolder() + mMetaName + ".prefab";
+				}
+				
+				if(createNewMeta && !string.IsNullOrEmpty(mMetaName)) {
+					GameObject metago = new GameObject(mMetaName);
+					metago.AddComponent<AnimatorMeta>();
+					UnityEngine.Object pref = PrefabUtility.CreateEmptyPrefab(mMetaPath);
+					GameObject metagopref = PrefabUtility.ReplacePrefab(metago, pref);
+					UnityEngine.Object.DestroyImmediate(metago);
+					mMeta = metagopref.GetComponent<AnimatorMeta>();
+
+					AssetDatabase.Refresh();
+				}
+				
+				GUILayout.BeginHorizontal();
+				
+				GUILayout.Label("Select Meta: ");
+				
+				mMeta = (AnimatorMeta)EditorGUILayout.ObjectField(mMeta, typeof(AnimatorMeta), false);
+				
+				GUILayout.EndHorizontal();
+				
+				if(!string.IsNullOrEmpty(mMetaPath))
+					GUILayout.Label("Path: " + mMetaPath);
+				else {
+					GUILayout.Label("Path: <none>");
+				}
+
+				DrawSeparator();
+				//
+
+				if(GUILayout.Button(go ? "Add Component" : "Create AnimatorData")) {
+					// create component
+					if(!go) go = new GameObject("AnimatorData");
+					AnimatorData nData = go.AddComponent<AnimatorData>();
+					nData.e_setMeta(mMeta, false);
+					aData = nData;
+				}
             }
 
             if(!aData) //still no data
@@ -685,6 +745,8 @@ public class AMTimeline : EditorWindow {
         }*/
 
         if(aData.e_getCurrentTake() == null) { Repaint(); return; } //????
+
+		AMTimeline.loadSkin(oData, ref skin, ref cachedSkinName, position);
 
         //retain animator open, this is mostly when recompiling AnimatorData
         aData.isAnimatorOpen = true;
@@ -994,8 +1056,6 @@ public class AMTimeline : EditorWindow {
 
 			// save data
 			setDirtyTakes(aData);
-			// refresh component
-			refreshGizmos();
 		}
 		else if(aData.currentTake == aData._takes.Count + 1) {
 			isRenamingTake = false;
@@ -4920,8 +4980,6 @@ public class AMTimeline : EditorWindow {
 
         // select current frame
         timelineSelectFrame(aData.e_getCurrentTake().selectedTrack, aData.e_getCurrentTake().selectedFrame, false);
-        // refresh gizmos
-        refreshGizmos();
 
         AMCodeView.refresh();
     }
@@ -5385,9 +5443,31 @@ public class AMTimeline : EditorWindow {
         // reset all object transforms to frame 1
 		aData.e_getCurrentTake().previewFrame(aData, 1f);
     }
-    void refreshGizmos() {
-        EditorUtility.SetDirty(aData);
-    }
+	public static void DrawSeparator() {
+		GUILayout.Space(12f);
+		
+		if(Event.current.type == EventType.Repaint) {
+			Texture2D tex = EditorGUIUtility.whiteTexture;
+			Rect rect = GUILayoutUtility.GetLastRect();
+			GUI.color = new Color(0f, 0f, 0f, 0.25f);
+			GUI.DrawTexture(new Rect(0f, rect.yMin + 6f, Screen.width, 4f), tex);
+			GUI.DrawTexture(new Rect(0f, rect.yMin + 6f, Screen.width, 1f), tex);
+			GUI.DrawTexture(new Rect(0f, rect.yMin + 9f, Screen.width, 1f), tex);
+			GUI.color = Color.white;
+		}
+	}
+	public static string GetSelectionFolder() {
+		if(Selection.activeObject != null) {
+			string path = AssetDatabase.GetAssetPath(Selection.activeObject.GetInstanceID());
+			
+			if(!string.IsNullOrEmpty(path)) {
+				int dot = path.LastIndexOf('.');
+				int slash = Mathf.Max(path.LastIndexOf('/'), path.LastIndexOf('\\'));
+				if(slash > 0) return (dot > slash) ? path.Substring(0, slash + 1) : path + "/";
+			}
+		}
+		return "Assets/";
+	}
     void cancelTextEditting(bool toggleIsRenamingTake = false) {
         if(!isChangingTimeControl && !isChangingFrameControl) {
             try {

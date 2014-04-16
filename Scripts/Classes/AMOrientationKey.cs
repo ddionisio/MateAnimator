@@ -85,13 +85,14 @@ public class AMOrientationKey : AMKey {
     public int endFrame;
 
 	public void SetTarget(AMITarget itarget, Transform t) {
-		targetPath = AMUtil.GetPath(itarget.TargetGetHolder(), t);
+		targetPath = AMUtil.GetPath(itarget.TargetGetRoot(), t);
 		if(itarget.TargetIsMeta()) {
 			target = null;
 			itarget.TargetSetCache(targetPath, t);
 		}
 		else {
 			target = t;
+			targetPath = "";
 		}
 	}
 	public Transform GetTarget(AMITarget itarget) {
@@ -99,28 +100,32 @@ public class AMOrientationKey : AMKey {
 		if(itarget.TargetIsMeta()) {
 			ret = itarget.TargetGetCache(targetPath) as Transform;
 			if(ret == null) {
-				GameObject go = AMUtil.GetTarget(itarget.TargetGetHolder(), targetPath);
+				GameObject go = AMUtil.GetTarget(itarget.TargetGetRoot(), targetPath);
 				if(go) {
 					ret = go.transform;
 					itarget.TargetSetCache(targetPath, ret);
 				}
 			}
+#if UNITY_EDITOR
+			else if(!Application.isPlaying) {
+				//check if object is renamed
+				int slashInd = targetPath.LastIndexOf('/');
+				if(slashInd != -1) {
+					if(targetPath.Substring(slashInd+1) != ret.name) {
+						itarget.TargetSetCache(targetPath, null);
+						targetPath = AMUtil.GetPath(itarget.TargetGetRoot(), ret);
+						itarget.TargetSetCache(targetPath, ret);
+						UnityEditor.EditorUtility.SetDirty(this);
+					}
+				}
+			}
+#endif
 		}
 		else
 			ret = target;
 		return ret;
 	}
 
-	public void SetTargetEnd(AMITarget itarget, Transform t) {
-		endTargetPath = AMUtil.GetPath(itarget.TargetGetHolder(), t);
-		if(itarget.TargetIsMeta()) {
-			endTarget = null;
-			itarget.TargetSetCache(endTargetPath, t);
-		}
-		else {
-			endTarget = t;
-		}
-	}
 	public void SetTargetEnd(AMOrientationKey nextKey) {
 		endTarget = nextKey.target;
 		endTargetPath = nextKey.targetPath;
@@ -130,16 +135,71 @@ public class AMOrientationKey : AMKey {
 		if(itarget.TargetIsMeta()) {
 			ret = itarget.TargetGetCache(endTargetPath) as Transform;
 			if(ret == null) {
-				GameObject go = AMUtil.GetTarget(itarget.TargetGetHolder(), endTargetPath);
+				GameObject go = AMUtil.GetTarget(itarget.TargetGetRoot(), endTargetPath);
 				if(go) {
 					ret = go.transform;
 					itarget.TargetSetCache(endTargetPath, ret);
 				}
 			}
+#if UNITY_EDITOR
+			else if(!Application.isPlaying) {
+				//check if object is renamed
+				int slashInd = endTargetPath.LastIndexOf('/');
+				if(slashInd != -1) {
+					if(endTargetPath.Substring(slashInd+1) != ret.name) {
+						itarget.TargetSetCache(endTargetPath, null);
+						endTargetPath = AMUtil.GetPath(itarget.TargetGetRoot(), ret);
+						itarget.TargetSetCache(endTargetPath, ret);
+						UnityEditor.EditorUtility.SetDirty(this);
+					}
+				}
+			}
+#endif
 		}
 		else
 			ret = endTarget;
 		return ret;
+	}
+
+	public override void maintainKey(AMITarget itarget, UnityEngine.Object targetObj) {
+		if(itarget.TargetIsMeta()) {
+			if(string.IsNullOrEmpty(targetPath)) {
+				if(target) {
+					targetPath = AMUtil.GetPath(itarget.TargetGetRoot(), target);
+					itarget.TargetSetCache(targetPath, target);
+				}
+			}
+
+			if(string.IsNullOrEmpty(endTargetPath)) {
+				if(endTarget) {
+					endTargetPath = AMUtil.GetPath(itarget.TargetGetRoot(), endTarget);
+					itarget.TargetSetCache(endTargetPath, endTarget);
+				}
+			}
+
+			target = null;
+			endTarget = null;
+		}
+		else {
+			if(!target) {
+				if(!string.IsNullOrEmpty(targetPath)) {
+					target = itarget.TargetGetCache(targetPath) as Transform;
+					if(!target)
+						target = AMUtil.GetTarget(itarget.TargetGetRoot(), targetPath).transform;
+				}
+			}
+
+			if(!endTarget) {
+				if(!string.IsNullOrEmpty(endTargetPath)) {
+					endTarget = itarget.TargetGetCache(endTargetPath) as Transform;
+					if(!endTarget)
+						endTarget = AMUtil.GetTarget(itarget.TargetGetRoot(), endTargetPath).transform;
+				}
+			}
+
+			targetPath = "";
+			endTargetPath = "";
+		}
 	}
         
     public override AMKey CreateClone(GameObject go) {

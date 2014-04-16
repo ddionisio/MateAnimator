@@ -2,7 +2,6 @@ using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
-using System;
 
 using Holoville.HOTween;
 using Holoville.HOTween.Plugins;
@@ -53,6 +52,22 @@ public class AMPropertyKey : AMKey {
 		if(inf != null) { methodName = inf.Name; fieldName = ""; propertyName = ""; }
 		else methodName = "";
 		methodParameterTypes = parms;
+	}
+
+	public override void maintainKey(AMITarget itarget, UnityEngine.Object targetObj) {
+		if(string.IsNullOrEmpty(componentName)) {
+			if(component) {
+				componentName = component.GetType().Name;
+			}
+		}
+		
+		if(itarget.TargetIsMeta()) {
+			component = null;
+		}
+		else if(!component && !string.IsNullOrEmpty(componentName)) {
+			component = ((GameObject)targetObj).GetComponent(componentName);
+		}
+
 	}
 
     //union for single values
@@ -265,13 +280,13 @@ public class AMPropertyKey : AMKey {
 
 				switch((AMPropertyTrack.ValueType)valueType) {
 				case AMPropertyTrack.ValueType.Integer:
-					return HOTween.To(comp, t, new TweenParms().Prop(varName, new AMPlugNoTween(Convert.ToInt32(val))));
+					return HOTween.To(comp, t, new TweenParms().Prop(varName, new AMPlugNoTween(System.Convert.ToInt32(val))));
 				case AMPropertyTrack.ValueType.Float:
-					return HOTween.To(comp, t, new TweenParms().Prop(varName, new AMPlugNoTween(Convert.ToSingle(val))));
+					return HOTween.To(comp, t, new TweenParms().Prop(varName, new AMPlugNoTween(System.Convert.ToSingle(val))));
 				case AMPropertyTrack.ValueType.Double:
 					return HOTween.To(comp, t, new TweenParms().Prop(varName, new AMPlugNoTween(new AMPlugDouble(val))));
 				case AMPropertyTrack.ValueType.Long:
-					return HOTween.To(comp, t, new TweenParms().Prop(varName, new AMPlugNoTween(Convert.ToInt64(val))));
+					return HOTween.To(comp, t, new TweenParms().Prop(varName, new AMPlugNoTween(System.Convert.ToInt64(val))));
 				case AMPropertyTrack.ValueType.Vector2:
 					return HOTween.To(comp, t, new TweenParms().Prop(varName, new AMPlugNoTween(vect2)));
 				case AMPropertyTrack.ValueType.Vector3:
@@ -289,13 +304,13 @@ public class AMPropertyKey : AMKey {
             else if(hasCustomEase()) {
                 switch((AMPropertyTrack.ValueType)valueType) {
                     case AMPropertyTrack.ValueType.Integer:
-					return HOTween.To(comp, getTime(frameRate), new TweenParms().Prop(varName, Convert.ToInt32(end_val)).Ease(easeCurve));
+					return HOTween.To(comp, getTime(frameRate), new TweenParms().Prop(varName, System.Convert.ToInt32(end_val)).Ease(easeCurve));
                     case AMPropertyTrack.ValueType.Float:
-					return HOTween.To(comp, getTime(frameRate), new TweenParms().Prop(varName, Convert.ToSingle(end_val)).Ease(easeCurve));
+					return HOTween.To(comp, getTime(frameRate), new TweenParms().Prop(varName, System.Convert.ToSingle(end_val)).Ease(easeCurve));
                     case AMPropertyTrack.ValueType.Double:
 					return HOTween.To(comp, getTime(frameRate), new TweenParms().Prop(varName, new AMPlugDouble(end_val)).Ease(easeCurve));
                     case AMPropertyTrack.ValueType.Long:
-					return HOTween.To(comp, getTime(frameRate), new TweenParms().Prop(varName, new AMPlugLong(Convert.ToInt64(end_val))).Ease(easeCurve));
+					return HOTween.To(comp, getTime(frameRate), new TweenParms().Prop(varName, new AMPlugLong(System.Convert.ToInt64(end_val))).Ease(easeCurve));
                     case AMPropertyTrack.ValueType.Vector2:
 					return HOTween.To(comp, getTime(frameRate), new TweenParms().Prop(varName, end_vect2).Ease(easeCurve));
                     case AMPropertyTrack.ValueType.Vector3:
@@ -313,13 +328,13 @@ public class AMPropertyKey : AMKey {
             else {
                 switch((AMPropertyTrack.ValueType)valueType) {
                     case AMPropertyTrack.ValueType.Integer:
-					return HOTween.To(comp, getTime(frameRate), new TweenParms().Prop(varName, Convert.ToInt32(end_val)).Ease((EaseType)easeType, amplitude, period));
+					return HOTween.To(comp, getTime(frameRate), new TweenParms().Prop(varName, System.Convert.ToInt32(end_val)).Ease((EaseType)easeType, amplitude, period));
                     case AMPropertyTrack.ValueType.Float:
-					return HOTween.To(comp, getTime(frameRate), new TweenParms().Prop(varName, Convert.ToSingle(end_val)).Ease((EaseType)easeType, amplitude, period));
+					return HOTween.To(comp, getTime(frameRate), new TweenParms().Prop(varName, System.Convert.ToSingle(end_val)).Ease((EaseType)easeType, amplitude, period));
                     case AMPropertyTrack.ValueType.Double:
 					return HOTween.To(comp, getTime(frameRate), new TweenParms().Prop(varName, new AMPlugDouble(end_val)).Ease((EaseType)easeType, amplitude, period));
                     case AMPropertyTrack.ValueType.Long:
-					return HOTween.To(comp, getTime(frameRate), new TweenParms().Prop(varName, new AMPlugLong(Convert.ToInt64(end_val))).Ease((EaseType)easeType, amplitude, period));
+					return HOTween.To(comp, getTime(frameRate), new TweenParms().Prop(varName, new AMPlugLong(System.Convert.ToInt64(end_val))).Ease((EaseType)easeType, amplitude, period));
                     case AMPropertyTrack.ValueType.Vector2:
 					return HOTween.To(comp, getTime(frameRate), new TweenParms().Prop(varName, end_vect2).Ease((EaseType)easeType, amplitude, period));
                     case AMPropertyTrack.ValueType.Vector3:
@@ -448,9 +463,9 @@ public class AMPropertyKey : AMKey {
     }
 
     public object getStartValue() {
-        if(valueType == (int)AMPropertyTrack.ValueType.Integer) return Convert.ToInt32(val);
-        if(valueType == (int)AMPropertyTrack.ValueType.Long) return Convert.ToInt64(val);
-        if(valueType == (int)AMPropertyTrack.ValueType.Float) return Convert.ToSingle(val);
+		if(valueType == (int)AMPropertyTrack.ValueType.Integer) return System.Convert.ToInt32(val);
+		if(valueType == (int)AMPropertyTrack.ValueType.Long) return System.Convert.ToInt64(val);
+		if(valueType == (int)AMPropertyTrack.ValueType.Float) return System.Convert.ToSingle(val);
         if(valueType == (int)AMPropertyTrack.ValueType.Double) return val;
         if(valueType == (int)AMPropertyTrack.ValueType.Vector2) return vect2;
         if(valueType == (int)AMPropertyTrack.ValueType.Vector3) return vect3;
@@ -464,9 +479,9 @@ public class AMPropertyKey : AMKey {
         return "Unknown";
     }
     public object getEndValue() {
-        if(valueType == (int)AMPropertyTrack.ValueType.Integer) return Convert.ToInt32(end_val);
-        if(valueType == (int)AMPropertyTrack.ValueType.Long) return Convert.ToInt64(end_val);
-        if(valueType == (int)AMPropertyTrack.ValueType.Float) return Convert.ToSingle(end_val);
+		if(valueType == (int)AMPropertyTrack.ValueType.Integer) return System.Convert.ToInt32(end_val);
+		if(valueType == (int)AMPropertyTrack.ValueType.Long) return System.Convert.ToInt64(end_val);
+		if(valueType == (int)AMPropertyTrack.ValueType.Float) return System.Convert.ToSingle(end_val);
         if(valueType == (int)AMPropertyTrack.ValueType.Double) return end_val;
         if(valueType == (int)AMPropertyTrack.ValueType.Vector2) return end_vect2;
         if(valueType == (int)AMPropertyTrack.ValueType.Vector3) return end_vect3;

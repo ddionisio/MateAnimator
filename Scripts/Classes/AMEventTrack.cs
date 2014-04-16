@@ -68,7 +68,7 @@ public class AMEventTrack : AMTrack {
                     // check if new GameObject has all the required components
                     foreach(AMEventKey key in keys) {
                         string componentName = key.getComponentName();
-                        if(key.getComponent() && newReferences[i].GetComponent(componentName) == null) {
+                        if(newReferences[i].GetComponent(componentName) == null) {
                             // missing component
                             Debug.LogWarning("Animator: Event Track component '" + componentName + "' not found on new reference for GameObject '" + obj.name + "'. Duplicate not replaced.");
                             List<GameObject> lsFlagToKeep = new List<GameObject>();

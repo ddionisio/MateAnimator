@@ -30,6 +30,9 @@ public class AMKey : MonoBehaviour {
         Object.DestroyImmediate(this);
     }
 
+	public virtual void maintainKey(AMITarget itarget, UnityEngine.Object targetObj) {
+	}
+
     public virtual AMKey CreateClone(GameObject go) {
         Debug.LogError("Animator: No override for CreateClone()");
         return null;
