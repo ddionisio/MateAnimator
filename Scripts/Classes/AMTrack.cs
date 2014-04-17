@@ -72,6 +72,21 @@ public abstract class AMTrack : MonoBehaviour {
 		return "";
 	}
 
+    /// <summary>
+    /// Check to see if given GameObject has all the required components for this track
+    /// </summary>
+    public bool VerifyComponents(GameObject go) {
+        if(go.GetComponent(GetRequiredComponent()) == null)
+            return false;
+
+        foreach(AMKey key in keys) {
+            if(go.GetComponent(key.GetRequiredComponent()) == null)
+                return false;
+        }
+
+        return true;
+    }
+
 	public string GetTargetPath(AMITarget target) {
 		if(target.TargetIsMeta())
 			return _targetPath;

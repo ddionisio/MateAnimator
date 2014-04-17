@@ -559,6 +559,18 @@ public class AnimatorData : MonoBehaviour, AMITarget {
 			return new string[0];
 	}
 
+    public void e_maintainTargetCache(AMTrack track) {
+        if(TargetIsMeta() && mCache.ContainsKey(track.targetPath)) {
+            UnityEngine.Object obj = track.GetTarget(this);
+            if(obj) {
+                string objPath = AMUtil.GetPath(transform, obj);
+                if(objPath != track.targetPath) {
+                    mCache.Remove(track.targetPath);
+                }
+            }
+        }
+    }
+
 	public void e_maintainTakes() {
 		foreach(AMTakeData take in _takes) {
 			take.maintainTake(this);
