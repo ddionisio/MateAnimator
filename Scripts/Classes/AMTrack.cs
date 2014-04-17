@@ -48,18 +48,17 @@ public abstract class AMTrack : MonoBehaviour {
 		UnityEngine.Object ret = null;
 
 		if(target.TargetIsMeta()) {
-			ret = target.TargetGetCache(_targetPath) as UnityEngine.Object;
-			if(ret == null) {
-				Transform root = target.TargetGetRoot();
+			Transform tgt = target.TargetGetCache(_targetPath);
+			if(tgt == null) {
+				tgt = AMUtil.GetTarget(target.TargetGetRoot(), _targetPath);
+			}
 
-				GameObject go = AMUtil.GetTarget(root, _targetPath);
-				if(go) {
-					ret = GetSerializeObject(go);
-					target.TargetSetCache(_targetPath, ret);
-				}
-				else {
-					target.TargetMissing(_targetPath, true);
-				}
+			if(tgt) {
+				ret = GetSerializeObject(tgt.gameObject);
+				target.TargetSetCache(_targetPath, tgt);
+			}
+			else {
+				target.TargetMissing(_targetPath, true);
 			}
 		}
 		else {
@@ -80,7 +79,7 @@ public abstract class AMTrack : MonoBehaviour {
 		if(target.TargetIsMeta()) {
 			target.TargetMissing(_targetPath, false);
 			_targetPath = AMUtil.GetPath(target.TargetGetRoot(), item);
-			target.TargetSetCache(_targetPath, item);
+			target.TargetSetCache(_targetPath, AMUtil.GetTransform(item));
 			SetSerializeObject(null);
 		}
 		else {
@@ -93,7 +92,7 @@ public abstract class AMTrack : MonoBehaviour {
 		return GetTarget(target) == obj;
 	}
 
-	public void maintainTrack(AMITarget itarget) {
+	public virtual void maintainTrack(AMITarget itarget) {
 		Object obj = null;
 
 		//fix the target info
@@ -102,22 +101,19 @@ public abstract class AMTrack : MonoBehaviour {
 				obj = GetSerializeObject(null);
 				if(obj) {
 					_targetPath = AMUtil.GetPath(itarget.TargetGetRoot(), obj);
-					itarget.TargetSetCache(_targetPath, obj);
+					itarget.TargetSetCache(_targetPath, AMUtil.GetTransform(obj));
 				}
 			}
 			SetSerializeObject(null);
 		}
 		else {
 			obj = GetSerializeObject(null);
-			if(!obj) {
+			if(obj == null) {
 				if(!string.IsNullOrEmpty(_targetPath)) {
-					obj = itarget.TargetGetCache(_targetPath) as UnityEngine.Object;
-					if(!obj) {
-						GameObject go = AMUtil.GetTarget(itarget.TargetGetRoot(), _targetPath);
-						if(go) {
-							obj = GetSerializeObject(go);
-						}
-					}
+					Transform tgt = itarget.TargetGetCache(_targetPath);
+					if(tgt == null)
+						tgt = AMUtil.GetTarget(itarget.TargetGetRoot(), _targetPath);
+					obj = GetSerializeObject(tgt.gameObject);
 					SetSerializeObject(obj);
 				}
 			}

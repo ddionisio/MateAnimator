@@ -1262,11 +1262,13 @@ public class AMTakeData {
 		foreach(AMTrack track in trackValues) {
 			track.buildSequenceStart(itarget, sequence, frameRate);
 			Object tgt = track.GetTarget(itarget);
-			foreach(AMKey key in track.keys) {
-				Tweener tween = key.buildTweener(itarget, sequence, tgt, frameRate);
-				if(tween != null) {
-					sequence.Insert(key.getWaitTime(frameRate, 0.0f), tween);
-					numTweensAdded++;
+			if(tgt != null) {
+				foreach(AMKey key in track.keys) {
+					Tweener tween = key.buildTweener(itarget, sequence, tgt, frameRate);
+					if(tween != null) {
+						sequence.Insert(key.getWaitTime(frameRate, 0.0f), tween);
+						numTweensAdded++;
+					}
 				}
 			}
 		}

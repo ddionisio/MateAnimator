@@ -5,6 +5,6 @@ public interface AMITarget {
 	Transform TargetGetDataHolder();
 	bool TargetIsMeta();
 	void TargetMissing(string path, bool isMissing);
-	object TargetGetCache(string path);
-	void TargetSetCache(string path, object obj);
+	Transform TargetGetCache(string path);
+	void TargetSetCache(string path, Transform obj);
 }

@@ -99,15 +99,16 @@ public class AMOrientationKey : AMKey {
 	public Transform GetTarget(AMITarget itarget) {
 		Transform ret = null;
 		if(itarget.TargetIsMeta()) {
-			ret = itarget.TargetGetCache(targetPath) as Transform;
-			if(ret == null) {
-				GameObject go = AMUtil.GetTarget(itarget.TargetGetRoot(), targetPath);
-				if(go) {
-					ret = go.transform;
-					itarget.TargetSetCache(targetPath, ret);
+			if(!string.IsNullOrEmpty(targetPath)) {
+				ret = itarget.TargetGetCache(targetPath);
+				if(ret == null) {
+					ret = AMUtil.GetTarget(itarget.TargetGetRoot(), targetPath);
+					if(ret) {
+						itarget.TargetSetCache(targetPath, ret);
+					}
+					else
+						itarget.TargetMissing(targetPath, true);
 				}
-				else
-					itarget.TargetMissing(targetPath, true);
 			}
 		}
 		else
@@ -122,15 +123,16 @@ public class AMOrientationKey : AMKey {
 	public Transform GetTargetEnd(AMITarget itarget) {
 		Transform ret = null;
 		if(itarget.TargetIsMeta()) {
-			ret = itarget.TargetGetCache(endTargetPath) as Transform;
-			if(ret == null) {
-				GameObject go = AMUtil.GetTarget(itarget.TargetGetRoot(), endTargetPath);
-				if(go) {
-					ret = go.transform;
-					itarget.TargetSetCache(endTargetPath, ret);
+			if(!string.IsNullOrEmpty(endTargetPath)) {
+				ret = itarget.TargetGetCache(endTargetPath);
+				if(ret == null) {
+					ret = AMUtil.GetTarget(itarget.TargetGetRoot(), endTargetPath);
+					if(ret) {
+						itarget.TargetSetCache(endTargetPath, ret);
+					}
+					else
+						itarget.TargetMissing(endTargetPath, true);
 				}
-				else
-					itarget.TargetMissing(endTargetPath, true);
 			}
 		}
 		else
@@ -160,7 +162,7 @@ public class AMOrientationKey : AMKey {
 		else {
 			if(!target) {
 				if(!string.IsNullOrEmpty(targetPath)) {
-					target = itarget.TargetGetCache(targetPath) as Transform;
+					target = itarget.TargetGetCache(targetPath);
 					if(!target)
 						target = AMUtil.GetTarget(itarget.TargetGetRoot(), targetPath).transform;
 				}
@@ -168,7 +170,7 @@ public class AMOrientationKey : AMKey {
 
 			if(!endTarget) {
 				if(!string.IsNullOrEmpty(endTargetPath)) {
-					endTarget = itarget.TargetGetCache(endTargetPath) as Transform;
+					endTarget = itarget.TargetGetCache(endTargetPath);
 					if(!endTarget)
 						endTarget = AMUtil.GetTarget(itarget.TargetGetRoot(), endTargetPath).transform;
 				}

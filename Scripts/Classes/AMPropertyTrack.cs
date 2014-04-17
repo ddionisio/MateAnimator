@@ -49,11 +49,6 @@ public class AMPropertyTrack : AMTrack {
 	protected override void SetSerializeObject(UnityEngine.Object obj) {
 		this.obj = obj as GameObject;
 
-		propertyName = "";
-		fieldName = "";
-		methodName = "";
-		methodParameterTypes = new string[0];
-		
 		cachedPropertyInfo = null;
 		cachedFieldInfo = null;
 		cachedMethodInfo = null;
@@ -97,7 +92,17 @@ public class AMPropertyTrack : AMTrack {
 			cachedPropertyInfo = null;
 		}
 	}
-
+	/// <summary>
+	/// Call this to reset info, make sure this track is empty, so clear the keys first!
+	/// </summary>
+	public void clearInfo() {
+		propertyName = "";
+		fieldName = "";
+		methodName = "";
+		cachedPropertyInfo = null;
+		cachedFieldInfo = null;
+		cachedMethodInfo = null;
+	}
 	public bool canTween {
 		get {
 			return !(valueType == (int)ValueType.Bool || valueType == (int)ValueType.String || valueType == (int)ValueType.Sprite);
@@ -429,6 +434,21 @@ public class AMPropertyTrack : AMTrack {
         }
         return false;
     }
+	public override void maintainTrack(AMITarget itarget) {
+		base.maintainTrack(itarget);
+
+		if(string.IsNullOrEmpty(componentName)) {
+			if(component)
+				componentName = component.GetType().Name;
+		}
+
+		if(itarget.TargetIsMeta()) {
+			component = null;
+		}
+		else if(!component && !string.IsNullOrEmpty(componentName)) {
+			component = ((GameObject)GetTarget(itarget)).GetComponent(componentName);
+		}
+	}
     // update cache (optimized)
     public override void updateCache(AMITarget target) {
         base.updateCache(target);

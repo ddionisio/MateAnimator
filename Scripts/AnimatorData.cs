@@ -172,7 +172,7 @@ public class AnimatorData : MonoBehaviour, AMITarget {
 
     private float mAnimScale = 1.0f; //NOTE: this is reset during disable
 
-	private Dictionary<string, object> mCache;
+	private Dictionary<string, Transform> mCache;
 
 	private AMTakeData mCurrentPlayingTake { get { return mNowPlayingTakeIndex == -1 ? null : _takes[mNowPlayingTakeIndex]; } }
 
@@ -196,8 +196,8 @@ public class AnimatorData : MonoBehaviour, AMITarget {
 	}
 
     public void PlayDefault(bool loop = false) {
-        if(playOnStartIndex != -1) {
-			Play(_takes[playOnStartIndex].name, loop);
+        if(!string.IsNullOrEmpty(defaultTakeName)) {
+			Play(defaultTakeName, loop);
 		}
     }
 
@@ -351,8 +351,8 @@ public class AnimatorData : MonoBehaviour, AMITarget {
 	void OnEnable() {
 		if(mStarted) {
 			if(playOnEnable) {
-				if(mNowPlayingTakeIndex == -1 && playOnStartIndex != -1)
-					Play(playOnStartIndex, true, 0f, false);
+				if(mNowPlayingTakeIndex == -1 && !string.IsNullOrEmpty(defaultTakeName))
+					Play(defaultTakeName, false);
 				else
 					Resume();
 			}
@@ -398,8 +398,8 @@ public class AnimatorData : MonoBehaviour, AMITarget {
 			}
 		}
 		
-		if(playOnStartIndex != -1) {
-			Play(playOnStartIndex, true, 0.0f, false);
+		if(!string.IsNullOrEmpty(defaultTakeName)) {
+			Play(defaultTakeName, false);
 		}
 	}
 			
@@ -504,20 +504,24 @@ public class AnimatorData : MonoBehaviour, AMITarget {
 	private HashSet<string> mTargetMissing;
 	public void TargetMissing(string path, bool isMissing) {
 		if(mTargetMissing == null) mTargetMissing = new HashSet<string>();
-		if(isMissing)
+		if(isMissing) {
 			mTargetMissing.Add(path);
+
+			if(Application.isPlaying)
+				Debug.LogWarning(name+ " is missing Target: "+path);
+		}
 		else
 			mTargetMissing.Remove(path);
 	}
 #else
 	public void TargetMissing(string path, bool isMissing) {
 		if(isMissing)
-			Debug.LogWarning("Missing Target: "+path);
+			Debug.LogWarning(name+ " is missing Target: "+path);
 	}
 #endif
 
-	public object TargetGetCache(string path) {
-		object ret = null;
+	public Transform TargetGetCache(string path) {
+		Transform ret = null;
 		if(mCache != null) {
 			if(mCache.TryGetValue(path, out ret)) {
 #if UNITY_EDITOR
@@ -529,8 +533,8 @@ public class AnimatorData : MonoBehaviour, AMITarget {
 		return ret;
 	}
 	
-	public void TargetSetCache(string path, object obj) {
-		if(mCache == null) mCache = new Dictionary<string, object>();
+	public void TargetSetCache(string path, Transform obj) {
+		if(mCache == null) mCache = new Dictionary<string, Transform>();
 		if(mCache.ContainsKey(path))
 			mCache[path] = obj;
 		else
@@ -649,8 +653,6 @@ public class AnimatorData : MonoBehaviour, AMITarget {
 			//reset editor data
 			if(mTargetMissing != null)
 				mTargetMissing.Clear();
-
-			e_maintainTakes();
 		}
 
 		return newItems;
@@ -777,6 +779,7 @@ public class AnimatorData : MonoBehaviour, AMITarget {
 						}
 					}
 
+					dupTrack.maintainTrack(this);
 					dupTrack.updateCache(this);
 				}
 
@@ -795,15 +798,25 @@ public class AnimatorData : MonoBehaviour, AMITarget {
     }
 
     public void e_deleteTake(int index) {
+		string prevDefaultTakeName = defaultTakeName;
         //if(shouldCheckDependencies) shouldCheckDependencies = false;
-		if(playOnStartIndex != -1) {
-			if(playOnStartIndex == index) playOnStartIndex = -1;
-			else if(index < playOnStartIndex) playOnStartIndex--;
-		}
+
 		//TODO: destroy tracks, keys
 		//_takes[index].destroy();
 		_takes.RemoveAt(index);
         if((currentTake >= index) && (currentTake > 0)) currentTake--;
+
+		if(!string.IsNullOrEmpty(prevDefaultTakeName)) {
+			string newPlayOnStart = "";
+			foreach(AMTakeData take in _takes) {
+				if(take.name == prevDefaultTakeName) {
+					newPlayOnStart = take.name;
+					break;
+				}
+			}
+			
+			defaultTakeName = newPlayOnStart;
+		}
     }
 
     public void e_selectTake(int index) {

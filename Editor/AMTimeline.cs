@@ -3711,6 +3711,7 @@ public class AMTimeline : EditorWindow {
 							Undo.DestroyObjectImmediate(key);
 
 						amTrack.keys = new List<AMKey>();
+						if(amTrack is AMPropertyTrack) ((AMPropertyTrack)amTrack).clearInfo();
                         amTrack.updateCache(aData);
                         AMCodeView.refresh();
                     }

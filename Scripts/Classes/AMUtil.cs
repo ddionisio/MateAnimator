@@ -3,26 +3,26 @@ using System.Collections;
 using System.Text;
 
 public struct AMUtil {
-	public static GameObject GetTarget(Transform root, string path) {
-		GameObject go = null;
+	public static Transform GetTarget(Transform root, string path) {
+		Transform ret = null;
 		
 		if(!string.IsNullOrEmpty(path)) {
 			if(path[0] == '.') {
-				go = root.gameObject;
+				ret = root;
 			}
 			else if(path[0] == '/') {
-				go = GameObject.Find(path);
+				GameObject go = GameObject.Find(path);
+				if(go) ret = go.transform;
 			}
 			else {
-				Transform t = root.FindChild(path);
-				if(t) go = t.gameObject;
+				ret = root.FindChild(path);
 			}
 		}
 
-		return go;
+		return ret;
 	}
 
-	public static string GetPath(Transform root, UnityEngine.Object target) {
+	public static Transform GetTransform(UnityEngine.Object target) {
 		Transform tgt;
 		if(target is GameObject) {
 			tgt = (target as GameObject).transform;
@@ -33,6 +33,11 @@ public struct AMUtil {
 		else {
 			tgt = null;
 		}
+		return tgt;
+	}
+
+	public static string GetPath(Transform root, UnityEngine.Object target) {
+		Transform tgt = GetTransform(target);
 		
 		if(tgt) {
 			if(tgt == root) {
