@@ -658,6 +658,47 @@ public class AnimatorData : MonoBehaviour, AMITarget {
 		return newItems;
 	}
 
+	/// <summary>
+	/// attempt to generate the missing targets
+	/// </summary>
+	public void e_generateMissingTargets() {
+		if(mTargetMissing != null && mTargetMissing.Count > 0) {
+			foreach(string missingPath in mTargetMissing) {
+				AMUtil.CreateTarget(transform, missingPath);
+			}
+
+			//fill necessary components per track and key
+			foreach(AMTakeData take in _takes) {
+				foreach(AMTrack track in take.trackValues) {
+					Transform t = AMUtil.GetTarget(transform, track.targetPath);
+
+					string compName = track.GetRequiredComponent();
+					if(!string.IsNullOrEmpty(compName)) {
+						Component comp = t.gameObject.GetComponent(compName);
+						if(comp == null) {
+							t.gameObject.AddComponent(compName);
+						}
+					}
+
+					foreach(AMKey key in track.keys) {
+						compName = key.GetRequiredComponent();
+						if(!string.IsNullOrEmpty(compName)) {
+							Component comp = t.gameObject.GetComponent(compName);
+							if(comp == null) {
+								t.gameObject.AddComponent(compName);
+							}
+						}
+					}
+				}
+			}
+
+			mTargetMissing.Clear();
+
+			if(mCache != null)
+				mCache.Clear();
+		}
+	}
+
 	public int e_takeCount { get { return _takes.Count; } }
 	
 	public int e_prevTake { get { return _prevTake; } }
@@ -770,16 +811,21 @@ public class AnimatorData : MonoBehaviour, AMITarget {
 
                 a.trackValues.Add(dupTrack);
 
-				if(includeKeys) {
+				dupTrack.maintainTrack(this);
+
+				Object tgtObj = dupTrack.GetTarget(this);
+
+				//if there's no target, then we can't add the keys for events and properties
+				if(includeKeys && !(tgtObj == null && (dupTrack is AMPropertyTrack || dupTrack is AMEventTrack))) {
 					foreach(AMKey key in track.keys) {
 						AMKey dupKey = key.CreateClone(TargetGetDataHolder().gameObject);
 						if(dupKey) {
 							dupTrack.keys.Add(dupKey);
+							dupKey.maintainKey(this, tgtObj);
 							ret.Add(dupKey);
 						}
 					}
 
-					dupTrack.maintainTrack(this);
 					dupTrack.updateCache(this);
 				}
 

@@ -141,6 +141,11 @@ public class AnimatorDataInspector : Editor {
 					GUILayout.Label(missings[i]);
 				}
 			}
+
+			//fix missing targets
+			if(GUILayout.Button("Generate Missing Targets")) {
+				dat.e_generateMissingTargets();
+			}
 		}
 		        
         GUILayout.EndVertical();
@@ -157,7 +162,15 @@ public class AnimatorDataInspector : Editor {
 			}
 		}
 		else if(doInstantiate) {
-			dat.e_setMeta(null, true);
+			//warning if there are missing targets
+			bool doIt = true;
+			if(missings != null && missings.Length > 0)
+				doIt = UnityEditor.EditorUtility.DisplayDialog("Instantiate Animator Meta", "There are missing targets, some keys will be removed. Do you want to proceed?", "Yes", "No");
+			if(doIt) {
+				Undo.RecordObject(dat, "Instantiate Animator Meta");
+				dat.e_setMeta(null, true);
+				GUI.changed = true;
+			}
 		}
 
 		if(GUI.changed)

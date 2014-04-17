@@ -64,10 +64,14 @@ public class AMPropertyKey : AMKey {
 		if(itarget.TargetIsMeta()) {
 			component = null;
 		}
-		else if(!component && !string.IsNullOrEmpty(componentName)) {
+		else if(!component && !string.IsNullOrEmpty(componentName) && targetObj) {
 			component = ((GameObject)targetObj).GetComponent(componentName);
 		}
 
+	}
+
+	public override string GetRequiredComponent() {
+		return componentName;
 	}
 
     //union for single values

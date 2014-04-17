@@ -116,6 +116,9 @@ public class AMPropertyTrack : AMTrack {
         }
         return "Not Set";
     }
+	public override string GetRequiredComponent() {
+		return componentName;
+	}
     public string getMemberInfoTypeName() {
 		if(!string.IsNullOrEmpty(fieldName)) return "FieldInfo";
 		if(!string.IsNullOrEmpty(propertyName)) return "PropertyInfo";
@@ -446,7 +449,9 @@ public class AMPropertyTrack : AMTrack {
 			component = null;
 		}
 		else if(!component && !string.IsNullOrEmpty(componentName)) {
-			component = ((GameObject)GetTarget(itarget)).GetComponent(componentName);
+			GameObject go = GetTarget(itarget) as GameObject;
+			if(go)
+				component = go.GetComponent(componentName);
 		}
 	}
     // update cache (optimized)

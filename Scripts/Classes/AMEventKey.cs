@@ -45,6 +45,10 @@ public class AMEventKey : AMKey {
         return true;
     }
 
+	public override string GetRequiredComponent() {
+		return componentName;
+	}
+
 	public override void maintainKey(AMITarget itarget, UnityEngine.Object targetObj) {
 		if(string.IsNullOrEmpty(componentName)) {
 			if(component) {
@@ -55,7 +59,7 @@ public class AMEventKey : AMKey {
 		if(itarget.TargetIsMeta()) {
 			component = null;
 		}
-		else if(!component && !string.IsNullOrEmpty(componentName)) {
+		else if(!component && !string.IsNullOrEmpty(componentName) && targetObj) {
 			component = ((GameObject)targetObj).GetComponent(componentName);
 		}
 

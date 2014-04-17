@@ -20,6 +20,10 @@ public class AMAudioTrack : AMTrack {
         return "Audio";
     }
 
+	public override string GetRequiredComponent() {
+		return "AudioSource";
+	}
+
     // add a new key
     public AMKey addKey(AMITarget itarget, int _frame, AudioClip _clip, bool _loop) {
         foreach(AMAudioKey key in keys) {

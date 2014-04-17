@@ -1,8 +1,49 @@
 using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
 using System.Text;
 
 public struct AMUtil {
+	public static Transform[] CreateTarget(Transform root, string path) {
+		List<Transform> rets = new List<Transform>();
+		if(path[0] == '.') {
+
+		}
+		else {
+			string[] names;
+			int startInd;
+			Transform parent;
+			if(path[0] == '/') {
+				names = path.Substring(1).Split('/');
+				startInd = 1;
+				//get first parent
+				GameObject go = GameObject.Find(names[0]);
+				if(!go) {
+					go = new GameObject(names[0]);
+					rets.Add(go.transform);
+				}
+				parent = go.transform;
+			}
+			else {
+				names = path.Split('/');
+				startInd = 0;
+				parent = root;
+			}
+
+			for(int i = startInd; i < names.Length; i++) {
+				Transform t = parent.FindChild(names[i]);
+				if(!t) {
+					GameObject newGO = new GameObject(names[i]);
+					t = newGO.transform;
+					t.parent = parent;
+					rets.Add(t);
+				}
+				parent = t;
+			}
+		}
+		return rets.ToArray();
+	}
+
 	public static Transform GetTarget(Transform root, string path) {
 		Transform ret = null;
 		

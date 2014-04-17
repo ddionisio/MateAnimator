@@ -38,6 +38,10 @@ public class AMKey : MonoBehaviour {
         return null;
     }
 
+	public virtual string GetRequiredComponent() {
+		return "";
+	}
+
     /// <summary>
     /// Use sequence to insert callbacks, or some other crap, just don't insert the tweener you are returning!
 	/// target is set if required.

@@ -68,6 +68,10 @@ public abstract class AMTrack : MonoBehaviour {
 		return ret;
 	}
 
+	public virtual string GetRequiredComponent() {
+		return "";
+	}
+
 	public string GetTargetPath(AMITarget target) {
 		if(target.TargetIsMeta())
 			return _targetPath;
@@ -113,7 +117,8 @@ public abstract class AMTrack : MonoBehaviour {
 					Transform tgt = itarget.TargetGetCache(_targetPath);
 					if(tgt == null)
 						tgt = AMUtil.GetTarget(itarget.TargetGetRoot(), _targetPath);
-					obj = GetSerializeObject(tgt.gameObject);
+					if(tgt)
+						obj = GetSerializeObject(tgt.gameObject);
 					SetSerializeObject(obj);
 				}
 			}

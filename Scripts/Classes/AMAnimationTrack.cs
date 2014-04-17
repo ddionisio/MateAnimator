@@ -20,6 +20,10 @@ public class AMAnimationTrack : AMTrack {
 		return targetGO ? targetGO : obj;
 	}
 
+	public override string GetRequiredComponent() {
+		return "Animation";
+	}
+
     // add a new key
     public AMKey addKey(AMITarget itarget, int _frame, AnimationClip _clip, WrapMode _wrapMode) {
         foreach(AMAnimationKey key in keys) {
