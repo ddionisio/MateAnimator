@@ -17,6 +17,7 @@ public class AMOptionsFile : ScriptableObject {
 	public bool disableTimelineActions = false;
 	public bool disableTimelineActionsTooltip = false;
 	public bool showFramesForCollapsedTracks = true;
+    public float gizmo_size = 0.05f;
 	
 	// quick add combos
 	public List<List<int>> quickAdd_Combos = new List<List<int>>();
@@ -146,6 +147,7 @@ public class AMOptionsFile : ScriptableObject {
 	public static AMOptionsFile loadFile() {
         AMOptionsFile load_file = (AMOptionsFile)Resources.LoadAssetAtPath(filePath, typeof(AMOptionsFile));
 		if(load_file) {
+            AnimatorTimeline.e_gizmoSize = load_file.gizmo_size;
 			load_file.unflatten_quickAdd_Combos(true);
 			return load_file;
 		}

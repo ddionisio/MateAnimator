@@ -127,15 +127,24 @@ public class AMOptions : EditorWindow {
             GUILayout.Label("Gizmo size", GUILayout.Width(80f));
             GUILayout.FlexibleSpace();
             GUILayout.EndVertical();
-            if(aData.e_setGizmoSize(GUILayout.HorizontalSlider(aData.gizmo_size, 0f, 0.1f, GUILayout.ExpandWidth(true)))) {
+
+            float newGizmoSize = GUILayout.HorizontalSlider(oData.gizmo_size, 0f, 0.1f, GUILayout.ExpandWidth(true));
+            if(oData.gizmo_size != newGizmoSize) {
+                oData.gizmo_size = newGizmoSize;
+                AnimatorTimeline.e_gizmoSize = newGizmoSize;
                 GUIUtility.keyboardControl = 0;
-                EditorUtility.SetDirty(aData);
+                EditorUtility.SetDirty(oData);
             }
+
             GUILayout.BeginVertical(GUILayout.Height(26f), GUILayout.Width(75f));
             GUILayout.FlexibleSpace();
-            if(aData.e_setGizmoSize(EditorGUILayout.FloatField(aData.gizmo_size, GUI.skin.textField, GUILayout.Width(75f)))) {
-                EditorUtility.SetDirty(aData);
+            newGizmoSize = EditorGUILayout.FloatField(oData.gizmo_size, GUI.skin.textField, GUILayout.Width(75f));
+            if(oData.gizmo_size != newGizmoSize) {
+                oData.gizmo_size = newGizmoSize;
+                AnimatorTimeline.e_gizmoSize = newGizmoSize;
+                EditorUtility.SetDirty(oData);
             }
+
             GUILayout.FlexibleSpace();
             GUILayout.EndVertical();
             GUILayout.EndHorizontal();

@@ -135,19 +135,13 @@ public class AnimatorData : MonoBehaviour, AMITarget {
 			else return (float)take.numFrames / (float)take.frameRate;
         }
     }
-
-    [System.NonSerialized]
-    public bool isAnimatorOpen = false;
+        
     [System.NonSerialized]
     public bool isInspectorOpen = false;
-    [System.NonSerialized]
-    public bool inPlayMode = false;
     [HideInInspector]
     public float zoom = 0.4f;
     [HideInInspector]
     public int codeLanguage = 0; 	// 0 = C#, 1 = Javascript
-    [HideInInspector]
-    public float gizmo_size = 0.05f;
     [HideInInspector]
     public float width_track = 150f;
     
@@ -165,9 +159,7 @@ public class AnimatorData : MonoBehaviour, AMITarget {
     //private bool isLooping = false;
     //private float takeTime = 0f;
     private bool mStarted = false;
-
-    private int _prevTake = -1;
-
+        
     private float mAnimScale = 1.0f; //NOTE: this is reset during disable
 
 	private Dictionary<string, Transform> mCache;
@@ -422,14 +414,8 @@ public class AnimatorData : MonoBehaviour, AMITarget {
 				ntake.numLoop = take.numLoop;
 				ntake.loopMode = take.loopMode;
 				ntake.loopBackToFrame = take.loopBackToFrame;
-				ntake.selectedTrack = take.selectedTrack;
-				ntake.selectedFrame = take.selectedFrame;
-				ntake.selectedGroup = take.selectedGroup;
 				ntake.trackValues = new List<AMTrack>(take.trackValues.Count);
 				foreach(AMTrack track in take.trackValues) ntake.trackValues.Add(track);
-				ntake.contextSelection = new List<int>(take.contextSelection);
-				ntake.ghostSelection = new List<int>(take.ghostSelection);
-				ntake.contextSelectionTracks = new List<int>(take.contextSelectionTracks);
 				ntake.track_count = take.track_count;
 				ntake.group_count = take.group_count;
 				ntake.rootGroup = take.rootGroup != null ? take.rootGroup.duplicate() : null;
@@ -463,7 +449,8 @@ public class AnimatorData : MonoBehaviour, AMITarget {
 			takeCompleteCallback(this, aTake);
 	}
 
-	public Transform TargetGetRoot() {
+    #region AMITarget interface
+    public Transform TargetGetRoot() {
 		return transform;
 	}
 
@@ -543,14 +530,20 @@ public class AnimatorData : MonoBehaviour, AMITarget {
 #endif
 	}
 
-	//Editor stuff
+    #endregion
+
+    #region Editor stuff
 #if UNITY_EDITOR
     [System.NonSerialized]
+    public bool e_isAnimatorOpen = false;
+    [System.NonSerialized]
     public int e_currentTake;
+    [System.NonSerialized]
+    public int e_prevTake = -1;
 
 	void OnDrawGizmos() {
-		if(!isAnimatorOpen) return;
-		_takes[e_currentTake].drawGizmos(this, gizmo_size, inPlayMode);
+		if(!e_isAnimatorOpen) return;
+		_takes[e_currentTake].drawGizmos(this, AnimatorTimeline.e_gizmoSize, Application.isPlaying);
 	}
 
 	public string[] e_getMissingTargets() {
@@ -714,8 +707,6 @@ public class AnimatorData : MonoBehaviour, AMITarget {
 
 	public int e_takeCount { get { return _takes.Count; } }
 	
-	public int e_prevTake { get { return _prevTake; } }
-
 	public int e_getPlayOnStartIndex() {
 		return playOnStartIndex;
 	}
@@ -740,7 +731,7 @@ public class AnimatorData : MonoBehaviour, AMITarget {
 		
 	public bool e_setCurrentTakeValue(int _take) {
 		if(_take != e_currentTake) {
-			_prevTake = e_currentTake;
+			e_prevTake = e_currentTake;
 			
 			// reset preview to frame 1
 			e_getCurrentTake().previewFrame(this, 1f);
@@ -759,7 +750,7 @@ public class AnimatorData : MonoBehaviour, AMITarget {
 
     public AMTakeData e_getPreviousTake() {
 		List<AMTakeData> _ts = _takes;
-		return _ts != null && _prevTake >= 0 && _prevTake < _ts.Count ? _ts[_prevTake] : null;
+        return _ts != null && e_prevTake >= 0 && e_prevTake < _ts.Count ? _ts[e_prevTake] : null;
     }
 
     public AMTakeData e_addTake() {
@@ -792,9 +783,6 @@ public class AnimatorData : MonoBehaviour, AMITarget {
         a.frameRate = dupTake.frameRate;
         a.numFrames = dupTake.numFrames;
         a.startFrame = dupTake.startFrame;
-        a.selectedFrame = 1;
-        a.selectedTrack = dupTake.selectedTrack;
-        a.selectedGroup = dupTake.selectedGroup;
         a.playbackSpeedIndex = 2;
         //a.lsTracks = new List<AMTrack>();
         //a.dictTracks = new Dictionary<int,AMTrack>();
@@ -845,9 +833,6 @@ public class AnimatorData : MonoBehaviour, AMITarget {
                 ret.Add(dupTrack);
             }
         }
-        a.contextSelection = new List<int>();
-        a.ghostSelection = new List<int>();
-        a.contextSelectionTracks = new List<int>();
 
 		List<AMTakeData> _ts = _takes;
 		_ts.Add(a);
@@ -880,7 +865,7 @@ public class AnimatorData : MonoBehaviour, AMITarget {
 
     public void e_selectTake(int index) {
         if(e_currentTake != index)
-            _prevTake = e_currentTake;
+            e_prevTake = e_currentTake;
 
         e_currentTake = index;
     }
@@ -929,18 +914,6 @@ public class AnimatorData : MonoBehaviour, AMITarget {
         }
         return false;
     }
-    public bool e_setGizmoSize(float gizmo_size) {
-        if(this.gizmo_size != gizmo_size) {
-            this.gizmo_size = gizmo_size;
-            // update target gizmo size
-            foreach(Object target in GameObject.FindObjectsOfType(typeof(AMTarget))) {
-                if((target as AMTarget).gizmo_size != gizmo_size) (target as AMTarget).gizmo_size = gizmo_size;
-            }
-            return true;
-        }
-        return false;
-    }
-
     /*public bool setShowWarningForLostReferences(bool showWarningForLostReferences) {
         if(this.showWarningForLostReferences != showWarningForLostReferences) {
             this.showWarningForLostReferences = showWarningForLostReferences;
@@ -987,4 +960,5 @@ public class AnimatorData : MonoBehaviour, AMITarget {
         return lsFlagToKeep;
     }
 #endif
+#endregion
 }

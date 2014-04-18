@@ -95,8 +95,12 @@ public class AnimatorTimeline {
 	}
 	#endregion
 
-	#region JSON parser
-	public static void ParseJSON(string textAssetName) {
+    #region Editor
+    public static float e_gizmoSize = 0.05f;
+    #endregion
+
+    #region JSON parser
+    public static void ParseJSON(string textAssetName) {
 		TextAsset t = (TextAsset) Resources.Load(textAssetName);
 		if(!t) Debug.LogError("Animator: Could not find TextAsset '"+textAssetName+".txt', make sure it's placed in a Resources folder!");
 		ParseJSON(t);
