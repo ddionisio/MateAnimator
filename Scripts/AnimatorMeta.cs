@@ -7,9 +7,5 @@ public class AnimatorMeta : MonoBehaviour {
 	[SerializeField]
 	List<AMTakeData> takeData = new List<AMTakeData>();
 
-#if UNITY_EDITOR
-	public List<AMTakeData> e_getTakes() {
-		return takeData;
-	}
-#endif
+    public List<AMTakeData> takes { get { return takeData; } }
 }

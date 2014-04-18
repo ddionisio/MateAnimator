@@ -86,13 +86,14 @@ public class AMEventKey : AMKey {
 	}
 
 	//set target to a valid ref. for meta
-	public bool setMethodInfo(GameObject target, Component component, MethodInfo methodInfo, ParameterInfo[] cachedParameterInfos, bool restoreValues) {
+	public bool setMethodInfo(GameObject target, Component component, bool setComponent, MethodInfo methodInfo, ParameterInfo[] cachedParameterInfos, bool restoreValues) {
 		MethodInfo _methodInfo = getMethodInfo(target);
 
         // if different component or methodinfo
-		if((_methodInfo != methodInfo) || (this.component != component) || !isMatch(cachedParameterInfos)) {
-            this.component = component;
-			this.componentName = component.GetType().Name;
+        string _componentName = component.GetType().Name;
+        if((_methodInfo != methodInfo) || (this.componentName != _componentName) || !isMatch(cachedParameterInfos)) {
+            this.component = setComponent ? component : null;
+            this.componentName = _componentName;
 			methodName = methodInfo.Name;
 			cachedMethodInfo = methodInfo;
             //this.parameters = new object[numParameters];

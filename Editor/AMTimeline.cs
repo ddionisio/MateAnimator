@@ -737,13 +737,6 @@ public class AMTimeline : EditorWindow {
             if(!aData) //still no data
                 return;
         }
-        /*else {
-            if(!aData.CheckNulls()) {
-                aData = null;
-                Repaint();
-                return;
-            }
-        }*/
 
         if(aData.e_getCurrentTake() == null) { Repaint(); return; } //????
 
@@ -961,13 +954,13 @@ public class AMTimeline : EditorWindow {
         }
         else {
             // show popup
-            if(aData.e_setCurrentTakeValue(EditorGUI.Popup(rectTakePopup, aData.currentTake, aData.e_getTakeNames(), EditorStyles.toolbarPopup))) {
+            if(aData.e_setCurrentTakeValue(EditorGUI.Popup(rectTakePopup, aData.e_currentTake, aData.e_getTakeNames(), EditorStyles.toolbarPopup))) {
                 // take changed
 
                 // reset code view dictionaries
                 AMCodeView.resetTrackDictionary();
                 // if not creating new take
-                if(aData.currentTake < aData._takes.Count) {
+                if(aData.e_currentTake < aData._takes.Count) {
                     // select current frame
                     timelineSelectFrame(aData.e_getCurrentTake().selectedTrack, aData.e_getCurrentTake().selectedFrame);
                     // save data
@@ -1020,8 +1013,8 @@ public class AMTimeline : EditorWindow {
                         }
                     }
 
-                    if(aData.currentTake > 0)
-                        aData.currentTake--;
+                    if(aData.e_currentTake > 0)
+                        aData.e_currentTake--;
 
                     aData._takes.Remove(take);
 
@@ -1041,28 +1034,28 @@ public class AMTimeline : EditorWindow {
         if(GUI.color.a < 1f) GUI.color = new Color(GUI.color.r, GUI.color.g, GUI.color.b, 1f);
         #endregion
         #region Create/Duplicate Take
-        if(aData.currentTake == aData._takes.Count) {
+        if(aData.e_currentTake == aData._takes.Count) {
             isRenamingTake = false;
             cancelTextEditting();
 
-            aData.currentTake = aData._takes.Count - 1; // decrement for undo
+            aData.e_currentTake = aData._takes.Count - 1; // decrement for undo
 
             string label = "New Take";
 
             registerTakesUndo(aData, label, false);
 
-            aData.currentTake = aData._takes.Count;
+            aData.e_currentTake = aData._takes.Count;
 
             aData.e_addTake();
 
             // save data
             setDirtyTakes(aData);
         }
-        else if(aData.currentTake == aData._takes.Count + 1) {
+        else if(aData.e_currentTake == aData._takes.Count + 1) {
             isRenamingTake = false;
             cancelTextEditting();
 
-            aData.currentTake = aData._takes.Count - 1; // decrement for undo
+            aData.e_currentTake = aData._takes.Count - 1; // decrement for undo
 
             string label = "New Duplicate Take";
 
@@ -1079,7 +1072,7 @@ public class AMTimeline : EditorWindow {
                 aData.e_addTake();
             }
 
-            aData.currentTake = aData._takes.Count - 1;
+            aData.e_currentTake = aData._takes.Count - 1;
 
             // save data
             setDirtyTakes(aData);
@@ -1341,7 +1334,7 @@ public class AMTimeline : EditorWindow {
         #endregion
         #region playback speed popup
         Rect rectPopupPlaybackSpeed = new Rect(rectSkipForward.x + rectSkipForward.width + margin, height_indicator_footer / 2f - 15f / 2f, width_playback_speed, rectBtnTogglePlay.height);
-        aData._takes[aData.currentTake].playbackSpeedIndex = EditorGUI.Popup(rectPopupPlaybackSpeed, aData._takes[aData.currentTake].playbackSpeedIndex, playbackSpeed);
+        aData._takes[aData.e_currentTake].playbackSpeedIndex = EditorGUI.Popup(rectPopupPlaybackSpeed, aData._takes[aData.e_currentTake].playbackSpeedIndex, playbackSpeed);
         #endregion
         #region scrub controls
         GUIStyle styleScrubControl = new GUIStyle(GUI.skin.label);
@@ -3292,7 +3285,7 @@ public class AMTimeline : EditorWindow {
             if((indexMethodInfo != curIndexMethod && indexMethodInfo < cachedMethodInfo.Count) || !paramMatched) {
                 // process change
                 // update cache when modifying varaibles
-                if(eKey.setMethodInfo(tgtGo, cachedMethodInfoComponents[indexMethodInfo], cachedMethodInfo[indexMethodInfo], cachedParameterInfos, !paramMatched)) {
+                if(eKey.setMethodInfo(tgtGo, cachedMethodInfoComponents[indexMethodInfo], !aData.TargetIsMeta(), cachedMethodInfo[indexMethodInfo], cachedParameterInfos, !paramMatched)) {
                     AMCodeView.refresh();
                     // save data
                     EditorUtility.SetDirty(eKey);
@@ -3682,7 +3675,7 @@ public class AMTimeline : EditorWindow {
                     changeGO = false;
                 }
                 if(changeGO) {
-                    Undo.RecordObject(amTrack, "Set GameObject");
+                    Undo.RegisterCompleteObjectUndo(amTrack, "Set GameObject");
 
                     if(!componentsMatch) {
                         if(amTrack is AMPropertyTrack) { //remove all keys if required component is missing

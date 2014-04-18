@@ -145,8 +145,6 @@ public class AnimatorData : MonoBehaviour, AMITarget {
     [HideInInspector]
     public float zoom = 0.4f;
     [HideInInspector]
-    public int currentTake;
-    [HideInInspector]
     public int codeLanguage = 0; 	// 0 = C#, 1 = Javascript
     [HideInInspector]
     public float gizmo_size = 0.05f;
@@ -192,7 +190,7 @@ public class AnimatorData : MonoBehaviour, AMITarget {
     }
 
 	public List<AMTakeData> _takes {
-		get { return meta ? meta.e_getTakes() : takeData; }
+        get { return meta ? meta.takes : takeData; }
 	}
 
     public void PlayDefault(bool loop = false) {
@@ -547,9 +545,12 @@ public class AnimatorData : MonoBehaviour, AMITarget {
 
 	//Editor stuff
 #if UNITY_EDITOR
+    [System.NonSerialized]
+    public int e_currentTake;
+
 	void OnDrawGizmos() {
 		if(!isAnimatorOpen) return;
-		_takes[currentTake].drawGizmos(this, gizmo_size, inPlayMode);
+		_takes[e_currentTake].drawGizmos(this, gizmo_size, inPlayMode);
 	}
 
 	public string[] e_getMissingTargets() {
@@ -589,7 +590,7 @@ public class AnimatorData : MonoBehaviour, AMITarget {
 				}
 			}
 			else
-				return playOnStartIndex == currentTake;
+				return playOnStartIndex == e_currentTake;
 
 			return false;
 		}
@@ -613,7 +614,7 @@ public class AnimatorData : MonoBehaviour, AMITarget {
 
 			if(meta) {
 				if(copyTakes) {
-					meta.e_getTakes().Clear();
+                    meta.takes.Clear();
 
 					foreach(AMTakeData take in prevTakes) {
 						newItems.AddRange(e_duplicateTake(take, true));
@@ -738,13 +739,13 @@ public class AnimatorData : MonoBehaviour, AMITarget {
 	}
 		
 	public bool e_setCurrentTakeValue(int _take) {
-		if(_take != currentTake) {
-			_prevTake = currentTake;
+		if(_take != e_currentTake) {
+			_prevTake = e_currentTake;
 			
 			// reset preview to frame 1
 			e_getCurrentTake().previewFrame(this, 1f);
 			// change take
-			currentTake = _take;
+			e_currentTake = _take;
 			return true;
 		}
 		return false;
@@ -752,8 +753,8 @@ public class AnimatorData : MonoBehaviour, AMITarget {
 	
 	public AMTakeData e_getCurrentTake() {
 		List<AMTakeData> _ts = _takes;
-		if(_ts == null || currentTake >= _ts.Count || currentTake < 0) return null;
-		return _ts[currentTake];
+		if(_ts == null || e_currentTake >= _ts.Count || e_currentTake < 0) return null;
+		return _ts[e_currentTake];
     }
 
     public AMTakeData e_getPreviousTake() {
@@ -862,7 +863,7 @@ public class AnimatorData : MonoBehaviour, AMITarget {
 		//TODO: destroy tracks, keys
 		//_takes[index].destroy();
 		_takes.RemoveAt(index);
-        if((currentTake >= index) && (currentTake > 0)) currentTake--;
+        if((e_currentTake >= index) && (e_currentTake > 0)) e_currentTake--;
 
 		if(!string.IsNullOrEmpty(prevDefaultTakeName)) {
 			string newPlayOnStart = "";
@@ -878,10 +879,10 @@ public class AnimatorData : MonoBehaviour, AMITarget {
     }
 
     public void e_selectTake(int index) {
-        if(currentTake != index)
-            _prevTake = currentTake;
+        if(e_currentTake != index)
+            _prevTake = e_currentTake;
 
-        currentTake = index;
+        e_currentTake = index;
     }
 
     public void e_selectTake(string name) {

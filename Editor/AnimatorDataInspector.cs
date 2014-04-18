@@ -29,7 +29,7 @@ public class AnimatorDataInspector : Editor {
 
         //meta
         AnimatorMeta curMeta = dat.e_meta;
-        AnimatorMeta newMeta = EditorGUILayout.ObjectField("Meta", curMeta, typeof(AnimatorMeta), false) as AnimatorMeta;
+        AnimatorMeta newMeta = EditorGUILayout.ObjectField(new GUIContent("Meta", "Use data from the reference AnimatorMeta. Note: All modifications to the animation will be saved to the Meta."), curMeta, typeof(AnimatorMeta), false) as AnimatorMeta;
 
         if(curMeta != newMeta) {
             bool doIt = true;
