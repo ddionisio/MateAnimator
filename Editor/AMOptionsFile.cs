@@ -6,6 +6,7 @@ using System.IO;
 
 [System.Serializable]
 public class AMOptionsFile : ScriptableObject {
+
 	
 	// options
 	public string skin = "am_skin_dark";
@@ -21,12 +22,9 @@ public class AMOptionsFile : ScriptableObject {
 	
 	// quick add combos
 	public List<List<int>> quickAdd_Combos = new List<List<int>>();
-	public List<int> quickAdd_Combos_Flattened;
-	
+
+	private List<int> quickAdd_Combos_Flattened;
 	private bool unflattened = false;
-	
-	// foldout
-	public List<bool> foldout = new List<bool>();
 	
 	public bool setSkin(string _skin) {
 		if(skin != _skin) {
@@ -97,12 +95,6 @@ public class AMOptionsFile : ScriptableObject {
 			return true;
 		}
 		return false;
-	}
-	
-	public void checkForFoldout(int index) {
-		while(foldout.Count-1 < index) {
-			foldout.Add(true);	
-		}
 	}
 	
 	#region quickadd combinations

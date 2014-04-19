@@ -52,7 +52,7 @@ public class AMTakeEdit {
     }
 
     public AMTrack getSelectedTrack(AMTakeData take) {
-        return take.getTrack(selectedTrack);
+        return selectedTrack == -1 ? null : take.getTrack(selectedTrack);
     }
 
     public void addGroup(AMTakeData take) {

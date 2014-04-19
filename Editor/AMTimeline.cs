@@ -840,6 +840,37 @@ public class AMTimeline : EditorWindow {
             GUIUtility.keyboardControl = 0;
             GUIUtility.ExitGUI();
         }
+        //cut/copy/paste
+        else if(e.type == EventType.ValidateCommand) {
+            bool done = false;
+
+            if(e.commandName == "Copy") {
+                //are there keys?
+                if(TakeEditCurrent().contextSelectionTracks.Count > 1 || TakeEditCurrent().contextSelectionHasKeys(aData.e_getCurrentTake())) {
+                    contextCopyFrames();
+                    done = true;
+                }
+            }
+            else if(e.commandName == "Paste") {
+                if(canPaste()) {
+                    contextMenuFrame = TakeEditCurrent().selectedFrame;
+                    contextPasteKeys();
+                    done = true;
+                }
+            }
+            else if(e.commandName == "Cut") {
+                if(TakeEditCurrent().contextSelectionTracks.Count > 1 || TakeEditCurrent().contextSelectionHasKeys(aData.e_getCurrentTake())) {
+                    contextCutKeys();
+                    done = true;
+                }
+            }
+
+            if(done) {
+                e.Use();
+                return;
+            }
+        }
+
         // check if control or shift are down
         isControlDown = e.control || e.command;
         isShiftDown = e.shift;
@@ -5100,15 +5131,11 @@ public class AMTimeline : EditorWindow {
         }
         return true;
     }
-    void buildContextMenu(int frame) {
-        contextMenuFrame = frame;
-        contextMenu = new GenericMenu();
-        bool selectionHasKeys = TakeEditCurrent().contextSelectionTracks.Count > 1 || TakeEditCurrent().contextSelectionHasKeys(aData.e_getCurrentTake());
-        bool copyBufferNotEmpty = (contextSelectionKeysBuffer.Count > 0);
+    bool canPaste() {
         bool canPaste = false;
         bool singleTrack = contextSelectionKeysBuffer.Count == 1;
         AMTrack selectedTrack = TakeEditCurrent().getSelectedTrack(aData.e_getCurrentTake());
-        if(copyBufferNotEmpty) {
+        if(contextSelectionKeysBuffer.Count > 0) {
             if(singleTrack) {
                 // if origin is property track
                 if(selectedTrack is AMPropertyTrack) {
@@ -5130,7 +5157,7 @@ public class AMTimeline : EditorWindow {
                         }
                     }
                 }
-                else {
+                else if(selectedTrack) {
                     if(selectedTrack.getTrackType() == contextSelectionTracksBuffer[0].getTrackType()) {
                         canPaste = true;
                     }
@@ -5141,19 +5168,27 @@ public class AMTimeline : EditorWindow {
                 if(contextSelectionTracksBuffer.Contains(selectedTrack)) canPaste = true;
             }
         }
+        return canPaste;
+    }
+    void buildContextMenu(int frame) {
+        contextMenuFrame = frame;
+        contextMenu = new GenericMenu();
+        bool selectionHasKeys = TakeEditCurrent().contextSelectionTracks.Count > 1 || TakeEditCurrent().contextSelectionHasKeys(aData.e_getCurrentTake());
+        bool _canPaste = canPaste();
+        
         contextMenu.AddItem(new GUIContent("Insert Keyframe"), false, invokeContextMenuItem, 0);
         contextMenu.AddSeparator("");
         if(selectionHasKeys) {
             contextMenu.AddItem(new GUIContent("Cut Frames"), false, invokeContextMenuItem, 1);
             contextMenu.AddItem(new GUIContent("Copy Frames"), false, invokeContextMenuItem, 2);
-            if(canPaste) contextMenu.AddItem(new GUIContent("Paste Frames"), false, invokeContextMenuItem, 3);
+            if(_canPaste) contextMenu.AddItem(new GUIContent("Paste Frames"), false, invokeContextMenuItem, 3);
             else contextMenu.AddDisabledItem(new GUIContent("Paste Frames"));
             contextMenu.AddItem(new GUIContent("Clear Frames"), false, invokeContextMenuItem, 4);
         }
         else {
             contextMenu.AddDisabledItem(new GUIContent("Cut Frames"));
             contextMenu.AddDisabledItem(new GUIContent("Copy Frames"));
-            if(canPaste) contextMenu.AddItem(new GUIContent("Paste Frames"), false, invokeContextMenuItem, 3);
+            if(_canPaste) contextMenu.AddItem(new GUIContent("Paste Frames"), false, invokeContextMenuItem, 3);
             else contextMenu.AddDisabledItem(new GUIContent("Paste Frames"));
             contextMenu.AddDisabledItem(new GUIContent("Clear Frames"));
         }

@@ -21,7 +21,7 @@ public class AMOptions : EditorWindow {
         }
     }
 
-    string version = "1.53";
+    string version = "2.00";
     Vector2 scrollView = new Vector2(0f, 0f);
     private int exportTakeIndex = 0;
     private bool exportAllTakes = false;
@@ -395,8 +395,8 @@ public class AMOptions : EditorWindow {
         else if(tabIndex == (int)tabType.About) {
             GUILayout.Space(3f);
 
-            string message = "Animator v" + version + ", Created by Abdulla Ameen (c) 2012.\nAMTween is derived from Bob Berkebile's iTween which falls under the MIT license.\n\nPlease have a look at the documentation if you need help, or e-mail animatorunity@gmail.com for further assistance.";
-            message += "\n\nAdditional code contributions by:\nQuick Fingers, Eric Haines";
+            string message = "Animator v" + version + ", Originally by Abdulla Ameen (c) 2012.  Modified by David Dionisio under the Creative Commons Attribution-NonCommercial 3.0 Unported License.\n\nPlease have a look at the documentation if you need help, or e-mail ddionisio@renegadeware.com for further assistance.";
+            message += "\n\nHOTween by Daniele Giardini\n\nAdditional code contributions by:\nQuick Fingers, Eric Haines";
             GUIStyle styleInfo = new GUIStyle(GUI.skin.label);
             GUILayout.BeginHorizontal();
             GUILayout.Space(5);
