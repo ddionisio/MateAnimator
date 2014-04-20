@@ -18,11 +18,10 @@ public class AMRotationTrack : AMTrack {
 		return targetGO ? targetGO.transform : _obj;
 	}
 
-	public new void SetTarget(AMITarget target, UnityEngine.Object item) {
+	public new void SetTarget(AMITarget target, Transform item) {
 		base.SetTarget(target, item);
-
-		Transform _t = item as Transform;
-		if(_t != null && keys.Count <= 0) cachedInitialRotation = _isLocal ? _t.localRotation : _t.rotation;
+        isLocal = true;
+        if(item != null && keys.Count <= 0) cachedInitialRotation = _isLocal ? item.localRotation : item.rotation;
 	}
 
     public override int version { get { return 2; } }
@@ -88,35 +87,26 @@ public class AMRotationTrack : AMTrack {
         return "Local Rotation";
     }
     // add a new key
-    public AMKey addKey(AMITarget target, int _frame, Quaternion _rotation, OnKey addCallback) {
+    public void addKey(AMITarget target, OnAddKey addCall, int _frame, Quaternion _rotation) {
         foreach(AMRotationKey key in keys) {
             // if key exists on frame, update key
             if(key.frame == _frame) {
-                if(addCallback != null)
-                    addCallback(this, null);
-
                 key.rotation = _rotation;
                 // update cache
                 updateCache(target);
-                return null;
+                return;
             }
         }
-        AMRotationKey a = gameObject.AddComponent<AMRotationKey>();
-        a.enabled = false;
+        AMRotationKey a = addCall(gameObject, typeof(AMRotationKey)) as AMRotationKey;
         a.frame = _frame;
         a.rotation = _rotation;
         // set default ease type to linear
         a.easeType = (int)EaseType.Linear;
 
-        if(addCallback != null)
-            addCallback(this, a);
-
         // add a new key
         keys.Add(a);
         // update cache
 		updateCache(target);
-
-        return a;
     }
 
     // update cache (optimized)
@@ -194,14 +184,14 @@ public class AMRotationTrack : AMTrack {
         }
     }
     // returns true if autoKey successful, sets output key
-    public bool autoKey(AMITarget itarget, Transform aObj, int frame, OnKey addCallback) {
+    public bool autoKey(AMITarget itarget, OnAddKey addCall, Transform aObj, int frame) {
 		Transform t = GetTarget(itarget) as Transform;
         if(!t || t != aObj) { return false; }
 		Quaternion r = GetRotation(t);
         if(keys.Count <= 0) {
             if(r != cachedInitialRotation) {
                 // if updated position, addkey
-                addKey(itarget, frame, r, addCallback);
+                addKey(itarget, addCall, frame, r);
                 return true;
             }
 
@@ -210,7 +200,7 @@ public class AMRotationTrack : AMTrack {
         Quaternion oldRot = getRotationAtFrame((float)frame);
         if(r != oldRot) {
             // if updated position, addkey
-			addKey(itarget, frame, r, addCallback);
+            addKey(itarget, addCall, frame, r);
             return true;
         }
 
@@ -290,13 +280,10 @@ public class AMRotationTrack : AMTrack {
         return new List<GameObject>();
     }
 
-	protected override AMTrack doDuplicate(GameObject holder) {
-        AMRotationTrack ntrack = holder.AddComponent<AMRotationTrack>();
-        ntrack.enabled = false;
+    protected override void DoCopy(AMTrack track) {
+        AMRotationTrack ntrack = track as AMRotationTrack;
         ntrack._obj = _obj;
         ntrack._isLocal = _isLocal;
         ntrack.cachedInitialRotation = cachedInitialRotation;
-
-        return ntrack;
     }
 }

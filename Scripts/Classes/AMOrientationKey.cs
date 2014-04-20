@@ -180,17 +180,15 @@ public class AMOrientationKey : AMKey {
 			endTargetPath = "";
 		}
 	}
-        
-    public override AMKey CreateClone(GameObject go) {
 
-		AMOrientationKey a = go ? go.AddComponent<AMOrientationKey>() : gameObject.AddComponent<AMOrientationKey>();
+    public override void CopyTo(AMKey key) {
+		AMOrientationKey a = key as AMOrientationKey;
         a.enabled = false;
         a.frame = frame;
         a.target = target;
 		a.targetPath = targetPath;
         a.easeType = easeType;
         a.customEase = new List<float>(customEase);
-        return a;
     }
 
 	public override int getNumberOfFrames() {

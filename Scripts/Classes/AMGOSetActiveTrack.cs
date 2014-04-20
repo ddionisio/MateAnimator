@@ -77,23 +77,22 @@ public class AMGOSetActiveTrack : AMTrack {
     }
 
     // add a new key
-	public AMKey addKey(AMITarget target, int _frame) {
+    public void addKey(AMITarget target, OnAddKey addCall, int _frame) {
         foreach(AMGOSetActiveKey key in keys) {
             // if key exists on frame, update
             if(key.frame == _frame) {
                 key.setActive = true;
 				updateCache(target);
-                return null;
+                return;
             }
         }
-        AMGOSetActiveKey a = gameObject.AddComponent<AMGOSetActiveKey>();
+        AMGOSetActiveKey a = addCall(gameObject, typeof(AMGOSetActiveKey)) as AMGOSetActiveKey;
         a.frame = _frame;
         a.setActive = true;
         // add a new key
         keys.Add(a);
         // update cache
 		updateCache(target);
-        return a;
     }
 
 	public override AnimatorTimeline.JSONInit getJSONInit(AMITarget target) {
@@ -114,7 +113,7 @@ public class AMGOSetActiveTrack : AMTrack {
 		if(go) {
             for(int i = 0; i < oldReferences.Count; i++) {
 				if(oldReferences[i] == go) {
-					SetTarget(target, newReferences[i]);
+					SetTarget(target, newReferences[i].transform);
                     didUpdateObj = true;
                     break;
                 }
@@ -126,12 +125,9 @@ public class AMGOSetActiveTrack : AMTrack {
         return new List<GameObject>();
     }
 
-	protected override AMTrack doDuplicate(GameObject holder) {
-        AMGOSetActiveTrack ntrack = holder.AddComponent<AMGOSetActiveTrack>();
-        ntrack.enabled = false;
+    protected override void DoCopy(AMTrack track) {
+        AMGOSetActiveTrack ntrack = track as AMGOSetActiveTrack;
         ntrack.obj = obj;
         ntrack.startActive = startActive;
-
-        return ntrack;
     }
 }

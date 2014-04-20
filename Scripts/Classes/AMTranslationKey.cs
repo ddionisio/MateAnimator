@@ -22,17 +22,14 @@ public class AMTranslationKey : AMKey {
     public Vector3[] path;
 
     // copy properties from key
-    public override AMKey CreateClone(GameObject go) {
-
-		AMTranslationKey a = go ? go.AddComponent<AMTranslationKey>() : gameObject.AddComponent<AMTranslationKey>();
+    public override void CopyTo(AMKey key) {
+		AMTranslationKey a = key as AMTranslationKey;
         a.enabled = false;
         a.frame = frame;
         a.position = position;
         a.interp = interp;
         a.easeType = easeType;
         a.customEase = new List<float>(customEase);
-
-        return a;
     }
 
     #region action

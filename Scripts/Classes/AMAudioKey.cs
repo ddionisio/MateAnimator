@@ -11,15 +11,13 @@ public class AMAudioKey : AMKey {
     public bool loop;
 
     // copy properties from key
-    public override AMKey CreateClone(GameObject go) {
+    public override void CopyTo(AMKey key) {
 
-		AMAudioKey a = go ? go.AddComponent<AMAudioKey>() : gameObject.AddComponent<AMAudioKey>();
+		AMAudioKey a = key as AMAudioKey;
         a.enabled = false;
         a.frame = frame;
         a.audioClip = audioClip;
         a.loop = loop;
-
-        return a;
     }
 
     #region action

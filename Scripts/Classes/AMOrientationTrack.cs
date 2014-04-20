@@ -22,18 +22,17 @@ public class AMOrientationTrack : AMTrack {
         return "Orientation";
     }
     // add a new key
-    public AMKey addKey(AMITarget itarget, int _frame, Transform target) {
+    public void addKey(AMITarget itarget, OnAddKey addCall, int _frame, Transform target) {
         foreach(AMOrientationKey key in keys) {
             // if key exists on frame, update key
             if(key.frame == _frame) {
 				key.SetTarget(itarget, target);
                 // update cache
 				updateCache(itarget);
-                return null;
+                return;
             }
         }
-        AMOrientationKey a = gameObject.AddComponent<AMOrientationKey>();
-        a.enabled = false;
+        AMOrientationKey a = addCall(gameObject, typeof(AMOrientationKey)) as AMOrientationKey;
         a.frame = _frame;
 		a.SetTarget(itarget, target);
         // set default ease type to linear
@@ -42,7 +41,6 @@ public class AMOrientationTrack : AMTrack {
         keys.Add(a);
         // update cache
 		updateCache(itarget);
-        return a;
     }
 	public override void updateCache(AMITarget target) {
 		base.updateCache(target);
@@ -226,11 +224,7 @@ public class AMOrientationTrack : AMTrack {
         return new List<GameObject>();
     }
 
-	protected override AMTrack doDuplicate(GameObject holder) {
-        AMOrientationTrack ntrack = holder.AddComponent<AMOrientationTrack>();
-        ntrack.enabled = false;
-        ntrack.obj = obj;
-
-        return ntrack;
+    protected override void DoCopy(AMTrack track) {
+        (track as AMOrientationTrack).obj = obj;
     }
 }

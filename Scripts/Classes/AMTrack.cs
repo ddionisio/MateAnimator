@@ -6,6 +6,7 @@ using Holoville.HOTween;
 
 [AddComponentMenu("")]
 public abstract class AMTrack : MonoBehaviour {
+    public delegate AMKey OnAddKey(GameObject go, System.Type type);
     public delegate void OnKey(AMTrack track, AMKey key);
 
     public int id;
@@ -94,16 +95,16 @@ public abstract class AMTrack : MonoBehaviour {
 			return AMUtil.GetPath(target.TargetGetRoot(), GetSerializeObject(null));
 	}
 
-	public void SetTarget(AMITarget target, UnityEngine.Object item) {
+	public void SetTarget(AMITarget target, Transform item) {
 		if(target.TargetIsMeta()) {
 			target.TargetMissing(_targetPath, false);
 			_targetPath = AMUtil.GetPath(target.TargetGetRoot(), item);
-			target.TargetSetCache(_targetPath, AMUtil.GetTransform(item));
-			SetSerializeObject(null);
+			target.TargetSetCache(_targetPath, item);
+			SetSerializeObject(GetSerializeObject(item.gameObject));
 		}
 		else {
 			_targetPath = "";
-			SetSerializeObject(item);
+            SetSerializeObject(GetSerializeObject(item.gameObject));
 		}
 	}
 
@@ -398,18 +399,13 @@ public abstract class AMTrack : MonoBehaviour {
         return lsKeyRatios.ToArray();
     }
 
-	protected virtual AMTrack doDuplicate(GameObject holder) {
-        return null;
+    protected virtual void DoCopy(AMTrack track) {
     }
 
-	public AMTrack duplicate(GameObject holder) {
-		AMTrack ntrack = doDuplicate(holder);
-		if(ntrack != null) {
-            ntrack.id = id;
-            ntrack.name = name;
-			ntrack._targetPath = _targetPath;
-        }
-
-        return ntrack;
+	public void CopyTo(AMTrack track) {
+        track.id = id;
+        track.name = name;
+        track._targetPath = _targetPath;
+        DoCopy(track);
     }
 }

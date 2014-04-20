@@ -200,9 +200,8 @@ public class AMPropertyKey : AMKey {
     }
 
     // copy properties from key
-    public override AMKey CreateClone(GameObject go) {
-
-		AMPropertyKey a = go ? go.AddComponent<AMPropertyKey>() : gameObject.AddComponent<AMPropertyKey>();
+    public override void CopyTo(AMKey key) {
+		AMPropertyKey a = key as AMPropertyKey;
         a.enabled = false;
 		a.component = component;
 		a.componentName = componentName;
@@ -220,8 +219,6 @@ public class AMPropertyKey : AMKey {
         a.vect4 = vect4;
         a.easeType = easeType;
         a.customEase = new List<float>(customEase);
-
-        return a;
     }
 
 	//use in preview for specific refresh after setting the property with given obj

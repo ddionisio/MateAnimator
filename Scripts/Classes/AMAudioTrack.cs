@@ -25,7 +25,7 @@ public class AMAudioTrack : AMTrack {
 	}
 
     // add a new key
-    public AMKey addKey(AMITarget itarget, int _frame, AudioClip _clip, bool _loop) {
+    public void addKey(AMITarget itarget, OnAddKey addCall, int _frame, AudioClip _clip, bool _loop) {
         foreach(AMAudioKey key in keys) {
             // if key exists on frame, update key
             if(key.frame == _frame) {
@@ -33,11 +33,9 @@ public class AMAudioTrack : AMTrack {
                 key.loop = _loop;
                 // update cache
 				updateCache(itarget);
-                return null;
             }
         }
-        AMAudioKey a = gameObject.AddComponent<AMAudioKey>();
-        a.enabled = false;
+        AMAudioKey a = addCall(gameObject, typeof(AMAudioKey)) as AMAudioKey;
         a.frame = _frame;
         a.audioClip = _clip;
         a.loop = _loop;
@@ -45,7 +43,6 @@ public class AMAudioTrack : AMTrack {
         keys.Add(a);
         // update cache
 		updateCache(itarget);
-        return a;
     }
 
     // sample audio between frames
@@ -128,18 +125,14 @@ public class AMAudioTrack : AMTrack {
                     lsFlagToKeep.Add(oldReferences[i]);
                     return lsFlagToKeep;
                 }
-				SetTarget(target, _audioSource);
+                SetTarget(target, newReferences[i].transform);
                 break;
             }
         }
         return lsFlagToKeep;
     }
 
-    protected override AMTrack doDuplicate(GameObject holder) {
-        AMAudioTrack ntrack = holder.AddComponent<AMAudioTrack>();
-        ntrack.enabled = false;
-        ntrack.audioSource = audioSource;
-
-        return ntrack;
+    protected override void DoCopy(AMTrack track) {
+        (track as AMAudioTrack).audioSource = audioSource;
     }
 }

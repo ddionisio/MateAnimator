@@ -168,9 +168,9 @@ public class AMEventKey : AMKey {
         base.destroy();
     }
     // copy properties from key
-	public override AMKey CreateClone(GameObject go) {
+    public override void CopyTo(AMKey key) {
 
-		AMEventKey a = go ? go.AddComponent<AMEventKey>() : gameObject.AddComponent<AMEventKey>();
+		AMEventKey a = key as AMEventKey;
         a.enabled = false;
         a.frame = frame;
         a.component = component;
@@ -183,7 +183,6 @@ public class AMEventKey : AMKey {
         foreach(AMEventParameter e in parameters) {
             a.parameters.Add(e.CreateClone());
         }
-        return a;
     }
 
     public List<GameObject> getDependencies() {

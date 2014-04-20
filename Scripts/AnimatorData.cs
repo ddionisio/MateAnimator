@@ -144,10 +144,7 @@ public class AnimatorData : MonoBehaviour, AMITarget {
     public int codeLanguage = 0; 	// 0 = C#, 1 = Javascript
     [HideInInspector]
     public float width_track = 150f;
-    
-    [HideInInspector]
-    public bool autoKey = false;
-
+        
     [HideInInspector]
     [SerializeField]
     private GameObject _dataHolder;
@@ -535,6 +532,8 @@ public class AnimatorData : MonoBehaviour, AMITarget {
     #region Editor stuff
 #if UNITY_EDITOR
     [System.NonSerialized]
+    public bool e_autoKey = false;
+    [System.NonSerialized]
     public bool e_isAnimatorOpen = false;
     [System.NonSerialized]
     public int e_currentTake;
@@ -543,6 +542,8 @@ public class AnimatorData : MonoBehaviour, AMITarget {
 
 	void OnDrawGizmos() {
 		if(!e_isAnimatorOpen) return;
+        if(e_currentTake >= _takes.Count)
+            e_currentTake = _takes.Count - 1;
 		_takes[e_currentTake].drawGizmos(this, AnimatorTimeline.e_gizmoSize, Application.isPlaying);
 	}
 
@@ -596,9 +597,7 @@ public class AnimatorData : MonoBehaviour, AMITarget {
 	/// <summary>
 	/// if copyTakes is true, overrides all takes in newMeta (if null, then to our dataholder) with current data
 	/// </summary>
-	public List<UnityEngine.Object> e_setMeta(AnimatorMeta newMeta, bool copyTakes) {
-		List<UnityEngine.Object> newItems = new List<UnityEngine.Object>();
-
+	public void e_setMeta(AnimatorMeta newMeta, bool copyTakes) {
 		if(meta != newMeta) {
 			List<AMTakeData> prevTakes = _takes;
 			string prevPlayOnStartName = defaultTakeName;
@@ -609,9 +608,8 @@ public class AnimatorData : MonoBehaviour, AMITarget {
 				if(copyTakes) {
                     meta.takes.Clear();
 
-					foreach(AMTakeData take in prevTakes) {
-						newItems.AddRange(e_duplicateTake(take, true));
-					}
+					foreach(AMTakeData take in prevTakes)
+                        e_duplicateTake(take, true);
 				}
 
 				//clear out non-meta stuff
@@ -626,12 +624,11 @@ public class AnimatorData : MonoBehaviour, AMITarget {
 				_dataHolder = new GameObject("_animdata");
 				_dataHolder.transform.parent = transform;
 				_dataHolder.SetActive(false);
-				newItems.Add(_dataHolder);
+                UnityEditor.Undo.RegisterCreatedObjectUndo(_dataHolder, "Set Meta");
 
 				if(copyTakes) { //duplicate meta to takeData
-					foreach(AMTakeData take in prevTakes) {
-						newItems.AddRange(e_duplicateTake(take, true));
-					}
+					foreach(AMTakeData take in prevTakes)
+                        e_duplicateTake(take, true);
 				}
 			}
 
@@ -660,8 +657,6 @@ public class AnimatorData : MonoBehaviour, AMITarget {
 			if(mTargetMissing != null)
 				mTargetMissing.Clear();
 		}
-
-		return newItems;
 	}
 
 	/// <summary>
@@ -771,9 +766,7 @@ public class AnimatorData : MonoBehaviour, AMITarget {
     /// This will only duplicate the tracks and groups, includeKeys=true to also duplicate keys
     /// </summary>
     /// <param name="take"></param>
-    public List<UnityEngine.Object> e_duplicateTake(AMTakeData dupTake, bool includeKeys) {
-		List<UnityEngine.Object> ret = new List<UnityEngine.Object>();
-
+    public void e_duplicateTake(AMTakeData dupTake, bool includeKeys) {
 		AMTakeData a = new AMTakeData();
 
         a.name = dupTake.name;
@@ -808,8 +801,9 @@ public class AnimatorData : MonoBehaviour, AMITarget {
         if(dupTake.trackValues != null) {
             a.trackValues = new List<AMTrack>();
             foreach(AMTrack track in dupTake.trackValues) {
-                AMTrack dupTrack = track.duplicate(TargetGetDataHolder().gameObject);
-
+                AMTrack dupTrack = UnityEditor.Undo.AddComponent(TargetGetDataHolder().gameObject, track.GetType()) as AMTrack;
+                dupTrack.enabled = false;
+                track.CopyTo(dupTrack);
                 a.trackValues.Add(dupTrack);
 
 				dupTrack.maintainTrack(this);
@@ -819,26 +813,23 @@ public class AnimatorData : MonoBehaviour, AMITarget {
 				//if there's no target, then we can't add the keys for events and properties
 				if(includeKeys && !(tgtObj == null && (dupTrack is AMPropertyTrack || dupTrack is AMEventTrack))) {
 					foreach(AMKey key in track.keys) {
-						AMKey dupKey = key.CreateClone(TargetGetDataHolder().gameObject);
+                        AMKey dupKey = UnityEditor.Undo.AddComponent(TargetGetDataHolder().gameObject, key.GetType()) as AMKey;
 						if(dupKey) {
+                            key.CopyTo(dupKey);
+                            dupKey.enabled = false;
+                            dupKey.maintainKey(this, tgtObj);
 							dupTrack.keys.Add(dupKey);
-							dupKey.maintainKey(this, tgtObj);
-							ret.Add(dupKey);
 						}
 					}
 
 					dupTrack.updateCache(this);
 				}
-
-                ret.Add(dupTrack);
             }
         }
 
 		List<AMTakeData> _ts = _takes;
 		_ts.Add(a);
 		e_selectTake(_ts.Count - 1);
-
-        return ret;
     }
 
     public void e_deleteTake(int index) {

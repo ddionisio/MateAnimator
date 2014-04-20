@@ -12,16 +12,14 @@ public class AMAnimationKey : AMKey {
     public float crossfadeTime = 0.3f;
 
     // copy properties from key
-    public override AMKey CreateClone(GameObject go) {
+    public override void CopyTo(AMKey key) {
 
-		AMAnimationKey a = go ? go.AddComponent<AMAnimationKey>() : gameObject.AddComponent<AMAnimationKey>();
+        AMAnimationKey a = key as AMAnimationKey;
         a.enabled = false;
         a.frame = frame;
         a.wrapMode = wrapMode;
         a.amClip = amClip;
         a.crossfade = crossfade;
-
-        return a;
     }
 
     // get number of frames, -1 is infinite

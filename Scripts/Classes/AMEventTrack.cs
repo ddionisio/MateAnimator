@@ -22,20 +22,19 @@ public class AMEventTrack : AMTrack {
     }
 
     // add a new key
-    public AMKey addKey(AMITarget itarget, int _frame) {
+    public void addKey(AMITarget itarget, OnAddKey addCall, int _frame) {
         foreach(AMEventKey key in keys) {
             // if key exists on frame, do nothing
             if(key.frame == _frame) {
-                return null;
+                return;
             }
         }
-        AMEventKey a = gameObject.AddComponent<AMEventKey>();
+        AMEventKey a = addCall(gameObject, typeof(AMEventKey)) as AMEventKey;
         a.frame = _frame;
         // add a new key
         keys.Add(a);
         // update cache
 		updateCache(itarget);
-        return a;
     }
 	public bool hasSameEventsAs(AMITarget target, AMEventTrack _track) {
 		if(_track.GetTarget(target) == GetTarget(target))
@@ -76,7 +75,7 @@ public class AMEventTrack : AMTrack {
                             return lsFlagToKeep;
                         }
                     }
-					SetTarget(target, newReferences[i]);
+					SetTarget(target, newReferences[i].transform);
                     didUpdateObj = true;
                     break;
                 }
@@ -92,11 +91,7 @@ public class AMEventTrack : AMTrack {
         return new List<GameObject>();
     }
 
-	protected override AMTrack doDuplicate(GameObject holder) {
-        AMEventTrack ntrack = holder.AddComponent<AMEventTrack>();
-        ntrack.enabled = false;
-        ntrack.obj = obj;
-
-        return ntrack;
+    protected override void DoCopy(AMTrack track) {
+        (track as AMEventTrack).obj = obj;
     }
 }

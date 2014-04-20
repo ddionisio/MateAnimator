@@ -85,99 +85,12 @@ public class AMTakeData {
 	#region Tracks
 				
 	// add translation track
-	public AMTrack addTranslationTrack(int groupId, AMITarget target, GameObject obj) {
-		AMTranslationTrack a = target.TargetGetDataHolder().gameObject.AddComponent<AMTranslationTrack>();
-		a.enabled = false;
+	public void addTrack(int groupId, AMITarget target, Transform obj, AMTrack a) {
 		a.setName(getTrackCount());
 		a.id = getUniqueTrackID();
-		if(obj) a.SetTarget(target, obj.transform);
-		a.isLocal = true;
-        addTrack(groupId, a);
-		return a;
-	}
-	
-	// add rotation track
-    public AMTrack addRotationTrack(int groupId, AMITarget target, GameObject obj) {
-		AMRotationTrack a = target.TargetGetDataHolder().gameObject.AddComponent<AMRotationTrack>();
-		a.enabled = false;
-		a.setName(getTrackCount());
-		a.id = getUniqueTrackID();
-		if(obj) a.SetTarget(target, obj.transform);
-		a.isLocal = true;
-        addTrack(groupId, a);
-		return a;
-	}
-	
-	// add orientation track
-    public AMTrack addOrientationTrack(int groupId, AMITarget target, GameObject obj) {
-		AMOrientationTrack a = target.TargetGetDataHolder().gameObject.AddComponent<AMOrientationTrack>();
-		a.enabled = false;
-		a.setName(getTrackCount());
-		a.id = getUniqueTrackID();
-		if(obj) a.SetTarget(target, obj.transform);
-        addTrack(groupId, a);
-		return a;
-	}
-	
-	// add animation track
-    public AMTrack addAnimationTrack(int groupId, AMITarget target, GameObject obj) {
-		AMAnimationTrack a = target.TargetGetDataHolder().gameObject.AddComponent<AMAnimationTrack>();
-		a.enabled = false;
-		a.setName(getTrackCount());
-		a.id = getUniqueTrackID();
-		if(obj) {
-			Animation anm = obj.animation;
-			if(anm != null) a.SetTarget(target, obj);
-		}
-        addTrack(groupId, a);
-		return a;
-	}
-	
-	// add audio track
-    public AMTrack addAudioTrack(int groupId, AMITarget target, GameObject obj) {
-		AMAudioTrack a = target.TargetGetDataHolder().gameObject.AddComponent<AMAudioTrack>();
-		a.enabled = false;
-		a.setName(getTrackCount());
-		a.id = getUniqueTrackID();
-		if(obj) {
-			AudioSource aud = obj.audio;
-			if(aud != null) a.SetTarget(target, aud);
-		}
-        addTrack(groupId, a);
-		return a;
-	}
-	
-	// add property track
-    public AMTrack addPropertyTrack(int groupId, AMITarget target, GameObject obj) {
-		AMPropertyTrack a = target.TargetGetDataHolder().gameObject.AddComponent<AMPropertyTrack>();
-		a.enabled = false;
-		a.setName(getTrackCount());
-		a.id = getUniqueTrackID();
+        a.enabled = false;
 		if(obj) a.SetTarget(target, obj);
         addTrack(groupId, a);
-		return a;
-	}
-	
-	// add event track
-    public AMTrack addEventTrack(int groupId, AMITarget target, GameObject obj) {
-		AMEventTrack a = target.TargetGetDataHolder().gameObject.AddComponent<AMEventTrack>();
-		a.enabled = false;
-		a.setName(getTrackCount());
-		a.id = getUniqueTrackID();
-		if(obj) a.SetTarget(target, obj);
-        addTrack(groupId, a);
-		return a;
-	}
-	
-	// add go set active track
-    public AMTrack addGOSetActiveTrack(int groupId, AMITarget target, GameObject obj) {
-		AMGOSetActiveTrack a = target.TargetGetDataHolder().gameObject.AddComponent<AMGOSetActiveTrack>();
-		a.enabled = false;
-		a.setName(getTrackCount());
-		a.id = getUniqueTrackID();
-		if(obj) a.SetTarget(target, obj);
-        addTrack(groupId, a);
-		return a;
 	}
 	
 	public void deleteTrack(int trackid, bool deleteFromGroup = true) {
@@ -737,19 +650,19 @@ public class AMTakeData {
 	}
 	
 	// returns true if autokey successful
-	public bool autoKey(AMITarget itarget, Transform obj, int frame, AMTrack.OnKey addCallback) {
+	public bool autoKey(AMITarget itarget, AMTrack.OnAddKey addCall, Transform obj, int frame) {
 		if(!obj) return false;
 		bool didKey = false;
 		foreach(AMTrack track in trackValues) {
 			// for each track, if rotation or translation then autokey
 			if(track is AMTranslationTrack) {
-				if((track as AMTranslationTrack).autoKey(itarget, obj, frame, addCallback)) {
+                if((track as AMTranslationTrack).autoKey(itarget, addCall, obj, frame)) {
 					if(!didKey) didKey = true;
 					//track.updateCache();
 				}
 			}
 			else if(track is AMRotationTrack) {
-				if((track as AMRotationTrack).autoKey(itarget, obj, frame, addCallback)) {
+                if((track as AMRotationTrack).autoKey(itarget, addCall, obj, frame)) {
 					if(!didKey) didKey = true;
 				}
 			}

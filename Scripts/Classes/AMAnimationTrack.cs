@@ -25,7 +25,7 @@ public class AMAnimationTrack : AMTrack {
 	}
 
     // add a new key
-    public AMKey addKey(AMITarget itarget, int _frame, AnimationClip _clip, WrapMode _wrapMode) {
+    public void addKey(AMITarget itarget, OnAddKey addCall, int _frame, AnimationClip _clip, WrapMode _wrapMode) {
         foreach(AMAnimationKey key in keys) {
             // if key exists on frame, update key
             if(key.frame == _frame) {
@@ -33,11 +33,9 @@ public class AMAnimationTrack : AMTrack {
                 key.wrapMode = _wrapMode;
                 // update cache
 				updateCache(itarget);
-                return null;
             }
         }
-        AMAnimationKey a = gameObject.AddComponent<AMAnimationKey>();
-        a.enabled = false;
+        AMAnimationKey a = addCall(gameObject, typeof(AMAnimationKey)) as AMAnimationKey;
         a.frame = _frame;
         a.amClip = _clip;
         a.wrapMode = _wrapMode;
@@ -45,8 +43,6 @@ public class AMAnimationTrack : AMTrack {
         keys.Add(a);
         // update cache
 		updateCache(itarget);
-
-        return a;
     }
     // preview a frame in the scene view
 	public void previewFrame(AMITarget target, float frame, float frameRate) {
@@ -100,7 +96,7 @@ public class AMAnimationTrack : AMTrack {
                     lsFlagToKeep.Add(oldReferences[i]);
                     return lsFlagToKeep;
                 }
-				SetTarget(target, newReferences[i]);
+				SetTarget(target, newReferences[i].transform);
                 break;
             }
         }
@@ -108,11 +104,7 @@ public class AMAnimationTrack : AMTrack {
         return lsFlagToKeep;
     }
 
-	protected override AMTrack doDuplicate(GameObject holder) {
-		AMAnimationTrack ntrack = holder.AddComponent<AMAnimationTrack>();
-        ntrack.enabled = false;
-        ntrack.obj = obj;
-
-        return ntrack;
+    protected override void DoCopy(AMTrack track) {
+        (track as AMAnimationTrack).obj = obj;
     }
 }

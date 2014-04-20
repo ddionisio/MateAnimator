@@ -39,11 +39,7 @@ public class AnimatorDataInspector : Editor {
 
             if(doIt) {
                 Undo.RecordObject(dat, "Set Meta");
-                List<UnityEngine.Object> newObjs = dat.e_setMeta(newMeta, false);
-                if(newObjs != null && newObjs.Count > 0) {
-                    foreach(UnityEngine.Object newObj in newObjs)
-                        Undo.RegisterCreatedObjectUndo(newObj, "Set Meta");
-                }
+                dat.e_setMeta(newMeta, false);
             }
         }
 

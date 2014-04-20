@@ -33,9 +33,8 @@ public class AMKey : MonoBehaviour {
 	public virtual void maintainKey(AMITarget itarget, UnityEngine.Object targetObj) {
 	}
 
-    public virtual AMKey CreateClone(GameObject go) {
-        Debug.LogError("Animator: No override for CreateClone()");
-        return null;
+    public virtual void CopyTo(AMKey key) {
+        Debug.LogError("Animator: No override for CopyTo()");
     }
 
 	public virtual string GetRequiredComponent() {

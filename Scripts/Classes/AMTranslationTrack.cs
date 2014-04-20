@@ -21,11 +21,10 @@ public class AMTranslationTrack : AMTrack {
 		return targetGO ? targetGO.transform : _obj;
 	}
 	
-	public new void SetTarget(AMITarget target, UnityEngine.Object item) {
+	public new void SetTarget(AMITarget target, Transform item) {
 		base.SetTarget(target, item);
-		
-		Transform _t = item as Transform;
-		if(_t != null && keys.Count <= 0) cachedInitialPosition = _isLocal ? _t.localPosition : _t.position;
+        isLocal = true;
+        if(item != null && keys.Count <= 0) cachedInitialPosition = _isLocal ? item.localPosition : item.position;
 	}
 
     public override int version { get { return 2; } }
@@ -89,65 +88,48 @@ public class AMTranslationTrack : AMTrack {
     }
 
     // add a new key
-    public AMKey addKey(AMITarget itarget, int _frame, Vector3 _position, int _interp, int _easeType, OnKey addCallback) {
+    public void addKey(AMITarget itarget, OnAddKey addCall, int _frame, Vector3 _position, int _interp, int _easeType) {
         foreach(AMTranslationKey key in keys) {
             // if key exists on frame, update key
             if(key.frame == _frame) {
-                if(addCallback != null)
-                    addCallback(this, null);
-
                 key.position = _position;
                 key.interp = _interp;
                 key.easeType = _easeType;
                 // update cache
 				updateCache(itarget);
-                return null;
+                return;
             }
         }
-        AMTranslationKey a = gameObject.AddComponent<AMTranslationKey>();
-        a.enabled = false;
+        AMTranslationKey a = addCall(gameObject, typeof(AMTranslationKey)) as AMTranslationKey;
         a.frame = _frame;
         a.position = _position;
         a.interp = _interp;
         a.easeType = _easeType;
 
-        if(addCallback != null)
-            addCallback(this, a);
-
         // add a new key
         keys.Add(a);
         // update cache
 		updateCache(itarget);
-        return a;
     }
     // add a new key, default interpolation and easeType
-	public AMKey addKey(AMITarget itarget, int _frame, Vector3 _position, OnKey addCallback) {
+    public void addKey(AMITarget itarget, OnAddKey addCall, int _frame, Vector3 _position) {
         foreach(AMTranslationKey key in keys) {
             // if key exists on frame, update key
             if(key.frame == _frame) {
-                if(addCallback != null)
-                    addCallback(this, null);
-
                 key.position = _position;
                 // update cache
 				updateCache(itarget);
-                return null;
+                return;
             }
         }
-        AMTranslationKey a = gameObject.AddComponent<AMTranslationKey>();
-
-        a.enabled = false;
+        AMTranslationKey a = addCall(gameObject, typeof(AMTranslationKey)) as AMTranslationKey;
         a.frame = _frame;
         a.position = _position;
-
-        if(addCallback != null)
-            addCallback(this, a);
 
         // add a new key
         keys.Add(a);
         // update cache
 		updateCache(itarget);
-        return a;
     }
 
     // preview a frame in the scene view
@@ -202,14 +184,14 @@ public class AMTranslationTrack : AMTrack {
 
     }
     // returns true if autoKey successful
-    public bool autoKey(AMITarget itarget, Transform aobj, int frame, OnKey addCallback) {
+    public bool autoKey(AMITarget itarget, OnAddKey addCall, Transform aobj, int frame) {
 		Transform t = GetTarget(itarget) as Transform;
         if(!t || aobj != t) { return false; }
 
         if(keys.Count <= 0) {
             if(GetPosition(t) != cachedInitialPosition) {
                 // if updated position, addkey
-				addKey(itarget, frame, GetPosition(t), addCallback);
+				addKey(itarget, addCall, frame, GetPosition(t));
                 return true;
             }
             return false;
@@ -217,7 +199,7 @@ public class AMTranslationTrack : AMTrack {
         Vector3 oldPos = getPositionAtFrame(t, (float)frame, false);
 		if(GetPosition(t) != oldPos) {
             // if updated position, addkey
-			addKey(itarget, frame, GetPosition(t), addCallback);
+			addKey(itarget, addCall, frame, GetPosition(t));
             return true;
         }
 
@@ -432,13 +414,10 @@ public class AMTranslationTrack : AMTrack {
         return new List<GameObject>();
     }
 
-	protected override AMTrack doDuplicate(GameObject holder) {
-        AMTranslationTrack ntrack = holder.AddComponent<AMTranslationTrack>();
-        ntrack.enabled = false;
+    protected override void DoCopy(AMTrack track) {
+        AMTranslationTrack ntrack = track as AMTranslationTrack;
         ntrack._obj = _obj;
         ntrack._isLocal = _isLocal;
         ntrack.cachedInitialPosition = cachedInitialPosition;
-
-        return ntrack;
     }
 }

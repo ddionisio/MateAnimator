@@ -134,241 +134,53 @@ public class AMPropertyTrack : AMTrack {
     }
 
     // add key
-    public AMKey addKey(AMITarget target, int _frame) {
+    public void addKey(AMITarget target, OnAddKey addCall, int _frame) {
 		Component comp = GetTargetComp(target);
 		RefreshData(comp);
 
+        AMPropertyKey k = null;
+
+        foreach(AMPropertyKey key in keys) {
+            // if key exists on frame, update key
+            if(key.frame == _frame) {
+                k = key;
+            }
+        }
+
+        if(k == null) {
+            k = addCall(gameObject, typeof(AMPropertyKey)) as AMPropertyKey;
+            k.frame = _frame;
+            k.easeType = (int)EaseType.Linear;
+            // add a new key
+            keys.Add(k);
+        }
+
         if(isValueTypeNumeric(valueType))
-			return addKey(target, _frame, getPropertyValueNumeric(target));
-		else if(valueType == (int)ValueType.Bool)
-			return addKey(target, _frame, getPropertyValueBool(target) ? 1.0 : -1.0);
-		else if(valueType == (int)ValueType.String)
-			return addKey(target, _frame, getPropertyValueString(target));
+            k.setValue(Convert.ToDouble(getPropertyValue(target)));
+        else if(valueType == (int)ValueType.Bool)
+            k.setValue(Convert.ToBoolean(getPropertyValue(target)));
+        else if(valueType == (int)ValueType.String)
+            k.setValue(Convert.ToString(getPropertyValue(target)));
         else if(valueType == (int)ValueType.Vector2)
-			return addKey(target, _frame, getPropertyValueVector2(target));
+            k.setValue((Vector2)getPropertyValue(target));
         else if(valueType == (int)ValueType.Vector3)
-			return addKey(target, _frame, getPropertyValueVector3(target));
+            k.setValue((Vector3)getPropertyValue(target));
         else if(valueType == (int)ValueType.Color)
-			return addKey(target, _frame, getPropertyValueColor(target));
+            k.setValue((Color)getPropertyValue(target));
         else if(valueType == (int)ValueType.Rect)
-			return addKey(target, _frame, getPropertyValueRect(target));
+            k.setValue((Rect)getPropertyValue(target));
         else if(valueType == (int)ValueType.Vector4)
-			return addKey(target, _frame, getPropertyValueVector4(target));
+            k.setValue((Vector4)getPropertyValue(target));
         else if(valueType == (int)ValueType.Quaternion)
-			return addKey(target, _frame, getPropertyValueQuaternion(target));
-		else if(valueType == (int)ValueType.Sprite)
-			return addKey(target, _frame, getPropertyValueObject(target));
+            k.setValue((Quaternion)getPropertyValue(target));
+        else if(valueType == (int)ValueType.Sprite)
+            k.setValue((UnityEngine.Object)getPropertyValue(target));
         else {
             Debug.LogError("Animator: Invalid ValueType " + valueType.ToString());
-            return null;
         }
-    }
-    // add key numeric
-	AMKey addKey(AMITarget target, int _frame, double val) {
-        foreach(AMPropertyKey key in keys) {
-            // if key exists on frame, update key
-            if(key.frame == _frame) {
-                key.setValue(val);
-                // update cache
-				updateCache(target);
-                return null;
-            }
-        }
-        AMPropertyKey a = gameObject.AddComponent<AMPropertyKey>();
-        a.enabled = false;
-        a.frame = _frame;
-        a.setValue(val);
-        // set default ease type to linear
-        a.easeType = (int)EaseType.Linear;
-        // add a new key
-        keys.Add(a);
+
         // update cache
-		updateCache(target);
-        return a;
-    }
-	// add key object
-	AMKey addKey(AMITarget target, int _frame, UnityEngine.Object val) {
-		foreach(AMPropertyKey key in keys) {
-			// if key exists on frame, update key
-			if(key.frame == _frame) {
-				key.setValue(val);
-				// update cache
-				updateCache(target);
-				return null;
-			}
-		}
-		AMPropertyKey a = gameObject.AddComponent<AMPropertyKey>();
-		a.enabled = false;
-		a.frame = _frame;
-		a.setValue(val);
-		// set default ease type to linear
-		a.easeType = (int)EaseType.Linear;
-		// add a new key
-		keys.Add(a);
-		// update cache
-		updateCache(target);
-		return a;
-	}
-	// add key string
-	AMKey addKey(AMITarget target, int _frame, string val) {
-		foreach(AMPropertyKey key in keys) {
-			// if key exists on frame, update key
-			if(key.frame == _frame) {
-				key.setValue(val);
-				// update cache
-				updateCache(target);
-				return null;
-			}
-		}
-		AMPropertyKey a = gameObject.AddComponent<AMPropertyKey>();
-		a.enabled = false;
-		a.frame = _frame;
-		a.setValue(val);
-		// set default ease type to linear
-		a.easeType = (int)EaseType.Linear;
-		// add a new key
-		keys.Add(a);
-		// update cache
-		updateCache(target);
-		return a;
-	}
-    // add key vector2
-	AMKey addKey(AMITarget target, int _frame, Vector2 val) {
-        foreach(AMPropertyKey key in keys) {
-            // if key exists on frame, update key
-            if(key.frame == _frame) {
-                key.setValue(val);
-                // update cache
-				updateCache(target);
-                return null;
-            }
-        }
-        AMPropertyKey a = gameObject.AddComponent<AMPropertyKey>();
-        a.enabled = false;
-        a.frame = _frame;
-        a.setValue(val);
-        // set default ease type to linear
-        a.easeType = (int)EaseType.Linear;
-        // add a new key
-        keys.Add(a);
-        // update cache
-		updateCache(target);
-        return a;
-    }
-    // add key vector3
-	AMKey addKey(AMITarget target, int _frame, Vector3 val) {
-        foreach(AMPropertyKey key in keys) {
-            // if key exists on frame, update key
-            if(key.frame == _frame) {
-                key.setValue(val);
-                // update cache
-				updateCache(target);
-                return null;
-            }
-        }
-        AMPropertyKey a = gameObject.AddComponent<AMPropertyKey>();
-        a.enabled = false;
-        a.frame = _frame;
-        a.setValue(val);
-        // set default ease type to linear
-        a.easeType = (int)EaseType.Linear;
-        // add a new key
-        keys.Add(a);
-        // update cache
-		updateCache(target);
-        return a;
-    }
-    // add key color
-	AMKey addKey(AMITarget target, int _frame, Color val) {
-        foreach(AMPropertyKey key in keys) {
-            // if key exists on frame, update key
-            if(key.frame == _frame) {
-                key.setValue(val);
-                // update cache
-				updateCache(target);
-                return null;
-            }
-        }
-        AMPropertyKey a = gameObject.AddComponent<AMPropertyKey>();
-        a.enabled = false;
-        a.frame = _frame;
-        a.setValue(val);
-        // set default ease type to linear
-        a.easeType = (int)EaseType.Linear;
-        // add a new key
-        keys.Add(a);
-        // update cache
-		updateCache(target);
-        return a;
-    }
-    // add key rect
-	AMKey addKey(AMITarget target, int _frame, Rect val) {
-        foreach(AMPropertyKey key in keys) {
-            // if key exists on frame, update key
-            if(key.frame == _frame) {
-                key.setValue(val);
-                // update cache
-				updateCache(target);
-                return null;
-            }
-        }
-        AMPropertyKey a = gameObject.AddComponent<AMPropertyKey>();
-        a.enabled = false;
-        a.frame = _frame;
-        a.setValue(val);
-        // set default ease type to linear
-        a.easeType = (int)EaseType.Linear;
-        // add a new key
-        keys.Add(a);
-        // update cache
-		updateCache(target);
-        return a;
-    }
-    // add key vector4
-	AMKey addKey(AMITarget target, int _frame, Vector4 val) {
-        foreach(AMPropertyKey key in keys) {
-            // if key exists on frame, update key
-            if(key.frame == _frame) {
-                key.setValue(val);
-                // update cache
-				updateCache(target);
-                return null;
-            }
-        }
-        AMPropertyKey a = gameObject.AddComponent<AMPropertyKey>();
-        a.enabled = false;
-        a.frame = _frame;
-        a.setValue(val);
-        // set default ease type to linear
-        a.easeType = (int)EaseType.Linear;
-        // add a new key
-        keys.Add(a);
-        // update cache
-		updateCache(target);
-        return a;
-    }
-    // add key quaternion
-	AMKey addKey(AMITarget target, int _frame, Quaternion val) {
-        foreach(AMPropertyKey key in keys) {
-            // if key exists on frame, update key
-            if(key.frame == _frame) {
-                key.setValue(val);
-                // update cache
-				updateCache(target);
-                return null;
-            }
-        }
-        AMPropertyKey a = gameObject.AddComponent<AMPropertyKey>();
-        a.enabled = false;
-        a.frame = _frame;
-        a.setValue(val);
-        // set default ease type to linear
-        a.easeType = (int)EaseType.Linear;
-        // add a new key
-        keys.Add(a);
-        // update cache
-		updateCache(target);
-        return a;
+        updateCache(target);
     }
     
 	public bool setComponent(AMITarget target, Component component) {
@@ -527,94 +339,13 @@ public class AMPropertyTrack : AMTrack {
         }
     }
 
-	bool getPropertyValueBool(AMITarget itarget) {
-		if(cachedFieldInfo != null)
-			return Convert.ToBoolean(cachedFieldInfo.GetValue(GetTargetComp(itarget)));
-		else
-			return Convert.ToBoolean(cachedPropertyInfo.GetValue(GetTargetComp(itarget), null));
-	}
-
-	string getPropertyValueString(AMITarget itarget) {
-		if(cachedFieldInfo != null)
-			return Convert.ToString(cachedFieldInfo.GetValue(GetTargetComp(itarget)));
-		else
-			return Convert.ToString(cachedPropertyInfo.GetValue(GetTargetComp(itarget), null));
-	}
-
-    // get numeric value. unsafe, must check to see if value is numeric first
-	double getPropertyValueNumeric(AMITarget itarget) {
-        // field
-		if(cachedFieldInfo != null)
-			return Convert.ToDouble(cachedFieldInfo.GetValue(GetTargetComp(itarget)));
-        // property
-        else {
-			return Convert.ToDouble(cachedPropertyInfo.GetValue(GetTargetComp(itarget), null));
-        }
-
-    }
-    // get Vector2 value. unsafe, must check to see if value is Vector2 first
-	Vector2 getPropertyValueVector2(AMITarget itarget) {
-        // field
-		if(cachedFieldInfo != null)
-			return (Vector2)cachedFieldInfo.GetValue(GetTargetComp(itarget));
-        // property
+    object getPropertyValue(AMITarget itarget) {
+        if(cachedFieldInfo != null)
+            return cachedFieldInfo.GetValue(GetTargetComp(itarget));
         else
-			return (Vector2)cachedPropertyInfo.GetValue(GetTargetComp(itarget), null);
-
+            return cachedPropertyInfo.GetValue(GetTargetComp(itarget), null);
     }
-	Vector3 getPropertyValueVector3(AMITarget itarget) {
-        // field
-		if(cachedFieldInfo != null)
-			return (Vector3)cachedFieldInfo.GetValue(GetTargetComp(itarget));
-        // property
-        else
-			return (Vector3)cachedPropertyInfo.GetValue(GetTargetComp(itarget), null);
 
-    }
-	Vector4 getPropertyValueVector4(AMITarget itarget) {
-        // field
-		if(cachedFieldInfo != null)
-			return (Vector4)cachedFieldInfo.GetValue(GetTargetComp(itarget));
-        // property
-        else
-			return (Vector4)cachedPropertyInfo.GetValue(GetTargetComp(itarget), null);
-
-    }
-	Quaternion getPropertyValueQuaternion(AMITarget itarget) {
-        // field
-		if(cachedFieldInfo != null)
-			return (Quaternion)cachedFieldInfo.GetValue(GetTargetComp(itarget));
-        // property
-        else
-			return (Quaternion)cachedPropertyInfo.GetValue(GetTargetComp(itarget), null);
-
-    }
-	Color getPropertyValueColor(AMITarget itarget) {
-        // field
-		if(cachedFieldInfo != null)
-			return (Color)cachedFieldInfo.GetValue(GetTargetComp(itarget));
-        // property
-        else
-			return (Color)cachedPropertyInfo.GetValue(GetTargetComp(itarget), null);
-
-    }
-	Rect getPropertyValueRect(AMITarget itarget) {
-        // field
-		if(cachedFieldInfo != null)
-			return (Rect)cachedFieldInfo.GetValue(GetTargetComp(itarget));
-        // property
-        else
-			return (Rect)cachedPropertyInfo.GetValue(GetTargetComp(itarget), null);
-
-    }
-	UnityEngine.Object getPropertyValueObject(AMITarget itarget) {
-		// field
-		if(cachedFieldInfo != null)
-			return (UnityEngine.Object)cachedFieldInfo.GetValue(GetTargetComp(itarget));
-		// property
-		else
-			return (UnityEngine.Object)cachedPropertyInfo.GetValue(GetTargetComp(itarget), null);
-	}
     public static bool isNumeric(Type t) {
         if((t == typeof(int)) || (t == typeof(long)) || (t == typeof(float)) || (t == typeof(double)))
             return true;
@@ -925,7 +656,7 @@ public class AMPropertyTrack : AMTrack {
                     return lsFlagToKeep;
                 }
 
-				SetTarget(target, newReferences[i]);
+				SetTarget(target, newReferences[i].transform);
 				setComponent(target, _component);
                 break;
             }
@@ -933,9 +664,8 @@ public class AMPropertyTrack : AMTrack {
         return lsFlagToKeep;
     }
 
-	protected override AMTrack doDuplicate(GameObject holder) {
-        AMPropertyTrack ntrack = holder.AddComponent<AMPropertyTrack>();
-        ntrack.enabled = false;
+    protected override void DoCopy(AMTrack track) {
+        AMPropertyTrack ntrack = track as AMPropertyTrack;
         ntrack.valueType = valueType;
         ntrack.obj = obj;
         ntrack.component = component;
@@ -948,7 +678,5 @@ public class AMPropertyTrack : AMTrack {
             ntrack.methodParameterTypes = new string[methodParameterTypes.Length];
             Array.Copy(methodParameterTypes, ntrack.methodParameterTypes, methodParameterTypes.Length);
         }
-
-        return ntrack;
     }
 }

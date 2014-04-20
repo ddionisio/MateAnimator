@@ -23,7 +23,7 @@ public class AMOptionsFile : ScriptableObject {
 	// quick add combos
 	public List<List<int>> quickAdd_Combos = new List<List<int>>();
 
-	private List<int> quickAdd_Combos_Flattened;
+	private List<int> quickAdd_Combos_Flattened = new List<int>();
 	private bool unflattened = false;
 	
 	public bool setSkin(string _skin) {
