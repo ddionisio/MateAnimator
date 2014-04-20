@@ -581,6 +581,23 @@ public class AMTakeData {
 			}
 		}
 	}
+
+    /// <summary>
+    /// Only preview tracks that have starting frame > _frame
+    /// </summary>
+    public void previewFrameStart(AMITarget itarget, float _frame) {
+        if(!mTracksSorted) {
+            trackValues.Sort(TrackCompare);
+            mTracksSorted = true;
+        }
+
+        foreach(AMTrack track in trackValues) {
+            if(track.keys.Count > 0 && (float)track.keys[0].getStartFrame() > _frame) {
+                if(track is AMAnimationTrack) (track as AMAnimationTrack).previewFrame(itarget, _frame, frameRate);
+                else track.previewFrame(itarget, _frame);
+            }
+        }
+    }
 	
 	public void sampleAudioAtFrame(AMITarget itarget, int frame, float speed) {
 		foreach(AMTrack track in trackValues) {

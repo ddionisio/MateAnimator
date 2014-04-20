@@ -291,7 +291,7 @@ public class AnimatorData : MonoBehaviour, AMITarget {
 			seq = mSequences[index] = newPlayTake.BuildSequence(this, gameObject.name, sequenceKillWhenDone, updateType, OnTakeSequenceDone);
 		}
 
-		newPlayTake.previewFrame(this, isFrame ? value : newPlayTake.frameRate * value, false, true);
+		newPlayTake.previewFrameStart(this, isFrame ? value : newPlayTake.frameRate * value);
 
 		if(seq != null) {
             if(loop) {

@@ -49,7 +49,7 @@ public class AMTranslationKey : AMKey {
         if(!obj) return null;
 
 		if(easeType == EaseTypeNone) {
-			return HOTween.To(obj, getTime(frameRate), new TweenParms().Prop(isLocal ? "localPosition" : "position", new AMPlugNoTween(position)));
+            return HOTween.To(obj, endFrame == -1 || endFrame == startFrame ? 1.0f/(float)frameRate : getTime(frameRate), new TweenParms().Prop(isLocal ? "localPosition" : "position", new AMPlugNoTween(position)));
 		}
 
         if(path.Length <= 1) return null;

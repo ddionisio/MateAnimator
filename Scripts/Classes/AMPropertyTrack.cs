@@ -394,6 +394,9 @@ public class AMPropertyTrack : AMTrack {
         }
 
     }
+    public override void previewFrame(AMITarget target, float frame, AMTrack extraTrack = null) {
+        previewFrame(target, frame, true);
+    }
     // preview a frame in the scene view
     public void previewFrame(AMITarget target, float frame, bool quickPreview = false) {
         if(keys == null || keys.Count <= 0) {
