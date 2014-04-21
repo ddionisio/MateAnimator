@@ -508,6 +508,28 @@ public class AMTimeline : EditorWindow {
             //aData.propertySelectTrack = null;
         }
     }
+    bool MetaInstantiate(string label) {
+        if(aData.e_metaCanInstantiatePrefab) {
+            //preserve the current take edit info
+            AMTakeEdit curTakeEdit = null;
+            AMTakeData curTake = aData.e_getCurrentTake();
+            foreach(AMTakeData take in aData._takes) {
+                if(take == curTake)
+                    window.mTakeEdits.TryGetValue(take, out curTakeEdit);
+                window.mTakeEdits.Remove(take);
+            }
+
+            aData.e_metaInstantiatePrefab(label);
+
+            if(curTakeEdit != null) {
+                mTakeEdits.Add(aData.e_getCurrentTake(), curTakeEdit);
+                aData.e_getCurrentTake().selectedFrame = curTakeEdit.selectedFrame;
+            }
+
+            return true;
+        }
+        return false;
+    }
     AMTakeEdit TakeEdit(AMTakeData take) {
         AMTakeEdit ret = null;
         if(!mTakeEdits.TryGetValue(take, out ret)) {
@@ -697,7 +719,7 @@ public class AMTimeline : EditorWindow {
 
                 if(mMeta == null) {
                     GUI.backgroundColor = Color.green;
-                    createNewMeta = GUILayout.Button("New Meta", GUILayout.Width(100f));
+                    createNewMeta = GUILayout.Button("Create Meta", GUILayout.Width(100f));
 
                     GUI.backgroundColor = Color.white;
                     mMetaName = GUILayout.TextField(mMetaName);
@@ -743,8 +765,13 @@ public class AMTimeline : EditorWindow {
 
                 if(GUILayout.Button(go ? "Add Component" : "Create AnimatorData")) {
                     // create component
-                    if(!go) go = new GameObject("AnimatorData");
-                    AnimatorData nData = go.AddComponent<AnimatorData>();
+                    if(!go) {
+                        go = new GameObject("AnimatorData");
+                        Undo.RegisterCreatedObjectUndo(go, "Create AnimatorData");
+                    }
+
+                    AnimatorData nData = Undo.AddComponent<AnimatorData>(go);
+
                     nData.e_setMeta(mMeta, false);
                     aData = nData;
                 }
@@ -957,14 +984,16 @@ public class AMTimeline : EditorWindow {
         GUI.DrawTexture(new Rect(0f, 0f, position.width, height_menu_bar - 2f), EditorStyles.toolbar.normal.background);
         //GUI.color = Color.white;
         #region select name
+        GUI.color = aData.e_metaCanSavePrefabInstance ? Color.red : Color.white;
         GUIContent selectLabel = new GUIContent(aData.gameObject.name);
         Vector2 selectLabelSize = EditorStyles.toolbarButton.CalcSize(selectLabel);
         Rect rectSelectLabel = new Rect(margin, 0f, selectLabelSize.x, height_button_delete);
-
+        
         if(GUI.Button(rectSelectLabel, selectLabel, EditorStyles.toolbarButton)) {
             EditorGUIUtility.PingObject(aData.gameObject);
             Selection.activeGameObject = aData.gameObject;
         }
+        GUI.color = Color.white;
         #endregion
 
         #region options button
@@ -1906,11 +1935,32 @@ public class AMTimeline : EditorWindow {
     #region Static
 
     public static void registerTakesUndo(AnimatorData dat, string label, bool complete) {
-        UnityEngine.Object obj = dat.e_meta ? (UnityEngine.Object)dat.e_meta : (UnityEngine.Object)dat;
-        if(complete)
-            UnityEditor.Undo.RegisterCompleteObjectUndo(obj, label);
-        else
-            UnityEditor.Undo.RecordObject(obj, label);
+        //instantiate meta for editing
+        if(dat.e_metaCanInstantiatePrefab) {
+            //preserve the current take edit info
+            AMTakeEdit curTakeEdit = null;
+            if(window) {
+                AMTakeData curTake = dat.e_getCurrentTake();
+                foreach(AMTakeData take in dat._takes) {
+                    if(take == curTake)
+                        window.mTakeEdits.TryGetValue(take, out curTakeEdit);
+                    window.mTakeEdits.Remove(take);
+                }
+            }
+
+            dat.e_metaInstantiatePrefab(label);
+
+            if(curTakeEdit != null)
+                window.mTakeEdits.Add(dat.e_getCurrentTake(), curTakeEdit);
+        }
+        else {
+            UnityEngine.Object obj = dat.e_meta ? (UnityEngine.Object)dat.e_meta : (UnityEngine.Object)dat;
+
+            if(complete)
+                UnityEditor.Undo.RegisterCompleteObjectUndo(obj, label);
+            else
+                UnityEditor.Undo.RecordObject(obj, label);
+        }
     }
 
     public static void setDirtyTakes(AnimatorData dat) {
@@ -2839,19 +2889,34 @@ public class AMTimeline : EditorWindow {
         GUI.EndGroup();
     }
     void showInspectorPropertiesFor(Rect rect, int _track, int _frame, Event e) {
+        //if meta is prefab, then ask user to instantiate it for editing
+        if(aData.e_meta && PrefabUtility.GetPrefabType(aData.e_meta) == PrefabType.Prefab) {
+            GUIStyle _styleLabelWordwrap = new GUIStyle(GUI.skin.label);
+            _styleLabelWordwrap.wordWrap = true;
+            GUI.Label(new Rect(0f, 0f, width_inspector_open - width_inspector_closed - width_button_delete - margin, 100f), 
+                "In order to make changes, the AnimatorMeta has to be instantiated.  Make sure to press the 'Save' button in the AnimatorData inspector to save changes to the AnimatorMeta.", _styleLabelWordwrap);
+
+            if(GUI.Button(new Rect(0f, 110f, width_inspector_open - width_inspector_closed - width_button_delete - margin, 20f), "Edit")) {
+                MetaInstantiate("Animator Meta Edit");
+            }
+            return;
+        }
+
+        AMTakeData ctake = aData.e_getCurrentTake();
+
         // if there are no tracks, return
-        if(aData.e_getCurrentTake().getTrackCount() <= 0) return;
+        if(ctake.getTrackCount() <= 0) return;
         string track_name = "";
         AMTrack sTrack = null;
         if(_track > -1) {
             // get the selected track
-            sTrack = aData.e_getCurrentTake().getTrack(_track);
+            sTrack = ctake.getTrack(_track);
             track_name = sTrack.name + ", ";
         }
         GUIStyle styleLabelWordwrap = new GUIStyle(GUI.skin.label);
         styleLabelWordwrap.wordWrap = true;
         string strFrameInfo = track_name;
-        if(oData.time_numbering) strFrameInfo += "Time " + frameToTime(_frame, (float)aData.e_getCurrentTake().frameRate).ToString("N2") + " s";
+        if(oData.time_numbering) strFrameInfo += "Time " + frameToTime(_frame, (float)ctake.frameRate).ToString("N2") + " s";
         else strFrameInfo += "Frame " + _frame;
         GUI.Label(new Rect(0f, 0f, width_inspector_open - width_inspector_closed - width_button_delete - margin, 20f), strFrameInfo, styleLabelWordwrap);
         Rect rectBtnDeleteKey = new Rect(width_inspector_open - width_inspector_closed - width_button_delete - margin, 0f, width_button_delete, height_button_delete);
@@ -2900,7 +2965,7 @@ public class AMTimeline : EditorWindow {
                 sTrack.updateCache(aData);
                 AMCodeView.refresh();
                 // preview new position
-                aData.e_getCurrentTake().previewFrame(aData, aData.e_getCurrentTake().selectedFrame);
+                ctake.previewFrame(aData, ctake.selectedFrame);
                 // save data
                 EditorUtility.SetDirty(sTrack);
                 setDirtyKeys(sTrack);
@@ -2935,7 +3000,7 @@ public class AMTimeline : EditorWindow {
                 sTrack.updateCache(aData);
                 AMCodeView.refresh();
                 // preview new position
-                aData.e_getCurrentTake().previewFrame(aData, aData.e_getCurrentTake().selectedFrame);
+                ctake.previewFrame(aData, ctake.selectedFrame);
                 // save data
                 EditorUtility.SetDirty(sTrack);
                 setDirtyKeys(sTrack);
@@ -2965,7 +3030,7 @@ public class AMTimeline : EditorWindow {
                 (sTrack as AMOrientationTrack).updateCache(aData);
                 AMCodeView.refresh();
                 // preview
-                aData.e_getCurrentTake().previewFrame(aData, aData.e_getCurrentTake().selectedFrame);
+                ctake.previewFrame(aData, ctake.selectedFrame);
                 // save data
                 EditorUtility.SetDirty(sTrack);
                 setDirtyKeys(sTrack);
@@ -3003,7 +3068,7 @@ public class AMTimeline : EditorWindow {
                 sTrack.updateCache(aData);
                 AMCodeView.refresh();
                 // preview new position
-                aData.e_getCurrentTake().previewFrame(aData, aData.e_getCurrentTake().selectedFrame);
+                ctake.previewFrame(aData, ctake.selectedFrame);
                 // save data
                 EditorUtility.SetDirty(sTrack);
                 setDirtyKeys(sTrack);
@@ -3017,7 +3082,7 @@ public class AMTimeline : EditorWindow {
                 Undo.RecordObject(aKey, "Wrap Mode");
                 AMCodeView.refresh();
                 // preview new position
-                aData.e_getCurrentTake().previewFrame(aData, aData.e_getCurrentTake().selectedFrame);
+                ctake.previewFrame(aData, ctake.selectedFrame);
                 // save data
                 EditorUtility.SetDirty(aKey);
             }
@@ -3030,7 +3095,7 @@ public class AMTimeline : EditorWindow {
                 Undo.RecordObject(aKey, "Cross Fade");
                 AMCodeView.refresh();
                 // preview new position
-                aData.e_getCurrentTake().previewFrame(aData, aData.e_getCurrentTake().selectedFrame);
+                ctake.previewFrame(aData, ctake.selectedFrame);
                 // save data
                 EditorUtility.SetDirty(aKey);
             }
@@ -3099,7 +3164,7 @@ public class AMTimeline : EditorWindow {
                     sTrack.updateCache(aData);
                     AMCodeView.refresh();
                     // preview new value
-                    aData.e_getCurrentTake().previewFrame(aData, aData.e_getCurrentTake().selectedFrame);
+                    ctake.previewFrame(aData, ctake.selectedFrame);
                     // save data
                     EditorUtility.SetDirty(sTrack);
                     setDirtyKeys(sTrack);
@@ -3115,7 +3180,7 @@ public class AMTimeline : EditorWindow {
                     sTrack.updateCache(aData);
                     AMCodeView.refresh();
                     // preview new value
-                    aData.e_getCurrentTake().previewFrame(aData, aData.e_getCurrentTake().selectedFrame);
+                    ctake.previewFrame(aData, ctake.selectedFrame);
                     // save data
                     EditorUtility.SetDirty(sTrack);
                     setDirtyKeys(sTrack);
@@ -3131,7 +3196,7 @@ public class AMTimeline : EditorWindow {
                     sTrack.updateCache(aData);
                     AMCodeView.refresh();
                     // preview new value
-                    aData.e_getCurrentTake().previewFrame(aData, aData.e_getCurrentTake().selectedFrame);
+                    ctake.previewFrame(aData, ctake.selectedFrame);
                     // save data
                     EditorUtility.SetDirty(sTrack);
                     setDirtyKeys(sTrack);
@@ -3147,7 +3212,7 @@ public class AMTimeline : EditorWindow {
                     sTrack.updateCache(aData);
                     AMCodeView.refresh();
                     // preview new value
-                    aData.e_getCurrentTake().previewFrame(aData, aData.e_getCurrentTake().selectedFrame);
+                    ctake.previewFrame(aData, ctake.selectedFrame);
                     // save data
                     EditorUtility.SetDirty(sTrack);
                     setDirtyKeys(sTrack);
@@ -3163,7 +3228,7 @@ public class AMTimeline : EditorWindow {
                     sTrack.updateCache(aData);
                     AMCodeView.refresh();
                     // preview new value
-                    aData.e_getCurrentTake().previewFrame(aData, aData.e_getCurrentTake().selectedFrame);
+                    ctake.previewFrame(aData, ctake.selectedFrame);
                     // save data
                     EditorUtility.SetDirty(sTrack);
                     setDirtyKeys(sTrack);
@@ -3179,7 +3244,7 @@ public class AMTimeline : EditorWindow {
                     sTrack.updateCache(aData);
                     AMCodeView.refresh();
                     // preview new value
-                    aData.e_getCurrentTake().previewFrame(aData, aData.e_getCurrentTake().selectedFrame);
+                    ctake.previewFrame(aData, ctake.selectedFrame);
                     // save data
                     EditorUtility.SetDirty(sTrack);
                     setDirtyKeys(sTrack);
@@ -3195,7 +3260,7 @@ public class AMTimeline : EditorWindow {
                     sTrack.updateCache(aData);
                     AMCodeView.refresh();
                     // preview new value
-                    aData.e_getCurrentTake().previewFrame(aData, aData.e_getCurrentTake().selectedFrame);
+                    ctake.previewFrame(aData, ctake.selectedFrame);
                     // save data
                     EditorUtility.SetDirty(sTrack);
                     setDirtyKeys(sTrack);
@@ -3211,7 +3276,7 @@ public class AMTimeline : EditorWindow {
                     sTrack.updateCache(aData);
                     AMCodeView.refresh();
                     // preview new value
-                    aData.e_getCurrentTake().previewFrame(aData, aData.e_getCurrentTake().selectedFrame);
+                    ctake.previewFrame(aData, ctake.selectedFrame);
                     // save data
                     EditorUtility.SetDirty(sTrack);
                     setDirtyKeys(sTrack);
@@ -3228,7 +3293,7 @@ public class AMTimeline : EditorWindow {
                     sTrack.updateCache(aData);
                     AMCodeView.refresh();
                     // preview new value
-                    aData.e_getCurrentTake().previewFrame(aData, aData.e_getCurrentTake().selectedFrame);
+                    ctake.previewFrame(aData, ctake.selectedFrame);
                     // save data
                     EditorUtility.SetDirty(sTrack);
                     setDirtyKeys(sTrack);
@@ -3247,7 +3312,7 @@ public class AMTimeline : EditorWindow {
                     sTrack.updateCache(aData);
                     AMCodeView.refresh();
                     // preview new value
-                    aData.e_getCurrentTake().previewFrame(aData, aData.e_getCurrentTake().selectedFrame);
+                    ctake.previewFrame(aData, ctake.selectedFrame);
                     // save data
                     EditorUtility.SetDirty(sTrack);
                     setDirtyKeys(sTrack);
@@ -3301,7 +3366,7 @@ public class AMTimeline : EditorWindow {
                 // update cache when modifying varaibles
                 sTrack.updateCache(aData);
                 // preview new value
-                aData.e_getCurrentTake().previewFrame(aData, aData.e_getCurrentTake().selectedFrame);
+                ctake.previewFrame(aData, ctake.selectedFrame);
                 // save data
                 EditorUtility.SetDirty(pKey);
 
@@ -4882,9 +4947,15 @@ public class AMTimeline : EditorWindow {
     }
     void addKey(int _track, int _frame) {
         // add a key to the track number and frame, used in OnGUI. Needs to be updated for every track type.
-        AMTrack amTrack = aData.e_getCurrentTake().getTrack(_track);
-        recordUndoTrackAndKeys(amTrack, true, "New Key");
-
+        AMTrack amTrack;
+        if(MetaInstantiate("New Key")) {
+            amTrack = aData.e_getCurrentTake().getTrack(_track);
+        }
+        else {
+            amTrack = aData.e_getCurrentTake().getTrack(_track);
+            recordUndoTrackAndKeys(amTrack, true, "New Key");
+        }
+        
         // translation
         if(amTrack is AMTranslationTrack) {
             Transform t = amTrack.GetTarget(aData) as Transform;
@@ -4986,12 +5057,14 @@ public class AMTimeline : EditorWindow {
         }
 
         AMTrack selectedTrack = TakeEditCurrent().getSelectedTrack(aData.e_getCurrentTake());
-        EditorUtility.SetDirty(selectedTrack);
-        setDirtyKeys(selectedTrack);
-
+        if(selectedTrack) {
+            EditorUtility.SetDirty(selectedTrack);
+            setDirtyKeys(selectedTrack);
+        }
         AMCodeView.refresh();
     }
     void deleteKeyFromSelectedFrame() {
+        MetaInstantiate("Clear Frame");
         AMTrack amTrack = TakeEditCurrent().getSelectedTrack(aData.e_getCurrentTake());
         recordUndoTrackAndKeys(amTrack, true, "Clear Frame");
 
@@ -5006,7 +5079,7 @@ public class AMTimeline : EditorWindow {
         setDirtyKeys(amTrack);
 
         // select current frame
-        timelineSelectFrame(TakeEditCurrent().selectedTrack, aData.e_getCurrentTake().selectedFrame);
+        timelineSelectFrame(TakeEditCurrent().selectedTrack, TakeEditCurrent().selectedFrame);
 
         AMCodeView.refresh();
     }
@@ -5020,8 +5093,11 @@ public class AMTimeline : EditorWindow {
             }
         }
         if(shouldClearFrames) {
+            MetaInstantiate("Clear Frame");
+
             foreach(int track_id in TakeEditCurrent().contextSelectionTracks) {
                 AMTrack amTrack = aData.e_getCurrentTake().getTrack(track_id);
+
                 recordUndoTrackAndKeys(amTrack, true, "Clear Frames");
 
                 AMKey[] dkeys = TakeEditCurrent().removeSelectedKeysFromTrack(aData.e_getCurrentTake(), aData, track_id);
@@ -5034,7 +5110,7 @@ public class AMTimeline : EditorWindow {
         }
 
         // select current frame
-        timelineSelectFrame(TakeEditCurrent().selectedTrack, aData.e_getCurrentTake().selectedFrame, false);
+        timelineSelectFrame(TakeEditCurrent().selectedTrack, TakeEditCurrent().selectedFrame, false);
 
         AMCodeView.refresh();
     }
@@ -5216,6 +5292,8 @@ public class AMTimeline : EditorWindow {
 
         bool singleTrack = contextSelectionKeysBuffer.Count == 1;
         int offset = (int)contextSelectionRange.y - (int)contextSelectionRange.x + 1;
+
+        MetaInstantiate("Paste Frames");
 
         if(singleTrack) {
             AMTrack track = TakeEditCurrent().getSelectedTrack(aData.e_getCurrentTake());

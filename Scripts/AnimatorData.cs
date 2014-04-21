@@ -541,9 +541,13 @@ public class AnimatorData : MonoBehaviour, AMITarget {
     public int e_prevTake = -1;
 
 	void OnDrawGizmos() {
-		if(!e_isAnimatorOpen) return;
-        if(e_currentTake >= _takes.Count)
+        if(!e_isAnimatorOpen || _takes == null || _takes.Count == 0) return;
+        if(e_currentTake < 0) {
+            e_currentTake = 0;
+        }
+        else if(e_currentTake >= _takes.Count)
             e_currentTake = _takes.Count - 1;
+
 		_takes[e_currentTake].drawGizmos(this, AnimatorTimeline.e_gizmoSize, Application.isPlaying);
 	}
 
@@ -594,11 +598,65 @@ public class AnimatorData : MonoBehaviour, AMITarget {
 		get { return meta; }
 	}
 
+    public bool e_metaCanInstantiatePrefab {
+        get {
+            if(meta) {
+                if(UnityEditor.PrefabUtility.GetPrefabType(meta) == UnityEditor.PrefabType.Prefab) {
+                    GameObject go = UnityEditor.PrefabUtility.FindRootGameObjectWithSameParentPrefab(meta.gameObject);
+                    return go && go.GetComponent<AnimatorMeta>() != null;
+                }
+            }
+            return false;
+        }
+    }
+
+    public bool e_metaCanSavePrefabInstance {
+        get {
+            if(meta && UnityEditor.PrefabUtility.GetPrefabType(meta) == UnityEditor.PrefabType.PrefabInstance) {
+                GameObject go = UnityEditor.PrefabUtility.FindRootGameObjectWithSameParentPrefab(meta.gameObject);
+                return go && go.GetComponent<AnimatorMeta>() != null;
+            }
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// For editing the animator meta
+    /// </summary>
+    public bool e_metaInstantiatePrefab(string undoLabel) {
+        if(e_metaCanInstantiatePrefab) {
+            GameObject go = UnityEditor.PrefabUtility.InstantiatePrefab(meta.gameObject) as GameObject;
+            UnityEditor.Undo.RegisterCreatedObjectUndo(go, undoLabel);
+            UnityEditor.Undo.SetTransformParent(go.transform, transform, undoLabel);
+            UnityEditor.Undo.RegisterCompleteObjectUndo(this, undoLabel);
+            meta = go.GetComponent<AnimatorMeta>();
+            UnityEditor.EditorUtility.SetDirty(this);
+            return true;
+        }
+        return false;
+    }
+
+    public void e_metaSaveInstantiate() {
+        if(meta && UnityEditor.PrefabUtility.GetPrefabType(meta) == UnityEditor.PrefabType.PrefabInstance) {
+            GameObject instanceGO = meta.gameObject;
+            GameObject prefab = UnityEditor.PrefabUtility.GetPrefabParent(instanceGO) as GameObject;
+            if(prefab) {
+                UnityEditor.Undo.RegisterCompleteObjectUndo(this, "Save Prefab");
+
+                UnityEditor.PrefabUtility.ReplacePrefab(instanceGO, prefab);
+                meta = prefab.GetComponent<AnimatorMeta>();
+
+                UnityEditor.Undo.DestroyObjectImmediate(instanceGO);
+            }
+        }
+    }
+
 	/// <summary>
 	/// if copyTakes is true, overrides all takes in newMeta (if null, then to our dataholder) with current data
 	/// </summary>
 	public void e_setMeta(AnimatorMeta newMeta, bool copyTakes) {
 		if(meta != newMeta) {
+            AnimatorMeta prevMeta = meta;
 			List<AMTakeData> prevTakes = _takes;
 			string prevPlayOnStartName = defaultTakeName;
 
@@ -656,6 +714,11 @@ public class AnimatorData : MonoBehaviour, AMITarget {
 			//reset editor data
 			if(mTargetMissing != null)
 				mTargetMissing.Clear();
+
+            //destroy previous meta if it is not prefab
+            if(prevMeta && UnityEditor.PrefabUtility.GetPrefabType(prevMeta) != UnityEditor.PrefabType.Prefab) {
+                UnityEditor.Undo.DestroyObjectImmediate(prevMeta.gameObject);
+            }
 		}
 	}
 

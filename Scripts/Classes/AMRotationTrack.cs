@@ -20,7 +20,7 @@ public class AMRotationTrack : AMTrack {
 
 	public new void SetTarget(AMITarget target, Transform item) {
 		base.SetTarget(target, item);
-        isLocal = true;
+        _isLocal = true;
         if(item != null && keys.Count <= 0) cachedInitialRotation = _isLocal ? item.localRotation : item.rotation;
 	}
 

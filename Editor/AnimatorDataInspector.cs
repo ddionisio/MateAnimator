@@ -5,6 +5,13 @@ using System.Collections.Generic;
 
 [CustomEditor(typeof(AnimatorData))]
 public class AnimatorDataInspector : Editor {
+    private enum MetaCommand {
+        None,
+        Save,
+        SaveAs,
+        Revert,
+        Instantiate
+    }
     private string[] mTakeLabels;
     private bool mMissingsFoldout = true;
 
@@ -21,8 +28,6 @@ public class AnimatorDataInspector : Editor {
     }
 
     public override void OnInspectorGUI() {
-        serializedObject.Update();
-
         AnimatorData dat = target as AnimatorData;
 
         GUILayout.BeginVertical();
@@ -43,18 +48,31 @@ public class AnimatorDataInspector : Editor {
             }
         }
 
-        bool doMetaSave = false, doInstantiate = false;
+        MetaCommand metaComm = MetaCommand.None;
 
         GUILayout.BeginHorizontal();
 
         GUI.backgroundColor = Color.green;
-        doMetaSave = GUILayout.Button("Save As...", GUILayout.Width(100f));
+
+        GUI.enabled = PrefabUtility.GetPrefabType(dat.gameObject) != PrefabType.Prefab && dat.e_metaCanSavePrefabInstance;
+        if(GUILayout.Button("Save", GUILayout.Width(100f))) metaComm = MetaCommand.Save;
+
+        GUI.enabled = true;
+        if(GUILayout.Button("Save As...", GUILayout.Width(100f))) metaComm = MetaCommand.SaveAs;
+
+        GUILayout.EndHorizontal();
+
+        GUILayout.BeginHorizontal();
+
+        GUI.backgroundColor = Color.red;
+
+        GUI.enabled = PrefabUtility.GetPrefabType(dat.gameObject) != PrefabType.Prefab && dat.e_metaCanSavePrefabInstance;
+        if(GUILayout.Button("Revert", GUILayout.Width(100f))) metaComm = MetaCommand.Revert;
+
         GUI.backgroundColor = Color.white;
 
-        GUILayout.Space(8);
-
-        GUI.enabled = dat.e_meta;
-        doInstantiate = GUILayout.Button(new GUIContent("Instantiate", "This will copy all data from the Meta to this Animator, and then removes the reference to Meta."), GUILayout.Width(100f));
+        GUI.enabled = PrefabUtility.GetPrefabType(dat.gameObject) != PrefabType.Prefab && dat.e_meta;
+        if(GUILayout.Button(new GUIContent("Break", "This will copy all data from AnimatorMeta to this AnimatorData, and then removes the reference to AnimatorMeta."), GUILayout.Width(100f))) metaComm = MetaCommand.Instantiate;
         GUI.enabled = true;
 
         GUILayout.EndHorizontal();
@@ -82,6 +100,7 @@ public class AnimatorDataInspector : Editor {
 
         bool isglobal = GUILayout.Toggle(dat.isGlobal, "Global");
         if(dat.isGlobal != isglobal) {
+            Undo.RecordObject(dat, "Set Global");
             dat.isGlobal = isglobal;
             if(isglobal) {
                 //uncheck isGlobal to any other animator data on scene
@@ -146,32 +165,43 @@ public class AnimatorDataInspector : Editor {
 
         GUILayout.EndVertical();
 
-        if(doMetaSave) {
-            string path = EditorUtility.SaveFilePanelInProject("Save AnimatorMeta", dat.name + ".prefab", "prefab", "Please enter a file name to save the animator data to");
-            if(!string.IsNullOrEmpty(path)) {
-                GameObject metago = new GameObject("_meta");
-                metago.AddComponent<AnimatorMeta>();
-                UnityEngine.Object pref = PrefabUtility.CreateEmptyPrefab(path);
-                GameObject metagopref = PrefabUtility.ReplacePrefab(metago, pref);
-                UnityEngine.Object.DestroyImmediate(metago);
-                dat.e_setMeta(metagopref.GetComponent<AnimatorMeta>(), true);
-            }
-        }
-        else if(doInstantiate) {
-            //warning if there are missing targets
-            bool doIt = true;
-            if(missings != null && missings.Length > 0)
-                doIt = UnityEditor.EditorUtility.DisplayDialog("Instantiate Animator Meta", "There are missing targets, some keys will be removed. Do you want to proceed?", "Yes", "No");
-            if(doIt) {
-                Undo.RecordObject(dat, "Instantiate Animator Meta");
-                dat.e_setMeta(null, true);
+        switch(metaComm) {
+            case MetaCommand.Save:
+                dat.e_metaSaveInstantiate();
                 GUI.changed = true;
-            }
+                break;
+            case MetaCommand.SaveAs:
+                string path = EditorUtility.SaveFilePanelInProject("Save AnimatorMeta", dat.name + ".prefab", "prefab", "Please enter a file name to save the animator data to");
+                if(!string.IsNullOrEmpty(path)) {
+                    GameObject metago = new GameObject("_meta");
+                    metago.AddComponent<AnimatorMeta>();
+                    UnityEngine.Object pref = PrefabUtility.CreateEmptyPrefab(path);
+                    GameObject metagopref = PrefabUtility.ReplacePrefab(metago, pref);
+                    UnityEngine.Object.DestroyImmediate(metago);
+                    dat.e_setMeta(metagopref.GetComponent<AnimatorMeta>(), true);
+                }
+                break;
+            case MetaCommand.Revert:
+                if(EditorUtility.DisplayDialog("Revert Animator Meta", "Are you sure?", "Yes", "No")) {
+                    GameObject prefabGO = PrefabUtility.GetPrefabParent(dat.e_meta.gameObject) as GameObject;
+                    dat.e_setMeta(prefabGO ? prefabGO.GetComponent<AnimatorMeta>() : null, false);
+                    GUI.changed = true;
+                }
+                break;
+            case MetaCommand.Instantiate:
+                //warning if there are missing targets
+                bool doIt = true;
+                if(missings != null && missings.Length > 0)
+                    doIt = EditorUtility.DisplayDialog("Break Animator Meta", "There are missing targets, some keys will be removed. Do you want to proceed?", "Yes", "No");
+                if(doIt) {
+                    Undo.RecordObject(dat, "Break Animator Meta");
+                    dat.e_setMeta(null, true);
+                    GUI.changed = true;
+                }
+                break;
         }
 
         if(GUI.changed)
             EditorUtility.SetDirty(dat);
-
-        serializedObject.ApplyModifiedProperties();
     }
 }

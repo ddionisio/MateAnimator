@@ -54,7 +54,8 @@ public class AMSettings : EditorWindow {
 
 			string label = take.name+": Modify Settings";
 			AMTimeline.registerTakesUndo(aData, label, true);
-
+            take = aData.e_getCurrentTake();
+            
             if(saveNumFrames) {
 				Undo.RegisterCompleteObjectUndo(AMTimeline.getKeysAndTracks(take), label);
 

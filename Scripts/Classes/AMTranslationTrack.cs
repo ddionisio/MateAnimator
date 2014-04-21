@@ -23,7 +23,7 @@ public class AMTranslationTrack : AMTrack {
 	
 	public new void SetTarget(AMITarget target, Transform item) {
 		base.SetTarget(target, item);
-        isLocal = true;
+        _isLocal = true;
         if(item != null && keys.Count <= 0) cachedInitialPosition = _isLocal ? item.localPosition : item.position;
 	}
 
@@ -46,11 +46,13 @@ public class AMTranslationTrack : AMTrack {
                     Transform t = _obj.parent;
 
                     foreach(AMTranslationKey key in keys) {
-                        for(int i = 0; i < key.path.Length; i++) {
-                            if(key.isLocal && !value) //to world
-                                key.path[i] = t.localToWorldMatrix.MultiplyPoint(key.path[i]);
-                            else if(!key.isLocal && value) //to local
-                                key.path[i] = t.InverseTransformPoint(key.path[i]);
+                        if(key.path != null) {
+                            for(int i = 0;i < key.path.Length;i++) {
+                                if(key.isLocal && !value) //to world
+                                    key.path[i] = t.localToWorldMatrix.MultiplyPoint(key.path[i]);
+                                else if(!key.isLocal && value) //to local
+                                    key.path[i] = t.InverseTransformPoint(key.path[i]);
+                            }
                         }
 
                         key.isLocal = value;
