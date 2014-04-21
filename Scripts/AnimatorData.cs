@@ -625,12 +625,12 @@ public class AnimatorData : MonoBehaviour, AMITarget {
     /// </summary>
     public bool e_metaInstantiatePrefab(string undoLabel) {
         if(e_metaCanInstantiatePrefab) {
+            Debug.Log("instantiating");
             GameObject go = UnityEditor.PrefabUtility.InstantiatePrefab(meta.gameObject) as GameObject;
             UnityEditor.Undo.RegisterCreatedObjectUndo(go, undoLabel);
             UnityEditor.Undo.SetTransformParent(go.transform, transform, undoLabel);
             UnityEditor.Undo.RegisterCompleteObjectUndo(this, undoLabel);
             meta = go.GetComponent<AnimatorMeta>();
-            UnityEditor.EditorUtility.SetDirty(this);
             return true;
         }
         return false;
@@ -667,7 +667,7 @@ public class AnimatorData : MonoBehaviour, AMITarget {
                     meta.takes.Clear();
 
 					foreach(AMTakeData take in prevTakes)
-                        e_duplicateTake(take, true);
+                        e_duplicateTake(take, true, true);
 				}
 
 				//clear out non-meta stuff
@@ -686,7 +686,7 @@ public class AnimatorData : MonoBehaviour, AMITarget {
 
 				if(copyTakes) { //duplicate meta to takeData
 					foreach(AMTakeData take in prevTakes)
-                        e_duplicateTake(take, true);
+                        e_duplicateTake(take, true, false);
 				}
 			}
 
@@ -829,7 +829,7 @@ public class AnimatorData : MonoBehaviour, AMITarget {
     /// This will only duplicate the tracks and groups, includeKeys=true to also duplicate keys
     /// </summary>
     /// <param name="take"></param>
-    public void e_duplicateTake(AMTakeData dupTake, bool includeKeys) {
+    public void e_duplicateTake(AMTakeData dupTake, bool includeKeys, bool addCompUndo) {
 		AMTakeData a = new AMTakeData();
 
         a.name = dupTake.name;
@@ -864,7 +864,7 @@ public class AnimatorData : MonoBehaviour, AMITarget {
         if(dupTake.trackValues != null) {
             a.trackValues = new List<AMTrack>();
             foreach(AMTrack track in dupTake.trackValues) {
-                AMTrack dupTrack = UnityEditor.Undo.AddComponent(TargetGetDataHolder().gameObject, track.GetType()) as AMTrack;
+                AMTrack dupTrack = (addCompUndo ? UnityEditor.Undo.AddComponent(TargetGetDataHolder().gameObject, track.GetType()) : TargetGetDataHolder().gameObject.AddComponent(track.GetType())) as AMTrack;
                 dupTrack.enabled = false;
                 track.CopyTo(dupTrack);
                 a.trackValues.Add(dupTrack);
@@ -876,7 +876,7 @@ public class AnimatorData : MonoBehaviour, AMITarget {
 				//if there's no target, then we can't add the keys for events and properties
 				if(includeKeys && !(tgtObj == null && (dupTrack is AMPropertyTrack || dupTrack is AMEventTrack))) {
 					foreach(AMKey key in track.keys) {
-                        AMKey dupKey = UnityEditor.Undo.AddComponent(TargetGetDataHolder().gameObject, key.GetType()) as AMKey;
+                        AMKey dupKey = (addCompUndo ? UnityEditor.Undo.AddComponent(TargetGetDataHolder().gameObject, key.GetType()) : TargetGetDataHolder().gameObject.AddComponent(key.GetType())) as AMKey;
 						if(dupKey) {
                             key.CopyTo(dupKey);
                             dupKey.enabled = false;

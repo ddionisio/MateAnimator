@@ -89,7 +89,7 @@ public class AMTakeData {
 		a.setName(getTrackCount());
 		a.id = getUniqueTrackID();
         a.enabled = false;
-		if(obj) a.SetTarget(target, obj);
+		a.SetTarget(target, obj);
         addTrack(groupId, a);
 	}
 	

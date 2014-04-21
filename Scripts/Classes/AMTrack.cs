@@ -58,7 +58,7 @@ public abstract class AMTrack : MonoBehaviour {
 				ret = GetSerializeObject(tgt.gameObject);
 				target.TargetSetCache(_targetPath, tgt);
 			}
-			else {
+			else if(!string.IsNullOrEmpty(_targetPath)) {
 				target.TargetMissing(_targetPath, true);
 			}
 		}
@@ -96,7 +96,7 @@ public abstract class AMTrack : MonoBehaviour {
 	}
 
 	public void SetTarget(AMITarget target, Transform item) {
-		if(target.TargetIsMeta()) {
+		if(target.TargetIsMeta() && item) {
 			target.TargetMissing(_targetPath, false);
 			_targetPath = AMUtil.GetPath(target.TargetGetRoot(), item);
 			target.TargetSetCache(_targetPath, item);
@@ -104,7 +104,7 @@ public abstract class AMTrack : MonoBehaviour {
 		}
 		else {
 			_targetPath = "";
-            SetSerializeObject(GetSerializeObject(item.gameObject));
+            SetSerializeObject(item ? GetSerializeObject(item.gameObject) : null);
 		}
 	}
 

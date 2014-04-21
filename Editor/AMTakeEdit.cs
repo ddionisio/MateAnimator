@@ -52,7 +52,9 @@ public class AMTakeEdit {
     }
 
     public AMTrack getSelectedTrack(AMTakeData take) {
-        return selectedTrack == -1 ? null : take.getTrack(selectedTrack);
+        if(selectedTrack == -1) return null;
+        int ind = take.getTrackIndex(selectedTrack);
+        return ind == -1 || ind >= take.trackValues.Count ? null : take.trackValues[ind];
     }
 
     public void addGroup(AMTakeData take) {
