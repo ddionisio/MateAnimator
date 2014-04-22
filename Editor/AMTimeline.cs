@@ -461,7 +461,6 @@ public class AMTimeline : EditorWindow {
         this.minSize = new Vector2(width_track + width_playback_controls + width_inspector_open + 70f, 190f);
         this.wantsMouseMove = true;
         window = this;
-        //this.wantsMouseMove = true;
         // find component
         if(!aData && !EditorApplication.isPlayingOrWillChangePlaymode) {
             GameObject go = Selection.activeGameObject;
@@ -2934,7 +2933,7 @@ public class AMTimeline : EditorWindow {
             GUIStyle _styleLabelWordwrap = new GUIStyle(GUI.skin.label);
             _styleLabelWordwrap.wordWrap = true;
             GUI.Label(new Rect(0f, 0f, width_inspector_open - width_inspector_closed - width_button_delete - margin, 100f), 
-                "In order to make changes, the AnimatorMeta has to be instantiated.  Make sure to press the 'Save' button in the AnimatorData inspector to save changes to the AnimatorMeta.", _styleLabelWordwrap);
+                "In order to make changes, the AnimatorMeta prefab has to be instantiated.  Make sure to press the 'Save' button in the AnimatorData inspector to save changes to the AnimatorMeta prefab.", _styleLabelWordwrap);
 
             if(GUI.Button(new Rect(0f, 110f, width_inspector_open - width_inspector_closed - width_button_delete - margin, 20f), "Edit")) {
                 MetaInstantiate("Animator Meta Edit");
@@ -5182,7 +5181,7 @@ public class AMTimeline : EditorWindow {
 
     void addTrackFromMenu(object type) {
         bool addCompUndo = !aData.e_metaCanInstantiatePrefab;
-        registerTakesUndo(aData, "New Track", true);
+        registerTakesUndo(aData, "New Track", false);
         addTrack((int)type, addCompUndo);
     }
     void buildAddTrackMenu() {

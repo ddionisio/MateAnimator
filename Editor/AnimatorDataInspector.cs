@@ -43,14 +43,15 @@ public class AnimatorDataInspector : Editor {
             }
 
             if(doIt) {
-                Undo.RecordObject(dat, "Set Meta");
+                Undo.RegisterCompleteObjectUndo(dat, "Set Meta");
                 dat.e_setMeta(newMeta, false);
             }
         }
 
         MetaCommand metaComm = MetaCommand.None;
-
+                
         GUILayout.BeginHorizontal();
+        GUILayout.FlexibleSpace();
 
         GUI.backgroundColor = Color.green;
 
@@ -60,9 +61,11 @@ public class AnimatorDataInspector : Editor {
         GUI.enabled = true;
         if(GUILayout.Button("Save As...", GUILayout.Width(100f))) metaComm = MetaCommand.SaveAs;
 
+        GUILayout.FlexibleSpace();
         GUILayout.EndHorizontal();
-
+                
         GUILayout.BeginHorizontal();
+        GUILayout.FlexibleSpace();
 
         GUI.backgroundColor = Color.red;
 
@@ -75,6 +78,7 @@ public class AnimatorDataInspector : Editor {
         if(GUILayout.Button(new GUIContent("Break", "This will copy all data from AnimatorMeta to this AnimatorData, and then removes the reference to AnimatorMeta."), GUILayout.Width(100f))) metaComm = MetaCommand.Instantiate;
         GUI.enabled = true;
 
+        GUILayout.FlexibleSpace();
         GUILayout.EndHorizontal();
 
         AMEditorUtil.DrawSeparator();
@@ -183,6 +187,7 @@ public class AnimatorDataInspector : Editor {
                 break;
             case MetaCommand.Revert:
                 if(EditorUtility.DisplayDialog("Revert Animator Meta", "Are you sure?", "Yes", "No")) {
+                    Undo.RegisterCompleteObjectUndo(dat, "Revert Animator Meta");
                     GameObject prefabGO = PrefabUtility.GetPrefabParent(dat.e_meta.gameObject) as GameObject;
                     dat.e_setMeta(prefabGO ? prefabGO.GetComponent<AnimatorMeta>() : null, false);
                     GUI.changed = true;

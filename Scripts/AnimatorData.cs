@@ -625,7 +625,7 @@ public class AnimatorData : MonoBehaviour, AMITarget {
     /// </summary>
     public bool e_metaInstantiatePrefab(string undoLabel) {
         if(e_metaCanInstantiatePrefab) {
-            Debug.Log("instantiating");
+            //Debug.Log("instantiating");
             GameObject go = UnityEditor.PrefabUtility.InstantiatePrefab(meta.gameObject) as GameObject;
             UnityEditor.Undo.RegisterCreatedObjectUndo(go, undoLabel);
             UnityEditor.Undo.SetTransformParent(go.transform, transform, undoLabel);
