@@ -422,7 +422,6 @@ public class AMTakeData {
 		}
 		return index;
 	}
-	
 	public AMGroup getGroup(int id) {
 		initGroups();
 		if(id == 0) return rootGroup;

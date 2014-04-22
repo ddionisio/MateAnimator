@@ -311,11 +311,14 @@ public class AMTakeEdit {
     }
 
     public bool contextSelectionHasKeys(AMTakeData take) {
-        foreach(AMKey key in getSelectedTrack(take).keys) {
-            for(int i = 0;i < contextSelection.Count;i += 2) {
-                // if selection start frame > frame, break out of sorted list
-                if(contextSelection[i] > key.frame) break;
-                if(contextSelection[i] <= key.frame && contextSelection[i + 1] >= key.frame) return true;
+        AMTrack track = getSelectedTrack(take);
+        if(track) {
+            foreach(AMKey key in track.keys) {
+                for(int i = 0;i < contextSelection.Count;i += 2) {
+                    // if selection start frame > frame, break out of sorted list
+                    if(contextSelection[i] > key.frame) break;
+                    if(contextSelection[i] <= key.frame && contextSelection[i + 1] >= key.frame) return true;
+                }
             }
         }
         return false;

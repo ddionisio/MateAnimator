@@ -27,4 +27,12 @@ public class AMGroup {
         ngrp.elements = new List<int>(elements);
         return ngrp;
     }
+
+    public int getItemIndex(int itemId) {
+        for(int i = 0; i < elements.Count;i++) {
+            if(elements[i] == itemId)
+                return i;
+        }
+        return -1;
+    }
 }

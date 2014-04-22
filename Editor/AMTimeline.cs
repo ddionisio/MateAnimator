@@ -884,32 +884,111 @@ public class AMTimeline : EditorWindow {
             GUIUtility.keyboardControl = 0;
             GUIUtility.ExitGUI();
         }
-        //cut/copy/paste
-        else if(e.type == EventType.ValidateCommand) {
+        else if(!isTextEditting()) {
             bool done = false;
 
-            if(e.commandName == "Copy") {
-                //are there keys?
-                if(TakeEditCurrent().contextSelectionTracks.Count > 1 || TakeEditCurrent().contextSelectionHasKeys(aData.e_getCurrentTake())) {
-                    contextCopyFrames();
+            if(e.Equals(Event.KeyboardEvent("delete")) || e.Equals(Event.KeyboardEvent("backspace"))) {
+                deleteSelectedKeys(false);
+                done = true;
+            }
+            else if(e.Equals(Event.KeyboardEvent("up"))) {
+                done = timelineSelectGroupOrTrackFromCurrent(-1);
+                if(done) {
+                    AMTakeEdit takeEdit = TakeEditCurrent();
+                    takeEdit.contextSelection.Clear();
+                    if(takeEdit.selectedTrack != -1)
+                        contextSelectFrame(takeEdit.selectedFrame, takeEdit.selectedFrame);
+                }
+            }
+            else if(e.Equals(Event.KeyboardEvent("down"))) {
+                done = timelineSelectGroupOrTrackFromCurrent(1);
+                if(done) {
+                    AMTakeEdit takeEdit = TakeEditCurrent();
+                    takeEdit.contextSelection.Clear();
+                    if(takeEdit.selectedTrack != -1)
+                        contextSelectFrame(takeEdit.selectedFrame, takeEdit.selectedFrame);
+                }
+            }
+            else if(e.Equals(Event.KeyboardEvent("left"))) {
+                AMTakeEdit takeEdit = TakeEditCurrent();
+                if(takeEdit.selectedTrack != -1 && takeEdit.selectedFrame > 1) {
+                    int f = takeEdit.selectedFrame - 1;
+                    takeEdit.contextSelection.Clear();
+                    contextSelectFrame(f, f);
+                    timelineSelectFrame(takeEdit.selectedTrack, f);
                     done = true;
                 }
             }
-            else if(e.commandName == "Paste") {
-                if(canPaste()) {
-                    contextMenuFrame = TakeEditCurrent().selectedFrame;
-                    contextPasteKeys();
+            else if(e.Equals(Event.KeyboardEvent("#left"))) {
+                AMTakeEdit takeEdit = TakeEditCurrent();
+                if(takeEdit.selectedTrack != -1 && takeEdit.selectedFrame > 1) {
+                    int f = takeEdit.selectedFrame;
+                    if(takeEdit.isFrameInContextSelection(f-1) && !takeEdit.isFrameInContextSelection(f+1))
+                        takeEdit.contextSelectFrame(f, true);
+                    else
+                        contextSelectFrame(f-1, f-1);
+                    timelineSelectFrame(takeEdit.selectedTrack, f-1);
                     done = true;
                 }
             }
-            else if(e.commandName == "Cut") {
-                if(TakeEditCurrent().contextSelectionTracks.Count > 1 || TakeEditCurrent().contextSelectionHasKeys(aData.e_getCurrentTake())) {
-                    contextCutKeys();
+            else if(e.Equals(Event.KeyboardEvent("right"))) {
+                AMTakeEdit takeEdit = TakeEditCurrent();
+                if(takeEdit.selectedTrack != -1 && takeEdit.selectedFrame < aData.e_getCurrentTake().numFrames) {
+                    int f = takeEdit.selectedFrame + 1;
+                    takeEdit.contextSelection.Clear();
+                    contextSelectFrame(f, f);
+                    timelineSelectFrame(takeEdit.selectedTrack, f);
                     done = true;
+                }
+            }
+            else if(e.Equals(Event.KeyboardEvent("#right"))) {
+                AMTakeEdit takeEdit = TakeEditCurrent();
+                if(takeEdit.selectedTrack != -1 && takeEdit.selectedFrame < aData.e_getCurrentTake().numFrames) {
+                    int f = takeEdit.selectedFrame;
+                    if(takeEdit.isFrameInContextSelection(f+1) && !takeEdit.isFrameInContextSelection(f-1))
+                        takeEdit.contextSelectFrame(f, true);
+                    else
+                        contextSelectFrame(f+1, f+1);
+                    timelineSelectFrame(takeEdit.selectedTrack, f+1);
+                    done = true;
+                }
+            }
+            //cut/copy/paste/duplicate
+            else if(e.type == EventType.ValidateCommand) {
+                if(e.commandName == "Copy") {
+                    //are there keys?
+                    if(TakeEditCurrent().contextSelectionTracks.Count > 1 || TakeEditCurrent().contextSelectionHasKeys(aData.e_getCurrentTake())) {
+                        contextCopyFrames();
+                        done = true;
+                    }
+                }
+                else if(e.commandName == "Paste") {
+                    if(canPaste()) {
+                        contextMenuFrame = TakeEditCurrent().selectedFrame;
+                        contextPasteKeys();
+                        done = true;
+                    }
+                }
+                else if(e.commandName == "Cut") {
+                    if(TakeEditCurrent().contextSelectionTracks.Count > 1 || TakeEditCurrent().contextSelectionHasKeys(aData.e_getCurrentTake())) {
+                        contextCutKeys();
+                        done = true;
+                    }
+                }
+                else if(e.commandName == "Duplicate") {
+                    AMTakeEdit takeEdit = TakeEditCurrent();
+                    if(takeEdit.contextSelectionTracks.Count > 1 || takeEdit.contextSelectionHasKeys(aData.e_getCurrentTake())) {
+                        contextCopyFrames();
+                        contextMenuFrame = takeEdit.contextSelection.Count > 0 ? takeEdit.contextSelection[takeEdit.contextSelection.Count-1] + 1 : takeEdit.selectedFrame;
+                        contextPasteKeys();
+                        timelineSelectFrame(takeEdit.selectedTrack, contextMenuFrame);
+                        done = true;
+                    }
                 }
             }
 
             if(done) {
+                Repaint();
                 e.Use();
                 return;
             }
@@ -4613,6 +4692,120 @@ public class AMTimeline : EditorWindow {
         else
             timelineSelectObjectFor(track);
     }
+    bool timelineSelectGroupOrTrackFromCurrent(int dir) {
+        AMTakeData take = aData.e_getCurrentTake();
+        AMTakeEdit takeEdit = TakeEditCurrent();
+
+        int parentGrpId = 0;
+        int id = 0;
+        bool proceed = false;
+
+        //AMTrack 
+        if(takeEdit.selectedTrack != -1) {
+            id = takeEdit.selectedTrack;
+            parentGrpId = take.getElementGroup(takeEdit.selectedTrack);
+            proceed = true;
+        }
+        else if(takeEdit.selectedGroup != 0) {
+            id = takeEdit.selectedGroup;
+            
+            //if we are moving down, just select the first element
+            if(dir > 0) {
+                AMGroup grp = take.getGroup(id);
+                if(grp.elements.Count > 0 && grp.foldout) {
+                    int nextId = grp.elements[0];
+                    if(nextId < 0) //select group
+                        timelineSelectGroup(nextId);
+                    else
+                        timelineSelectTrack(nextId);
+                    return true;
+                }
+            }
+
+            parentGrpId = take.getElementGroup(takeEdit.selectedGroup);
+            proceed = true;
+        }
+
+        if(proceed) {
+            //Debug.Log("grp: "+parentGrpId);
+            AMGroup grp = take.getGroup(parentGrpId);
+
+            int curInd = grp.getItemIndex(id);
+            int nextInd = curInd + dir;
+            if(curInd != -1) {
+                int nextId;
+                if(nextInd < 0 || nextInd >= grp.elements.Count) {
+                    if(parentGrpId == 0) {
+                        if(id < 0) {
+                            if(dir > 0) {
+                                nextInd = -1;
+                                while(id < 0) {
+                                    grp = take.getGroup(id);
+                                    if(grp.elements.Count > 0) {
+                                        if(grp.foldout) {
+                                            nextInd = 0;
+                                            break;
+                                        }
+                                    }
+                                    id = take.getElementGroup(id);
+                                }
+                                if(nextInd != -1) {
+                                    nextId = grp.elements[nextInd];
+                                }
+                                else
+                                    return false;
+                            }
+                            else
+                                return false;
+                        }
+                        else
+                            return false;
+                    }
+                    else {
+                        if(dir < 0)
+                            nextId = parentGrpId;
+                        else { //moving down, check the next element up the hierarchy
+                            //see if we can get the first element if id is group
+                            if(id < 0 && (grp = take.getGroup(id)).elements.Count > 0 && grp.foldout) {
+                                nextInd = 0;
+                            }
+                            else {
+                                do {
+                                    id = parentGrpId;
+                                    parentGrpId = take.getElementGroup(id);
+                                    grp = take.getGroup(parentGrpId);
+                                    curInd = grp.getItemIndex(id);
+                                    if(curInd == -1) break;
+                                    nextInd = curInd + dir;
+                                } while(parentGrpId < 0 && nextInd >= grp.elements.Count);
+                                if(curInd == -1 || nextInd >= grp.elements.Count)
+                                    return false;
+                            }
+                            nextId = grp.elements[nextInd];
+                        }
+                    }
+                }
+                else {
+                    nextId = grp.elements[nextInd];
+                    if(nextId < 0 && dir < 0) { //if next is a group, see if we can select its last element
+                        grp = take.getGroup(nextId);
+                        if(grp.elements.Count > 0 && grp.foldout) {
+                            nextId = grp.elements[grp.elements.Count - 1];
+                        }
+                    }
+                }
+
+                if(nextId < 0) //select group
+                    timelineSelectGroup(nextId);
+                else
+                    timelineSelectTrack(nextId);
+            }
+            else
+                proceed = false;
+        }
+
+        return proceed;
+    }
     void timelineSelectGroup(int group_id) {
         cancelTextEditting();
         TakeEditCurrent().selectGroup(aData.e_getCurrentTake(), group_id, isShiftDown, isControlDown);
@@ -5490,7 +5683,7 @@ public class AMTimeline : EditorWindow {
             return;
         }
         // clear context selection if control is not down
-        if(!isControlDown) TakeEditCurrent().contextSelection = new List<int>();
+        if(!isControlDown) TakeEditCurrent().contextSelection.Clear();
         // select single, toggle if control is down
         TakeEditCurrent().contextSelectFrame(frame, isControlDown);
         //contextSelectFrameRange(frame,frame);
@@ -5501,7 +5694,7 @@ public class AMTimeline : EditorWindow {
             TakeEditCurrent().contextSelectFrameRange(aData.e_getCurrentTake().selectedFrame, endFrame);
             return;
         }
-        if(!isControlDown) TakeEditCurrent().contextSelection = new List<int>();
+        if(!isControlDown) TakeEditCurrent().contextSelection.Clear();
 
         TakeEditCurrent().contextSelectFrameRange(startFrame, endFrame);
     }
@@ -5644,6 +5837,9 @@ public class AMTimeline : EditorWindow {
     void resetPreview() {
         // reset all object transforms to frame 1
         aData.e_getCurrentTake().previewFrame(aData, 1f);
+    }
+    bool isTextEditting() {
+        return isRenamingTrack != -1 || isRenamingTake || isRenamingGroup != 0;
     }
     void cancelTextEditting(bool toggleIsRenamingTake = false) {
         if(!isChangingTimeControl && !isChangingFrameControl) {
