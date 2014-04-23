@@ -201,12 +201,16 @@ public class AnimatorDataInspector : Editor {
                 if(doIt) {
                     Undo.RecordObject(dat, "Break Animator Meta");
                     dat.e_setMeta(null, true);
+                    dat.e_currentTake = 0;
                     GUI.changed = true;
                 }
                 break;
         }
 
-        if(GUI.changed)
+        if(GUI.changed) {
+            if(AMTimeline.window)
+                AMTimeline.window.Repaint();
             EditorUtility.SetDirty(dat);
+        }
     }
 }

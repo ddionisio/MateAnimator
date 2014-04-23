@@ -361,6 +361,8 @@ public class AMTimeline : EditorWindow {
     private int mouseXOverFrame = 0;				// the frame number that the mouse X is over, 0 if none
     private int mouseOverTrack = -1;				// mouse over frame track, -1 if no track
     private int mouseOverElement = -1;
+    private int mouseMoveTrack = -1;				// mouse move frame track, -1 if no track
+    private int mouseMoveFrame = 0;                 // mouse move frame, 0 if none
     private int mouseXOverHScrollbarFrame = 0;
     private Vector2 mouseOverGroupElement = new Vector2(-1, -1);	// group_id, track id
     private bool mouseOverSelectedFrame = false;
@@ -507,7 +509,7 @@ public class AMTimeline : EditorWindow {
             //aData.propertySelectTrack = null;
         }
     }
-    bool MetaInstantiate(string label) {
+    public bool MetaInstantiate(string label) {
         if(aData.e_metaCanInstantiatePrefab) {
             //preserve the current take edit info
             AMTakeEdit curTakeEdit = null;
@@ -864,8 +866,38 @@ public class AMTimeline : EditorWindow {
         #endregion
         #region drag logic events
         bool wasDragging = false;
+        UnityEngine.Object[] dragItems = null;
+        Rect dropArea = new Rect(width_track, height_menu_bar + height_control_bar + 2f, position.width - 5f - 15f - width_track - (aData.isInspectorOpen ? width_inspector_open : width_inspector_closed), position.height - height_indicator_footer - height_menu_bar - height_control_bar);
         if(e.type == EventType.mouseDrag && EditorWindow.mouseOverWindow == this) {
             isDragging = true;
+        }
+        else if(EditorWindow.mouseOverWindow == this && (e.type == EventType.DragUpdated || e.type == EventType.DragPerform) && DragAndDrop.objectReferences.Length > 0 && dropArea.Contains(currentMousePosition)) {
+            dragType = (int)DragType.None;
+            wasDragging = isDragging = false;
+
+            //Debug.Log("track: " + mouseMoveTrack + " frame: "+mouseMoveFrame);
+
+            if(e.type == EventType.DragPerform) {
+                DragAndDrop.AcceptDrag();
+                                
+                UnityEngine.Object[] objs = DragAndDrop.objectReferences;
+
+                if(mouseMoveTrack != -1 && mouseMoveFrame > 0) {
+
+                }
+                else if(mouseMoveTrack == -1) { //check to see if we can create a track
+                    if(!addSpriteTrackWithKeyObjects(objs, 1))
+                        dragItems = objs;
+                    else {
+                        Repaint();
+                        return;
+                    }
+                }
+                else
+                    dragItems = objs;
+            }
+
+            DragAndDrop.visualMode = DragAndDropVisualMode.Link;
         }
         else if((dragType == (int)DragType.CursorZoom && EditorWindow.mouseOverWindow != this) || e.type == EventType.mouseUp || /*EditorWindow.mouseOverWindow!=this*/Event.current.rawType == EventType.MouseUp /*|| e.mousePosition.y < 0f*/) {
             if(isDragging) {
@@ -873,6 +905,7 @@ public class AMTimeline : EditorWindow {
                 isDragging = false;
             }
         }
+
         #endregion
         #region keyboard events
         if(e.Equals(Event.KeyboardEvent("[enter]")) || e.Equals(Event.KeyboardEvent("return"))) {
@@ -1916,16 +1949,19 @@ public class AMTimeline : EditorWindow {
         }
         #endregion
         #region quick add
-        GUIStyle styleObjectField = new GUIStyle(EditorStyles.objectField);
+        /*GUIStyle styleObjectField = new GUIStyle(EditorStyles.objectField);
         GUIStyle styleObjectFieldThumb = new GUIStyle(EditorStyles.objectFieldThumb);
         EditorStyles.objectField.normal.textColor = new Color(0f, 0f, 0f, 0f);
         EditorStyles.objectField.contentOffset = new Vector2(width_track * -1 - 300f, 0f);
         EditorStyles.objectField.normal.background = null;
-        EditorStyles.objectField.onNormal.background = null;
+        EditorStyles.objectField.onNormal.background = null;*/
 
         GameObject tempGO = null;
-        tempGO = (GameObject)EditorGUI.ObjectField(new Rect(width_track, height_menu_bar + height_control_bar + 2f, position.width - 5f - 15f - width_track - (aData.isInspectorOpen ? width_inspector_open : width_inspector_closed), position.height - height_indicator_footer - height_menu_bar - height_control_bar), "", tempGO, typeof(GameObject), true);
-
+        //tempGO = (GameObject)EditorGUI.ObjectField(new Rect(width_track, height_menu_bar + height_control_bar + 2f, position.width - 5f - 15f - width_track - (aData.isInspectorOpen ? width_inspector_open : width_inspector_closed), position.height - height_indicator_footer - height_menu_bar - height_control_bar), "", tempGO, typeof(GameObject), true);
+        if(dragItems != null && dragItems.Length > 0) {
+            tempGO = dragItems[0] as GameObject;
+        }
+                
         if(tempGO != null) {
             objects_window = new List<GameObject>();
             if(Selection.gameObjects.Length <= 0) objects_window.Add(tempGO);
@@ -1933,10 +1969,10 @@ public class AMTimeline : EditorWindow {
             buildAddTrackMenu_Drag();
             menu_drag.ShowAsContext();
         }
-        EditorStyles.objectField.contentOffset = styleObjectField.contentOffset;
+        /*EditorStyles.objectField.contentOffset = styleObjectField.contentOffset;
         EditorStyles.objectField.normal = styleObjectField.normal;
         EditorStyles.objectField.onNormal = styleObjectField.onNormal;
-        EditorStyles.objectFieldThumb.normal = styleObjectFieldThumb.normal;
+        EditorStyles.objectFieldThumb.normal = styleObjectFieldThumb.normal;*/
         #endregion
         #region tooltip
 
@@ -1976,6 +2012,11 @@ public class AMTimeline : EditorWindow {
             _aData.e_isAnimatorOpen = false;
             _aData = null;
             Selection.activeGameObject = go;
+        }
+
+        if(e.type == EventType.MouseMove || e.type == EventType.DragUpdated) {
+            mouseMoveTrack = mouseOverTrack;
+            mouseMoveFrame = mouseOverFrame;
         }
     }
     void ReloadOtherWindows() {
@@ -5167,6 +5208,71 @@ public class AMTimeline : EditorWindow {
                 break;
         }
     }
+
+    /// <summary>
+    /// Returns true if track added successfully
+    /// </summary>
+    public bool addSpriteTrackWithKeyObjects(UnityEngine.Object[] objs, int startFrame) {
+        List<Sprite> sprites = new List<Sprite>(objs.Length);
+
+        for(int i = 0; i < objs.Length; i++) {
+            if(objs[i] is Sprite) {
+                Sprite spr = objs[i] as Sprite;
+                if(sprites.IndexOf(spr) == -1)
+                    sprites.Add(spr);
+            }
+            else if(objs[i] is Texture2D) {
+                string path = AssetDatabase.GetAssetPath(objs[i]);
+                UnityEngine.Object[] sprs = AssetDatabase.LoadAllAssetRepresentationsAtPath(path);
+                for(int s = 0; s < sprs.Length; s++) {
+                    if(sprs[s] is Sprite) {
+                        Sprite _spr = sprs[s] as Sprite;
+                        if(sprites.IndexOf(_spr) == -1)
+                            sprites.Add(_spr);
+                    }
+                }
+            }
+        }
+
+        if(sprites.Count > 0) {
+            sprites.Sort(delegate(Sprite obj1, Sprite obj2) { return obj1.name.CompareTo(obj2.name); });
+
+            //create go
+            const string label = "Add Sprite Track";
+            GameObject newGO = new GameObject("sprite", typeof(SpriteRenderer));
+            Undo.RegisterCreatedObjectUndo(newGO, label);
+            Undo.SetTransformParent(newGO.transform, aData.TargetGetRoot(), label);
+            newGO.transform.localPosition = Vector3.zero;
+
+            //prepare animator data
+            bool instantiated = registerTakesUndo(aData, "Add Sprite Track", false);
+            AMTrack.OnAddKey addCall = instantiated ? (AMTrack.OnAddKey)OnAddKeyComp : (AMTrack.OnAddKey)OnAddKeyUndoComp;
+
+            //add track
+            addTrack((int)Track.Property, !instantiated);
+
+            AMTakeData take = aData.e_getCurrentTake();
+            timelineSelectTrack(aData.e_getCurrentTake().track_count);
+
+            AMPropertyTrack newTrack = TakeEdit(take).getSelectedTrack(take) as AMPropertyTrack;
+            newTrack.SetTarget(aData, newGO.transform);
+
+            SpriteRenderer comp = newGO.GetComponent<SpriteRenderer>();
+            newTrack.setComponent(aData, comp);
+            newTrack.setPropertyInfo(comp.GetType().GetProperty("sprite"));
+
+            for(int i = 0; i < sprites.Count; i++) {
+                AMPropertyKey key = newTrack.addKey(aData, addCall, startFrame + i);
+                key.setValue(sprites[i]);
+            }
+
+            comp.sprite = sprites[0];
+
+            return true;
+        }
+
+        return false;
+    }
     void addKeyToFrame(int frame) {
         // add key if there are tracks
         if(aData.e_getCurrentTake().getTrackCount() > 0) {
@@ -5701,7 +5807,7 @@ public class AMTimeline : EditorWindow {
     #endregion
 
     #region Other Fns
-
+        
     public int findWidthFontSize(float width, GUIStyle style, GUIContent content, int min = 8, int max = 15) {
         // finds the largest font size that can fit in the given style. max 15
         style.fontSize = max;
@@ -5756,6 +5862,7 @@ public class AMTimeline : EditorWindow {
             }
         }
     }
+        
     //returns deleted keys
     AMKey[] checkForOutOfBoundsFramesOnSelectedTrack() {
         AMTakeData take = aData.e_getCurrentTake();

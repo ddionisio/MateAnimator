@@ -134,7 +134,7 @@ public class AMPropertyTrack : AMTrack {
     }
 
     // add key
-    public void addKey(AMITarget target, OnAddKey addCall, int _frame) {
+    public AMPropertyKey addKey(AMITarget target, OnAddKey addCall, int _frame) {
 		Component comp = GetTargetComp(target);
 		RefreshData(comp);
 
@@ -181,6 +181,7 @@ public class AMPropertyTrack : AMTrack {
 
         // update cache
         updateCache(target);
+        return k;
     }
     
 	public bool setComponent(AMITarget target, Component component) {

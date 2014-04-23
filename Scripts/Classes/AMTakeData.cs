@@ -754,7 +754,7 @@ public class AMTakeData {
 			}
 		}
 	}
-	
+
 	public Sequence BuildSequence(AMITarget itarget, string goName, bool autoKill, UpdateType updateType, OnSequenceDone endCallback) {
 		if(loopBackToFrame >= 0 && numLoop <= 0)
 			numLoop = 1;

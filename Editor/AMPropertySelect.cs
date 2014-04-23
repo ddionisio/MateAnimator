@@ -199,12 +199,17 @@ public class AMPropertySelect : EditorWindow {
             changePropertyValue = false;
         }
         if(changePropertyValue) {
+            bool instantiated = AMTimeline.window.MetaInstantiate("Set Property");
 
-			Undo.RegisterCompleteObjectUndo(track, "Set Property");
+            if(!instantiated)
+			    Undo.RegisterCompleteObjectUndo(track, "Set Property");
+
             // delete keys
             if(track.keys.Count > 0) {
-				foreach(AMKey key in track.keys)
-					Undo.DestroyObjectImmediate(key);
+                if(!instantiated) {
+                    foreach(AMKey key in track.keys)
+                        Undo.DestroyObjectImmediate(key);
+                }
 				track.keys = new List<AMKey>();
                 AMCodeView.refresh();
             }
@@ -216,6 +221,7 @@ public class AMPropertySelect : EditorWindow {
             // set component
             track.setComponent(aData, propertyComponent);
 			track.updateCache(aData);
+            EditorUtility.SetDirty(track);
         }
         this.Close();
     }

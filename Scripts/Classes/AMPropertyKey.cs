@@ -209,7 +209,7 @@ public class AMPropertyKey : AMKey {
 		a.fieldName = fieldName;
 		a.methodName = methodName;
 
-		a.methodParameterTypes = new string[methodParameterTypes.Length];
+		a.methodParameterTypes = methodParameterTypes != null ? new string[methodParameterTypes.Length] : new string[0];
 		System.Array.Copy(methodParameterTypes, a.methodParameterTypes, methodParameterTypes.Length);
 
         a.frame = frame;
