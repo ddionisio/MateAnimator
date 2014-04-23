@@ -18,7 +18,7 @@ Import/Export, Code Generator doesn't work. JSON stuff mangled.
 Update
 ======
 * Undo/Redo reworked and changed to comply with Unity 4.3
-* Keyboard shortcuts: arrowkeys to select keys/tracks, undo/redo/duplicate for keys, copy/paste for keys, delete to delete selected keys.
+* Keyboard shortcuts: arrowkeys to select keys/tracks, copy/paste/duplicate for keys, delete to delete selected keys.
 * Shared Animator (AnimatorMeta) allows you to share animation per AnimatorData.  This helps with updating any shared animation reliably, and reduces overhead.
 * Sprite animation support.  You can also drag sprites to the Animator window to automatically add the track/keys.
 
