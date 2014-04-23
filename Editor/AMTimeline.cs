@@ -883,7 +883,12 @@ public class AMTimeline : EditorWindow {
                 UnityEngine.Object[] objs = DragAndDrop.objectReferences;
 
                 if(mouseMoveTrack != -1 && mouseMoveFrame > 0) {
-
+                    if(!addSpriteKeysToTrack(objs, mouseMoveTrack, mouseMoveFrame))
+                        dragItems = objs;
+                    else {
+                        Repaint();
+                        return;
+                    }
                 }
                 else if(mouseMoveTrack == -1) { //check to see if we can create a track
                     if(!addSpriteTrackWithKeyObjects(objs, 1))
@@ -5209,31 +5214,41 @@ public class AMTimeline : EditorWindow {
         }
     }
 
+    public bool addSpriteKeysToTrack(UnityEngine.Object[] objs, int trackId, int frame) {
+        AMPropertyTrack track = aData.e_getCurrentTake().getTrack(trackId) as AMPropertyTrack;
+        if(track && track.getTrackType() == "sprite") {
+            List<Sprite> sprites = AMEditorUtil.GetSprites(objs);
+            if(sprites.Count > 0) {
+                const string label = "Add Sprite Keys";
+                AMTrack.OnAddKey addCall;
+                if(MetaInstantiate(label)) {
+                    addCall = OnAddKeyComp;
+                }
+                else {
+                    recordUndoTrackAndKeys(track, true, label);
+                    addCall = OnAddKeyUndoComp;
+                }
+
+                track.offsetKeysFromBy(aData, frame, sprites.Count);
+
+                for(int i = 0;i < sprites.Count;i++) {
+                    AMPropertyKey key = track.addKey(aData, addCall, frame + i);
+                    key.setValue(sprites[i]);
+                }
+
+                EditorUtility.SetDirty(track);
+                setDirtyKeys(track);
+                return true;
+            }
+        }
+        return false;
+    }
+
     /// <summary>
     /// Returns true if track added successfully
     /// </summary>
     public bool addSpriteTrackWithKeyObjects(UnityEngine.Object[] objs, int startFrame) {
-        List<Sprite> sprites = new List<Sprite>(objs.Length);
-
-        for(int i = 0; i < objs.Length; i++) {
-            if(objs[i] is Sprite) {
-                Sprite spr = objs[i] as Sprite;
-                if(sprites.IndexOf(spr) == -1)
-                    sprites.Add(spr);
-            }
-            else if(objs[i] is Texture2D) {
-                string path = AssetDatabase.GetAssetPath(objs[i]);
-                UnityEngine.Object[] sprs = AssetDatabase.LoadAllAssetRepresentationsAtPath(path);
-                for(int s = 0; s < sprs.Length; s++) {
-                    if(sprs[s] is Sprite) {
-                        Sprite _spr = sprs[s] as Sprite;
-                        if(sprites.IndexOf(_spr) == -1)
-                            sprites.Add(_spr);
-                    }
-                }
-            }
-        }
-
+        List<Sprite> sprites = AMEditorUtil.GetSprites(objs);
         if(sprites.Count > 0) {
             sprites.Sort(delegate(Sprite obj1, Sprite obj2) { return obj1.name.CompareTo(obj2.name); });
 

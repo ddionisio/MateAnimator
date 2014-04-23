@@ -1,7 +1,31 @@
 ﻿using UnityEngine;
 using UnityEditor;
+using System.Collections.Generic;
 
 public struct AMEditorUtil {
+    public static List<Sprite> GetSprites(UnityEngine.Object[] objs) {
+        List<Sprite> sprites = new List<Sprite>(objs.Length);
+
+        for(int i = 0;i < objs.Length;i++) {
+            if(objs[i] is Sprite) {
+                Sprite spr = objs[i] as Sprite;
+                if(sprites.IndexOf(spr) == -1)
+                    sprites.Add(spr);
+            }
+            else if(objs[i] is Texture2D) {
+                string path = AssetDatabase.GetAssetPath(objs[i]);
+                UnityEngine.Object[] sprs = AssetDatabase.LoadAllAssetRepresentationsAtPath(path);
+                for(int s = 0;s < sprs.Length;s++) {
+                    if(sprs[s] is Sprite) {
+                        Sprite _spr = sprs[s] as Sprite;
+                        if(sprites.IndexOf(_spr) == -1)
+                            sprites.Add(_spr);
+                    }
+                }
+            }
+        }
+        return sprites;
+    }
 	public static void DrawSeparator() {
 		GUILayout.Space(12f);
 		
