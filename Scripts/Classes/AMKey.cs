@@ -24,6 +24,9 @@ public class AMKey : MonoBehaviour {
             if(_cachedEaseCurve == null || _cachedEaseCurve.keys.Length <= 0) _cachedEaseCurve = getCustomEaseCurve();
             return _cachedEaseCurve;
         }
+        set {
+            _cachedEaseCurve = value;
+        }
     }
 
     public virtual void destroy() {

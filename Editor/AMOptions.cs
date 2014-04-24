@@ -148,6 +148,18 @@ public class AMOptions : EditorWindow {
             GUILayout.FlexibleSpace();
             GUILayout.EndVertical();
             GUILayout.EndHorizontal();
+            // sprite drag/drop fps
+            GUILayout.BeginHorizontal();
+            GUILayout.Space(width_indent);
+            EditorGUIUtility.labelWidth = 250.0f;
+            int nfps = EditorGUILayout.IntField("Sprite Insert Frame/Second", oData.spriteInsertFramePerSecond);
+            if(nfps <= 0) nfps = 1;
+            if(oData.spriteInsertFramePerSecond != nfps) {
+                oData.spriteInsertFramePerSecond = nfps;
+                // save
+                EditorUtility.SetDirty(oData);
+            }
+            GUILayout.EndHorizontal();
             // time instead of frame numbers
             GUILayout.BeginHorizontal();
             GUILayout.Space(width_indent);

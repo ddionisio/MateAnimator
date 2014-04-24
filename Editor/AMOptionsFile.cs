@@ -19,6 +19,7 @@ public class AMOptionsFile : ScriptableObject {
 	public bool disableTimelineActionsTooltip = false;
 	public bool showFramesForCollapsedTracks = true;
     public float gizmo_size = 0.05f;
+    public int spriteInsertFramePerSecond = 6;
 	
 	// quick add combos
 	public List<List<int>> quickAdd_Combos = new List<List<int>>();

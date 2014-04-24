@@ -5219,9 +5219,11 @@ public class AMTimeline : EditorWindow {
         if(track && track.getTrackType() == "sprite") {
             List<Sprite> sprites = AMEditorUtil.GetSprites(objs);
             if(sprites.Count > 0) {
+                //prepare data
                 const string label = "Add Sprite Keys";
                 AMTrack.OnAddKey addCall;
-                if(MetaInstantiate(label)) {
+                if(registerTakesUndo(aData, label, false)) {
+                    track = aData.e_getCurrentTake().getTrack(trackId) as AMPropertyTrack;
                     addCall = OnAddKeyComp;
                 }
                 else {
@@ -5229,11 +5231,25 @@ public class AMTimeline : EditorWindow {
                     addCall = OnAddKeyUndoComp;
                 }
 
-                track.offsetKeysFromBy(aData, frame, sprites.Count);
+                //insert keys
+                AMTakeData take = aData.e_getCurrentTake();
+
+                float sprFPS = oData.spriteInsertFramePerSecond;
+
+                //expand num frames if needed
+                int lastFrame = track.keys != null && track.keys.Count > 0 ? track.keys[track.keys.Count-1].frame : 1;
+                int spriteNumFrames = Mathf.RoundToInt(((float)sprites.Count/sprFPS)*(float)take.frameRate);
+                if(take.numFrames < lastFrame + spriteNumFrames - 1)
+                    take.numFrames += (lastFrame + spriteNumFrames - 1) - take.numFrames;
+
+                track.offsetKeysFromBy(aData, frame, spriteNumFrames);
 
                 for(int i = 0;i < sprites.Count;i++) {
-                    AMPropertyKey key = track.addKey(aData, addCall, frame + i);
+                    AMPropertyKey key = track.addKey(aData, addCall, frame);
                     key.setValue(sprites[i]);
+
+                    int nframe = Mathf.RoundToInt((((float)frame/(float)take.frameRate) + (1.0f/sprFPS))*(float)take.frameRate);
+                    frame = Mathf.Max(nframe, frame+1);
                 }
 
                 EditorUtility.SetDirty(track);
@@ -5251,7 +5267,7 @@ public class AMTimeline : EditorWindow {
         List<Sprite> sprites = AMEditorUtil.GetSprites(objs);
         if(sprites.Count > 0) {
             sprites.Sort(delegate(Sprite obj1, Sprite obj2) { return obj1.name.CompareTo(obj2.name); });
-
+                        
             //create go
             const string label = "Add Sprite Track";
             GameObject newGO = new GameObject("sprite", typeof(SpriteRenderer));
@@ -5272,13 +5288,25 @@ public class AMTimeline : EditorWindow {
             AMPropertyTrack newTrack = TakeEdit(take).getSelectedTrack(take) as AMPropertyTrack;
             newTrack.SetTarget(aData, newGO.transform);
 
+            //insert keys
+            float sprFPS = oData.spriteInsertFramePerSecond;
+
+            //expand num frames if needed
+            int spriteNumFrames = Mathf.RoundToInt(((float)sprites.Count/sprFPS)*(float)take.frameRate);
+            if(take.numFrames < spriteNumFrames)
+                take.numFrames = spriteNumFrames;
+
             SpriteRenderer comp = newGO.GetComponent<SpriteRenderer>();
             newTrack.setComponent(aData, comp);
             newTrack.setPropertyInfo(comp.GetType().GetProperty("sprite"));
 
+            int frame = startFrame;
             for(int i = 0; i < sprites.Count; i++) {
-                AMPropertyKey key = newTrack.addKey(aData, addCall, startFrame + i);
+                AMPropertyKey key = newTrack.addKey(aData, addCall, frame);
                 key.setValue(sprites[i]);
+
+                int nframe = Mathf.RoundToInt((((float)frame/(float)take.frameRate) + (1.0f/sprFPS))*(float)take.frameRate);
+                frame = Mathf.Max(nframe, frame+1);
             }
 
             comp.sprite = sprites[0];
@@ -5623,9 +5651,10 @@ public class AMTimeline : EditorWindow {
         return canPaste;
     }
     void buildContextMenu(int frame) {
+        AMTakeEdit takeEdit = TakeEditCurrent();
         contextMenuFrame = frame;
         contextMenu = new GenericMenu();
-        bool selectionHasKeys = TakeEditCurrent().contextSelectionTracks.Count > 1 || TakeEditCurrent().contextSelectionHasKeys(aData.e_getCurrentTake());
+        bool selectionHasKeys = takeEdit.contextSelectionTracks.Count > 1 || takeEdit.contextSelectionHasKeys(aData.e_getCurrentTake());
         bool _canPaste = canPaste();
         
         contextMenu.AddItem(new GUIContent("Insert Keyframe"), false, invokeContextMenuItem, 0);
@@ -5645,6 +5674,10 @@ public class AMTimeline : EditorWindow {
             contextMenu.AddDisabledItem(new GUIContent("Clear Frames"));
         }
         contextMenu.AddItem(new GUIContent("Select All Frames"), false, invokeContextMenuItem, 5);
+        if(selectionHasKeys) {
+            contextMenu.AddSeparator("");
+            contextMenu.AddItem(new GUIContent("Reverse Key Order"), false, invokeContextMenuItem, 6);
+        }
     }
     void invokeContextMenuItem(object _index) {
         int index = (int)_index;
@@ -5658,6 +5691,35 @@ public class AMTimeline : EditorWindow {
         else if(index == 3) contextPasteKeys();
         else if(index == 4) deleteSelectedKeys(true);
         else if(index == 5) contextSelectAllFrames();
+        else if(index == 6) contextReverseKeys();
+    }
+    void contextReverseKeys() {
+        bool instantiated = MetaInstantiate("Reverse Key Order");
+        AMTakeEdit takeEdit = TakeEditCurrent();
+        AMTakeData take = aData.e_getCurrentTake();
+        foreach(int track_id in takeEdit.contextSelectionTracks) {
+            AMTrack track = take.getTrack(track_id);
+
+            if(!instantiated) recordUndoTrackAndKeys(track, true, "Reverse Key Order");
+
+            AMKey[] keys = takeEdit.getContextSelectionKeysForTrack(take.getTrack(track_id));
+            for(int i = 0; i < keys.Length/2; i++) {
+                AMKey key = keys[i];
+                AMKey rkey = keys[keys.Length-1-i];
+
+                int frame = key.frame; key.frame = rkey.frame; rkey.frame = frame;
+                int easeType = key.easeType; key.easeType = rkey.easeType; rkey.easeType = easeType;
+                AnimationCurve easeCurve = key.easeCurve; key.easeCurve = rkey.easeCurve; rkey.easeCurve = easeCurve;
+                List<float> customEase = key.customEase; key.customEase = rkey.customEase; rkey.customEase = customEase;
+                float amp = key.amplitude; key.amplitude = rkey.amplitude; rkey.amplitude = amp;
+                float period = key.period; key.period = rkey.period; rkey.period = period;
+            }
+
+            track.updateCache(aData);
+
+            EditorUtility.SetDirty(track);
+            setDirtyKeys(track);
+        }
     }
     void contextCutKeys() {
         contextCopyFrames();
