@@ -100,6 +100,8 @@ public class AMTimeline : EditorWindow {
     private bool isPlaying;						// is preview player playing
     private float playerStartTime;				// preview player start time
     private int playerStartFrame;				// preview player start frame
+    private int playerCurLoop;                  // current number of loops made
+    private bool playerBackward;                // playing backwards
     public static string[] easeTypeNames = {
 		"linear",
         "easeInSine",
@@ -618,16 +620,62 @@ public class AMTimeline : EditorWindow {
             }
             else {
                 // determine speed
-                float speed = (float)aData.e_getCurrentTake().frameRate * playbackSpeedValue[aData.e_getCurrentTake().playbackSpeedIndex];
-                curFrame = playerStartFrame + timeRunning * speed;
-                if(Mathf.FloorToInt(curFrame) > aData.e_getCurrentTake().numFrames) {
+                AMTakeData take = aData.e_getCurrentTake();
+                float speed = (float)take.frameRate * playbackSpeedValue[take.playbackSpeedIndex];
+                curFrame = playerStartFrame + (playerBackward ? -timeRunning * speed : timeRunning * speed);
+                int curFrameI = Mathf.FloorToInt(curFrame);
+                AMTakeData.Range frameRange = take.getFrameRange();
+                if((playerBackward && curFrameI < frameRange.first) || curFrameI > frameRange.last) {
+                    bool restart = true;
                     // loop
-                    playerStartTime = Time.realtimeSinceStartup;
-                    curFrame = curFrame - aData.e_getCurrentTake().numFrames;
-                    playerStartFrame = Mathf.FloorToInt(curFrame);
-                    if(playerStartFrame <= 0) playerStartFrame = 1;
+                    if(take.numLoop > 0) {
+                        playerCurLoop++;
+                        restart = playerCurLoop < take.numLoop;
+                    }
+
+                    int startFrame = 1;
+                    if(restart) {
+                        if((take.loopMode == Holoville.HOTween.LoopType.Yoyo || take.loopMode == Holoville.HOTween.LoopType.YoyoInverse))
+                            playerBackward = !playerBackward;
+
+                        startFrame = frameRange.first;
+                    }
+                    else if(take.loopBackToFrame > 0) {
+                        startFrame = take.loopBackToFrame;
+                        restart = true;
+                        playerBackward = false;
+                    }
+
+                    if(restart) {
+                        playerStartTime = Time.realtimeSinceStartup;
+
+                        if(curFrameI < frameRange.first) {
+                            curFrame = (float)frameRange.first - curFrame;
+                        }
+                        else {
+                            curFrame = curFrame - (float)frameRange.last;
+                            if(playerBackward)
+                                curFrame += (float)frameRange.last;
+                        }
+
+                        playerStartFrame = Mathf.FloorToInt(curFrame);
+                                                
+                        if(playerBackward) {
+                            if(playerStartFrame > frameRange.last) playerStartFrame = frameRange.last;
+                        }
+                        else {
+                            if(playerStartFrame < startFrame) playerStartFrame = startFrame;
+                        }
+                    }
+                    else {
+                        isPlaying = false;
+                        timelineSelectFrame(TakeEdit(take).selectedTrack, take.selectedFrame);
+                    }
+                    /*private int playerCurLoop;                  // current number of loops made
+    private bool playerBackward;                // playing backwards*/
+                                        
                     // stop audio
-                    aData.e_getCurrentTake().stopAudio(aData);
+                    take.stopAudio(aData);
                 }
             }
             // select the appropriate frame
@@ -4917,6 +4965,8 @@ public class AMTimeline : EditorWindow {
         playerStartFrame = aData.e_getCurrentTake().selectedFrame;
         // start playing
         isPlaying = true;
+        playerCurLoop = 0;
+        playerBackward = false;
         // sample audio from current frame
         aData.e_getCurrentTake().sampleAudio(aData, (float)aData.e_getCurrentTake().selectedFrame, playbackSpeedValue[aData.e_getCurrentTake().playbackSpeedIndex]);
     }

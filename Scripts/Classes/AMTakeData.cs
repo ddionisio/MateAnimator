@@ -11,6 +11,11 @@ using Holoville.HOTween;
 public class AMTakeData {
 	public delegate void OnSequenceDone(AMTakeData take);
 
+    public struct Range {
+        public int first;
+        public int last;
+    }
+
 	#region Declarations
 	public string name;					// take name
 	public int frameRate = 24;				// frames per second
@@ -664,7 +669,54 @@ public class AMTakeData {
 		}
 		return false;
 	}
-	
+
+    public Range getFrameRange() {
+        int numTrackWithKeys = 0;
+        Range rng = new Range() { first=int.MaxValue, last=0 };
+        foreach(AMTrack track in trackValues) {
+            if(track.keys.Count > 0) {
+                AMKey key = track.keys[track.keys.Count - 1];
+                if(key.frame > rng.last)
+                    rng.last = key.frame;
+
+                key = track.keys[0];
+                if(key.frame < rng.first)
+                    rng.first = key.frame;
+                numTrackWithKeys++;
+            }
+        }
+        if(numTrackWithKeys == 0) { rng.first = rng.last = 1; }
+        return rng;
+    }
+
+    // returns the highest frame value of the last key
+    public int getLastFrame() {
+        int frame = 0;
+        foreach(AMTrack track in trackValues) {
+            if(track.keys.Count > 0) {
+                AMKey key = track.keys[track.keys.Count - 1];
+                if(key.frame > frame)
+                    frame = key.frame;
+            }
+        }
+        return frame;
+    }
+
+    // returns the lowest frame value of the first key
+    public int getFirstFrame() {
+        int numTrackWithKeys = 0;
+        int frame = int.MaxValue;
+        foreach(AMTrack track in trackValues) {
+            if(track.keys.Count > 0) {
+                AMKey key = track.keys[0];
+                if(key.frame > frame)
+                    frame = key.frame;
+                numTrackWithKeys++;
+            }
+        }
+        return numTrackWithKeys > 0 ? frame : 1;
+    }
+
 	// returns true if autokey successful
 	public bool autoKey(AMITarget itarget, AMTrack.OnAddKey addCall, Transform obj, int frame) {
 		if(!obj) return false;
@@ -756,7 +808,7 @@ public class AMTakeData {
 	}
 
 	public Sequence BuildSequence(AMITarget itarget, string goName, bool autoKill, UpdateType updateType, OnSequenceDone endCallback) {
-		if(loopBackToFrame >= 0 && numLoop <= 0)
+		if(loopBackToFrame > 0 && numLoop <= 0)
 			numLoop = 1;
 
 		Sequence sequence = new Sequence(

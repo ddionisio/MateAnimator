@@ -114,7 +114,9 @@ public class AMSettings : EditorWindow {
         //pausePreviousTake = EditorGUILayout.Toggle("Pause Prev. Take", pausePreviousTake);
                 
         GUILayout.Space(4f);
+        GUI.enabled = loopCount <= 0;
         loopBackFrame = EditorGUILayout.IntSlider("Loop Back To Frame", loopBackFrame, -1, numFrames);
+        GUI.enabled = true;
         GUILayout.Space(6f);
         GUILayout.Label("Number of Frames");
         GUILayout.Space(2f);
