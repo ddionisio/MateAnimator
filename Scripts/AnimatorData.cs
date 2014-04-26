@@ -182,6 +182,15 @@ public class AnimatorData : MonoBehaviour, AMITarget {
         get { return meta ? meta.takes : takeData; }
 	}
 
+    public bool TakeExists(string takeName) {
+        List<AMTakeData> t = _takes;
+        for(int i = 0; i < t.Count; i++) {
+            if(t[i].name == takeName)
+                return true;
+        }
+        return false;
+    }
+
     public void PlayDefault(bool loop = false) {
         if(!string.IsNullOrEmpty(defaultTakeName)) {
 			Play(defaultTakeName, loop);
