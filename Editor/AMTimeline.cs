@@ -3121,10 +3121,13 @@ public class AMTimeline : EditorWindow {
         string track_name = "";
         AMTrack sTrack = null;
         if(_track > -1) {
+            int trackInd = ctake.getTrackIndex(_track);
             // get the selected track
-            sTrack = ctake.getTrack(_track);
-            track_name = sTrack.name + ", ";
+            if(trackInd != -1 && trackInd < ctake.trackValues.Count)
+                sTrack = ctake.trackValues[trackInd];
         }
+        if(!sTrack) return;
+        track_name = sTrack.name + ", ";
         GUIStyle styleLabelWordwrap = new GUIStyle(GUI.skin.label);
         styleLabelWordwrap.wordWrap = true;
         string strFrameInfo = track_name;
@@ -5287,10 +5290,9 @@ public class AMTimeline : EditorWindow {
                 float sprFPS = oData.spriteInsertFramePerSecond;
 
                 //expand num frames if needed
-                int lastFrame = track.keys != null && track.keys.Count > 0 ? track.keys[track.keys.Count-1].frame : 1;
                 int spriteNumFrames = Mathf.RoundToInt(((float)sprites.Count/sprFPS)*(float)take.frameRate);
-                if(take.numFrames < lastFrame + spriteNumFrames - 1)
-                    take.numFrames += (lastFrame + spriteNumFrames - 1) - take.numFrames;
+                if(take.numFrames < frame + spriteNumFrames)
+                    take.numFrames += (frame + spriteNumFrames) - take.numFrames;
 
                 track.offsetKeysFromBy(aData, frame, spriteNumFrames);
 
@@ -5300,8 +5302,14 @@ public class AMTimeline : EditorWindow {
 
                     int nframe = Mathf.RoundToInt((((float)frame/(float)take.frameRate) + (1.0f/sprFPS))*(float)take.frameRate);
                     frame = Mathf.Max(nframe, frame+1);
-                }
 
+                    //add final key if it's the last in track
+                    if(i == sprites.Count-1 && track.keys[track.keys.Count-1] == key) {
+                        key = track.addKey(aData, addCall, frame);
+                        key.setValue(sprites[i]);
+                    }
+                }
+                
                 EditorUtility.SetDirty(track);
                 setDirtyKeys(track);
                 return true;
@@ -5358,6 +5366,10 @@ public class AMTimeline : EditorWindow {
                 int nframe = Mathf.RoundToInt((((float)frame/(float)take.frameRate) + (1.0f/sprFPS))*(float)take.frameRate);
                 frame = Mathf.Max(nframe, frame+1);
             }
+
+            //add last frame
+            AMPropertyKey lastKey = newTrack.addKey(aData, addCall, frame);
+            lastKey.setValue(sprites[sprites.Count - 1]);
 
             comp.sprite = sprites[0];
 
