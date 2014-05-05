@@ -196,7 +196,8 @@ public class AMTimeline : EditorWindow {
         Audio = 4,
         Property = 5,
         Event = 6,
-        GOSetActive = 7
+        GOSetActive = 7,
+        CameraSwitcher = 8
     }
 
     public static string[] TrackNames = new string[] {
@@ -207,7 +208,8 @@ public class AMTimeline : EditorWindow {
 		"Audio",
 		"Property",
 		"Event",
-        "GOSetActive"
+        "GOSetActive",
+        "Camera Switcher"
 	};
     // skins
     public static string global_skin = "am_skin_blue";
@@ -285,6 +287,7 @@ public class AMTimeline : EditorWindow {
     private Texture texBoxPink;
     private Texture texBoxYellow;
     private Texture texBoxOrange;
+    private Texture texBoxPurple;
     private Texture texIconTranslation;
     private Texture texIconRotation;
     private Texture texIconAnimation;
@@ -292,6 +295,7 @@ public class AMTimeline : EditorWindow {
     private Texture texIconProperty;
     private Texture texIconEvent;
     private Texture texIconOrientation;
+    private Texture texIconCameraSwitcher;
     private bool texLoaded = false;
 
     // temporary variables
@@ -450,6 +454,7 @@ public class AMTimeline : EditorWindow {
             texBoxPink = AMEditorResource.LoadEditorTexture("am_box_pink");
             texBoxYellow = AMEditorResource.LoadEditorTexture("am_box_yellow");
             texBoxOrange = AMEditorResource.LoadEditorTexture("am_box_orange");
+            texBoxPurple = AMEditorResource.LoadEditorTexture("am_box_purple");
             texIconTranslation = AMEditorResource.LoadEditorTexture("am_icon_translation");
             texIconRotation = AMEditorResource.LoadEditorTexture("am_icon_rotation");
             texIconAnimation = AMEditorResource.LoadEditorTexture("am_icon_animation");
@@ -457,6 +462,7 @@ public class AMTimeline : EditorWindow {
             texIconProperty = AMEditorResource.LoadEditorTexture("am_icon_property");
             texIconEvent = AMEditorResource.LoadEditorTexture("am_icon_event");
             texIconOrientation = AMEditorResource.LoadEditorTexture("am_icon_orientation");
+            texIconCameraSwitcher = AMEditorResource.LoadEditorTexture("am_icon_cameraswitcher");
 
             texLoaded = true;
         }
@@ -510,6 +516,9 @@ public class AMTimeline : EditorWindow {
             // reset property select track
             //aData.propertySelectTrack = null;
         }
+
+        if(AMCameraFade.hasInstance() && AMCameraFade.isPreview())
+            AMCameraFade.destroyImmediateInstance();
     }
     public bool MetaInstantiate(string label) {
         if(aData.e_metaCanInstantiatePrefab) {
@@ -712,7 +721,7 @@ public class AMTimeline : EditorWindow {
 
                 if(autoKeyMade) {
                     // preview frame, update orientation only
-                    aData.e_getCurrentTake().previewFrame(aData, aData.e_getCurrentTake().selectedFrame, true);
+                    aData.e_getCurrentTake().previewFrame(aData, aData.e_getCurrentTake().selectedFrame, true, false);
 
                     if(dats != null) {
                         foreach(MonoBehaviour dat in dats)
@@ -1214,7 +1223,8 @@ public class AMTimeline : EditorWindow {
             // show popup
             if(aData.e_setCurrentTakeValue(EditorGUI.Popup(rectTakePopup, aData.e_currentTake, aData.e_getTakeNames(), EditorStyles.toolbarPopup))) {
                 // take changed
-
+                // destroy camera fade
+                if(AMCameraFade.hasInstance()) AMCameraFade.destroyImmediateInstance();
                 // reset code view dictionaries
                 AMCodeView.resetTrackDictionary();
                 // if not creating new take
@@ -1492,6 +1502,11 @@ public class AMTimeline : EditorWindow {
                     bool instantiated = registerTakesUndo(aData, "Delete Track", true);
 
                     AMTakeData curTake = aData.e_getCurrentTake();
+
+                    // delete camera fade
+                    if(TakeEdit(curTake).selectedTrack != -1 && TakeEdit(curTake).getSelectedTrack(curTake) == curTake.cameraSwitcher && AMCameraFade.hasInstance() && AMCameraFade.isPreview()) {
+                        AMCameraFade.destroyImmediateInstance();
+                    }
 
                     List<MonoBehaviour> items = new List<MonoBehaviour>();
 
@@ -2088,6 +2103,10 @@ public class AMTimeline : EditorWindow {
             Selection.activeGameObject = null;
             aData = null;
             if(dragType == (int)DragType.TimeScrub || dragType == (int)DragType.FrameScrub) dragType = (int)DragType.None;
+            // destroy camerafade
+            if(AMCameraFade.hasInstance() && AMCameraFade.isPreview()) {
+                AMCameraFade.destroyImmediateInstance();
+            }
         }
 
         /*bool justHitPlay = EditorApplication.isPlayingOrWillChangePlaymode && !EditorApplication.isPlaying;
@@ -2873,15 +2892,14 @@ public class AMTimeline : EditorWindow {
                                     cached_action_startFrame = _track.keys[lastStartInd].getStartFrame();
                                     cached_action_endFrame = _track.keys[i].getStartFrame();
 
-                                    if(_track is AMRotationTrack) {
+                                    if(_track is AMRotationTrack)
                                         texBox = texBoxYellow;
-                                    }
-                                    else if(_track is AMOrientationTrack) {
+                                    else if(_track is AMOrientationTrack)
                                         texBox = texBoxOrange;
-                                    }
-                                    else if(_track is AMPropertyTrack) {
+                                    else if(_track is AMPropertyTrack)
                                         texBox = texBoxLightBlue;
-                                    }
+                                    else if(_track is AMCameraSwitcherTrack)
+                                        texBox = texBoxPurple;
                                 }
 
                                 drawBox(cached_action_startFrame, cached_action_endFrame, _startFrame, _endFrame, rectTimelineActions, rectFramesBirdsEye.width, texBox);
@@ -2929,7 +2947,7 @@ public class AMTimeline : EditorWindow {
                         if(action_endFrame > _track.keys[i + 1].getStartFrame()) action_endFrame = _track.keys[i + 1].getStartFrame();
                     }
                 }
-                else if((i == 0) && (!didClampBackwards) && (_track is AMPropertyTrack || _track is AMGOSetActiveTrack)) {
+                else if((i == 0) && (!didClampBackwards) && (_track is AMPropertyTrack || _track is AMGOSetActiveTrack || _track is AMCameraSwitcherTrack)) {
                     // clamp behind if first action
                     action_startFrame = 1;
                     action_endFrame = _track.keys[0].getStartFrame();
@@ -2937,7 +2955,7 @@ public class AMTimeline : EditorWindow {
                     didClampBackwards = true;
                     clamped = -1;
                 }
-                else if((_track is AMAnimationTrack) || (_track is AMAudioTrack) || (_track is AMPropertyTrack) || (_track is AMEventTrack) || (_track is AMGOSetActiveTrack)) {
+                else if(_track is AMAnimationTrack || _track is AMAudioTrack || _track is AMPropertyTrack || _track is AMEventTrack || _track is AMGOSetActiveTrack || _track is AMCameraSwitcherTrack) {
                     // single frame tracks (clamp box to last frame) (if audio track not set, clamp)
                     action_startFrame = _track.keys[i].getStartFrame();
                     if(i < _track.keys.Count - 1) {
@@ -2999,6 +3017,7 @@ public class AMTimeline : EditorWindow {
                 else if(_track is AMOrientationTrack) texBox = texBoxOrange;
                 else if(_track is AMEventTrack) texBox = texBoxDarkBlue;
                 else if(_track is AMGOSetActiveTrack) texBox = texBoxDarkBlue;
+                else if(_track is AMCameraSwitcherTrack) texBox = texBoxPurple;
                 else texBox = texBoxBorder;
                 if(drawEachAction) {
                     GUI.DrawTexture(rectBox, texBox);
@@ -3010,7 +3029,7 @@ public class AMTimeline : EditorWindow {
                 styleTxtInfo.normal.textColor = Color.white;
                 styleTxtInfo.alignment = (hideTxtInfo ? TextAnchor.MiddleLeft : TextAnchor.MiddleCenter);
                 bool isLastAction;
-                if(_track is AMPropertyTrack || _track is AMEventTrack || _track is AMGOSetActiveTrack) isLastAction = (i == _track.keys.Count - 1);
+                if(_track is AMPropertyTrack || _track is AMEventTrack || _track is AMGOSetActiveTrack || _track is AMCameraSwitcherTrack) isLastAction = (i == _track.keys.Count - 1);
                 else if(_track is AMAudioTrack || _track is AMAnimationTrack) isLastAction = false;
                 else isLastAction = (i == _track.keys.Count - 2);
                 if(rectBox.width > 5f) EditorGUI.DropShadowLabel(new Rect(rectBox.x, rectBox.y, rectBox.width - (!isLastAction ? current_width_frame : 0f), rectBox.height), txtInfo, styleTxtInfo);
@@ -3713,6 +3732,102 @@ public class AMTimeline : EditorWindow {
             return;
         }
         #endregion
+        #region camerea switcher inspector
+        if(sTrack is AMCameraSwitcherTrack) {
+            AMCameraSwitcherKey cKey = (AMCameraSwitcherKey)(sTrack as AMCameraSwitcherTrack).getKeyOnFrame(_frame);
+            bool showExtras = false;
+            bool notLastKey = cKey != (sTrack as AMCameraSwitcherTrack).keys[(sTrack as AMCameraSwitcherTrack).keys.Count-1];
+            if(notLastKey) {
+                int cActionIndex = (sTrack as AMCameraSwitcherTrack).getKeyIndexForFrame(_frame);
+                showExtras = cActionIndex>-1 && !(sTrack.keys[cActionIndex] as AMCameraSwitcherKey).targetsAreEqual(aData);
+            }
+            float height_cs = 44f+height_inspector_space + (showExtras ? 22f*3f+height_inspector_space*3f : 0f);
+            Rect rectScrollView = new Rect(0f, start_y, width_inspector-margin, rect.height-start_y);
+            Rect rectView = new Rect(0f, 0f, rectScrollView.width-(height_cs > rectScrollView.height ? 20f : 0f), height_cs);
+            inspectorScrollView = GUI.BeginScrollView(rectScrollView, inspectorScrollView, rectView);
+            Rect rectLabelType = new Rect(0f, 0f, 56f, 22f);
+            GUI.Label(rectLabelType, "Type");
+            Rect rectSelGridType = new Rect(rectLabelType.x+rectLabelType.width+margin, rectLabelType.y, rectView.width-margin-rectLabelType.width, 22f);
+            int newType = GUI.SelectionGrid(rectSelGridType, cKey.type, new string[] { "Camera", "Color" }, 2);
+            if(cKey.type != newType) {
+                recordUndoTrackAndKeys(sTrack, false, "Set Camera Track Type");
+                cKey.type = newType;
+                // update cache when modifying varaibles
+                (sTrack as AMCameraSwitcherTrack).updateCache(aData);
+                AMCodeView.refresh();
+                // preview
+                aData.e_getCurrentTake().previewFrame(aData, TakeEditCurrent().selectedFrame);
+                // save data
+                EditorUtility.SetDirty(sTrack);
+                setDirtyKeys(sTrack);
+            }
+            // camera
+            Rect rectLabelCameraColor = new Rect(0f, rectLabelType.y+rectLabelType.height+height_inspector_space, 56f, 22f);
+            GUI.Label(rectLabelCameraColor, (cKey.type == 0 ? "Camera" : "Color"));
+            Rect rectCameraColor = new Rect(rectLabelCameraColor.x+rectLabelCameraColor.width+margin, rectLabelCameraColor.y+3f, rectView.width-rectLabelCameraColor.width-margin, 16f);
+            if(cKey.type == 0) {
+                Camera newCam = (Camera)EditorGUI.ObjectField(rectCameraColor, cKey.getCamera(aData), typeof(Camera), true);
+                if(cKey.getCamera(aData) != newCam) {
+                    recordUndoTrackAndKeys(sTrack, false, "Set Camera Track Camera");
+                    cKey.setCamera(aData, newCam);
+                    // update cache when modifying varaibles
+                    (sTrack as AMCameraSwitcherTrack).updateCache(aData);
+                    AMCodeView.refresh();
+                    // preview
+                    aData.e_getCurrentTake().previewFrame(aData, aData.e_getCurrentTake().selectedFrame);
+                    // save data
+                    EditorUtility.SetDirty(sTrack);
+                    setDirtyKeys(sTrack);
+                }
+            }
+            else {
+                Color newColor = EditorGUI.ColorField(rectCameraColor, cKey.color);
+                if(cKey.color != newColor) {
+                    recordUndoTrackAndKeys(sTrack, false, "Set Camera Track Color");
+                    cKey.color = newColor;
+                    // update cache when modifying varaibles
+                    (sTrack as AMCameraSwitcherTrack).updateCache(aData);
+                    AMCodeView.refresh();
+                    // preview
+                    aData.e_getCurrentTake().previewFrame(aData, aData.e_getCurrentTake().selectedFrame);
+                    // save data
+                    EditorUtility.SetDirty(sTrack);
+                    setDirtyKeys(sTrack);
+                }
+            }
+            GUI.enabled = true;
+            // if not last key, show transition and ease
+            if(notLastKey && showExtras) {
+                // transition picker
+                Rect rectTransitionPicker = new Rect(0f, rectLabelCameraColor.y+rectLabelCameraColor.height+height_inspector_space, rectView.width, 22f);
+                showTransitionPicker(sTrack, cKey, rectTransitionPicker.x, rectTransitionPicker.y, rectTransitionPicker.width);
+                if(cKey.cameraFadeType != (int)AMCameraSwitcherKey.Fade.None) {
+                    // ease picker
+                    Rect rectEasePicker = new Rect(0f, rectTransitionPicker.y+rectTransitionPicker.height+height_inspector_space, rectView.width, 22f);
+                    showEasePicker(sTrack, cKey, aData, rectEasePicker.x, rectEasePicker.y, rectEasePicker.width);
+                    // render texture
+                    Rect rectLabelRenderTexture = new Rect(0f, rectEasePicker.y+rectEasePicker.height+height_inspector_space+55.0f, 175f, 22f);
+                    GUI.Label(rectLabelRenderTexture, "Render Texture (Pro Only)");
+                    Rect rectToggleRenderTexture = new Rect(rectView.width-22f, rectLabelRenderTexture.y, 22f, 22f);
+                    bool newStill = !GUI.Toggle(rectToggleRenderTexture, !cKey.still, "");
+                    if(cKey.still != newStill) {
+                        recordUndoTrackAndKeys(sTrack, false, "Set Camera Track Still");
+                        cKey.still = newStill;
+                        // update cache when modifying varaibles
+                        sTrack.updateCache(aData);
+                        AMCodeView.refresh();
+                        // preview
+                        aData.e_getCurrentTake().previewFrame(aData, aData.e_getCurrentTake().selectedFrame);
+                        // save data
+                        EditorUtility.SetDirty(sTrack);
+                        setDirtyKeys(sTrack);
+                    }
+                }
+            }
+            GUI.EndScrollView();
+            return;
+        }
+        #endregion
     }
 
     bool showFieldFor(Rect rect, string id, string name, AMEventParameter parameter, Type t, int level, ref float height_field) {
@@ -4051,7 +4166,88 @@ public class AMTimeline : EditorWindow {
     void showAlertMissingObjectType(string type) {
         EditorUtility.DisplayDialog("Missing " + type, "You must add a " + type + " to the track before you can add keys.", "Okay");
     }
+    void showTransitionPicker(AMTrack track, AMCameraSwitcherKey key, float x = -1f, float y = -1f, float width = -1f) {
+        if(x >= 0f && y >= 0f && width >= 0f) {
+            width--;
+            float height = 22f;
+            Rect rectLabel = new Rect(x, y-1f, 40f, height);
+            int index = 0;
 
+            GUI.Label(rectLabel, "Fade");
+            Rect rectPopup = new Rect(rectLabel.x + rectLabel.width + 2f, y+3f, width - rectLabel.width - width_button_delete -3f, height);
+            for(int i=0; i<AMTransitionPicker.TransitionOrder.Length; i++) {
+                if(AMTransitionPicker.TransitionOrder[i] == key.cameraFadeType) {
+                    index = i;
+                    break;
+                }
+            }
+            int newIndex = EditorGUI.Popup(rectPopup, index, AMTransitionPicker.TransitionNames);
+            if(key.cameraFadeType != AMTransitionPicker.TransitionOrder[newIndex]) {
+                recordUndoTrackAndKeys(track, false, "Set Camera Track Fade Type");
+                key.cameraFadeType = AMTransitionPicker.TransitionOrder[newIndex];
+                // reset parameters
+                AMTransitionPicker.setDefaultParametersForKey(ref key);
+                // update cache when modifying variables
+                track.updateCache(aData);
+                // save data
+                EditorUtility.SetDirty(track);
+                setDirtyKeys(track);
+                // preview current frame
+                aData.e_getCurrentTake().previewFrame(aData, aData.e_getCurrentTake().selectedFrame);
+                // refresh values
+                AMTransitionPicker.refreshValues();
+                // refresh code view
+                AMCodeView.refresh();
+            }
+            Rect rectButton = new Rect(width-width_button_delete+1f, y, width_button_delete, width_button_delete);
+            if(GUI.Button(rectButton, getSkinTextureStyleState("popup").background, GUI.skin.GetStyle("ButtonImage"))) {
+                AMTransitionPicker.setValues(key, track);
+                EditorWindow.GetWindow(typeof(AMTransitionPicker));
+            }
+        }
+        else {
+            GUILayout.BeginHorizontal();
+            GUILayout.BeginVertical();
+            GUILayout.Space(1f);
+            GUILayout.Label("Fade");
+            GUILayout.EndVertical();
+            GUILayout.BeginVertical();
+            GUILayout.Space(3f);
+            int index = 0;
+            for(int i=0; i<AMTransitionPicker.TransitionOrder.Length; i++) {
+                if(AMTransitionPicker.TransitionOrder[i] == key.cameraFadeType) {
+                    index = i;
+                    break;
+                }
+            }
+            int newIndex = EditorGUILayout.Popup(index, AMTransitionPicker.TransitionNames);
+            if(key.cameraFadeType != AMTransitionPicker.TransitionOrder[newIndex]) {
+                recordUndoTrackAndKeys(track, false, "Set Camera Track Fade Type");
+                key.cameraFadeType = AMTransitionPicker.TransitionOrder[newIndex];
+                // reset parameters
+                AMTransitionPicker.setDefaultParametersForKey(ref key);
+                // update cache when modifying variables
+                track.updateCache(aData);
+                // save data
+                EditorUtility.SetDirty(track);
+                setDirtyKeys(track);
+                // preview current frame
+                aData.e_getCurrentTake().previewFrame(aData, aData.e_getCurrentTake().selectedFrame);
+                // refresh values
+                AMTransitionPicker.refreshValues();
+                // refresh code view
+                AMCodeView.refresh();
+            }
+
+            GUILayout.EndVertical();
+            if(GUILayout.Button(getSkinTextureStyleState("popup").background, GUI.skin.GetStyle("ButtonImage"), GUILayout.Width(width_button_delete), GUILayout.Height(width_button_delete))) {
+                AMTransitionPicker.setValues(key, track);
+                EditorWindow.GetWindow(typeof(AMTransitionPicker));
+            }
+            GUILayout.Space(1f);
+            GUILayout.EndHorizontal();
+        }
+    }
     public static bool showEasePicker(AMTrack track, AMKey key, AnimatorData aData, float x = -1f, float y = -1f, float width = -1f) {
         bool didUpdate = false;
         if(x >= 0f && y >= 0f && width >= 0f) {
@@ -5094,6 +5290,21 @@ public class AMTimeline : EditorWindow {
             txtInfoOrientation += "\n" + easeTypeNames[easeInd];
             return txtInfoOrientation;
             #endregion
+            #region camera switcher
+        }
+        else if(_key is AMCameraSwitcherKey) {
+            if(!(_key as AMCameraSwitcherKey).hasStartTarget(aData)) return "None";
+			string txtInfoCameraSwitcher = null;
+            if((_key as AMCameraSwitcherKey).targetsAreEqual(aData) || clamped != 0) {
+                txtInfoCameraSwitcher = (_key as AMCameraSwitcherKey).getStartTargetName(aData);
+				return txtInfoCameraSwitcher;
+			}
+            txtInfoCameraSwitcher = (_key as AMCameraSwitcherKey).getStartTargetName(aData) +
+			" -> " + (_key as AMCameraSwitcherKey).getEndTargetName(aData);
+            txtInfoCameraSwitcher += "\n"+AMTransitionPicker.TransitionNamesDict[((_key as AMCameraSwitcherKey).cameraFadeType > AMTransitionPicker.TransitionNamesDict.Length ? 0 : (_key as AMCameraSwitcherKey).cameraFadeType)];
+            if((_key as AMCameraSwitcherKey).cameraFadeType != (int)AMCameraSwitcherKey.Fade.None) txtInfoCameraSwitcher += ": "+easeTypeNames[(_key as AMCameraSwitcherKey).easeType];
+			return txtInfoCameraSwitcher;
+            #endregion
             #region goactive
         }
         else if(_key is AMGOSetActiveKey) {
@@ -5127,6 +5338,7 @@ public class AMTimeline : EditorWindow {
         else if(_track is AMRotationTrack) return texIconRotation;
         else if(_track is AMOrientationTrack) return texIconOrientation;
         else if(_track is AMGOSetActiveTrack) return texIconProperty;
+        else if(_track is AMCameraSwitcherTrack) return texIconCameraSwitcher;
 
         Debug.LogWarning("Animator: Icon texture not found for track " + _track.getTrackType());
         return null;
@@ -5248,6 +5460,20 @@ public class AMTimeline : EditorWindow {
             case (int)Track.Event:
                 aData.e_getCurrentTake().addTrack(TakeEditCurrent().selectedGroup, aData, object_window ? object_window.transform : null, 
                     addCompUndo ? Undo.AddComponent<AMEventTrack>(holder) : holder.AddComponent<AMEventTrack>());
+                break;
+            case (int)Track.CameraSwitcher:
+                if(object_window == null && aData.e_getCurrentTake().cameraSwitcher) {
+                    // already exists
+                    EditorUtility.DisplayDialog("Camera Switcher Already Exists", "You can only have one Camera Switcher track. Transition between cameras by adding keyframes to the track.", "Okay");
+                }
+                else {
+                    aData.e_getCurrentTake().addTrack(TakeEditCurrent().selectedGroup, aData, object_window ? object_window.transform : null,
+                        addCompUndo ? Undo.AddComponent<AMCameraSwitcherTrack>(holder) : holder.AddComponent<AMCameraSwitcherTrack>());
+                    // preview selected frame
+                    if(object_window != null) {
+                        aData.e_getCurrentTake().previewFrame(aData, TakeEditCurrent().selectedFrame);
+                    }
+                }
                 break;
             case (int)Track.GOSetActive:
                 aData.e_getCurrentTake().addTrack(TakeEditCurrent().selectedGroup, aData, object_window ? object_window.transform : null,
@@ -5500,6 +5726,17 @@ public class AMTimeline : EditorWindow {
             // add key to event track
             (amTrack as AMEventTrack).addKey(aData, addCall, _frame);
         }
+        else if(amTrack is AMCameraSwitcherTrack) {
+            // camera switcher
+            AMCameraSwitcherKey _cKey = null;
+            int last_key = (amTrack as AMCameraSwitcherTrack).getKeyFrameBeforeFrame(_frame, false);
+            if(last_key == -1) last_key = (amTrack as AMCameraSwitcherTrack).getKeyFrameAfterFrame(_frame, false);
+            if(last_key != -1) {
+                _cKey = ((amTrack as AMCameraSwitcherTrack).getKeyOnFrame(last_key) as AMCameraSwitcherKey);
+            }
+            // add key to camera switcher
+            (amTrack as AMCameraSwitcherTrack).addKey(aData, addCall, _frame, null, _cKey);
+        }
         else if(amTrack is AMGOSetActiveTrack) {
             // go set active
             GameObject go = amTrack.GetTarget(aData) as GameObject;
@@ -5597,6 +5834,7 @@ public class AMTimeline : EditorWindow {
         menu.AddItem(new GUIContent("Property"), false, addTrackFromMenu, (int)Track.Property);
         menu.AddItem(new GUIContent("Event"), false, addTrackFromMenu, (int)Track.Event);
         menu.AddItem(new GUIContent("GO Active"), false, addTrackFromMenu, (int)Track.GOSetActive);
+        menu.AddItem(new GUIContent("Camera Switcher"), false, addTrackFromMenu, (int)Track.CameraSwitcher);
     }
     void buildAddTrackMenu_Drag() {
         bool hasTransform = true;
@@ -5645,6 +5883,9 @@ public class AMTimeline : EditorWindow {
         menu_drag.AddItem(new GUIContent("Event"), false, addTrackFromMenu, (int)Track.Event);
         // GO Active
         menu_drag.AddItem(new GUIContent("GO Active"), false, addTrackFromMenu, (int)Track.GOSetActive);
+        // Camera Switcher
+        if(hasCamera) menu_drag.AddItem(new GUIContent("Camera Switcher"+(aData.e_getCurrentTake().cameraSwitcher != null ? " (Key)" : "")), false, addTrackFromMenu, (int)Track.CameraSwitcher);
+        else menu_drag.AddDisabledItem(new GUIContent("Camera Switcher"+(aData.e_getCurrentTake().cameraSwitcher != null ? " (Key)" : "")));
 
         if(oData.quickAdd_Combos.Count > 0) {
             // multiple tracks
@@ -5653,7 +5894,7 @@ public class AMTimeline : EditorWindow {
                 string combo_name = "";
                 for(int i = 0;i < combo.Count;i++) {
                     //combo_name += Enum.GetName(typeof(Track),combo[i])+" ";
-                    combo_name += TrackNames[combo[i]] + " ";
+                    combo_name += TrackNames[combo[i]] + " "+(combo[i] == (int)Track.CameraSwitcher && aData.e_getCurrentTake().cameraSwitcher ? "(Key) " : "");
                     if(i < combo.Count - 1) combo_name += "+ ";
                 }
                 if(canQuickAddCombo(combo, hasTransform, hasAnimation, hasAudioSource, hasCamera)) menu_drag.AddItem(new GUIContent(combo_name), false, addTrackFromMenu, 100 + oData.quickAdd_Combos.IndexOf(combo));
@@ -5669,6 +5910,8 @@ public class AMTimeline : EditorWindow {
             else if(!hasAnimation && _track == (int)Track.Animation)
                 return false;
             else if(!hasAudioSource && _track == (int)Track.Audio)
+                return false;
+            else if(!hasCamera && _track == (int)Track.CameraSwitcher)
                 return false;
         }
         return true;

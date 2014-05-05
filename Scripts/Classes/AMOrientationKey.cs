@@ -164,7 +164,7 @@ public class AMOrientationKey : AMKey {
 				if(!string.IsNullOrEmpty(targetPath)) {
 					target = itarget.TargetGetCache(targetPath);
 					if(!target)
-						target = AMUtil.GetTarget(itarget.TargetGetRoot(), targetPath).transform;
+						target = AMUtil.GetTarget(itarget.TargetGetRoot(), targetPath);
 				}
 			}
 
@@ -172,7 +172,7 @@ public class AMOrientationKey : AMKey {
 				if(!string.IsNullOrEmpty(endTargetPath)) {
 					endTarget = itarget.TargetGetCache(endTargetPath);
 					if(!endTarget)
-						endTarget = AMUtil.GetTarget(itarget.TargetGetRoot(), endTargetPath).transform;
+						endTarget = AMUtil.GetTarget(itarget.TargetGetRoot(), endTargetPath);
 				}
 			}
 

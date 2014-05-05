@@ -6,6 +6,7 @@ using System.IO;
 public struct AMEditorResource {
     private static string skinsDir = null;
     private static string textureEditorDir = null;
+    private static string textureDir = null;
         
     public static GUISkin LoadSkin(string name) {
         if(skinsDir == null) skinsDir = GetDir(name + ".guiskin");
@@ -23,6 +24,11 @@ public struct AMEditorResource {
     public static Texture LoadEditorTexture(string name) {
         if(textureEditorDir == null) textureEditorDir = GetDir(name + ".png");
         return Resources.LoadAssetAtPath(string.Format("{0}{1}.png", textureEditorDir, name), typeof(Texture)) as Texture;
+    }
+
+    public static Texture LoadTexture(string name) {
+        if(textureDir == null) textureDir = GetDir(name + ".png");
+        return Resources.LoadAssetAtPath(string.Format("{0}{1}.png", textureDir, name), typeof(Texture)) as Texture;
     }
 
     private static string GetDir(string filename) {

@@ -4,6 +4,33 @@ using System.Collections.Generic;
 using System.Text;
 
 public struct AMUtil {
+    public static void SetTopCamera(Camera top, Camera bottom) {
+        if(top) top.depth = 0;
+        if(bottom) bottom.depth = -1;
+    }
+
+    public static void SetTopCamera(Camera top, Camera[] all) {
+        top.depth = 0;
+        foreach(Camera camera in all) {
+            if(camera != top) camera.depth = -1;
+        }
+    }
+
+    // should the cameras be reversed
+    public static bool isTransitionReversed(int transition, float[] r) {
+        switch(transition) {
+            case (int)AMCameraSwitcherKey.Fade.IrisShape:
+            case (int)AMCameraSwitcherKey.Fade.IrisRound:
+            case (int)AMCameraSwitcherKey.Fade.IrisBox:
+                // if iris type is grow, reverse
+                if(r.Length >= 1 && r[0] == 1f) return true;
+                break;
+            default:
+                break;
+        }
+        return false;
+    }
+
 	public static Transform[] CreateTarget(Transform root, string path) {
 		List<Transform> rets = new List<Transform>();
 		if(path[0] == '.') {

@@ -43,6 +43,22 @@ public class AMTakeData {
 
 	private bool mTracksSorted = false;
 
+    private AMCameraSwitcherTrack mCameraSwitcher;
+
+    public AMCameraSwitcherTrack cameraSwitcher {
+        get {
+            if(!mCameraSwitcher) {
+                for(int i = 0; i < trackValues.Count; i++) {
+                    if(trackValues[i] is AMCameraSwitcherTrack) {
+                        mCameraSwitcher = trackValues[i] as AMCameraSwitcherTrack;
+                        break;
+                    }
+                }
+            }
+            return mCameraSwitcher;
+        }
+    }
+
 	#endregion
 	
 	//Only used by editor
@@ -96,6 +112,7 @@ public class AMTakeData {
         a.enabled = false;
 		a.SetTarget(target, obj);
         addTrack(groupId, a);
+        if(a is AMCameraSwitcherTrack) mCameraSwitcher = a as AMCameraSwitcherTrack;
 	}
 	
 	public void deleteTrack(int trackid, bool deleteFromGroup = true) {
@@ -114,6 +131,7 @@ public class AMTakeData {
 		int id = track.id;
 		int index = getTrackIndex(id);
 		if(track) {
+            if(mCameraSwitcher == track) mCameraSwitcher = null;
 			track.destroy();
 		}
 		
@@ -130,7 +148,7 @@ public class AMTakeData {
 			
 			modifiedItems.Add(track);
 		}
-		
+        if(mCameraSwitcher == track) mCameraSwitcher = null;
 		trackValues.RemoveAt(index);
 		if(deleteFromGroup) deleteTrackFromGroups(id);
 	}
@@ -560,7 +578,7 @@ public class AMTakeData {
 	}
 	
 	// preview a frame
-	public void previewFrame(AMITarget itarget, float _frame, bool orientationOnly = false, bool quickPreview = false /* do not preview properties to execute */) {
+	public void previewFrame(AMITarget itarget, float _frame, bool orientationOnly = false, bool renderStill = true) {
 		#if UNITY_EDITOR
 		if(!Application.isPlaying)
 			mTracksSorted = false;
@@ -570,6 +588,9 @@ public class AMTakeData {
 			trackValues.Sort(TrackCompare);
 			mTracksSorted = true;
 		}
+
+        // render camera switcher still texture if necessary
+        if(renderStill) renderCameraSwitcherStill(itarget, _frame);
 		
 		if(orientationOnly) {
 			foreach(AMTrack track in trackValues) {
@@ -580,7 +601,6 @@ public class AMTakeData {
 		else {
 			foreach(AMTrack track in trackValues) {
 				if(track is AMAnimationTrack) (track as AMAnimationTrack).previewFrame(itarget, _frame, frameRate);
-				else if(track is AMPropertyTrack) (track as AMPropertyTrack).previewFrame(itarget, _frame, quickPreview);
 				else track.previewFrame(itarget, _frame);
 			}
 		}
@@ -601,6 +621,86 @@ public class AMTakeData {
                 else track.previewFrame(itarget, _frame);
             }
         }
+    }
+
+    private void renderCameraSwitcherStill(AMITarget itarget, float _frame) {
+        if(!cameraSwitcher) return;
+
+        AMCameraSwitcherTrack.cfTuple tuple = cameraSwitcher.getCameraFadeTupleForFrame(itarget, (int)_frame);
+        if(tuple.frame != 0) {
+
+            AMCameraFade cf = AMCameraFade.getCameraFade(true);
+            cf.isReset = false;
+            // create render texture still
+            //bool isPro = PlayerSettings.advancedLicense;
+            bool isPro = isProLicense;
+            if(!cf.tex2d || cf.shouldUpdateStill || (isPro && cf.cachedStillFrame != tuple.frame)) {
+                if(isPro) {
+                    int firstTargetType = (tuple.isReversed ? tuple.type2 : tuple.type1);
+                    int secondTargetType = (tuple.isReversed ? tuple.type1 : tuple.type2);
+                    if(firstTargetType == 0) {
+                        if(cf.tex2d) Object.DestroyImmediate(cf.tex2d);
+                        previewFrame(itarget, tuple.frame, false, false);
+                        // set top camera
+                        //bool isReversed = tuple.isReversed;
+                        Camera firstCamera = (tuple.isReversed ? tuple.camera2 : tuple.camera1);
+
+
+
+                        AMUtil.SetTopCamera(firstCamera, cameraSwitcher.getAllCameras(itarget));
+
+                        // set cached frame to 0 if bad frame
+                        if(cf.width <= 0 || cf.height <= 0) {
+                            if(Application.isPlaying) {
+                                cf.width = Screen.width;
+                                cf.height = Screen.height;
+                            }
+                            else {
+                                cf.width = 200;
+                                cf.height = 100;
+                                cf.shouldUpdateStill = true;
+                            }
+                        }
+                        else {
+                            cf.shouldUpdateStill = false;
+                        }
+                        // render texture
+                        RenderTexture renderTexture = RenderTexture.GetTemporary(cf.width, cf.height, 24);
+                        //RenderTexture renderTexture = new RenderTexture(cf.width,cf.height,24);
+                        firstCamera.targetTexture = renderTexture;
+                        firstCamera.Render();
+                        // readpixels from render texture
+                        Texture2D tex2d = new Texture2D(renderTexture.width, renderTexture.height, TextureFormat.RGB24, false);
+                        RenderTexture.active = renderTexture;
+                        tex2d.ReadPixels(new Rect(0f, 0f, renderTexture.width, renderTexture.height), 0, 0);
+                        tex2d.Apply();
+                        // set texture
+                        cf.tex2d = tex2d;
+                        cf.cachedStillFrame = tuple.frame;
+                        // cleanup
+                        RenderTexture.active = null;
+                        RenderTexture.ReleaseTemporary(renderTexture);
+                        firstCamera.targetTexture = null;
+                        if(cf.placeholder) cf.placeholder = false;
+                        if(secondTargetType == 0) {
+
+                            Camera secondCamera = (tuple.isReversed ? tuple.camera1 : tuple.camera2);
+                            AMUtil.SetTopCamera(secondCamera, cameraSwitcher.getAllCameras(itarget));
+                        }
+                    }
+
+                }
+                else {
+                    // show placeholder if non-pro
+                    cf.tex2d = (Texture2D)Resources.Load("am_indie_placeholder");
+
+                    if(!cf.placeholder) cf.placeholder = true;
+                }
+
+            }
+            cf.useRenderTexture = false;
+        }
+
     }
 	
 	public void sampleAudioAtFrame(AMITarget itarget, int frame, float speed) {
