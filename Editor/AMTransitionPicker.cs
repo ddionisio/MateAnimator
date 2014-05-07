@@ -447,6 +447,7 @@ public class AMTransitionPicker : EditorWindow {
             // save data
             EditorUtility.SetDirty(track);
             AMTimeline.setDirtyKeys(track);
+            if(AMTimeline.window) AMTimeline.window.Repaint();
             this.Close();
         }
         if(GUILayout.Button("Cancel")) {
@@ -950,8 +951,8 @@ public class AMTransitionPicker : EditorWindow {
     }
 
     public void setWindowSize() {
-        this.maxSize = new Vector2((showTransitionList ? width_transition_list_open : width_transition_list_closed), height_window);
-        this.minSize = this.maxSize;
+        //this.maxSize = new Vector2((showTransitionList ? width_transition_list_open : width_transition_list_closed), height_window);
+        this.minSize = new Vector2((showTransitionList ? width_transition_list_open : width_transition_list_closed), height_window);
     }
 
     public int getSelectedTransitionIndex(List<string> filteredNames) {

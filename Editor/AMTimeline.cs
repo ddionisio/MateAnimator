@@ -520,6 +520,17 @@ public class AMTimeline : EditorWindow {
         if(AMCameraFade.hasInstance() && AMCameraFade.isPreview())
             AMCameraFade.destroyImmediateInstance();
     }
+    void OnFocus() {
+        ResetDragging();
+        Repaint();
+    }
+    void OnLostFocus() {
+        ResetDragging();
+    }
+    void ResetDragging() {
+        isDragging = false;
+        dragType = (int)DragType.None;
+    }
     public bool MetaInstantiate(string label) {
         if(aData.e_metaCanInstantiatePrefab) {
             //preserve the current take edit info
@@ -634,6 +645,7 @@ public class AMTimeline : EditorWindow {
                 curFrame = playerStartFrame + (playerBackward ? -timeRunning * speed : timeRunning * speed);
                 int curFrameI = Mathf.FloorToInt(curFrame);
                 AMTakeData.Range frameRange = take.getFrameRange();
+                //reached end?
                 if((playerBackward && curFrameI < frameRange.first) || curFrameI > frameRange.last) {
                     bool restart = true;
                     // loop
@@ -678,7 +690,7 @@ public class AMTimeline : EditorWindow {
                     }
                     else {
                         isPlaying = false;
-                        timelineSelectFrame(TakeEdit(take).selectedTrack, take.selectedFrame);
+                        curFrame = frameRange.first;
                     }
                     /*private int playerCurLoop;                  // current number of loops made
     private bool playerBackward;                // playing backwards*/
@@ -929,8 +941,7 @@ public class AMTimeline : EditorWindow {
             isDragging = true;
         }
         else if(EditorWindow.mouseOverWindow == this && (e.type == EventType.DragUpdated || e.type == EventType.DragPerform) && DragAndDrop.objectReferences.Length > 0 && dropArea.Contains(currentMousePosition)) {
-            dragType = (int)DragType.None;
-            wasDragging = isDragging = false;
+            ResetDragging();
 
             //Debug.Log("track: " + mouseMoveTrack + " frame: "+mouseMoveFrame);
 
@@ -975,11 +986,11 @@ public class AMTimeline : EditorWindow {
             cancelTextEditting();
             if(isChangingTimeControl) isChangingTimeControl = false;
             if(isChangingFrameControl) isChangingFrameControl = false;
-            // deselect keyboard focus
-            GUIUtility.keyboardControl = 0;
-            GUIUtility.ExitGUI();
+            Repaint();
+            e.Use();
+            return;
         }
-        else if(!isTextEditting()) {
+        else if(GUIUtility.keyboardControl == 0 && !isTextEditting()) {
             bool done = false;
 
             if(e.Equals(Event.KeyboardEvent("delete")) || e.Equals(Event.KeyboardEvent("backspace"))) {
@@ -1494,46 +1505,52 @@ public class AMTimeline : EditorWindow {
         if(GUI.Button(rectBtnDeleteElement, gcDeleteButton, "label")) {
             cancelTextEditting();
             if(TakeEditCurrent().contextSelectionTracks.Count > 0) {
-                string strMsgDeleteTrack = (TakeEditCurrent().contextSelectionTracks.Count > 1 ? "multiple tracks" : "track '" + TakeEditCurrent().getSelectedTrack(aData.e_getCurrentTake()).name + "'");
+                AMTakeData curTake = aData.e_getCurrentTake();
+                AMTrack track = TakeEdit(curTake).getSelectedTrack(curTake);
+                if(track) {
+                    string strMsgDeleteTrack = (TakeEdit(curTake).contextSelectionTracks.Count > 1 ? "multiple tracks" : "track '" + track.name + "'");
+                    if((EditorUtility.DisplayDialog("Delete " + strTitleDeleteTrack, "Are you sure you want to delete " + strMsgDeleteTrack + "?", "Delete", "Cancel"))) {
+                        isRenamingTrack = -1;
 
-                if((EditorUtility.DisplayDialog("Delete " + strTitleDeleteTrack, "Are you sure you want to delete " + strMsgDeleteTrack + "?", "Delete", "Cancel"))) {
-                    isRenamingTrack = -1;
-                                        
-                    bool instantiated = registerTakesUndo(aData, "Delete Track", true);
+                        bool instantiated = registerTakesUndo(aData, "Delete Track", true);
 
-                    AMTakeData curTake = aData.e_getCurrentTake();
+                        // delete camera fade
+                        if(TakeEdit(curTake).selectedTrack != -1 && track == curTake.cameraSwitcher && AMCameraFade.hasInstance() && AMCameraFade.isPreview()) {
+                            AMCameraFade.destroyImmediateInstance();
+                        }
 
-                    // delete camera fade
-                    if(TakeEdit(curTake).selectedTrack != -1 && TakeEdit(curTake).getSelectedTrack(curTake) == curTake.cameraSwitcher && AMCameraFade.hasInstance() && AMCameraFade.isPreview()) {
-                        AMCameraFade.destroyImmediateInstance();
+                        List<MonoBehaviour> items = new List<MonoBehaviour>();
+
+                        foreach(int track_id in TakeEdit(curTake).contextSelectionTracks) {
+                            curTake.deleteTrack(track_id, true, ref items);
+                        }
+
+                        if(instantiated) {
+                            foreach(MonoBehaviour item in items)
+                                DestroyImmediate(item);
+                        }
+                        else {
+                            foreach(MonoBehaviour item in items)
+                                Undo.DestroyObjectImmediate(item);
+                        }
+
+                        TakeEdit(curTake).contextSelectionTracks = new List<int>();
+
+                        // deselect track
+                        TakeEdit(curTake).selectedTrack = -1;
+                        // deselect group
+                        TakeEdit(curTake).selectedGroup = 0;
+
+                        // save data
+                        setDirtyTakes(aData);
+
+                        AMCodeView.refresh();
                     }
-
-                    List<MonoBehaviour> items = new List<MonoBehaviour>();
-
-                    foreach(int track_id in TakeEditCurrent().contextSelectionTracks) {
-                        curTake.deleteTrack(track_id, true, ref items);
-                    }
-
-                    if(instantiated) {
-                        foreach(MonoBehaviour item in items)
-                            DestroyImmediate(item);
-                    }
-                    else {
-                        foreach(MonoBehaviour item in items)
-                            Undo.DestroyObjectImmediate(item);
-                    }
-
-                    TakeEditCurrent().contextSelectionTracks = new List<int>();
-
-                    // deselect track
-                    TakeEditCurrent().selectedTrack = -1;
-                    // deselect group
-                    TakeEditCurrent().selectedGroup = 0;
-
-                    // save data
-                    setDirtyTakes(aData);
-
-                    AMCodeView.refresh();
+                }
+                else {
+                    // deselect track/group
+                    TakeEdit(curTake).selectedTrack = -1;
+                    TakeEdit(curTake).selectedGroup = 0;
                 }
             }
             else {
@@ -5784,7 +5801,10 @@ public class AMTimeline : EditorWindow {
             bool instantiated = MetaInstantiate("Clear Frame");
 
             foreach(int track_id in TakeEditCurrent().contextSelectionTracks) {
-                AMTrack amTrack = aData.e_getCurrentTake().getTrack(track_id);
+                int trackInd = aData.e_getCurrentTake().getTrackIndex(track_id);
+                if(trackInd == -1) continue;
+
+                AMTrack amTrack = aData.e_getCurrentTake().trackValues[trackInd];
 
                 if(!instantiated)
                     recordUndoTrackAndKeys(amTrack, true, "Clear Frames");
