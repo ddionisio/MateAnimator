@@ -3,6 +3,37 @@ using System.Collections;
 using System.Collections.Generic;
 
 using Holoville.HOTween;
+using Holoville.HOTween.Plugins.Core;
+using Holoville.HOTween.Core;
+
+public class AMPlugCameraSwitcher : ABSTweenPlugin {
+
+    protected override object startVal { get { return _startVal; } set { _startVal = value; } }
+
+    protected override object endVal { get { return _endVal; } set { _endVal = value; } }
+
+    public AMPlugCameraSwitcher()
+        : base(null, false) { }
+
+    protected override float GetSpeedBasedDuration(float p_speed) {
+        return p_speed;
+    }
+
+    protected override void SetChangeVal() { }
+
+    protected override void SetIncremental(int p_diffIncr) { }
+
+    protected override void DoUpdate(float p_totElapsed) {
+        if(AMCameraFade.hasInstance()) {
+            AMCameraFade cf = AMCameraFade.getCameraFade();
+            cf.value = ease(p_totElapsed, 1f, -1f, _duration, tweenObj.easeOvershootOrAmplitude, tweenObj.easePeriod);
+            cf.percent = p_totElapsed/_duration;
+        }
+    }
+
+    protected override void SetValue(object p_value) { }
+    protected override object GetValue() { return AMCameraFade.getCameraFade().value; }
+}
 
 public class AMCameraSwitcherKey : AMKey {
     public enum Fade {
@@ -46,14 +77,18 @@ public class AMCameraSwitcherKey : AMKey {
 
     public Camera getCamera(AMITarget itarget) {
         if(itarget.TargetIsMeta()) {
-            Transform t = itarget.TargetGetCache(_cameraPath);
-            if(!t) {
-                t = AMUtil.GetTarget(itarget.TargetGetRoot(), _cameraPath);
-                if(t) itarget.TargetSetCache(_cameraPath, t);
-                else itarget.TargetMissing(_cameraPath, true);
-            }
+            if(!string.IsNullOrEmpty(_cameraPath)) {
+                Transform t = itarget.TargetGetCache(_cameraPath);
+                if(!t) {
+                    t = AMUtil.GetTarget(itarget.TargetGetRoot(), _cameraPath);
+                    if(t) itarget.TargetSetCache(_cameraPath, t);
+                    else itarget.TargetMissing(_cameraPath, true);
+                }
 
-            return t.camera;
+                return t.camera;
+            }
+            else
+                return null;
         }
         else
             return _camera;
@@ -91,14 +126,18 @@ public class AMCameraSwitcherKey : AMKey {
 
     public Camera getCameraEnd(AMITarget itarget) {
         if(itarget.TargetIsMeta()) {
-            Transform t = itarget.TargetGetCache(_cameraEndPath);
-            if(!t) {
-                t = AMUtil.GetTarget(itarget.TargetGetRoot(), _cameraEndPath);
-                if(t) itarget.TargetSetCache(_cameraEndPath, t);
-                else itarget.TargetMissing(_cameraEndPath, true);
-            }
+            if(!string.IsNullOrEmpty(_cameraEndPath)) {
+                Transform t = itarget.TargetGetCache(_cameraEndPath);
+                if(!t) {
+                    t = AMUtil.GetTarget(itarget.TargetGetRoot(), _cameraEndPath);
+                    if(t) itarget.TargetSetCache(_cameraEndPath, t);
+                    else itarget.TargetMissing(_cameraEndPath, true);
+                }
 
-            return t.camera;
+                return t.camera;
+            }
+            else
+                return null;
         }
         else
             return _cameraEnd;
@@ -212,12 +251,193 @@ public class AMCameraSwitcherKey : AMKey {
     }
 
     public bool isReversed() {
-        //TODO
-        return false;
+        return AMUtil.isTransitionReversed(cameraFadeType, cameraFadeParameters.ToArray());
     }
 
-    public override Tweener buildTweener(AMITarget itarget, Sequence sequence, UnityEngine.Object obj, int frameRate) {
-        //TODO
-        return null;
+    public Tweener buildTweener(AMITarget itarget, Sequence sequence, Camera[] allCameras, int frameRate) {
+        // if targets are equal do nothing
+        if(endFrame == -1 || !hasTargets(itarget) || targetsAreEqual(itarget)) return null;
+
+        float[] fadeParams = cameraFadeParameters.ToArray();
+        bool isReversed = AMUtil.isTransitionReversed(type, fadeParams);
+        Camera cam=getCamera(itarget), camEnd=getCameraEnd(itarget);
+
+        sequence.InsertCallback(((float)frame - 1f) / (float)frameRate, OnFirstFrameEvent,
+            isReversed, cam, camEnd, (object)allCameras, (object)fadeParams);
+
+        sequence.InsertCallback(((float)endFrame - 1.01f) / (float)frameRate, OnLastFrameEvent,
+            isReversed, cam, camEnd, (object)allCameras, (object)fadeParams);
+
+        //use 'this' with property 'type' as a placeholder since AMPlugCameraSwitcher does not require any property
+        return HOTween.To(this, getTime(frameRate), new TweenParms().Prop("type", new AMPlugCameraSwitcher()));
+    }
+
+    void OnFirstFrameEvent(TweenEvent dat) {
+        bool isReversed = (bool)dat.parms[0];
+        Camera cam = dat.parms[1] as Camera;
+        Camera camEnd = dat.parms[2] as Camera;
+        Camera[] allCams = dat.parms[3] as Camera[];
+        float[] fadeParams = dat.parms[4] as float[];
+
+        if(dat.tween.isLoopingBack) {
+            CameraEnd(!isReversed, camEnd, cam, allCams);
+        }
+        else {
+            if(cameraFadeType == (int)Fade.None) {
+                CameraFadeNoneTargets(typeEnd, colorEnd, camEnd, allCams);
+                CameraEnd(isReversed, cam, camEnd, allCams);
+            }
+            else {
+                CameraGenerateFadeTargets(isReversed, cam, camEnd, allCams, fadeParams);
+            }
+        }
+    }
+
+    void OnLastFrameEvent(TweenEvent dat) {
+        bool isReversed = (bool)dat.parms[0];
+        Camera cam = dat.parms[1] as Camera;
+        Camera camEnd = dat.parms[2] as Camera;
+        Camera[] allCams = dat.parms[3] as Camera[];
+        float[] fadeParams = dat.parms[4] as float[];
+
+        if(dat.tween.isLoopingBack) {
+            if(cameraFadeType == (int)Fade.None) {
+                CameraFadeNoneTargets(typeEnd, colorEnd, camEnd, allCams);
+                CameraEnd(isReversed, cam, camEnd, allCams);
+            }
+            else {
+                CameraGenerateFadeTargets(isReversed, cam, camEnd, allCams, fadeParams);
+            }
+        }
+        else {
+            CameraEnd(isReversed, cam, camEnd, allCams);
+        }
+    }
+
+    void CameraFadeNoneTargets(int typeEnd, Color colorEnd, Camera camEnd, Camera[] allCams) {
+        if(typeEnd == 0) {
+            if(camEnd) AMUtil.SetTopCamera(camEnd, allCams);
+        }
+        else {
+            ShowColor(colorEnd);
+        }
+    }
+
+    void ShowColor(Color color) {
+        AMCameraFade cf = AMCameraFade.getCameraFade();
+        cf.keepAliveColor = true;
+        cf.colorTex = color;
+        cf.hasColorTex = true;
+        cf.hasColorBG = false;
+        cf.mode = 0;
+        cf.value = 1f;
+        cf.isReset = false;
+    }
+
+    void CameraGenerateFadeTargets(bool isReversed, Camera cam, Camera camEnd, Camera[] allCams, float[] parameters) {
+        AMCameraFade cf = AMCameraFade.getCameraFade();
+        cf.incrementKeepAlives();
+
+        if(cf.keepAliveColor) cf.keepAliveColor = false;
+        cf.isReset = false;
+
+        Camera firstCamera = null;
+        Camera secondCamera = null;
+        Color? firstColor = null;
+        Color? secondColor = null;
+
+        if(isReversed) {
+            if(camEnd) firstCamera = camEnd;
+            else if(typeEnd == 1) firstColor = colorEnd;
+            if(cam) secondCamera = cam;
+            else if(type == 1) secondColor = color;
+        }
+        else {
+            if(cam) firstCamera = cam;
+            else if(type == 1) firstColor = color;
+            if(camEnd) secondCamera = camEnd;
+            else if(typeEnd == 1) secondColor = colorEnd;
+        }
+        // setup first target
+        if(firstCamera) {
+            // camera
+            if(!still) {
+                cf.setupRenderTexture(firstCamera);
+            }
+            else {
+                AMUtil.SetTopCamera(firstCamera, allCams);
+                firstCamera.Render();
+                cf.clearTexture2D();
+                cf.tex2d = GetScreenTexture();
+                cf.useRenderTexture = false;
+                cf.hasColorTex = false;
+            }
+        }
+        else {
+            // color
+            cf.colorTex = (Color)firstColor;
+            cf.hasColorTex = true;
+        }
+        // setup second target
+        if(secondCamera) {
+            // camera
+            AMUtil.SetTopCamera(secondCamera, allCams);
+            cf.hasColorBG = false;
+        }
+        else {
+            // color
+            cf.colorBG = (Color)secondColor;
+            cf.hasColorBG = true;
+        }
+        // iris shape
+        if(irisShape) {
+            cf.irisShape = irisShape;
+            //cf.setupMaterials();
+        }
+        cf.mode = cameraFadeType;
+        // setup camera fade
+        cf.setupMaterials();
+        cf.r = parameters;
+        cf.value = 1f;
+        cf.percent = 0f;
+    }
+
+    Texture2D GetScreenTexture() {
+        Texture2D tex2d = new Texture2D(Screen.width, Screen.height, TextureFormat.RGB24, false);
+        tex2d.ReadPixels(new Rect(0, 0, Screen.width, Screen.height), 0, 0, false);
+        tex2d.Apply();
+        return tex2d;
+    }
+
+    void CameraEnd(bool isReversed, Camera cam, Camera camEnd, Camera[] allCams) {
+        if(isReversed) {
+            //set camEnd to top
+            if(camEnd)
+                AMUtil.SetTopCamera(camEnd, allCams);
+        }
+
+        if(typeEnd == 0) {
+            AMCameraFade.reset();
+        }
+        else {
+            AMCameraFade cf = AMCameraFade.getCameraFade();
+            cf.keepAliveColor = true;
+            cf.hasColorTex = true;
+            cf.hasColorBG = false;
+            cf.colorTex = colorEnd;
+            cf.mode = 0;
+            cf.value = 1.0f;
+        }
+
+        if(!still) {
+            if(cam) cam.targetTexture = null;
+            if(camEnd) camEnd.targetTexture = null;
+        }
+
+        if(AMCameraFade.hasInstance()) {
+            AMCameraFade cf = AMCameraFade.getCameraFade();
+            cf.clearTexture2D();
+            if(cf.keepAlives > 0) cf.keepAlives--;
+        }
     }
 }

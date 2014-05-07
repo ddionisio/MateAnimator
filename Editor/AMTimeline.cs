@@ -3676,18 +3676,8 @@ public class AMTimeline : EditorWindow {
                 }
 
             }
-            //
-            Rect rectLabelFrameLimit = new Rect(0f, rectLabelObjectMessage.y + rectLabelObjectMessage.height + height_inspector_space, 150f, 20f);
-            GUI.Label(rectLabelFrameLimit, "Frame Limit");
-            Rect rectToggleFrameLimit = new Rect(rectLabelFrameLimit.x + rectLabelFrameLimit.width + margin, rectLabelFrameLimit.y, 20f, 20f);
-            if(eKey.setFrameLimit(GUI.Toggle(rectToggleFrameLimit, eKey.frameLimit, ""))) {
-                AMCodeView.refresh();
-                // save data
-                EditorUtility.SetDirty(eKey);
-            }
-            //
             GUI.enabled = sendMessageToggleEnabled;
-            Rect rectLabelSendMessage = new Rect(0f, rectLabelFrameLimit.y + rectLabelFrameLimit.height + height_inspector_space, 150f, 20f);
+            Rect rectLabelSendMessage = new Rect(0f, rectLabelObjectMessage.y + rectLabelObjectMessage.height + height_inspector_space, 150f, 20f);
             GUI.Label(rectLabelSendMessage, "Use SendMessage");
             Rect rectToggleSendMessage = new Rect(rectLabelSendMessage.x + rectLabelSendMessage.width + margin, rectLabelSendMessage.y, 20f, 20f);
             if(eKey.setUseSendMessage(GUI.Toggle(rectToggleSendMessage, eKey.useSendMessage, ""))) {

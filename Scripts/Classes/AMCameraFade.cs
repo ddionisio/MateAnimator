@@ -119,6 +119,8 @@ public class AMCameraFade : MonoBehaviour {
                 DestroyImmediate(_tex);
             }
 
+            clearTexture2D();
+
             _cf = null;
         }
     }
@@ -981,7 +983,7 @@ public class AMCameraFade : MonoBehaviour {
 
     public void clearTexture2D() {
         if(tex2d) {
-            Destroy(tex2d);
+            DestroyImmediate(tex2d);
             tex2d = null;
         }
     }
@@ -990,7 +992,7 @@ public class AMCameraFade : MonoBehaviour {
         if(!shouldUpdateRenderTexture && _tex) return _tex;
         shouldUpdateRenderTexture = false;
         if(Application.isPlaying) {
-            if(_tex) Destroy(_tex);
+            if(_tex) DestroyImmediate(_tex);
             width = Screen.width;
             height = Screen.height;
         }

@@ -217,6 +217,12 @@ public class AMPlugQuaternionSlerp : ABSTweenPlugin {
     /// Sets the typed changeVal based on the current startVal and endVal.
     /// </summary>
     protected override void SetChangeVal() {
+        if(isRelative && !tweenObj.isFrom) {
+            changeVal = typedEndVal;
+        }
+        else {
+            changeVal = Quaternion.RotateTowards(typedStartVal, typedEndVal, 360.0f);
+        }
     }
 
     /// <summary>
@@ -226,8 +232,8 @@ public class AMPlugQuaternionSlerp : ABSTweenPlugin {
     /// The difference from the previous loop increment.
     /// </param>
     protected override void SetIncremental(int p_diffIncr) {
-        //???
-        typedStartVal = Quaternion.RotateTowards(typedStartVal, typedEndVal, (float)p_diffIncr);
+        for(int i = 0; i < p_diffIncr; i++)
+            typedStartVal *= changeVal;
     }
 
     /// <summary>

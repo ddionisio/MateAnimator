@@ -20,7 +20,6 @@ public class AMEventKey : AMKey {
 	[SerializeField]
 	string componentName = "";
 
-    public bool frameLimit = true;
     public bool useSendMessage = true;
     public List<AMEventParameter> parameters = new List<AMEventParameter>();
     public string methodName;
@@ -135,14 +134,6 @@ public class AMEventKey : AMKey {
         return false;
     }
 
-    public bool setFrameLimit(bool frameLimit) {
-        if(this.frameLimit != frameLimit) {
-            this.frameLimit = frameLimit;
-            return true;
-        }
-        return false;
-    }
-
     public bool setUseSendMessage(bool useSendMessage) {
         if(this.useSendMessage != useSendMessage) {
             this.useSendMessage = useSendMessage;
@@ -176,7 +167,6 @@ public class AMEventKey : AMKey {
         a.component = component;
 		a.componentName = componentName;
         a.useSendMessage = useSendMessage;
-        a.frameLimit = frameLimit;
         // parameters
         a.methodName = methodName;
         a.cachedMethodInfo = cachedMethodInfo;
@@ -334,19 +324,14 @@ public class AMEventKey : AMKey {
 		if(cachedMethodInfo == null)
 			cachedMethodInfo = comp.GetType().GetMethod(methodName, GetParamTypes());
 
-        if(frameLimit) {
-			sequence.InsertCallback(getWaitTime(frameRate, 0.0f), OnMethodCallbackLimitFrame, comp, frameRate, (object)buildParams());
+        if(useSendMessage) {
+            if(parameters == null || parameters.Count <= 0)
+                sequence.InsertCallback(getWaitTime(frameRate, 0.0f), comp.gameObject, methodName, null, SendMessageOptions.DontRequireReceiver);
+            else
+                sequence.InsertCallback(getWaitTime(frameRate, 0.0f), comp.gameObject, methodName, parameters[0].toObject(), SendMessageOptions.DontRequireReceiver);
         }
         else {
-            if(useSendMessage) {
-                if(parameters == null || parameters.Count <= 0)
-					sequence.InsertCallback(getWaitTime(frameRate, 0.0f), comp.gameObject, methodName, null, SendMessageOptions.DontRequireReceiver);
-                else
-					sequence.InsertCallback(getWaitTime(frameRate, 0.0f), comp.gameObject, methodName, parameters[0].toObject(), SendMessageOptions.DontRequireReceiver);
-            }
-            else {
-				sequence.InsertCallback(getWaitTime(frameRate, 0.0f), OnMethodCallbackParams, comp, (object)buildParams());
-            }
+            sequence.InsertCallback(getWaitTime(frameRate, 0.0f), OnMethodCallbackParams, comp, (object)buildParams());
         }
 
         return null;
@@ -361,30 +346,5 @@ public class AMEventKey : AMKey {
 		cachedMethodInfo.Invoke(comp, parms);
     }
 
-    //only call method if elapse is within frame
-    void OnMethodCallbackLimitFrame(TweenEvent dat) {
-		Component comp = dat.parms[0] as Component;
-
-		if(comp == null) return;
-
-		int frameRate = (int)dat.parms[1];
-		object[] parms = dat.parms[2] as object[];
-
-        float elapsed = dat.tween.elapsed;
-        float curFrame = ((float)frameRate) * elapsed;
-
-        if(curFrame > frame + getNumberOfFrames()) return;
-
-        
-        if(useSendMessage) {
-            if(parms.Length == 0)
-				comp.gameObject.SendMessage(methodName, null, SendMessageOptions.DontRequireReceiver);
-            else
-				comp.gameObject.SendMessage(methodName, parms[0], SendMessageOptions.DontRequireReceiver);
-        }
-        else {
-			cachedMethodInfo.Invoke(comp, parms);
-        }
-    }
     #endregion
 }
