@@ -1,7 +1,7 @@
 MateAnimator
 ============
 
-Fixing up the open sourced Animator from Unity to be more useful.
+Animator++
 
 Based on: https://github.com/absameen/Animator_Timeline
 
@@ -11,9 +11,9 @@ This takes advantage of Sequence and the ability to cache all the tweens at star
 
 Also, Animator is no longer global and can be added to any game object.  You can now have many Sequences running simultaneously.
 
-Camera Transition and Mega Morph has been removed
+Mega Morph has been removed.
 
-Import/Export, Code Generator doesn't work. JSON stuff mangled. 
+Import/Export, Code Generator are currently disabled. 
 
 Update
 ======
@@ -21,6 +21,7 @@ Update
 * Keyboard shortcuts: arrowkeys to select keys/tracks, copy/paste/duplicate for keys, delete to delete selected keys.
 * Shared Animator (AnimatorMeta) allows you to share animation per AnimatorData.  This helps with updating any shared animation reliably, and reduces overhead.
 * Sprite animation support.  You can also drag sprites to the Animator window to automatically add the track/keys.
+* Camera Transition added back.
 
 
 Installation
@@ -31,7 +32,6 @@ Installation
 
 TODO
 ====
-* Camera Transition - soon!
 * Import/Export - AnimatorMeta sort of does this already, but adding a JSON format wouldn't hurt.
 * Add a way to make this tool extensive - will help with implementing tk2d, etc.
 * Work with MechAnim. - allow change state, etc. and preview.
