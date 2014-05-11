@@ -31,30 +31,32 @@ public class AMAnimationKey : AMKey {
 
     #region action
     void OnMethodCallbackParams(TweenEvent dat) {
-		Animation anim = dat.parms[0] as Animation;
-        if(anim != null && amClip != null) {
-            float elapsed = dat.tween.elapsed;
-            float frameRate = (float)dat.parms[1];
-            float curFrame = frameRate * elapsed;
-            float numFrames = getNumberOfFrames(Mathf.RoundToInt(frameRate));
+        //TODO: figure out a way to play the animation backwards...
+        if(!dat.tween.isLoopingBack) {
+            Animation anim = dat.parms[0] as Animation;
+            if(anim != null && amClip != null) {
+                float elapsed = dat.tween.elapsed;
+                float frameRate = (float)dat.parms[1];
+                float curFrame = frameRate * elapsed;
+                float numFrames = getNumberOfFrames(Mathf.RoundToInt(frameRate));
 
-            if(numFrames > 0.0f && curFrame > frame + numFrames) return;
+                if(numFrames > 0.0f && curFrame > frame + numFrames) return;
 
-            if(wrapMode != WrapMode.Default)
-				anim.wrapMode = wrapMode;
+                if(wrapMode != WrapMode.Default)
+                    anim.wrapMode = wrapMode;
 
-            if(crossfade) {
-				anim.CrossFade(amClip.name, crossfadeTime);
-            }
-            else {
-				anim.Play(amClip.name);
+                if(crossfade) {
+                    anim.CrossFade(amClip.name, crossfadeTime);
+                }
+                else {
+                    anim.Play(amClip.name);
+                }
             }
         }
     }
 
 	public override Tweener buildTweener(AMITarget itarget, Sequence sequence, UnityEngine.Object target, int frameRate) {
-        sequence.InsertCallback(getWaitTime(frameRate, 0.0f), OnMethodCallbackParams, target, (float)frameRate);
-
+        sequence.InsertCallback(getWaitTime(frameRate, 0.0f), OnMethodCallbackParams, (target as GameObject).animation, (float)frameRate);
         return null;
     }
     #endregion
