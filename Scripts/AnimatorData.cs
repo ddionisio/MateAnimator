@@ -16,6 +16,7 @@ public class AnimatorData : MonoBehaviour, AMITarget {
     }
 
     public delegate void OnTake(AnimatorData anim, AMTakeData take);
+    public delegate void OnTakeTrigger(AnimatorData anim, AMTakeData take, AMTriggerData data);
 
     // show
 
@@ -49,6 +50,7 @@ public class AnimatorData : MonoBehaviour, AMITarget {
     // hide
 
     public event OnTake takeCompleteCallback;
+    public event OnTakeTrigger takeTriggerCallback;
 
 	public string defaultTakeName {
 		get {
@@ -342,6 +344,7 @@ public class AnimatorData : MonoBehaviour, AMITarget {
 		}
 		
 		takeCompleteCallback = null;
+        takeTriggerCallback = null;
 	}
 	
 	void OnEnable() {
@@ -455,6 +458,13 @@ public class AnimatorData : MonoBehaviour, AMITarget {
 			takeCompleteCallback(this, aTake);
 	}
 
+    void OnTrigger(TweenEvent dat) {
+        if(takeTriggerCallback != null) {
+            AMTriggerData trigDat = (AMTriggerData)dat.parms[0];
+            takeTriggerCallback(this, mCurrentPlayingTake, trigDat);
+        }
+    }
+
     #region AMITarget interface
     public Transform TargetGetRoot() {
 		return transform;
@@ -535,6 +545,10 @@ public class AnimatorData : MonoBehaviour, AMITarget {
 			mTargetMissing.Remove(path);
 #endif
 	}
+
+    public Holoville.HOTween.Core.TweenDelegate.TweenCallbackWParms TargetGetTriggerCallback() {
+        return OnTrigger;
+    }
 
     #endregion
 

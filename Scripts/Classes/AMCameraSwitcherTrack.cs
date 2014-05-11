@@ -23,6 +23,8 @@ public class AMCameraSwitcherTrack : AMTrack {
 
     protected override UnityEngine.Object GetSerializeObject(GameObject targetGO) { return null; }
 
+    public override bool noTarget { get { return true; } }
+
     public Camera[] GetCachedCameras(AMITarget itarget) {
         if(_cachedAllCameras == null)
             _cachedAllCameras = getAllCameras(itarget);
@@ -94,6 +96,8 @@ public class AMCameraSwitcherTrack : AMTrack {
 
     public override void previewFrame(AMITarget itarget, float frame, AMTrack extraTrack = null) {
         bool isPreview = !Application.isPlaying;
+
+        AMCameraFade.getCameraFade(isPreview);
 
         for(int i = 0; i < keys.Count; i++) {
             AMCameraSwitcherKey key = keys[i] as AMCameraSwitcherKey;

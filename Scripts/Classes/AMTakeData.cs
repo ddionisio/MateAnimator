@@ -937,8 +937,8 @@ public class AMTakeData {
             }
             else {
                 track.buildSequenceStart(itarget, sequence, frameRate);
-                Object tgt = track.GetTarget(itarget);
-                if(tgt != null) {
+                Object tgt = null;
+                if(track.noTarget || (tgt = track.GetTarget(itarget)) != null) {
                     foreach(AMKey key in track.keys) {
                         Tweener tween = key.buildTweener(itarget, sequence, tgt, frameRate);
                         if(tween != null) {

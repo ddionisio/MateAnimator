@@ -45,7 +45,6 @@ public class AMCameraFade : MonoBehaviour {
     }
     //private static Material matIris = null;
     // show
-    public bool deleteMe = false;
     public bool updateTexture = false;
 
     // hide in inspector
@@ -173,13 +172,11 @@ public class AMCameraFade : MonoBehaviour {
     }
 
     void Update() {
-        if(deleteMe) Debug.Log("Animator: Deleted AMCameraFade"+(preview ? "Preview" : ""));
         if(!Application.isPlaying) {
-            if(deleteMe) destroyImmediate();
-            else if(updateTexture) doForceUpdate(true);
+            if(updateTexture) doForceUpdate(true);
             return;
         }
-        if(preview || deleteMe || (!keepAliveAwake && !keepAliveColor && keepAlives <= 0 && !keepAlivePreview)) destroy();
+        if(preview || (!keepAliveAwake && !keepAliveColor && keepAlives <= 0 && !keepAlivePreview)) destroy();
     }
 
     void doForceUpdate(bool showMsg = false) {
@@ -848,7 +845,9 @@ public class AMCameraFade : MonoBehaviour {
             cf = (AMCameraFade)go.GetComponent(typeof(AMCameraFade));
         }
         if(!cf) {
-            cf = (AMCameraFade)new GameObject("AMCamera"+(preview ? "FadePreview" : "Fade"), typeof(AMCameraFade)).GetComponent(typeof(AMCameraFade));
+            go = new GameObject("AMCamera"+(preview ? "FadePreview" : "Fade"), typeof(AMCameraFade));
+            go.hideFlags = HideFlags.DontSave;
+            cf = (AMCameraFade)go.GetComponent(typeof(AMCameraFade));
         }
         _cf = cf;
         _cf.preview = preview;

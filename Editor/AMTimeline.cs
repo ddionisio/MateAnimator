@@ -197,7 +197,8 @@ public class AMTimeline : EditorWindow {
         Property = 5,
         Event = 6,
         GOSetActive = 7,
-        CameraSwitcher = 8
+        CameraSwitcher = 8,
+        Trigger = 9
     }
 
     public static string[] TrackNames = new string[] {
@@ -209,7 +210,8 @@ public class AMTimeline : EditorWindow {
 		"Property",
 		"Event",
         "GOSetActive",
-        "Camera Switcher"
+        "Camera Switcher",
+        "Trigger"
 	};
     // skins
     public static string global_skin = "am_skin_blue";
@@ -2827,19 +2829,31 @@ public class AMTimeline : EditorWindow {
             Rect rectTimelineActions = new Rect(0f, _current_height_frame, 0f, height_track - current_height_frame);	// used to group textures into one draw call
             if(!drawEachAction) {
                 if(_track.keys.Count > 0) {
-                    if(_track is AMEventTrack) {
+                    if(_track is AMEventTrack || _track is AMTriggerTrack) {
+                        texBox = texBoxDarkBlue;
+
+                        for(int i = 0; i < _track.keys.Count; i++) {
+                            AMKey key = _track.keys[i];
+
+                            if(key.frame + 1 < _startFrame) continue;
+                            else if(key.frame > _endFrame) break;
+
+                            drawBox(key.frame, key.frame, _startFrame, _endFrame, rectTimelineActions, rectFramesBirdsEye.width, texBox);
+                        }
+                    }
+                    else if(_track is AMPropertyTrack) {
                         // event track, from first action start frame to end frame
                         cached_action_startFrame = _track.keys[0].getStartFrame();
-                        cached_action_endFrame = _endFrame;
-                        texBox = texBoxDarkBlue;
+                        cached_action_endFrame = _track.keys[_track.keys.Count-1].getStartFrame();
+                        texBox = texBoxLightBlue;
                         drawBox(cached_action_startFrame, cached_action_endFrame, _startFrame, _endFrame, rectTimelineActions, rectFramesBirdsEye.width, texBox);
                     }
                     else if(_track is AMGOSetActiveTrack) {
-                        texBox = texBoxDarkBlue;
+                        texBox = texBoxLightBlue;
 
                         int lastStartInd = -1;
 
-                        for(int i = 0;i < _track.keys.Count;i++) {
+                        for(int i = 0; i < _track.keys.Count; i++) {
                             AMGOSetActiveKey key = _track.keys[i] as AMGOSetActiveKey;
 
                             bool draw = false;
@@ -2876,7 +2890,7 @@ public class AMTimeline : EditorWindow {
                     else {
                         int lastStartInd = -1;
 
-                        for(int i = 0;i < _track.keys.Count;i++) {
+                        for(int i = 0; i < _track.keys.Count; i++) {
                             bool draw = false;
 
                             if(_track.keys[i].easeType == AMKey.EaseTypeNone) {
@@ -2913,8 +2927,6 @@ public class AMTimeline : EditorWindow {
                                         texBox = texBoxYellow;
                                     else if(_track is AMOrientationTrack)
                                         texBox = texBoxOrange;
-                                    else if(_track is AMPropertyTrack)
-                                        texBox = texBoxLightBlue;
                                     else if(_track is AMCameraSwitcherTrack)
                                         texBox = texBoxPurple;
                                 }
@@ -2972,7 +2984,7 @@ public class AMTimeline : EditorWindow {
                     didClampBackwards = true;
                     clamped = -1;
                 }
-                else if(_track is AMAnimationTrack || _track is AMAudioTrack || _track is AMPropertyTrack || _track is AMEventTrack || _track is AMGOSetActiveTrack || _track is AMCameraSwitcherTrack) {
+                else if(_track is AMAnimationTrack || _track is AMAudioTrack || _track is AMPropertyTrack || _track is AMEventTrack || _track is AMGOSetActiveTrack || _track is AMCameraSwitcherTrack || _track is AMTriggerTrack) {
                     // single frame tracks (clamp box to last frame) (if audio track not set, clamp)
                     action_startFrame = _track.keys[i].getStartFrame();
                     if(i < _track.keys.Count - 1) {
@@ -3035,6 +3047,7 @@ public class AMTimeline : EditorWindow {
                 else if(_track is AMEventTrack) texBox = texBoxDarkBlue;
                 else if(_track is AMGOSetActiveTrack) texBox = texBoxDarkBlue;
                 else if(_track is AMCameraSwitcherTrack) texBox = texBoxPurple;
+                else if(_track is AMTriggerTrack) texBox = texBoxDarkBlue;
                 else texBox = texBoxBorder;
                 if(drawEachAction) {
                     GUI.DrawTexture(rectBox, texBox);
@@ -3046,7 +3059,7 @@ public class AMTimeline : EditorWindow {
                 styleTxtInfo.normal.textColor = Color.white;
                 styleTxtInfo.alignment = (hideTxtInfo ? TextAnchor.MiddleLeft : TextAnchor.MiddleCenter);
                 bool isLastAction;
-                if(_track is AMPropertyTrack || _track is AMEventTrack || _track is AMGOSetActiveTrack || _track is AMCameraSwitcherTrack) isLastAction = (i == _track.keys.Count - 1);
+                if(_track is AMPropertyTrack || _track is AMEventTrack || _track is AMGOSetActiveTrack || _track is AMCameraSwitcherTrack || _track is AMTriggerTrack) isLastAction = (i == _track.keys.Count - 1);
                 else if(_track is AMAudioTrack || _track is AMAnimationTrack) isLastAction = false;
                 else isLastAction = (i == _track.keys.Count - 2);
                 if(rectBox.width > 5f) EditorGUI.DropShadowLabel(new Rect(rectBox.x, rectBox.y, rectBox.width - (!isLastAction ? current_width_frame : 0f), rectBox.height), txtInfo, styleTxtInfo);
@@ -3189,7 +3202,7 @@ public class AMTimeline : EditorWindow {
         float start_y = 30f + height_inspector_space;
         #region translation inspector
         if(sTrack is AMTranslationTrack) {
-            AMTranslationKey tKey = (AMTranslationKey)(sTrack as AMTranslationTrack).getKeyOnFrame(_frame);
+            AMTranslationKey tKey = (AMTranslationKey)sTrack.getKeyOnFrame(_frame);
             // translation interpolation
             Rect rectLabelInterp = new Rect(0f, start_y, 50f, 20f);
             GUI.Label(rectLabelInterp, "Interpl.");
@@ -3239,7 +3252,7 @@ public class AMTimeline : EditorWindow {
         #endregion
         #region rotation inspector
         if(sTrack is AMRotationTrack) {
-            AMRotationKey rKey = (AMRotationKey)(sTrack as AMRotationTrack).getKeyOnFrame(_frame);
+            AMRotationKey rKey = (AMRotationKey)sTrack.getKeyOnFrame(_frame);
             Rect rectQuaternion = new Rect(0f, start_y, width_inspector - margin, 40f);
             // quaternion
             Vector3 rot = rKey.rotation.eulerAngles;
@@ -3832,6 +3845,35 @@ public class AMTimeline : EditorWindow {
                 }
             }
             GUI.EndScrollView();
+            return;
+        }
+        #endregion
+        #region trigger inspector
+        if(sTrack is AMTriggerTrack) {
+            EditorGUIUtility.labelWidth = 55.0f;
+            AMTriggerKey tKey = (AMTriggerKey)sTrack.getKeyOnFrame(_frame);
+            Rect rectString = new Rect(0f, start_y, width_inspector - margin, 20f);
+            string str = EditorGUI.TextField(rectString, "String", tKey.valueString);
+            if(tKey.valueString != str) {
+                Undo.RecordObject(tKey, "Trigger Set Value String");
+                tKey.valueString = str;
+                EditorUtility.SetDirty(tKey);
+            }
+            Rect rectInt = new Rect(0f, rectString.y + rectString.height + height_inspector_space, width_inspector - margin, 20f);
+            int i = EditorGUI.IntField(rectInt, "Integer", tKey.valueInt);
+            if(tKey.valueInt != i) {
+                Undo.RecordObject(tKey, "Trigger Set Value Int");
+                tKey.valueInt = i;
+                EditorUtility.SetDirty(tKey);
+            }
+            Rect rectFloat = new Rect(0f, rectInt.y + rectInt.height + height_inspector_space, width_inspector - margin, 20f);
+            float f = EditorGUI.FloatField(rectFloat, "Float", tKey.valueFloat);
+            if(tKey.valueFloat != f) {
+                Undo.RecordObject(tKey, "Trigger Set Value Float");
+                tKey.valueFloat = f;
+                EditorUtility.SetDirty(tKey);
+            }
+            EditorGUIUtility.labelWidth = 0.0f;
             return;
         }
         #endregion
@@ -5317,6 +5359,12 @@ public class AMTimeline : EditorWindow {
         else if(_key is AMGOSetActiveKey) {
             return "";
             #endregion
+            #region trigger
+        }
+        else if(_key is AMTriggerKey) {
+            AMTriggerKey tkey = _key as AMTriggerKey;
+            return string.Format("\"{0}\", {1}, {2}", tkey.valueString, tkey.valueInt, tkey.valueFloat);
+            #endregion
         }
 
         return "Unknown";
@@ -5346,6 +5394,7 @@ public class AMTimeline : EditorWindow {
         else if(_track is AMOrientationTrack) return texIconOrientation;
         else if(_track is AMGOSetActiveTrack) return texIconProperty;
         else if(_track is AMCameraSwitcherTrack) return texIconCameraSwitcher;
+        else if(_track is AMTriggerTrack) return texIconEvent;
 
         Debug.LogWarning("Animator: Icon texture not found for track " + _track.getTrackType());
         return null;
@@ -5469,11 +5518,11 @@ public class AMTimeline : EditorWindow {
                     addCompUndo ? Undo.AddComponent<AMEventTrack>(holder) : holder.AddComponent<AMEventTrack>());
                 break;
             case (int)Track.CameraSwitcher:
-                if(object_window == null && aData.e_getCurrentTake().cameraSwitcher) {
+                if(aData.e_getCurrentTake().cameraSwitcher) {
                     // already exists
                     EditorUtility.DisplayDialog("Camera Switcher Already Exists", "You can only have one Camera Switcher track. Transition between cameras by adding keyframes to the track.", "Okay");
                 }
-                else {
+                else if(object_window) {
                     aData.e_getCurrentTake().addTrack(TakeEditCurrent().selectedGroup, aData, object_window ? object_window.transform : null,
                         addCompUndo ? Undo.AddComponent<AMCameraSwitcherTrack>(holder) : holder.AddComponent<AMCameraSwitcherTrack>());
                     // preview selected frame
@@ -5485,6 +5534,10 @@ public class AMTimeline : EditorWindow {
             case (int)Track.GOSetActive:
                 aData.e_getCurrentTake().addTrack(TakeEditCurrent().selectedGroup, aData, object_window ? object_window.transform : null,
                     addCompUndo ? Undo.AddComponent<AMGOSetActiveTrack>(holder) : holder.AddComponent<AMGOSetActiveTrack>());
+                break;
+            case (int)Track.Trigger:
+                aData.e_getCurrentTake().addTrack(TakeEditCurrent().selectedGroup, aData, object_window ? object_window.transform : null,
+                    addCompUndo ? Undo.AddComponent<AMTriggerTrack>(holder) : holder.AddComponent<AMTriggerTrack>());
                 break;
             default:
                 int combo_index = (int)trackType - 100;
@@ -5755,6 +5808,9 @@ public class AMTimeline : EditorWindow {
             // add key to go active track
             (amTrack as AMGOSetActiveTrack).addKey(aData, addCall, _frame);
         }
+        else if(amTrack is AMTriggerTrack) {
+            (amTrack as AMTriggerTrack).addKey(aData, addCall, _frame);
+        }
 
         AMTrack selectedTrack = TakeEditCurrent().getSelectedTrack(aData.e_getCurrentTake());
         if(selectedTrack) {
@@ -5845,6 +5901,7 @@ public class AMTimeline : EditorWindow {
         menu.AddItem(new GUIContent("Event"), false, addTrackFromMenu, (int)Track.Event);
         menu.AddItem(new GUIContent("GO Active"), false, addTrackFromMenu, (int)Track.GOSetActive);
         menu.AddItem(new GUIContent("Camera Switcher"), false, addTrackFromMenu, (int)Track.CameraSwitcher);
+        menu.AddItem(new GUIContent("Trigger"), false, addTrackFromMenu, (int)Track.Trigger);
     }
     void buildAddTrackMenu_Drag() {
         bool hasTransform = true;
@@ -5894,8 +5951,8 @@ public class AMTimeline : EditorWindow {
         // GO Active
         menu_drag.AddItem(new GUIContent("GO Active"), false, addTrackFromMenu, (int)Track.GOSetActive);
         // Camera Switcher
-        if(hasCamera) menu_drag.AddItem(new GUIContent("Camera Switcher"+(aData.e_getCurrentTake().cameraSwitcher != null ? " (Key)" : "")), false, addTrackFromMenu, (int)Track.CameraSwitcher);
-        else menu_drag.AddDisabledItem(new GUIContent("Camera Switcher"+(aData.e_getCurrentTake().cameraSwitcher != null ? " (Key)" : "")));
+        if(hasCamera && !aData.e_getCurrentTake().cameraSwitcher) menu_drag.AddItem(new GUIContent("Camera Switcher"), false, addTrackFromMenu, (int)Track.CameraSwitcher);
+        else menu_drag.AddDisabledItem(new GUIContent("Camera Switcher"));
 
         if(oData.quickAdd_Combos.Count > 0) {
             // multiple tracks

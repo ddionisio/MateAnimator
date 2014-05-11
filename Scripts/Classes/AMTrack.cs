@@ -23,6 +23,11 @@ public abstract class AMTrack : MonoBehaviour {
 
 	public string targetPath { get { return _targetPath; } }
 
+    /// <summary>
+    /// If true, then this track does not require a target
+    /// </summary>
+    public virtual bool noTarget { get { return false; } }
+
     // set name based on index
     public void setName(int index) {
         name = "Track" + (index + 1);

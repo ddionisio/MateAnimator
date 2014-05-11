@@ -396,112 +396,108 @@ public class AMPropertyTrack : AMTrack {
 
     }
     public override void previewFrame(AMITarget target, float frame, AMTrack extraTrack = null) {
-        previewFrame(target, frame, true);
-    }
-    // preview a frame in the scene view
-    public void previewFrame(AMITarget target, float frame, bool quickPreview = false) {
         if(keys == null || keys.Count <= 0) {
             return;
         }
 
-		GameObject go = GetTarget(target) as GameObject;
-		Component comp = GetTargetComp(target);
+        GameObject go = GetTarget(target) as GameObject;
+        Component comp = GetTargetComp(target);
 
-		if(!comp || !go) return;
+        if(!comp || !go) return;
 
-		RefreshData(comp);
+        RefreshData(comp);
 
         // if before or equal to first frame, or is the only frame
-		AMPropertyKey ckey = keys[0] as AMPropertyKey;
-		if((frame <= (float)ckey.frame) || ckey.endFrame == -1) {
-			//go.rotation = (cache[0] as AMPropertyAction).getStartQuaternion();
+        AMPropertyKey ckey = keys[0] as AMPropertyKey;
+        if((frame <= (float)ckey.frame) || ckey.endFrame == -1) {
+            //go.rotation = (cache[0] as AMPropertyAction).getStartQuaternion();
             if(cachedFieldInfo != null) {
-				cachedFieldInfo.SetValue(comp, ckey.getStartValue());
+                cachedFieldInfo.SetValue(comp, ckey.getStartValue());
                 refreshTransform(go);
             }
             else if(cachedPropertyInfo != null) {
-				cachedPropertyInfo.SetValue(comp, ckey.getStartValue(), null);
-				refreshTransform(go);
+                cachedPropertyInfo.SetValue(comp, ckey.getStartValue(), null);
+                refreshTransform(go);
             }
             else if(cachedMethodInfo != null) {
             }
-			ckey.refresh(go, ckey.getStartValue());
+            ckey.refresh(go, ckey.getStartValue());
             return;
         }
         // if not tweenable and beyond last frame
-		ckey = keys[keys.Count - 1] as AMPropertyKey;
-		if(!canTween && frame >= (float)ckey.frame) {
-			if(cachedFieldInfo != null) {
-				cachedFieldInfo.SetValue(comp, ckey.getStartValue());
-				refreshTransform(go);
-			}
-			else if(cachedPropertyInfo != null) {
-				cachedPropertyInfo.SetValue(comp, ckey.getStartValue(), null);
-				refreshTransform(go);
-			}
-			else if(cachedMethodInfo != null) {
-			}
+        ckey = keys[keys.Count - 1] as AMPropertyKey;
+        if(!canTween && frame >= (float)ckey.frame) {
+            if(cachedFieldInfo != null) {
+                cachedFieldInfo.SetValue(comp, ckey.getStartValue());
+                refreshTransform(go);
+            }
+            else if(cachedPropertyInfo != null) {
+                cachedPropertyInfo.SetValue(comp, ckey.getStartValue(), null);
+                refreshTransform(go);
+            }
+            else if(cachedMethodInfo != null) {
+            }
 
-			if(valueType == (int)ValueType.Sprite) {
-				SpriteRenderer sprRender = comp as SpriteRenderer;
-				sprRender.sprite = ckey.getStartValue() as Sprite;
-			}
-			ckey.refresh(go, ckey.getStartValue());
-			return;
-		}
-		//if tweenable and beyond last tweenable
-		ckey = keys[keys.Count - 2] as AMPropertyKey;
-		if(frame >= (float)ckey.endFrame) {
-			if(cachedFieldInfo != null) {
-				cachedFieldInfo.SetValue(comp, ckey.getEndValue());
-				refreshTransform(go);
+            if(valueType == (int)ValueType.Sprite) {
+                SpriteRenderer sprRender = comp as SpriteRenderer;
+                sprRender.sprite = ckey.getStartValue() as Sprite;
             }
-			else if(cachedPropertyInfo != null) {
-				cachedPropertyInfo.SetValue(comp, ckey.getEndValue(), null);
-				refreshTransform(go);
+            ckey.refresh(go, ckey.getStartValue());
+            return;
+        }
+        //if tweenable and beyond last tweenable
+        ckey = keys[keys.Count - 2] as AMPropertyKey;
+        if(frame >= (float)ckey.endFrame) {
+            if(cachedFieldInfo != null) {
+                cachedFieldInfo.SetValue(comp, ckey.getEndValue());
+                refreshTransform(go);
             }
-			else if(cachedMethodInfo != null) {
+            else if(cachedPropertyInfo != null) {
+                cachedPropertyInfo.SetValue(comp, ckey.getEndValue(), null);
+                refreshTransform(go);
             }
-			ckey.refresh(go, ckey.getEndValue());
+            else if(cachedMethodInfo != null) {
+            }
+            ckey.refresh(go, ckey.getEndValue());
             return;
         }
         // if lies on property action
         foreach(AMPropertyKey key in keys) {
             if((frame < (float)key.frame) || (frame > (float)key.endFrame)) continue;
-            if(quickPreview && !key.targetsAreEqual()) return;	// quick preview; if action will execute then skip
+            //if(quickPreview && !key.targetsAreEqual()) return;	// quick preview; if action will execute then skip
             // if on startFrame or is no tween
             if(frame == (float)key.frame || ((key.easeType == AMKey.EaseTypeNone || !key.canTween) && frame < (float)key.endFrame)) {
-				if(cachedFieldInfo != null) {
-					cachedFieldInfo.SetValue(comp, key.getStartValue());
-					refreshTransform(go);
+                if(cachedFieldInfo != null) {
+                    cachedFieldInfo.SetValue(comp, key.getStartValue());
+                    refreshTransform(go);
                 }
-				else if(cachedPropertyInfo != null) {
-					cachedPropertyInfo.SetValue(comp, key.getStartValue(), null);
-					refreshTransform(go);
+                else if(cachedPropertyInfo != null) {
+                    cachedPropertyInfo.SetValue(comp, key.getStartValue(), null);
+                    refreshTransform(go);
                 }
-				else if(cachedMethodInfo != null) {
+                else if(cachedMethodInfo != null) {
                 }
-				key.refresh(go, key.getStartValue());
+                key.refresh(go, key.getStartValue());
                 return;
             }
             // if on endFrame
             if(frame == (float)key.endFrame) {
-				if(key.easeType == AMKey.EaseTypeNone || !key.canTween)
-					continue;
-				else {
-					if(cachedFieldInfo != null) {
-						cachedFieldInfo.SetValue(comp, key.getEndValue());
-						refreshTransform(go);
-	                }
-					else if(cachedPropertyInfo != null) {
-						cachedPropertyInfo.SetValue(comp, key.getEndValue(), null);
-						refreshTransform(go);
-	                }
-					else if(cachedMethodInfo != null) {
-	                }
-					key.refresh(go, key.getEndValue());
-	                return;
-				}
+                if(key.easeType == AMKey.EaseTypeNone || !key.canTween)
+                    continue;
+                else {
+                    if(cachedFieldInfo != null) {
+                        cachedFieldInfo.SetValue(comp, key.getEndValue());
+                        refreshTransform(go);
+                    }
+                    else if(cachedPropertyInfo != null) {
+                        cachedPropertyInfo.SetValue(comp, key.getEndValue(), null);
+                        refreshTransform(go);
+                    }
+                    else if(cachedMethodInfo != null) {
+                    }
+                    key.refresh(go, key.getEndValue());
+                    return;
+                }
             }
             // else find value using easing function
 
@@ -510,8 +506,8 @@ public class AMPropertyTrack : AMTrack {
 
             float t;
 
-			if(key.easeType == AMKey.EaseTypeNone)
-				t = 0.0f;
+            if(key.easeType == AMKey.EaseTypeNone)
+                t = 0.0f;
             else if(key.hasCustomEase()) {
                 t = AMUtil.EaseCustom(0.0f, 1.0f, framePositionInAction / key.getNumberOfFrames(), key.easeCurve);
             }
@@ -525,49 +521,49 @@ public class AMPropertyTrack : AMTrack {
                 float vStartInteger = Convert.ToSingle(key.val);
                 float vEndInteger = Convert.ToSingle(key.end_val);
                 int vCurrentInteger = Mathf.RoundToInt(Mathf.Lerp(vStartInteger, vEndInteger, t));
-				if(cachedFieldInfo != null) cachedFieldInfo.SetValue(comp, vCurrentInteger);
-				else if(cachedPropertyInfo != null) cachedPropertyInfo.SetValue(comp, vCurrentInteger, null);
-				refreshTransform(go); key.refresh(go, vCurrentInteger);
+                if(cachedFieldInfo != null) cachedFieldInfo.SetValue(comp, vCurrentInteger);
+                else if(cachedPropertyInfo != null) cachedPropertyInfo.SetValue(comp, vCurrentInteger, null);
+                refreshTransform(go); key.refresh(go, vCurrentInteger);
             }
             else if(key.valueType == (int)ValueType.Long) {
                 float vStartLong = Convert.ToSingle(key.val);
                 float vEndLong = Convert.ToSingle(key.end_val);
                 long vCurrentLong = (long)Mathf.Lerp(vStartLong, vEndLong, t);
-				if(cachedFieldInfo != null) cachedFieldInfo.SetValue(comp, vCurrentLong);
-				else if(cachedPropertyInfo != null) cachedPropertyInfo.SetValue(comp, vCurrentLong, null);
-				refreshTransform(go); key.refresh(go, vCurrentLong);
+                if(cachedFieldInfo != null) cachedFieldInfo.SetValue(comp, vCurrentLong);
+                else if(cachedPropertyInfo != null) cachedPropertyInfo.SetValue(comp, vCurrentLong, null);
+                refreshTransform(go); key.refresh(go, vCurrentLong);
             }
             else if(key.valueType == (int)ValueType.Float) {
                 float vStartFloat = Convert.ToSingle(key.val);
                 float vEndFloat = Convert.ToSingle(key.end_val);
                 float vCurrentFloat = Mathf.Lerp(vStartFloat, vEndFloat, t);
-				if(cachedFieldInfo != null) cachedFieldInfo.SetValue(comp, vCurrentFloat);
-				else if(cachedPropertyInfo != null) cachedPropertyInfo.SetValue(comp, vCurrentFloat, null);
-				refreshTransform(go); key.refresh(go, vCurrentFloat);
+                if(cachedFieldInfo != null) cachedFieldInfo.SetValue(comp, vCurrentFloat);
+                else if(cachedPropertyInfo != null) cachedPropertyInfo.SetValue(comp, vCurrentFloat, null);
+                refreshTransform(go); key.refresh(go, vCurrentFloat);
             }
             else if(key.valueType == (int)ValueType.Double) {
                 double vCurrentDouble = key.val + ((double)t) * (key.end_val - key.val);
-				if(cachedFieldInfo != null) cachedFieldInfo.SetValue(comp, vCurrentDouble);
-				else if(cachedPropertyInfo != null) cachedPropertyInfo.SetValue(comp, vCurrentDouble, null);
-				refreshTransform(go); key.refresh(go, vCurrentDouble);
+                if(cachedFieldInfo != null) cachedFieldInfo.SetValue(comp, vCurrentDouble);
+                else if(cachedPropertyInfo != null) cachedPropertyInfo.SetValue(comp, vCurrentDouble, null);
+                refreshTransform(go); key.refresh(go, vCurrentDouble);
             }
             else if(key.valueType == (int)ValueType.Vector2) {
                 Vector2 vCurrentVector2 = Vector2.Lerp(key.vect2, key.end_vect2, t);
-				if(cachedFieldInfo != null) cachedFieldInfo.SetValue(comp, vCurrentVector2);
-				else if(cachedPropertyInfo != null) cachedPropertyInfo.SetValue(comp, vCurrentVector2, null);
-				refreshTransform(go); key.refresh(go, vCurrentVector2);
+                if(cachedFieldInfo != null) cachedFieldInfo.SetValue(comp, vCurrentVector2);
+                else if(cachedPropertyInfo != null) cachedPropertyInfo.SetValue(comp, vCurrentVector2, null);
+                refreshTransform(go); key.refresh(go, vCurrentVector2);
             }
             else if(key.valueType == (int)ValueType.Vector3) {
                 Vector3 vCurrentVector3 = Vector3.Lerp(key.vect3, key.end_vect3, t);
-				if(cachedFieldInfo != null) cachedFieldInfo.SetValue(comp, vCurrentVector3);
-				else if(cachedPropertyInfo != null) cachedPropertyInfo.SetValue(comp, vCurrentVector3, null);
-				refreshTransform(go); key.refresh(go, vCurrentVector3);
+                if(cachedFieldInfo != null) cachedFieldInfo.SetValue(comp, vCurrentVector3);
+                else if(cachedPropertyInfo != null) cachedPropertyInfo.SetValue(comp, vCurrentVector3, null);
+                refreshTransform(go); key.refresh(go, vCurrentVector3);
             }
             else if(key.valueType == (int)ValueType.Color) {
                 Color vCurrentColor = Color.Lerp(key.color, key.end_color, t);
-				if(cachedFieldInfo != null) cachedFieldInfo.SetValue(comp, vCurrentColor);
-				else if(cachedPropertyInfo != null) cachedPropertyInfo.SetValue(comp, vCurrentColor, null);
-				refreshTransform(go); key.refresh(go, vCurrentColor);
+                if(cachedFieldInfo != null) cachedFieldInfo.SetValue(comp, vCurrentColor);
+                else if(cachedPropertyInfo != null) cachedPropertyInfo.SetValue(comp, vCurrentColor, null);
+                refreshTransform(go); key.refresh(go, vCurrentColor);
             }
             else if(key.valueType == (int)ValueType.Rect) {
                 Rect vStartRect = key.rect;
@@ -577,21 +573,21 @@ public class AMPropertyTrack : AMTrack {
                 vCurrentRect.y = Mathf.Lerp(vStartRect.y, vEndRect.y, t);
                 vCurrentRect.width = Mathf.Lerp(vStartRect.width, vEndRect.width, t);
                 vCurrentRect.height = Mathf.Lerp(vStartRect.height, vEndRect.height, t);
-				if(cachedFieldInfo != null) cachedFieldInfo.SetValue(comp, vCurrentRect);
-				else if(cachedPropertyInfo != null) cachedPropertyInfo.SetValue(comp, vCurrentRect, null);
-				refreshTransform(go); key.refresh(go, vCurrentRect);
+                if(cachedFieldInfo != null) cachedFieldInfo.SetValue(comp, vCurrentRect);
+                else if(cachedPropertyInfo != null) cachedPropertyInfo.SetValue(comp, vCurrentRect, null);
+                refreshTransform(go); key.refresh(go, vCurrentRect);
             }
             else if(key.valueType == (int)ValueType.Vector4) {
                 Vector4 vCurrentVector4 = Vector4.Lerp(key.vect4, key.end_vect4, t);
-				if(cachedFieldInfo != null) cachedFieldInfo.SetValue(comp, vCurrentVector4);
-				else if(cachedPropertyInfo != null) cachedPropertyInfo.SetValue(comp, vCurrentVector4, null);
-				refreshTransform(go); key.refresh(go, vCurrentVector4);
+                if(cachedFieldInfo != null) cachedFieldInfo.SetValue(comp, vCurrentVector4);
+                else if(cachedPropertyInfo != null) cachedPropertyInfo.SetValue(comp, vCurrentVector4, null);
+                refreshTransform(go); key.refresh(go, vCurrentVector4);
             }
             else if(key.valueType == (int)ValueType.Quaternion) {
                 Quaternion vCurrentQuat = Quaternion.Slerp(key.quat, key.end_quat, t);
-				if(cachedFieldInfo != null) cachedFieldInfo.SetValue(comp, vCurrentQuat);
-				else if(cachedPropertyInfo != null) cachedPropertyInfo.SetValue(comp, vCurrentQuat, null);
-				refreshTransform(go); key.refresh(go, vCurrentQuat);
+                if(cachedFieldInfo != null) cachedFieldInfo.SetValue(comp, vCurrentQuat);
+                else if(cachedPropertyInfo != null) cachedPropertyInfo.SetValue(comp, vCurrentQuat, null);
+                refreshTransform(go); key.refresh(go, vCurrentQuat);
             }
             else {
                 Debug.LogError("Animator: Invalid ValueType " + valueType.ToString());
