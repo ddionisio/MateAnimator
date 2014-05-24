@@ -4,6 +4,8 @@ using System.Collections.Generic;
 using System.Text;
 
 public struct AMUtil {
+    private static Transform[] mRoots; //generated to grab targets
+
     public static void SetTopCamera(Camera top, Camera bottom) {
         if(top) top.depth = 0;
         if(bottom) bottom.depth = -1;
@@ -71,20 +73,86 @@ public struct AMUtil {
 		return rets.ToArray();
 	}
 
+    /// <summary>
+    /// Call this before creating sequences for animator meta, after adding new root objects.
+    /// </summary>
+    public void ClearTargetRootCache() {
+        mRoots = null;
+    }
+
+    private static void GenerateTargetRootCache() {
+        Transform[] trans = Resources.FindObjectsOfTypeAll<Transform>();
+        if(trans.Length > 0) {
+            List<Transform> roots = new List<Transform>(trans.Length);
+
+            for(int i = 0; i < trans.Length; i++) {
+                Transform t = trans[i];
+                if(t.parent != null || t.gameObject.hideFlags == HideFlags.NotEditable || t.gameObject.hideFlags == HideFlags.HideAndDontSave) {
+                    continue;
+                }
+
+                roots.Add(t);
+            }
+
+            mRoots = roots.ToArray();
+        }
+        else
+            mRoots = new Transform[0];
+    }
+
+    private static Transform GetTargetRoot(string name) {
+        if(mRoots == null) GenerateTargetRootCache();
+
+        for(int i = 0; i < mRoots.Length; i++) {
+            if(mRoots[i].name == name)
+                return mRoots[i];
+        }
+        return null;
+    }
+
 	public static Transform GetTarget(Transform root, string path) {
 		Transform ret = null;
 		
 		if(!string.IsNullOrEmpty(path)) {
 			if(path[0] == '.') {
-				ret = root;
+                return root;
 			}
-			else if(path[0] == '/') {
-				GameObject go = GameObject.Find(path);
-				if(go) ret = go.transform;
-			}
-			else {
-				ret = root.FindChild(path);
-			}
+
+            string[] names;
+            int startInd;
+            Transform parent;
+            if(path[0] == '/') {
+                names = path.Substring(1).Split('/');
+                startInd = 1;
+                //get first parent
+                parent = GetTargetRoot(names[0]);
+                if(parent == null) {
+                    return null; //root not found, can't continue
+                }
+            }
+            else {
+                names = path.Split('/');
+                startInd = 0;
+                parent = root;
+            }
+
+            //iterate through names and store in ret
+            for(int i = startInd; i < names.Length; i++) {
+                //search child in current parent
+                int cCount = parent.childCount;
+                for(int c = 0; c < cCount; c++) {
+                    Transform child = parent.GetChild(c);
+                    if(child.name == names[i]) {
+                        ret = child;
+                        break;
+                    }
+                }
+
+                if(ret == null)
+                    break; //path not found
+
+                parent = ret;
+            }
 		}
 
 		return ret;
