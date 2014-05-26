@@ -131,7 +131,8 @@ public class AMPropertySelect : EditorWindow {
                             processSelectProperty(myComponent, fieldInfo, null);
 
                         }
-                        GUILayout.Label(fieldInfo.GetValue(myComponent).ToString());
+                        object val = fieldInfo.GetValue(myComponent);
+                        GUILayout.Label(val != null ? val.ToString() : "");
                         GUILayout.EndHorizontal();
                         numberOfProperties++;
 

@@ -8,72 +8,8 @@ using Holoville.HOTween.Plugins;
 
 [AddComponentMenu("")]
 public class AMPropertyKey : AMKey {
-    public int valueType;
-
-	[SerializeField]
-    Component component;
-	[SerializeField]
-	string componentName = "";
-
-	[SerializeField]
-	string propertyName;
-	[SerializeField]
-	string fieldName;
-	[SerializeField]
-	string methodName;
-
-	[SerializeField]
-	string[] methodParameterTypes;
-
     public int endFrame;
     
-	public void SetComponent(Component comp, bool nameOnly) {
-		if(comp) {
-			component = nameOnly ? null : comp;
-			componentName = comp.GetType().Name;
-		}
-		else {
-			component = null;
-			componentName = "";
-		}
-	}
-
-	public void SetPropertyInfo(PropertyInfo inf) {
-		if(inf != null) { propertyName = inf.Name; fieldName = ""; methodName = ""; }
-		else propertyName = "";
-	}
-
-	public void SetFieldInfo(FieldInfo inf) {
-		if(inf != null) { fieldName = inf.Name; propertyName = ""; methodName = ""; }
-		else fieldName = "";
-	} // holds a field such as variables for user scripts, should be null if property is used
-
-	public void SetMethodInfo(MethodInfo inf, string[] parms) {
-		if(inf != null) { methodName = inf.Name; fieldName = ""; propertyName = ""; }
-		else methodName = "";
-		methodParameterTypes = parms;
-	}
-
-	public override void maintainKey(AMITarget itarget, UnityEngine.Object targetObj) {
-		if(string.IsNullOrEmpty(componentName)) {
-			if(component) {
-				componentName = component.GetType().Name;
-			}
-		}
-		
-		if(itarget.TargetIsMeta()) {
-			component = null;
-		}
-		else if(!component && !string.IsNullOrEmpty(componentName) && targetObj) {
-			component = ((GameObject)targetObj).GetComponent(componentName);
-		}
-
-	}
-
-	public override string GetRequiredComponent() {
-		return componentName;
-	}
-
     //union for single values
     public double val;	// value as double
 	public string valString; //string
@@ -95,10 +31,6 @@ public class AMPropertyKey : AMKey {
     public Color end_color { get { return new Color(end_vect4.x, end_vect4.y, end_vect4.z, end_vect4.w); } set { end_vect4.Set(value.r, value.g, value.b, value.a); } }
     public Rect end_rect { get { return new Rect(end_vect4.x, end_vect4.y, end_vect4.z, end_vect4.w); } set { end_vect4.Set(value.xMin, value.yMin, value.width, value.height); } }
     public Quaternion end_quat { get { return new Quaternion(end_vect4.x, end_vect4.y, end_vect4.z, end_vect4.w); } set { end_vect4.Set(value.x, value.y, value.z, value.w); } }
-
-	public bool canTween {
-		get { return !(valueType == (int)AMPropertyTrack.ValueType.Bool || valueType == (int)AMPropertyTrack.ValueType.String || valueType == (int)AMPropertyTrack.ValueType.Sprite); }
-	}
 
 	public bool setValue(UnityEngine.Object val) {
 		if(this.valObj != val) {
@@ -203,19 +135,7 @@ public class AMPropertyKey : AMKey {
     public override void CopyTo(AMKey key) {
 		AMPropertyKey a = key as AMPropertyKey;
         a.enabled = false;
-		a.component = component;
-		a.componentName = componentName;
-		a.propertyName = propertyName;
-		a.fieldName = fieldName;
-		a.methodName = methodName;
-
-        if(methodParameterTypes != null) {
-            a.methodParameterTypes = new string[methodParameterTypes.Length];
-            System.Array.Copy(methodParameterTypes, a.methodParameterTypes, methodParameterTypes.Length);
-        }
-        else
-            methodParameterTypes = new string[0];
-
+		
         a.frame = frame;
         a.val = val;
 		a.valObj = valObj;
@@ -227,12 +147,12 @@ public class AMPropertyKey : AMKey {
 
 	//use in preview for specific refresh after setting the property with given obj
 	//e.g. Sprite
-	public void refresh(GameObject go, object obj) {
+	/*public void refresh(GameObject go, object obj) {
 		if(valueType == (int)AMPropertyTrack.ValueType.Sprite) {
 			SpriteRenderer sr = component ? component as SpriteRenderer : go.GetComponent<SpriteRenderer>();
 			sr.sprite = obj as Sprite;
 		}
-	}
+	}*/
 
     #region action
     public override int getNumberOfFrames() {
@@ -241,131 +161,125 @@ public class AMPropertyKey : AMKey {
     public float getTime(int frameRate) {
         return (float)getNumberOfFrames() / (float)frameRate;
     }
-    public override Tweener buildTweener(AMITarget itarget, Sequence sequence, UnityEngine.Object target, int frameRate) {
-        if(targetsAreEqual()) return null;
+    public override Tweener buildTweener(AMITarget itarget, AMTrack track, UnityEngine.Object target, Sequence sequence, int frameRate) {
+        AMPropertyTrack propTrack = track as AMPropertyTrack;
+
+        if(endFrame == -1 && easeType != EaseTypeNone && propTrack.canTween) return null;
+
+        int valueType = propTrack.valueType;
+
+        if(targetsAreEqual(valueType)) return null;
 
 		//get component and fill the cached method info
-		Component comp;
-		if(itarget.TargetIsMeta()) {
-			if(string.IsNullOrEmpty(componentName)) return null;
-			comp = (target as GameObject).GetComponent(componentName);
-			
-		}
-		else {
-			if(component == null) return null;
-			comp = component;
-		}
+        Component comp = propTrack.GetTargetComp(target as GameObject);
 
-		if((endFrame == -1 && easeType != EaseTypeNone && canTween) || !comp || (string.IsNullOrEmpty(fieldName) && string.IsNullOrEmpty(propertyName) && string.IsNullOrEmpty(methodName))) return null;
+        if(comp == null) return null;
 
-        string varName = null;
+        string varName = propTrack.getMemberName();
 
-		if(!string.IsNullOrEmpty(fieldName)) {
-            varName = fieldName;
-        }
-		else if(!string.IsNullOrEmpty(propertyName)) {
-            varName = propertyName;
-        }
-        //return HOTween.To(obj, getTime(frameRate), new TweenParms().Prop(isLocal ? "localRotation" : "rotation", new AMPlugQuaternionSlerp(endRotation)).Ease(easeCurve));
-        if(varName != null) {
+        if(!string.IsNullOrEmpty(varName)) {
 			if(valueType == (int)AMPropertyTrack.ValueType.Bool) {
-				return HOTween.To(comp, endFrame == -1 ? 1.0f/(float)frameRate : getTime(frameRate), 
+                return HOTween.To(comp, endFrame == -1 || endFrame == frame ? 1.0f/(float)frameRate : getTime(frameRate), 
 				                  new TweenParms().Prop(varName, new AMPlugNoTween(val > 0.0)));
 			}
 			else if(valueType == (int)AMPropertyTrack.ValueType.String) {
-				return HOTween.To(comp, endFrame == -1 ? 1.0f/(float)frameRate : getTime(frameRate), 
+                return HOTween.To(comp, endFrame == -1 || endFrame == frame ? 1.0f/(float)frameRate : getTime(frameRate), 
 				                  new TweenParms().Prop(varName, new AMPlugNoTween(valString)));
 			}
 			else if(valueType == (int)AMPropertyTrack.ValueType.Sprite) {
-				return HOTween.To(comp, endFrame == -1 ? 1.0f/(float)frameRate : getTime(frameRate), 
+                return HOTween.To(comp, endFrame == -1 || endFrame == frame ? 1.0f/(float)frameRate : getTime(frameRate), 
 				                  new TweenParms().Prop(varName, new AMPlugSprite(comp as SpriteRenderer, valObj ? valObj as Sprite : null)));
 			}
-			else if(easeType == EaseTypeNone) {
-				float t = endFrame == -1 ? 1.0f/(float)frameRate : getTime(frameRate);
+            else if(valueType == (int)AMPropertyTrack.ValueType.Enum) {
+                System.Type infType = propTrack.GetCachedInfoType(itarget);
+                object enumVal = infType != null ? System.Enum.ToObject(infType, (int)val) : null;
+                if(enumVal != null) {
+                    return HOTween.To(comp, endFrame == -1 || endFrame == frame ? 1.0f/(float)frameRate : getTime(frameRate),
+                                      new TweenParms().Prop(varName, new AMPlugNoTween(enumVal)));
+                }
+                else {
+                    Debug.LogError("Invalid enum value.");
+                    return null;
+                }
+            }
+            else if(easeType == EaseTypeNone) {
+                float t = endFrame == -1 || endFrame == frame ? 1.0f/(float)frameRate : getTime(frameRate);
 
-				switch((AMPropertyTrack.ValueType)valueType) {
-				case AMPropertyTrack.ValueType.Integer:
-					return HOTween.To(comp, t, new TweenParms().Prop(varName, new AMPlugNoTween(System.Convert.ToInt32(val))));
-				case AMPropertyTrack.ValueType.Float:
-					return HOTween.To(comp, t, new TweenParms().Prop(varName, new AMPlugNoTween(System.Convert.ToSingle(val))));
-				case AMPropertyTrack.ValueType.Double:
-					return HOTween.To(comp, t, new TweenParms().Prop(varName, new AMPlugNoTween(new AMPlugDouble(val))));
-				case AMPropertyTrack.ValueType.Long:
-					return HOTween.To(comp, t, new TweenParms().Prop(varName, new AMPlugNoTween(System.Convert.ToInt64(val))));
-				case AMPropertyTrack.ValueType.Vector2:
-					return HOTween.To(comp, t, new TweenParms().Prop(varName, new AMPlugNoTween(vect2)));
-				case AMPropertyTrack.ValueType.Vector3:
-					return HOTween.To(comp, t, new TweenParms().Prop(varName, new AMPlugNoTween(vect3)));
-				case AMPropertyTrack.ValueType.Color:
-					return HOTween.To(comp, t, new TweenParms().Prop(varName, new AMPlugNoTween(color)));
-				case AMPropertyTrack.ValueType.Rect:
-					return HOTween.To(comp, t, new TweenParms().Prop(varName, new AMPlugNoTween(rect)));
-				case AMPropertyTrack.ValueType.Vector4:
-					return HOTween.To(comp, t, new TweenParms().Prop(varName, new AMPlugNoTween(vect4)));
-				case AMPropertyTrack.ValueType.Quaternion:
-					return HOTween.To(comp, t, new TweenParms().Prop(varName, new AMPlugNoTween(quat)));
-				}
-			}
+                switch((AMPropertyTrack.ValueType)valueType) {
+                    case AMPropertyTrack.ValueType.Integer:
+                        return HOTween.To(comp, t, new TweenParms().Prop(varName, new AMPlugNoTween(System.Convert.ToInt32(val))));
+                    case AMPropertyTrack.ValueType.Float:
+                        return HOTween.To(comp, t, new TweenParms().Prop(varName, new AMPlugNoTween(System.Convert.ToSingle(val))));
+                    case AMPropertyTrack.ValueType.Double:
+                        return HOTween.To(comp, t, new TweenParms().Prop(varName, new AMPlugNoTween(new AMPlugDouble(val))));
+                    case AMPropertyTrack.ValueType.Long:
+                        return HOTween.To(comp, t, new TweenParms().Prop(varName, new AMPlugNoTween(System.Convert.ToInt64(val))));
+                    case AMPropertyTrack.ValueType.Vector2:
+                        return HOTween.To(comp, t, new TweenParms().Prop(varName, new AMPlugNoTween(vect2)));
+                    case AMPropertyTrack.ValueType.Vector3:
+                        return HOTween.To(comp, t, new TweenParms().Prop(varName, new AMPlugNoTween(vect3)));
+                    case AMPropertyTrack.ValueType.Color:
+                        return HOTween.To(comp, t, new TweenParms().Prop(varName, new AMPlugNoTween(color)));
+                    case AMPropertyTrack.ValueType.Rect:
+                        return HOTween.To(comp, t, new TweenParms().Prop(varName, new AMPlugNoTween(rect)));
+                    case AMPropertyTrack.ValueType.Vector4:
+                        return HOTween.To(comp, t, new TweenParms().Prop(varName, new AMPlugNoTween(vect4)));
+                    case AMPropertyTrack.ValueType.Quaternion:
+                        return HOTween.To(comp, t, new TweenParms().Prop(varName, new AMPlugNoTween(quat)));
+                }
+            }
             else if(hasCustomEase()) {
                 switch((AMPropertyTrack.ValueType)valueType) {
                     case AMPropertyTrack.ValueType.Integer:
-					return HOTween.To(comp, getTime(frameRate), new TweenParms().Prop(varName, System.Convert.ToInt32(end_val)).Ease(easeCurve));
+                        return HOTween.To(comp, getTime(frameRate), new TweenParms().Prop(varName, System.Convert.ToInt32(end_val)).Ease(easeCurve));
                     case AMPropertyTrack.ValueType.Float:
-					return HOTween.To(comp, getTime(frameRate), new TweenParms().Prop(varName, System.Convert.ToSingle(end_val)).Ease(easeCurve));
+                        return HOTween.To(comp, getTime(frameRate), new TweenParms().Prop(varName, System.Convert.ToSingle(end_val)).Ease(easeCurve));
                     case AMPropertyTrack.ValueType.Double:
-					return HOTween.To(comp, getTime(frameRate), new TweenParms().Prop(varName, new AMPlugDouble(end_val)).Ease(easeCurve));
+                        return HOTween.To(comp, getTime(frameRate), new TweenParms().Prop(varName, new AMPlugDouble(end_val)).Ease(easeCurve));
                     case AMPropertyTrack.ValueType.Long:
-					return HOTween.To(comp, getTime(frameRate), new TweenParms().Prop(varName, new AMPlugLong(System.Convert.ToInt64(end_val))).Ease(easeCurve));
+                        return HOTween.To(comp, getTime(frameRate), new TweenParms().Prop(varName, new AMPlugLong(System.Convert.ToInt64(end_val))).Ease(easeCurve));
                     case AMPropertyTrack.ValueType.Vector2:
-					return HOTween.To(comp, getTime(frameRate), new TweenParms().Prop(varName, end_vect2).Ease(easeCurve));
+                        return HOTween.To(comp, getTime(frameRate), new TweenParms().Prop(varName, end_vect2).Ease(easeCurve));
                     case AMPropertyTrack.ValueType.Vector3:
-					return HOTween.To(comp, getTime(frameRate), new TweenParms().Prop(varName, end_vect3).Ease(easeCurve));
+                        return HOTween.To(comp, getTime(frameRate), new TweenParms().Prop(varName, end_vect3).Ease(easeCurve));
                     case AMPropertyTrack.ValueType.Color:
-					return HOTween.To(comp, getTime(frameRate), new TweenParms().Prop(varName, end_color).Ease(easeCurve));
+                        return HOTween.To(comp, getTime(frameRate), new TweenParms().Prop(varName, end_color).Ease(easeCurve));
                     case AMPropertyTrack.ValueType.Rect:
-					return HOTween.To(comp, getTime(frameRate), new TweenParms().Prop(varName, end_rect).Ease(easeCurve));
+                        return HOTween.To(comp, getTime(frameRate), new TweenParms().Prop(varName, end_rect).Ease(easeCurve));
                     case AMPropertyTrack.ValueType.Vector4:
-					return HOTween.To(comp, getTime(frameRate), new TweenParms().Prop(varName, end_vect4).Ease(easeCurve));
+                        return HOTween.To(comp, getTime(frameRate), new TweenParms().Prop(varName, end_vect4).Ease(easeCurve));
                     case AMPropertyTrack.ValueType.Quaternion:
-					return HOTween.To(comp, getTime(frameRate), new TweenParms().Prop(varName, new AMPlugQuaternionSlerp(end_quat)).Ease(easeCurve));
+                        return HOTween.To(comp, getTime(frameRate), new TweenParms().Prop(varName, new AMPlugQuaternionSlerp(end_quat)).Ease(easeCurve));
                 }
             }
             else {
                 switch((AMPropertyTrack.ValueType)valueType) {
                     case AMPropertyTrack.ValueType.Integer:
-					return HOTween.To(comp, getTime(frameRate), new TweenParms().Prop(varName, System.Convert.ToInt32(end_val)).Ease((EaseType)easeType, amplitude, period));
+                        return HOTween.To(comp, getTime(frameRate), new TweenParms().Prop(varName, System.Convert.ToInt32(end_val)).Ease((EaseType)easeType, amplitude, period));
                     case AMPropertyTrack.ValueType.Float:
-					return HOTween.To(comp, getTime(frameRate), new TweenParms().Prop(varName, System.Convert.ToSingle(end_val)).Ease((EaseType)easeType, amplitude, period));
+                        return HOTween.To(comp, getTime(frameRate), new TweenParms().Prop(varName, System.Convert.ToSingle(end_val)).Ease((EaseType)easeType, amplitude, period));
                     case AMPropertyTrack.ValueType.Double:
-					return HOTween.To(comp, getTime(frameRate), new TweenParms().Prop(varName, new AMPlugDouble(end_val)).Ease((EaseType)easeType, amplitude, period));
+                        return HOTween.To(comp, getTime(frameRate), new TweenParms().Prop(varName, new AMPlugDouble(end_val)).Ease((EaseType)easeType, amplitude, period));
                     case AMPropertyTrack.ValueType.Long:
-					return HOTween.To(comp, getTime(frameRate), new TweenParms().Prop(varName, new AMPlugLong(System.Convert.ToInt64(end_val))).Ease((EaseType)easeType, amplitude, period));
+                        return HOTween.To(comp, getTime(frameRate), new TweenParms().Prop(varName, new AMPlugLong(System.Convert.ToInt64(end_val))).Ease((EaseType)easeType, amplitude, period));
                     case AMPropertyTrack.ValueType.Vector2:
-					return HOTween.To(comp, getTime(frameRate), new TweenParms().Prop(varName, end_vect2).Ease((EaseType)easeType, amplitude, period));
+                        return HOTween.To(comp, getTime(frameRate), new TweenParms().Prop(varName, end_vect2).Ease((EaseType)easeType, amplitude, period));
                     case AMPropertyTrack.ValueType.Vector3:
-					return HOTween.To(comp, getTime(frameRate), new TweenParms().Prop(varName, end_vect3).Ease((EaseType)easeType, amplitude, period));
+                        return HOTween.To(comp, getTime(frameRate), new TweenParms().Prop(varName, end_vect3).Ease((EaseType)easeType, amplitude, period));
                     case AMPropertyTrack.ValueType.Color:
-					return HOTween.To(comp, getTime(frameRate), new TweenParms().Prop(varName, end_color).Ease((EaseType)easeType, amplitude, period));
+                        return HOTween.To(comp, getTime(frameRate), new TweenParms().Prop(varName, end_color).Ease((EaseType)easeType, amplitude, period));
                     case AMPropertyTrack.ValueType.Rect:
-					return HOTween.To(comp, getTime(frameRate), new TweenParms().Prop(varName, end_rect).Ease((EaseType)easeType, amplitude, period));
+                        return HOTween.To(comp, getTime(frameRate), new TweenParms().Prop(varName, end_rect).Ease((EaseType)easeType, amplitude, period));
                     case AMPropertyTrack.ValueType.Vector4:
-					return HOTween.To(comp, getTime(frameRate), new TweenParms().Prop(varName, end_vect4).Ease((EaseType)easeType, amplitude, period));
+                        return HOTween.To(comp, getTime(frameRate), new TweenParms().Prop(varName, end_vect4).Ease((EaseType)easeType, amplitude, period));
                     case AMPropertyTrack.ValueType.Quaternion:
-					return HOTween.To(comp, getTime(frameRate), new TweenParms().Prop(varName, new AMPlugQuaternionSlerp(end_quat)).Ease((EaseType)easeType, amplitude, period));
+                        return HOTween.To(comp, getTime(frameRate), new TweenParms().Prop(varName, new AMPlugQuaternionSlerp(end_quat)).Ease((EaseType)easeType, amplitude, period));
                 }
             }
         }
 
         Debug.LogError("Animator: No FieldInfo or PropertyInfo set.");
         return null;
-    }
-
-    public string getName() {
-		if(!string.IsNullOrEmpty(fieldName)) return fieldName;
-		else if(!string.IsNullOrEmpty(propertyName)) return propertyName;
-        else if(!string.IsNullOrEmpty(methodName)) {
-        }
-        return "Unknown";
     }
 
     public string getFloatArrayString(int codeLanguage, List<float> ls) {
@@ -381,7 +295,7 @@ public class AMPropertyKey : AMKey {
         else s += "]";
         return s;
     }
-    public string getValueString(bool brief) {
+    public string getValueString(System.Type type, int valueType, bool brief) {
         string s = "";
         if(AMPropertyTrack.isValueTypeNumeric(valueType)) {
             //s+= start_val.ToString();
@@ -424,6 +338,9 @@ public class AMPropertyKey : AMKey {
 		else if(valueType == (int)AMPropertyTrack.ValueType.Sprite) {
 			s += string.Format("\"{0}\"", valObj ? valObj.name : "none");
 		}
+        else if(valueType == (int)AMPropertyTrack.ValueType.Enum) {
+            s += System.Enum.ToObject(type, (int)val).ToString();
+        }
         return s;
     }
     // use for floats
@@ -451,8 +368,8 @@ public class AMPropertyKey : AMKey {
         return input.ToString("N2");
     }
 
-    public bool targetsAreEqual() {
-		if(valueType == (int)AMPropertyTrack.ValueType.String || valueType == (int)AMPropertyTrack.ValueType.Bool || valueType == (int)AMPropertyTrack.ValueType.Sprite)
+    public bool targetsAreEqual(int valueType) {
+		if(valueType == (int)AMPropertyTrack.ValueType.String || valueType == (int)AMPropertyTrack.ValueType.Bool || valueType == (int)AMPropertyTrack.ValueType.Sprite || valueType == (int)AMPropertyTrack.ValueType.Enum)
 			return false;
         if(valueType == (int)AMPropertyTrack.ValueType.Integer || valueType == (int)AMPropertyTrack.ValueType.Long || valueType == (int)AMPropertyTrack.ValueType.Float || valueType == (int)AMPropertyTrack.ValueType.Double)
             return val == end_val;
@@ -467,7 +384,7 @@ public class AMPropertyKey : AMKey {
         return false;
     }
 
-    public object getStartValue() {
+    public object getStartValue(int valueType) {
 		if(valueType == (int)AMPropertyTrack.ValueType.Integer) return System.Convert.ToInt32(val);
 		if(valueType == (int)AMPropertyTrack.ValueType.Long) return System.Convert.ToInt64(val);
 		if(valueType == (int)AMPropertyTrack.ValueType.Float) return System.Convert.ToSingle(val);
@@ -481,9 +398,10 @@ public class AMPropertyKey : AMKey {
 		if(valueType == (int)AMPropertyTrack.ValueType.Bool) return val > 0.0;
 		if(valueType == (int)AMPropertyTrack.ValueType.String) return valString;
 		if(valueType == (int)AMPropertyTrack.ValueType.Sprite) return (valObj ? valObj : null);
+        if(valueType == (int)AMPropertyTrack.ValueType.Enum) return System.Convert.ToInt32(val);
         return "Unknown";
     }
-    public object getEndValue() {
+    public object getEndValue(int valueType) {
 		if(valueType == (int)AMPropertyTrack.ValueType.Integer) return System.Convert.ToInt32(end_val);
 		if(valueType == (int)AMPropertyTrack.ValueType.Long) return System.Convert.ToInt64(end_val);
 		if(valueType == (int)AMPropertyTrack.ValueType.Float) return System.Convert.ToSingle(end_val);
@@ -497,6 +415,7 @@ public class AMPropertyKey : AMKey {
 		if(valueType == (int)AMPropertyTrack.ValueType.Bool) return val > 0.0;
 		if(valueType == (int)AMPropertyTrack.ValueType.String) return valString;
 		if(valueType == (int)AMPropertyTrack.ValueType.Sprite) return valObj;
+        if(valueType == (int)AMPropertyTrack.ValueType.Enum) return System.Convert.ToInt32(val);
         return "Unknown";
     }
     #endregion

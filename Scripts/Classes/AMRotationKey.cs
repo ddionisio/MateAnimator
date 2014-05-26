@@ -61,10 +61,9 @@ public class AMRotationKey : AMKey {
     public float getTime(int frameRate) {
         return (float)getNumberOfFrames() / (float)frameRate;
     }
-    public override Tweener buildTweener(AMITarget target, Sequence sequence, UnityEngine.Object obj, int frameRate) {
-        if(!obj) return null;
+    public override Tweener buildTweener(AMITarget itarget, AMTrack track, UnityEngine.Object obj, Sequence sequence, int frameRate) {
 		if(easeType == EaseTypeNone) {
-			return HOTween.To(obj, getTime(frameRate), new TweenParms().Prop(isLocal ? "localRotation" : "rotation", new AMPlugNoTween(rotation)));
+            return HOTween.To(obj, endFrame == -1 || endFrame == frame ? 1.0f/(float)frameRate : getTime(frameRate), new TweenParms().Prop(isLocal ? "localRotation" : "rotation", new AMPlugNoTween(rotation)));
 		}
 		else if(endFrame == -1) return null;
         else if(hasCustomEase()) {

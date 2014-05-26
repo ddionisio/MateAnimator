@@ -922,29 +922,17 @@ public class AMTakeData {
 		maintainCaches(itarget);
 
 		int numTweensAdded = 0;
-		
+
 		foreach(AMTrack track in trackValues) {
-            //special case: camera switcher...
-            if(track == cameraSwitcher) {
-                Camera[] allCams = cameraSwitcher.GetCachedCameras(itarget);
-                foreach(AMCameraSwitcherKey key in track.keys) {
-                    Tweener tween = key.buildTweener(itarget, sequence, allCams, frameRate);
+            Object tgt = null;
+            if((tgt = track.GetTarget(itarget)) != null) {
+                track.buildSequenceStart(itarget, sequence, frameRate);
+
+                foreach(AMKey key in track.keys) {
+                    Tweener tween = key.buildTweener(itarget, track, tgt, sequence, frameRate);
                     if(tween != null) {
                         sequence.Insert(key.getWaitTime(frameRate, 0.0f), tween);
                         numTweensAdded++;
-                    }
-                }
-            }
-            else {
-                track.buildSequenceStart(itarget, sequence, frameRate);
-                Object tgt = null;
-                if(track.noTarget || (tgt = track.GetTarget(itarget)) != null) {
-                    foreach(AMKey key in track.keys) {
-                        Tweener tween = key.buildTweener(itarget, sequence, tgt, frameRate);
-                        if(tween != null) {
-                            sequence.Insert(key.getWaitTime(frameRate, 0.0f), tween);
-                            numTweensAdded++;
-                        }
                     }
                 }
             }

@@ -104,6 +104,11 @@ public struct AMUtil {
         if(mRoots == null) GenerateTargetRootCache();
 
         for(int i = 0; i < mRoots.Length; i++) {
+            if(mRoots[i] == null) {
+                //need to regenerate roots
+                mRoots = null;
+                return GetTargetRoot(name);
+            }
             if(mRoots[i].name == name)
                 return mRoots[i];
         }

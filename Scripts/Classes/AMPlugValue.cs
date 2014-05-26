@@ -5,28 +5,25 @@ using Holoville.HOTween;
 using Holoville.HOTween.Plugins.Core;
 
 public class AMPlugNoTween : ABSTweenPlugin {
-
 	protected override object startVal { get { return _startVal; } set { _startVal = value; } }
 	
 	protected override object endVal { get { return _endVal; } set { _endVal = value; } }
 	
 	public AMPlugNoTween(object val)
-	: base(val, false) {  }
+        : base(val, false) { }
 	
 	protected override float GetSpeedBasedDuration(float p_speed) {
 		return p_speed;
 	}
+
+    protected override void SetChangeVal() {
+        SetValue(_endVal);
+    }
 	
-	protected override void SetChangeVal() {
-		SetValue(_endVal);
-	}
-	
-	protected override void SetIncremental(int p_diffIncr) {
-		SetValue(_endVal);
-	}
-	
+	protected override void SetIncremental(int p_diffIncr) {}
+
 	protected override void DoUpdate(float p_totElapsed) {
-		SetValue(_endVal);
+        SetValue(_endVal);
 	}
 }
 
@@ -40,15 +37,15 @@ public class AMPlugSprite : ABSTweenPlugin {
 	protected override object endVal { get { return _endVal; } set { _endVal = value; } }
 	
 	public AMPlugSprite(SpriteRenderer renderer, Sprite val)
-	: base(null, false) {  mRender = renderer; mSprite = val; }
+        : base(null, false) { mRender = renderer; mSprite = val; ignoreAccessor = true; }
 	
 	protected override float GetSpeedBasedDuration(float p_speed) {
 		return p_speed;
 	}
 	
 	protected override void SetChangeVal() {
-		mRender.sprite = mSprite;
-	}
+        mRender.sprite = mSprite;
+    }
 	
 	protected override void SetIncremental(int p_diffIncr) {}
 	

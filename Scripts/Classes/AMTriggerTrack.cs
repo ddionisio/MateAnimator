@@ -6,9 +6,7 @@ using System.Collections.Generic;
 public class AMTriggerTrack : AMTrack {
 
     protected override void SetSerializeObject(UnityEngine.Object obj) { }
-    protected override UnityEngine.Object GetSerializeObject(GameObject targetGO) { return null; }
-
-    public override bool noTarget { get { return true; } }
+    protected override UnityEngine.Object GetSerializeObject(GameObject targetGO) { return this; }
 
     public override string getTrackType() {
         return "Trigger";

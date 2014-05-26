@@ -29,8 +29,8 @@ public class AMTriggerKey : AMKey {
     }
 
     #region action
-    
-    public override Tweener buildTweener(AMITarget itarget, Sequence sequence, UnityEngine.Object target, int frameRate) {
+
+    public override Tweener buildTweener(AMITarget itarget, AMTrack track, UnityEngine.Object target, Sequence sequence, int frameRate) {
         sequence.InsertCallback(getWaitTime(frameRate, 0.0f), itarget.TargetGetTriggerCallback(),
             new AMTriggerData() { valueString=this.valueString, valueInt=this.valueInt, valueFloat=this.valueFloat });
         return null;

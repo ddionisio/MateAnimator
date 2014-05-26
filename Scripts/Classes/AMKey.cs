@@ -48,13 +48,13 @@ public class AMKey : MonoBehaviour {
     /// Use sequence to insert callbacks, or some other crap, just don't insert the tweener you are returning!
 	/// target is set if required.
     /// </summary>
-    public virtual Tweener buildTweener(AMITarget itarget, Sequence sequence, UnityEngine.Object target, int frameRate) {
+    public virtual Tweener buildTweener(AMITarget itarget, AMTrack track, UnityEngine.Object target, Sequence sequence, int frameRate) {
         Debug.LogError("Animator: No override for buildTweener.");
         return null;
     }
 
     public float getWaitTime(int frameRate, float delay) {
-        return ((float)frame - 1f) / (float)frameRate - delay;
+        return ((float)frame - 1f) / (float)frameRate + delay;
     }
 
     public virtual int getStartFrame() {

@@ -254,7 +254,9 @@ public class AMCameraSwitcherKey : AMKey {
         return AMUtil.isTransitionReversed(cameraFadeType, cameraFadeParameters.ToArray());
     }
 
-    public Tweener buildTweener(AMITarget itarget, Sequence sequence, Camera[] allCameras, int frameRate) {
+    public override Tweener buildTweener(AMITarget itarget, AMTrack track, UnityEngine.Object target, Sequence sequence, int frameRate) {
+        Camera[] allCameras = (track as AMCameraSwitcherTrack).GetCachedCameras(itarget);
+
         // if targets are equal do nothing
         if(endFrame == -1 || !hasTargets(itarget) || targetsAreEqual(itarget)) return null;
 

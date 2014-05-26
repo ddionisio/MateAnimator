@@ -307,7 +307,7 @@ public class AMEventKey : AMKey {
 		return ret.ToArray();
 	}
 
-    public override Tweener buildTweener(AMITarget itarget, Sequence sequence, UnityEngine.Object target, int frameRate) {
+    public override Tweener buildTweener(AMITarget itarget, AMTrack track, UnityEngine.Object target, Sequence sequence, int frameRate) {
 		if(methodName == null) return null;
 
 		//get component and fill the cached method info

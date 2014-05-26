@@ -3413,157 +3413,95 @@ public class AMTimeline : EditorWindow {
         #endregion
         #region property inspector
         if(sTrack is AMPropertyTrack) {
-            AMPropertyKey pKey = (AMPropertyKey)(sTrack as AMPropertyTrack).getKeyOnFrame(_frame);
+            AMPropertyTrack pTrack = sTrack as AMPropertyTrack;
+            AMPropertyKey pKey = (AMPropertyKey)pTrack.getKeyOnFrame(_frame);
             // value
-            string propertyLabel = (sTrack as AMPropertyTrack).getTrackType();
+            string propertyLabel = pTrack.getTrackType();
             Rect rectField = new Rect(0f, start_y, width_inspector - margin, 22f);
-
-            if(((sTrack as AMPropertyTrack).valueType == (int)AMPropertyTrack.ValueType.Integer) || ((sTrack as AMPropertyTrack).valueType == (int)AMPropertyTrack.ValueType.Long)) {
+            bool isUpdated = false;
+            if((pTrack.valueType == (int)AMPropertyTrack.ValueType.Integer) || (pTrack.valueType == (int)AMPropertyTrack.ValueType.Long)) {
                 int val = Convert.ToInt32(pKey.val);
                 int nval = EditorGUI.IntField(rectField, propertyLabel, val);
                 if(val != nval) {
                     recordUndoTrackAndKeys(sTrack, false, "Change Property Value");
                     pKey.setValue(nval);
-                    // update cache when modifying varaibles
-                    sTrack.updateCache(aData);
-                    AMCodeView.refresh();
-                    // preview new value
-                    ctake.previewFrame(aData, ctake.selectedFrame);
-                    // save data
-                    EditorUtility.SetDirty(sTrack);
-                    setDirtyKeys(sTrack);
+                    isUpdated = true;
                 }
             }
-            else if(((sTrack as AMPropertyTrack).valueType == (int)AMPropertyTrack.ValueType.Float) || ((sTrack as AMPropertyTrack).valueType == (int)AMPropertyTrack.ValueType.Double)) {
+            else if((pTrack.valueType == (int)AMPropertyTrack.ValueType.Float) || (pTrack.valueType == (int)AMPropertyTrack.ValueType.Double)) {
                 float val = (float)pKey.val;
                 float nval = EditorGUI.FloatField(rectField, propertyLabel, val);
                 if(val != nval) {
                     recordUndoTrackAndKeys(sTrack, false, "Change Property Value");
                     pKey.setValue(nval);
-                    // update cache when modifying varaibles
-                    sTrack.updateCache(aData);
-                    AMCodeView.refresh();
-                    // preview new value
-                    ctake.previewFrame(aData, ctake.selectedFrame);
-                    // save data
-                    EditorUtility.SetDirty(sTrack);
-                    setDirtyKeys(sTrack);
+                    isUpdated = true;
                 }
             }
-            else if((sTrack as AMPropertyTrack).valueType == (int)AMPropertyTrack.ValueType.Bool) {
+            else if(pTrack.valueType == (int)AMPropertyTrack.ValueType.Bool) {
                 bool val = pKey.val > 0.0;
                 bool nval = EditorGUI.Toggle(rectField, propertyLabel, val);
                 if(val != nval) {
                     recordUndoTrackAndKeys(sTrack, false, "Change Property Value");
                     pKey.setValue(nval);
-                    // update cache when modifying varaibles
-                    sTrack.updateCache(aData);
-                    AMCodeView.refresh();
-                    // preview new value
-                    ctake.previewFrame(aData, ctake.selectedFrame);
-                    // save data
-                    EditorUtility.SetDirty(sTrack);
-                    setDirtyKeys(sTrack);
+                    isUpdated = true;
                 }
             }
-            else if((sTrack as AMPropertyTrack).valueType == (int)AMPropertyTrack.ValueType.String) {
+            else if(pTrack.valueType == (int)AMPropertyTrack.ValueType.String) {
                 string val = pKey.valString;
                 string nval = EditorGUI.TextField(rectField, propertyLabel, val);
                 if(val != nval) {
                     recordUndoTrackAndKeys(sTrack, false, "Change Property Value");
                     pKey.setValue(nval);
-                    // update cache when modifying varaibles
-                    sTrack.updateCache(aData);
-                    AMCodeView.refresh();
-                    // preview new value
-                    ctake.previewFrame(aData, ctake.selectedFrame);
-                    // save data
-                    EditorUtility.SetDirty(sTrack);
-                    setDirtyKeys(sTrack);
+                    isUpdated = true;
                 }
             }
-            else if((sTrack as AMPropertyTrack).valueType == (int)AMPropertyTrack.ValueType.Vector2) {
+            else if(pTrack.valueType == (int)AMPropertyTrack.ValueType.Vector2) {
                 rectField.height = 40f;
                 Vector2 nval = EditorGUI.Vector2Field(rectField, propertyLabel, pKey.vect2);
                 if(pKey.vect2 != nval) {
                     recordUndoTrackAndKeys(sTrack, false, "Change Property Value");
                     pKey.setValue(nval);
-                    // update cache when modifying varaibles
-                    sTrack.updateCache(aData);
-                    AMCodeView.refresh();
-                    // preview new value
-                    ctake.previewFrame(aData, ctake.selectedFrame);
-                    // save data
-                    EditorUtility.SetDirty(sTrack);
-                    setDirtyKeys(sTrack);
+                    isUpdated = true;
                 }
             }
-            else if((sTrack as AMPropertyTrack).valueType == (int)AMPropertyTrack.ValueType.Vector3) {
+            else if(pTrack.valueType == (int)AMPropertyTrack.ValueType.Vector3) {
                 rectField.height = 40f;
                 Vector3 nval = EditorGUI.Vector3Field(rectField, propertyLabel, pKey.vect3);
                 if(pKey.vect3 != nval) {
                     recordUndoTrackAndKeys(sTrack, false, "Change Property Value");
                     pKey.setValue(nval);
-                    // update cache when modifying varaibles
-                    sTrack.updateCache(aData);
-                    AMCodeView.refresh();
-                    // preview new value
-                    ctake.previewFrame(aData, ctake.selectedFrame);
-                    // save data
-                    EditorUtility.SetDirty(sTrack);
-                    setDirtyKeys(sTrack);
+                    isUpdated = true;
                 }
             }
-            else if((sTrack as AMPropertyTrack).valueType == (int)AMPropertyTrack.ValueType.Color) {
+            else if(pTrack.valueType == (int)AMPropertyTrack.ValueType.Color) {
                 rectField.height = 22f;
                 Color nclr = EditorGUI.ColorField(rectField, propertyLabel, pKey.color);
                 if(pKey.color != nclr) {
                     recordUndoTrackAndKeys(sTrack, false, "Change Property Value");
                     pKey.setValue(nclr);
-                    // update cache when modifying varaibles
-                    sTrack.updateCache(aData);
-                    AMCodeView.refresh();
-                    // preview new value
-                    ctake.previewFrame(aData, ctake.selectedFrame);
-                    // save data
-                    EditorUtility.SetDirty(sTrack);
-                    setDirtyKeys(sTrack);
+                    isUpdated = true;
                 }
             }
-            else if((sTrack as AMPropertyTrack).valueType == (int)AMPropertyTrack.ValueType.Rect) {
+            else if(pTrack.valueType == (int)AMPropertyTrack.ValueType.Rect) {
                 rectField.height = 60f;
                 Rect nrect = EditorGUI.RectField(rectField, propertyLabel, pKey.rect);
                 if(pKey.rect != nrect) {
                     recordUndoTrackAndKeys(sTrack, false, "Change Property Value");
                     pKey.setValue(nrect);
-                    // update cache when modifying varaibles
-                    sTrack.updateCache(aData);
-                    AMCodeView.refresh();
-                    // preview new value
-                    ctake.previewFrame(aData, ctake.selectedFrame);
-                    // save data
-                    EditorUtility.SetDirty(sTrack);
-                    setDirtyKeys(sTrack);
+                    isUpdated = true;
                 }
             }
-            else if((sTrack as AMPropertyTrack).valueType == (int)AMPropertyTrack.ValueType.Vector4
-                || (sTrack as AMPropertyTrack).valueType == (int)AMPropertyTrack.ValueType.Quaternion) {
+            else if(pTrack.valueType == (int)AMPropertyTrack.ValueType.Vector4
+                || pTrack.valueType == (int)AMPropertyTrack.ValueType.Quaternion) {
                 rectField.height = 40f;
                 Vector4 nvec = EditorGUI.Vector4Field(rectField, propertyLabel, pKey.vect4);
                 if(pKey.vect4 != nvec) {
                     recordUndoTrackAndKeys(sTrack, false, "Change Property Value");
                     pKey.setValue(nvec);
-                    // update cache when modifying varaibles
-                    sTrack.updateCache(aData);
-                    AMCodeView.refresh();
-                    // preview new value
-                    ctake.previewFrame(aData, ctake.selectedFrame);
-                    // save data
-                    EditorUtility.SetDirty(sTrack);
-                    setDirtyKeys(sTrack);
+                    isUpdated = true;
                 }
             }
-            else if((sTrack as AMPropertyTrack).valueType == (int)AMPropertyTrack.ValueType.Sprite) {
+            else if(pTrack.valueType == (int)AMPropertyTrack.ValueType.Sprite) {
                 UnityEngine.Object val = pKey.valObj;
                 GUI.skin = null; EditorGUIUtility.LookLikeControls();
                 rectField.height = 16.0f;
@@ -3572,19 +3510,32 @@ public class AMTimeline : EditorWindow {
                 if(val != nval) {
                     recordUndoTrackAndKeys(sTrack, false, "Change Property Value");
                     pKey.setValue(nval);
-                    // update cache when modifying varaibles
-                    sTrack.updateCache(aData);
-                    AMCodeView.refresh();
-                    // preview new value
-                    ctake.previewFrame(aData, ctake.selectedFrame);
-                    // save data
-                    EditorUtility.SetDirty(sTrack);
-                    setDirtyKeys(sTrack);
+                    isUpdated = true;
                 }
+            }
+            else if(pTrack.valueType == (int)AMPropertyTrack.ValueType.Enum) {
+                rectField.height = 40f;
+                Enum curEnum = Enum.ToObject(pTrack.GetCachedInfoType(aData), (int)pKey.val) as Enum;
+                Enum newEnum = EditorGUI.EnumPopup(rectField, propertyLabel, curEnum);
+                if(curEnum != newEnum) {
+                    recordUndoTrackAndKeys(sTrack, false, "Change Property Value");
+                    pKey.setValue(Convert.ToDouble(newEnum));
+                    isUpdated = true;
+                }
+            }
+            if(isUpdated) {
+                // update cache when modifying varaibles
+                sTrack.updateCache(aData);
+                AMCodeView.refresh();
+                // preview new value
+                ctake.previewFrame(aData, ctake.selectedFrame);
+                // save data
+                EditorUtility.SetDirty(sTrack);
+                setDirtyKeys(sTrack);
             }
             // property ease, show if not last key (check for action; there is no rotation action for last key). do not show for morph channels, because it is shown before the parameters
             // don't show on non-tweenable
-            if(pKey.canTween && pKey != (sTrack as AMPropertyTrack).keys[(sTrack as AMPropertyTrack).keys.Count - 1]) {
+            if(pTrack.canTween && pKey != pTrack.keys[pTrack.keys.Count - 1]) {
                 Rect rectEasePicker = new Rect(0f, rectField.y + rectField.height + height_inspector_space, width_inspector - margin, 0f);
                 showEasePicker(sTrack, pKey, aData, rectEasePicker.x, rectEasePicker.y, rectEasePicker.width);
             }
@@ -4094,16 +4045,24 @@ public class AMTimeline : EditorWindow {
             GUI.Label(rectLabelField, name);
             Rect rectObjectField = new Rect(rect.x, rectLabelField.y + rectLabelField.height + margin, rect.width, 16f);
             GUI.skin = null;
-            GUI.skin = null;
             EditorGUIUtility.LookLikeControls();
             if(parameter.setObject(EditorGUI.ObjectField(rectObjectField, parameter.val_obj, typeof(Component), true))) saveChanges = true;
             GUI.skin = skin;
             EditorGUIUtility.LookLikeControls();
         }
+        else if(t.IsEnum) {
+            height_field += 40f + margin;
+            // label
+            Rect rectLabelField = new Rect(rect);
+            GUI.Label(rectLabelField, name);
+            Rect rectObjectField = new Rect(rect.x, rectLabelField.y + rectLabelField.height + margin, rect.width, 16f);
+            if(parameter.setEnum(EditorGUI.EnumPopup(rectObjectField, parameter.val_enum))) saveChanges = true;
+        }
         else {
             height_field += 20f;
             GUI.skin.label.wordWrap = true;
             GUI.Label(rect, "Unsupported parameter type " + t.ToString() + ".");
+            GUI.skin.label.wordWrap = false;
         }
 
         return saveChanges;
@@ -5291,14 +5250,15 @@ public class AMTimeline : EditorWindow {
             #region property
         }
         else if(_key is AMPropertyKey) {
+            AMPropertyTrack propTrack = _track as AMPropertyTrack;
             AMPropertyKey propkey = _key as AMPropertyKey;
 
-            string info = propkey.getName() + "\n";
-            if(propkey.targetsAreEqual() || easeInd == AMKey.EaseTypeNone || !propkey.canTween) brief = true;
+            string info = propTrack.getTrackType() + "\n";
+            if(propkey.targetsAreEqual(propTrack.valueType) || easeInd == AMKey.EaseTypeNone || !propTrack.canTween) brief = true;
             if(!brief && propkey.endFrame != -1 && easeInd != AMKey.EaseTypeNone) {
                 info += easeTypeNames[easeInd] + ": ";
             }
-            string detail = propkey.getValueString(brief);	// extra details such as integer values ex. 1 -> 12
+            string detail = propkey.getValueString(propTrack.GetCachedInfoType(aData), propTrack.valueType, brief);	// extra details such as integer values ex. 1 -> 12
             if(detail != null) info += detail;
             return info;
             #endregion
@@ -5374,6 +5334,9 @@ public class AMTimeline : EditorWindow {
         // loop through parameters, add them to signature
         string methodString = methodInfo.Name + " (";
         for(int i = 0;i < parameters.Length;i++) {
+            //unsupported param type
+            if(AMEventParameter.GetValueType(parameters[i].ParameterType) == -1) return "";
+
             methodString += typeStringBrief(parameters[i].ParameterType);
             if(i < parameters.Length - 1) methodString += ", ";
         }
@@ -6305,9 +6268,12 @@ public class AMTimeline : EditorWindow {
             MethodInfo[] methodInfos = c.GetType().GetMethods(methodFlags);
             foreach(MethodInfo methodInfo in methodInfos) {
                 if((methodInfo.Name == "Start") || (methodInfo.Name == "Update") || (methodInfo.Name == "Main")) continue;
-                cachedMethodNames.Add(getMethodInfoSignature(methodInfo));
-                cachedMethodInfo.Add(methodInfo);
-                cachedMethodInfoComponents.Add(c);
+                string methodSig = getMethodInfoSignature(methodInfo);
+                if(!string.IsNullOrEmpty(methodSig)) {
+                    cachedMethodNames.Add(methodSig);
+                    cachedMethodInfo.Add(methodInfo);
+                    cachedMethodInfoComponents.Add(c);
+                }
             }
         }
     }

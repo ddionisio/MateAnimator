@@ -229,10 +229,10 @@ public class AMOrientationKey : AMKey {
 	}
 
     #region action
-    public override Tweener buildTweener(AMITarget itarget, Sequence sequence, UnityEngine.Object obj, int frameRate) {
+    public override Tweener buildTweener(AMITarget itarget, AMTrack track, UnityEngine.Object obj, Sequence sequence, int frameRate) {
         if(!obj) return null;
 		if(easeType == EaseTypeNone) {
-			return HOTween.To(obj, endFrame == -1 ? 1.0f/(float)frameRate : getTime(frameRate), new TweenParms().Prop("rotation", new AMPlugOrientation(GetTarget(itarget), null)));
+            return HOTween.To(obj, endFrame == -1 || endFrame == frame ? 1.0f/(float)frameRate : getTime(frameRate), new TweenParms().Prop("rotation", new AMPlugOrientation(GetTarget(itarget), null)));
 		}
         if(endFrame == -1) return null;
 		Transform tgt = GetTarget(itarget), tgte = GetTargetEnd(itarget);
