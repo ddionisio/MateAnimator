@@ -3514,9 +3514,12 @@ public class AMTimeline : EditorWindow {
                 }
             }
             else if(pTrack.valueType == (int)AMPropertyTrack.ValueType.Enum) {
-                rectField.height = 40f;
+                rectField.height = 20.0f;
+                GUI.Label(rectField, propertyLabel);
+                rectField.y += rectField.height + 4.0f; 
+                rectField.height = 16f;
                 Enum curEnum = Enum.ToObject(pTrack.GetCachedInfoType(aData), (int)pKey.val) as Enum;
-                Enum newEnum = EditorGUI.EnumPopup(rectField, propertyLabel, curEnum);
+                Enum newEnum = EditorGUI.EnumPopup(rectField, curEnum);
                 if(curEnum != newEnum) {
                     recordUndoTrackAndKeys(sTrack, false, "Change Property Value");
                     pKey.setValue(Convert.ToDouble(newEnum));
