@@ -3830,7 +3830,7 @@ public class AMTimeline : EditorWindow {
         #endregion
     }
 
-    bool showFieldFor(Rect rect, string id, string name, AMEventParameter parameter, Type t, int level, ref float height_field) {
+    bool showFieldFor(Rect rect, string id, string name, AMEventData data, Type t, int level, ref float height_field) {
         rect.x = 5f * level;
         name = typeStringBrief(t) + " " + name;
         bool saveChanges = false;
@@ -3850,16 +3850,18 @@ public class AMTimeline : EditorWindow {
             GUI.Label(rectLabelArrayName, name);
             height_field += rectLabelArrayName.height;
             if(arrayFieldFoldout[id]) {
+                AMEventParameter parameter = data as AMEventParameter;
+
                 // show elements if folded out
                 if(parameter.lsArray.Count <= 0) {
-                    AMEventParameter a = new AMEventParameter();
+                    AMEventData a = new AMEventData();
                     a.setValueType(t.GetElementType());
                     parameter.lsArray.Add(a);
                     saveChanges = true;
                 }
                 Rect rectElement = new Rect(rect);
                 rectElement.y += rect.height + margin;
-                for(int i = 0;i < parameter.lsArray.Count;i++) {
+                for(int i = 0; i < parameter.lsArray.Count; i++) {
                     float prev_height = height_field;
                     if((showFieldFor(rectElement, id + "_" + i, "(" + i.ToString() + ")", parameter.lsArray[i], t.GetElementType(), (level + 1), ref height_field)) && !saveChanges) saveChanges = true;
                     rectElement.y += height_field - prev_height;
@@ -3873,7 +3875,6 @@ public class AMTimeline : EditorWindow {
                 if(parameter.lsArray.Count <= 1) GUI.enabled = false;
                 Rect rectButtonRemoveElement = new Rect(rect.x + rect.width - 40f, rectLabelElement.y, 20f, 20f);
                 if(GUI.Button(rectButtonRemoveElement, "-")) {
-                    parameter.lsArray[parameter.lsArray.Count - 1].destroy();
                     parameter.lsArray.RemoveAt(parameter.lsArray.Count - 1);
                     saveChanges = true;
                 }
@@ -3881,7 +3882,7 @@ public class AMTimeline : EditorWindow {
                 rectButtonAddElement.x += rectButtonRemoveElement.width + margin;
                 GUI.enabled = !isPlaying;
                 if(GUI.Button(rectButtonAddElement, "+")) {
-                    AMEventParameter a = new AMEventParameter();
+                    AMEventData a = new AMEventData();
                     a.setValueType(t.GetElementType());
                     parameter.lsArray.Add(a);
                     saveChanges = true;
@@ -3891,59 +3892,59 @@ public class AMTimeline : EditorWindow {
         else if(t == typeof(bool)) {
             // int field
             height_field += 20f;
-            if(parameter.setBool(EditorGUI.Toggle(rect, name, parameter.val_bool))) saveChanges = true;
+            if(data.setBool(EditorGUI.Toggle(rect, name, data.val_bool))) saveChanges = true;
         }
         else if((t == typeof(int)) || (t == typeof(long))) {
             // int field
             height_field += 20f;
-            if(parameter.setInt(EditorGUI.IntField(rect, name, (int)parameter.val_int))) saveChanges = true;
+            if(data.setInt(EditorGUI.IntField(rect, name, (int)data.val_int))) saveChanges = true;
         }
         else if((t == typeof(float)) || (t == typeof(double))) {
             // float field
             height_field += 20f;
-            if(parameter.setFloat(EditorGUI.FloatField(rect, name, (float)parameter.val_float))) saveChanges = true;
+            if(data.setFloat(EditorGUI.FloatField(rect, name, (float)data.val_float))) saveChanges = true;
         }
         else if(t == typeof(Vector2)) {
             // vector2 field
             height_field += 40f;
-            if(parameter.setVector2(EditorGUI.Vector2Field(rect, name, (Vector2)parameter.val_vect2))) saveChanges = true;
+            if(data.setVector2(EditorGUI.Vector2Field(rect, name, (Vector2)data.val_vect2))) saveChanges = true;
         }
         else if(t == typeof(Vector3)) {
             // vector3 field
             height_field += 40f;
-            if(parameter.setVector3(EditorGUI.Vector3Field(rect, name, (Vector3)parameter.val_vect3))) saveChanges = true;
+            if(data.setVector3(EditorGUI.Vector3Field(rect, name, (Vector3)data.val_vect3))) saveChanges = true;
         }
         else if(t == typeof(Vector4)) {
             // vector4 field
             height_field += 40f;
-            if(parameter.setVector4(EditorGUI.Vector4Field(rect, name, (Vector4)parameter.val_vect4))) saveChanges = true;
+            if(data.setVector4(EditorGUI.Vector4Field(rect, name, (Vector4)data.val_vect4))) saveChanges = true;
         }
         else if(t == typeof(Color)) {
             // color field
             height_field += 40f;
-            if(parameter.setColor(EditorGUI.ColorField(rect, name, (Color)parameter.val_color))) saveChanges = true;
+            if(data.setColor(EditorGUI.ColorField(rect, name, (Color)data.val_color))) saveChanges = true;
         }
         else if(t == typeof(Rect)) {
             // rect field
             height_field += 60f;
-            if(parameter.setRect(EditorGUI.RectField(rect, name, (Rect)parameter.val_rect))) saveChanges = true;
+            if(data.setRect(EditorGUI.RectField(rect, name, (Rect)data.val_rect))) saveChanges = true;
         }
         else if(t == typeof(string)) {
             height_field += 20f;
             // set default
-            if(parameter.val_string == null) parameter.val_string = "";
+            if(data.val_string == null) data.val_string = "";
             // string field
-            if(parameter.setString(EditorGUI.TextField(rect, name, (string)parameter.val_string))) saveChanges = true;
+            if(data.setString(EditorGUI.TextField(rect, name, (string)data.val_string))) saveChanges = true;
         }
         else if(t == typeof(char)) {
             height_field += 20f;
             // set default
-            if(parameter.val_string == null) parameter.val_string = "";
+            if(data.val_string == null) data.val_string = "";
             // char (string) field
             Rect rectLabelCharField = new Rect(rect.x, rect.y, 146f, rect.height);
             GUI.Label(rectLabelCharField, name);
             Rect rectTextFieldChar = new Rect(rectLabelCharField.x + rectLabelCharField.width + margin, rectLabelCharField.y, rect.width - rectLabelCharField.width - margin, rect.height);
-            if(parameter.setString(GUI.TextField(rectTextFieldChar, parameter.val_string, 1))) saveChanges = true;
+            if(data.setString(GUI.TextField(rectTextFieldChar, data.val_string, 1))) saveChanges = true;
         }
         else if(t == typeof(GameObject)) {
             height_field += 40f + margin;
@@ -3954,7 +3955,7 @@ public class AMTimeline : EditorWindow {
             GUI.skin = null;
             EditorGUIUtility.LookLikeControls();
             Rect rectObjectField = new Rect(rect.x, rectLabelField.y + rectLabelField.height + margin, rect.width, 16f);
-            if(parameter.setObject(EditorGUI.ObjectField(rectObjectField, parameter.val_obj, typeof(GameObject), true))) saveChanges = true;
+            if(data.setObject(EditorGUI.ObjectField(rectObjectField, data.val_obj, typeof(GameObject), true))) saveChanges = true;
             GUI.skin = skin;
             EditorGUIUtility.LookLikeControls();
         }
@@ -3967,62 +3968,62 @@ public class AMTimeline : EditorWindow {
             Rect rectObjectField = new Rect(rect.x, rectLabelField.y + rectLabelField.height + margin, rect.width, 16f);
             EditorGUIUtility.LookLikeControls();
             // field
-            if(t == typeof(Transform)) { if(parameter.setObject(EditorGUI.ObjectField(rectObjectField, parameter.val_obj, typeof(Transform), true))) saveChanges = true; }
-            else if(t == typeof(MeshFilter)) { if(parameter.setObject(EditorGUI.ObjectField(rectObjectField, parameter.val_obj, typeof(MeshFilter), true))) saveChanges = true; }
-            else if(t == typeof(TextMesh)) { if(parameter.setObject(EditorGUI.ObjectField(rectObjectField, parameter.val_obj, typeof(TextMesh), true))) saveChanges = true; }
-            else if(t == typeof(MeshRenderer)) { if(parameter.setObject(EditorGUI.ObjectField(rectObjectField, parameter.val_obj, typeof(MeshRenderer), true))) saveChanges = true; }
+            if(t == typeof(Transform)) { if(data.setObject(EditorGUI.ObjectField(rectObjectField, data.val_obj, typeof(Transform), true))) saveChanges = true; }
+            else if(t == typeof(MeshFilter)) { if(data.setObject(EditorGUI.ObjectField(rectObjectField, data.val_obj, typeof(MeshFilter), true))) saveChanges = true; }
+            else if(t == typeof(TextMesh)) { if(data.setObject(EditorGUI.ObjectField(rectObjectField, data.val_obj, typeof(TextMesh), true))) saveChanges = true; }
+            else if(t == typeof(MeshRenderer)) { if(data.setObject(EditorGUI.ObjectField(rectObjectField, data.val_obj, typeof(MeshRenderer), true))) saveChanges = true; }
             //else if(t == typeof(ParticleSystem)) { if(parameter.setObject(EditorGUI.ObjectField(rectObjectField,parameter.val_obj,typeof(ParticleSystem),true))) saveChanges = true; }
-            else if(t == typeof(TrailRenderer)) { if(parameter.setObject(EditorGUI.ObjectField(rectObjectField, parameter.val_obj, typeof(TrailRenderer), true))) saveChanges = true; }
-            else if(t == typeof(LineRenderer)) { if(parameter.setObject(EditorGUI.ObjectField(rectObjectField, parameter.val_obj, typeof(LineRenderer), true))) saveChanges = true; }
-            else if(t == typeof(LensFlare)) { if(parameter.setObject(EditorGUI.ObjectField(rectObjectField, parameter.val_obj, typeof(LensFlare), true))) saveChanges = true; }
+            else if(t == typeof(TrailRenderer)) { if(data.setObject(EditorGUI.ObjectField(rectObjectField, data.val_obj, typeof(TrailRenderer), true))) saveChanges = true; }
+            else if(t == typeof(LineRenderer)) { if(data.setObject(EditorGUI.ObjectField(rectObjectField, data.val_obj, typeof(LineRenderer), true))) saveChanges = true; }
+            else if(t == typeof(LensFlare)) { if(data.setObject(EditorGUI.ObjectField(rectObjectField, data.val_obj, typeof(LensFlare), true))) saveChanges = true; }
             // halo
-            else if(t == typeof(Projector)) { if(parameter.setObject(EditorGUI.ObjectField(rectObjectField, parameter.val_obj, typeof(Projector), true))) saveChanges = true; }
-            else if(t == typeof(Rigidbody)) { if(parameter.setObject(EditorGUI.ObjectField(rectObjectField, parameter.val_obj, typeof(Rigidbody), true))) saveChanges = true; }
-            else if(t == typeof(CharacterController)) { if(parameter.setObject(EditorGUI.ObjectField(rectObjectField, parameter.val_obj, typeof(CharacterController), true))) saveChanges = true; }
-            else if(t == typeof(BoxCollider)) { if(parameter.setObject(EditorGUI.ObjectField(rectObjectField, parameter.val_obj, typeof(BoxCollider), true))) saveChanges = true; }
-            else if(t == typeof(SphereCollider)) { if(parameter.setObject(EditorGUI.ObjectField(rectObjectField, parameter.val_obj, typeof(SphereCollider), true))) saveChanges = true; }
-            else if(t == typeof(CapsuleCollider)) { if(parameter.setObject(EditorGUI.ObjectField(rectObjectField, parameter.val_obj, typeof(CapsuleCollider), true))) saveChanges = true; }
-            else if(t == typeof(MeshCollider)) { if(parameter.setObject(EditorGUI.ObjectField(rectObjectField, parameter.val_obj, typeof(MeshCollider), true))) saveChanges = true; }
-            else if(t == typeof(WheelCollider)) { if(parameter.setObject(EditorGUI.ObjectField(rectObjectField, parameter.val_obj, typeof(WheelCollider), true))) saveChanges = true; }
-            else if(t == typeof(TerrainCollider)) { if(parameter.setObject(EditorGUI.ObjectField(rectObjectField, parameter.val_obj, typeof(TerrainCollider), true))) saveChanges = true; }
-            else if(t == typeof(InteractiveCloth)) { if(parameter.setObject(EditorGUI.ObjectField(rectObjectField, parameter.val_obj, typeof(InteractiveCloth), true))) saveChanges = true; }
-            else if(t == typeof(SkinnedCloth)) { if(parameter.setObject(EditorGUI.ObjectField(rectObjectField, parameter.val_obj, typeof(SkinnedCloth), true))) saveChanges = true; }
-            else if(t == typeof(ClothRenderer)) { if(parameter.setObject(EditorGUI.ObjectField(rectObjectField, parameter.val_obj, typeof(ClothRenderer), true))) saveChanges = true; }
-            else if(t == typeof(HingeJoint)) { if(parameter.setObject(EditorGUI.ObjectField(rectObjectField, parameter.val_obj, typeof(HingeJoint), true))) saveChanges = true; }
-            else if(t == typeof(FixedJoint)) { if(parameter.setObject(EditorGUI.ObjectField(rectObjectField, parameter.val_obj, typeof(FixedJoint), true))) saveChanges = true; }
-            else if(t == typeof(SpringJoint)) { if(parameter.setObject(EditorGUI.ObjectField(rectObjectField, parameter.val_obj, typeof(SpringJoint), true))) saveChanges = true; }
-            else if(t == typeof(CharacterJoint)) { if(parameter.setObject(EditorGUI.ObjectField(rectObjectField, parameter.val_obj, typeof(CharacterJoint), true))) saveChanges = true; }
-            else if(t == typeof(ConfigurableJoint)) { if(parameter.setObject(EditorGUI.ObjectField(rectObjectField, parameter.val_obj, typeof(ConfigurableJoint), true))) saveChanges = true; }
-            else if(t == typeof(ConstantForce)) { if(parameter.setObject(EditorGUI.ObjectField(rectObjectField, parameter.val_obj, typeof(ConstantForce), true))) saveChanges = true; }
+            else if(t == typeof(Projector)) { if(data.setObject(EditorGUI.ObjectField(rectObjectField, data.val_obj, typeof(Projector), true))) saveChanges = true; }
+            else if(t == typeof(Rigidbody)) { if(data.setObject(EditorGUI.ObjectField(rectObjectField, data.val_obj, typeof(Rigidbody), true))) saveChanges = true; }
+            else if(t == typeof(CharacterController)) { if(data.setObject(EditorGUI.ObjectField(rectObjectField, data.val_obj, typeof(CharacterController), true))) saveChanges = true; }
+            else if(t == typeof(BoxCollider)) { if(data.setObject(EditorGUI.ObjectField(rectObjectField, data.val_obj, typeof(BoxCollider), true))) saveChanges = true; }
+            else if(t == typeof(SphereCollider)) { if(data.setObject(EditorGUI.ObjectField(rectObjectField, data.val_obj, typeof(SphereCollider), true))) saveChanges = true; }
+            else if(t == typeof(CapsuleCollider)) { if(data.setObject(EditorGUI.ObjectField(rectObjectField, data.val_obj, typeof(CapsuleCollider), true))) saveChanges = true; }
+            else if(t == typeof(MeshCollider)) { if(data.setObject(EditorGUI.ObjectField(rectObjectField, data.val_obj, typeof(MeshCollider), true))) saveChanges = true; }
+            else if(t == typeof(WheelCollider)) { if(data.setObject(EditorGUI.ObjectField(rectObjectField, data.val_obj, typeof(WheelCollider), true))) saveChanges = true; }
+            else if(t == typeof(TerrainCollider)) { if(data.setObject(EditorGUI.ObjectField(rectObjectField, data.val_obj, typeof(TerrainCollider), true))) saveChanges = true; }
+            else if(t == typeof(InteractiveCloth)) { if(data.setObject(EditorGUI.ObjectField(rectObjectField, data.val_obj, typeof(InteractiveCloth), true))) saveChanges = true; }
+            else if(t == typeof(SkinnedCloth)) { if(data.setObject(EditorGUI.ObjectField(rectObjectField, data.val_obj, typeof(SkinnedCloth), true))) saveChanges = true; }
+            else if(t == typeof(ClothRenderer)) { if(data.setObject(EditorGUI.ObjectField(rectObjectField, data.val_obj, typeof(ClothRenderer), true))) saveChanges = true; }
+            else if(t == typeof(HingeJoint)) { if(data.setObject(EditorGUI.ObjectField(rectObjectField, data.val_obj, typeof(HingeJoint), true))) saveChanges = true; }
+            else if(t == typeof(FixedJoint)) { if(data.setObject(EditorGUI.ObjectField(rectObjectField, data.val_obj, typeof(FixedJoint), true))) saveChanges = true; }
+            else if(t == typeof(SpringJoint)) { if(data.setObject(EditorGUI.ObjectField(rectObjectField, data.val_obj, typeof(SpringJoint), true))) saveChanges = true; }
+            else if(t == typeof(CharacterJoint)) { if(data.setObject(EditorGUI.ObjectField(rectObjectField, data.val_obj, typeof(CharacterJoint), true))) saveChanges = true; }
+            else if(t == typeof(ConfigurableJoint)) { if(data.setObject(EditorGUI.ObjectField(rectObjectField, data.val_obj, typeof(ConfigurableJoint), true))) saveChanges = true; }
+            else if(t == typeof(ConstantForce)) { if(data.setObject(EditorGUI.ObjectField(rectObjectField, data.val_obj, typeof(ConstantForce), true))) saveChanges = true; }
             //else if(t == typeof(NavMeshAgent)) { if(parameter.setObject(EditorGUI.ObjectField(rectObjectField,parameter.val_obj,typeof(NavMeshAgent),true))) saveChanges = true; }
             //else if(t == typeof(OffMeshLink)) { if(parameter.setObject(EditorGUI.ObjectField(rectObjectField,parameter.val_obj,typeof(OffMeshLink),true))) saveChanges = true; }
-            else if(t == typeof(AudioListener)) { if(parameter.setObject(EditorGUI.ObjectField(rectObjectField, parameter.val_obj, typeof(AudioListener), true))) saveChanges = true; }
-            else if(t == typeof(AudioSource)) { if(parameter.setObject(EditorGUI.ObjectField(rectObjectField, parameter.val_obj, typeof(AudioSource), true))) saveChanges = true; }
-            else if(t == typeof(AudioReverbZone)) { if(parameter.setObject(EditorGUI.ObjectField(rectObjectField, parameter.val_obj, typeof(AudioReverbZone), true))) saveChanges = true; }
-            else if(t == typeof(AudioLowPassFilter)) { if(parameter.setObject(EditorGUI.ObjectField(rectObjectField, parameter.val_obj, typeof(AudioLowPassFilter), true))) saveChanges = true; }
-            else if(t == typeof(AudioHighPassFilter)) { if(parameter.setObject(EditorGUI.ObjectField(rectObjectField, parameter.val_obj, typeof(AudioHighPassFilter), true))) saveChanges = true; }
-            else if(t == typeof(AudioEchoFilter)) { if(parameter.setObject(EditorGUI.ObjectField(rectObjectField, parameter.val_obj, typeof(AudioEchoFilter), true))) saveChanges = true; }
-            else if(t == typeof(AudioDistortionFilter)) { if(parameter.setObject(EditorGUI.ObjectField(rectObjectField, parameter.val_obj, typeof(AudioDistortionFilter), true))) saveChanges = true; }
-            else if(t == typeof(AudioReverbFilter)) { if(parameter.setObject(EditorGUI.ObjectField(rectObjectField, parameter.val_obj, typeof(AudioReverbFilter), true))) saveChanges = true; }
-            else if(t == typeof(AudioChorusFilter)) { if(parameter.setObject(EditorGUI.ObjectField(rectObjectField, parameter.val_obj, typeof(AudioChorusFilter), true))) saveChanges = true; }
-            else if(t == typeof(Camera)) { if(parameter.setObject(EditorGUI.ObjectField(rectObjectField, parameter.val_obj, typeof(Camera), true))) saveChanges = true; }
-            else if(t == typeof(Skybox)) { if(parameter.setObject(EditorGUI.ObjectField(rectObjectField, parameter.val_obj, typeof(Skybox), true))) saveChanges = true; }
+            else if(t == typeof(AudioListener)) { if(data.setObject(EditorGUI.ObjectField(rectObjectField, data.val_obj, typeof(AudioListener), true))) saveChanges = true; }
+            else if(t == typeof(AudioSource)) { if(data.setObject(EditorGUI.ObjectField(rectObjectField, data.val_obj, typeof(AudioSource), true))) saveChanges = true; }
+            else if(t == typeof(AudioReverbZone)) { if(data.setObject(EditorGUI.ObjectField(rectObjectField, data.val_obj, typeof(AudioReverbZone), true))) saveChanges = true; }
+            else if(t == typeof(AudioLowPassFilter)) { if(data.setObject(EditorGUI.ObjectField(rectObjectField, data.val_obj, typeof(AudioLowPassFilter), true))) saveChanges = true; }
+            else if(t == typeof(AudioHighPassFilter)) { if(data.setObject(EditorGUI.ObjectField(rectObjectField, data.val_obj, typeof(AudioHighPassFilter), true))) saveChanges = true; }
+            else if(t == typeof(AudioEchoFilter)) { if(data.setObject(EditorGUI.ObjectField(rectObjectField, data.val_obj, typeof(AudioEchoFilter), true))) saveChanges = true; }
+            else if(t == typeof(AudioDistortionFilter)) { if(data.setObject(EditorGUI.ObjectField(rectObjectField, data.val_obj, typeof(AudioDistortionFilter), true))) saveChanges = true; }
+            else if(t == typeof(AudioReverbFilter)) { if(data.setObject(EditorGUI.ObjectField(rectObjectField, data.val_obj, typeof(AudioReverbFilter), true))) saveChanges = true; }
+            else if(t == typeof(AudioChorusFilter)) { if(data.setObject(EditorGUI.ObjectField(rectObjectField, data.val_obj, typeof(AudioChorusFilter), true))) saveChanges = true; }
+            else if(t == typeof(Camera)) { if(data.setObject(EditorGUI.ObjectField(rectObjectField, data.val_obj, typeof(Camera), true))) saveChanges = true; }
+            else if(t == typeof(Skybox)) { if(data.setObject(EditorGUI.ObjectField(rectObjectField, data.val_obj, typeof(Skybox), true))) saveChanges = true; }
             // flare layer
-            else if(t == typeof(GUILayer)) { if(parameter.setObject(EditorGUI.ObjectField(rectObjectField, parameter.val_obj, typeof(GUILayer), true))) saveChanges = true; }
-            else if(t == typeof(Light)) { if(parameter.setObject(EditorGUI.ObjectField(rectObjectField, parameter.val_obj, typeof(Light), true))) saveChanges = true; }
+            else if(t == typeof(GUILayer)) { if(data.setObject(EditorGUI.ObjectField(rectObjectField, data.val_obj, typeof(GUILayer), true))) saveChanges = true; }
+            else if(t == typeof(Light)) { if(data.setObject(EditorGUI.ObjectField(rectObjectField, data.val_obj, typeof(Light), true))) saveChanges = true; }
             //else if(t == typeof(LightProbeGroup)) { if(parameter.setObject(EditorGUI.ObjectField(rectObjectField,parameter.val_obj,typeof(LightProbeGroup),true))) saveChanges = true; }
-            else if(t == typeof(OcclusionArea)) { if(parameter.setObject(EditorGUI.ObjectField(rectObjectField, parameter.val_obj, typeof(OcclusionArea), true))) saveChanges = true; }
+            else if(t == typeof(OcclusionArea)) { if(data.setObject(EditorGUI.ObjectField(rectObjectField, data.val_obj, typeof(OcclusionArea), true))) saveChanges = true; }
             //else if(t == typeof(OcclusionPortal)) { if(parameter.setObject(EditorGUI.ObjectField(rectObjectField,parameter.val_obj,typeof(OcclusionPortal),true))) saveChanges = true; }
             //else if(t == typeof(LODGroup)) { if(parameter.setObject(EditorGUI.ObjectField(rectObjectField,parameter.val_obj,typeof(LODGroup),true))) saveChanges = true; }
-            else if(t == typeof(GUITexture)) { if(parameter.setObject(EditorGUI.ObjectField(rectObjectField, parameter.val_obj, typeof(GUITexture), true))) saveChanges = true; }
-            else if(t == typeof(GUIText)) { if(parameter.setObject(EditorGUI.ObjectField(rectObjectField, parameter.val_obj, typeof(GUIText), true))) saveChanges = true; }
-            else if(t == typeof(Animation)) { if(parameter.setObject(EditorGUI.ObjectField(rectObjectField, parameter.val_obj, typeof(Animation), true))) saveChanges = true; }
-            else if(t == typeof(NetworkView)) { if(parameter.setObject(EditorGUI.ObjectField(rectObjectField, parameter.val_obj, typeof(NetworkView), true))) saveChanges = true; }
+            else if(t == typeof(GUITexture)) { if(data.setObject(EditorGUI.ObjectField(rectObjectField, data.val_obj, typeof(GUITexture), true))) saveChanges = true; }
+            else if(t == typeof(GUIText)) { if(data.setObject(EditorGUI.ObjectField(rectObjectField, data.val_obj, typeof(GUIText), true))) saveChanges = true; }
+            else if(t == typeof(Animation)) { if(data.setObject(EditorGUI.ObjectField(rectObjectField, data.val_obj, typeof(Animation), true))) saveChanges = true; }
+            else if(t == typeof(NetworkView)) { if(data.setObject(EditorGUI.ObjectField(rectObjectField, data.val_obj, typeof(NetworkView), true))) saveChanges = true; }
             // wind zone
             else {
 
-                if(t.BaseType == typeof(Behaviour)) { if(parameter.setObject(EditorGUI.ObjectField(rectObjectField, parameter.val_obj, typeof(Behaviour), true))) saveChanges = true; }
-                else { if(parameter.setObject(EditorGUI.ObjectField(rectObjectField, parameter.val_obj, typeof(Component), true))) saveChanges = true; }
+                if(t.BaseType == typeof(Behaviour)) { if(data.setObject(EditorGUI.ObjectField(rectObjectField, data.val_obj, typeof(Behaviour), true))) saveChanges = true; }
+                else { if(data.setObject(EditorGUI.ObjectField(rectObjectField, data.val_obj, typeof(Component), true))) saveChanges = true; }
 
             }
             GUI.skin = skin;
@@ -4036,7 +4037,7 @@ public class AMTimeline : EditorWindow {
             Rect rectObjectField = new Rect(rect.x, rectLabelField.y + rectLabelField.height + margin, rect.width, 16f);
             GUI.skin = null;
             EditorGUIUtility.LookLikeControls();
-            if(parameter.setObject(EditorGUI.ObjectField(rectObjectField, parameter.val_obj, typeof(UnityEngine.Object), true))) saveChanges = true;
+            if(data.setObject(EditorGUI.ObjectField(rectObjectField, data.val_obj, typeof(UnityEngine.Object), true))) saveChanges = true;
             GUI.skin = skin;
             EditorGUIUtility.LookLikeControls();
         }
@@ -4046,7 +4047,7 @@ public class AMTimeline : EditorWindow {
             Rect rectObjectField = new Rect(rect.x, rectLabelField.y + rectLabelField.height + margin, rect.width, 16f);
             GUI.skin = null;
             EditorGUIUtility.LookLikeControls();
-            if(parameter.setObject(EditorGUI.ObjectField(rectObjectField, parameter.val_obj, typeof(Component), true))) saveChanges = true;
+            if(data.setObject(EditorGUI.ObjectField(rectObjectField, data.val_obj, typeof(Component), true))) saveChanges = true;
             GUI.skin = skin;
             EditorGUIUtility.LookLikeControls();
         }
@@ -4056,7 +4057,7 @@ public class AMTimeline : EditorWindow {
             Rect rectLabelField = new Rect(rect);
             GUI.Label(rectLabelField, name);
             Rect rectObjectField = new Rect(rect.x, rectLabelField.y + rectLabelField.height + margin, rect.width, 16f);
-            if(parameter.setEnum(EditorGUI.EnumPopup(rectObjectField, parameter.val_enum))) saveChanges = true;
+            if(data.setEnum(EditorGUI.EnumPopup(rectObjectField, data.val_enum))) saveChanges = true;
         }
         else {
             height_field += 20f;

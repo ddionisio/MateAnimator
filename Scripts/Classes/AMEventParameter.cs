@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 
 [System.Serializable]
-public class AMEventParameter {
+public class AMEventData {
     public enum ValueType {
         Integer = 0,
         Long = 1,
@@ -34,9 +34,6 @@ public class AMEventParameter {
     public string val_string;
     public Vector4 val_vect4;
     public UnityEngine.Object val_obj;
-    public List<AMEventParameter> lsArray = new List<AMEventParameter>();
-
-    private System.Type mCachedType = null;
 
     public static int GetValueType(Type t) {
         int valueType = -1;
@@ -60,7 +57,7 @@ public class AMEventParameter {
 
     public bool val_bool { get { return val_int == 1; } set { val_int = value ? 1 : 0; } }
     public long val_long { get { return val_int; } set { val_int = (int)value; } }
-    public float val_float { get { return val_vect4.x; } set { val_vect4.Set(value, 0,0,0); } }
+    public float val_float { get { return val_vect4.x; } set { val_vect4.Set(value, 0, 0, 0); } }
     public double val_double { get { return val_float; } set { val_float = (float)value; } }
     public Vector2 val_vect2 { get { return new Vector2(val_vect4.x, val_vect4.y); } set { val_vect4.Set(value.x, value.y, 0, 0); } }
     public Vector3 val_vect3 { get { return new Vector3(val_vect4.x, val_vect4.y, val_vect4.z); } set { val_vect4.Set(value.x, value.y, value.z, 0); } }
@@ -68,10 +65,7 @@ public class AMEventParameter {
     public Color val_color { get { return new Color(val_vect4.x, val_vect4.y, val_vect4.z, val_vect4.w); } set { val_vect4.Set(value.r, value.g, value.b, value.a); } }
     public Rect val_rect { get { return new Rect(val_vect4.x, val_vect4.y, val_vect4.z, val_vect4.w); } set { val_vect4.Set(value.xMin, value.yMin, value.width, value.height); } }
     public Enum val_enum { get { return Enum.ToObject(getParamType(), val_int) as Enum; } set { val_int = Convert.ToInt32(value); } }
-    
-    public AMEventParameter() {
-
-    }
+        
     public bool setBool(bool val_bool) {
         if(this.val_bool != val_bool) {
             this.val_bool = val_bool;
@@ -163,130 +157,75 @@ public class AMEventParameter {
         }
         return false;
     }
-    public bool checkArrayIntegrity() {
-        if(valueType == (int)ValueType.Array) {
-            if(lsArray != null && lsArray.Count > 0) {
-                int valElem = lsArray[0].valueType;
-                foreach(AMEventParameter elem in lsArray) {
-                    if(elem.valueType != valElem)
-                        return false;
-                }
-            }
-        }
 
-        return true;
+    public virtual void setValueType(Type t) {
+        valueType = GetValueType(t);
+        if(valueType == (int)ValueType.Enum)
+            val_string = t.ToString();
     }
-    public Type getParamType() {
-        if(mCachedType != null)
-            return mCachedType;
 
-        if(valueType == (int)ValueType.Boolean) mCachedType = typeof(bool);
-        else if(valueType == (int)ValueType.Integer) mCachedType = typeof(int);
-        else if(valueType == (int)ValueType.Long) mCachedType = typeof(long);
-        else if(valueType == (int)ValueType.Float) mCachedType = typeof(float);
-        else if(valueType == (int)ValueType.Double) mCachedType = typeof(double);
-        else if(valueType == (int)ValueType.Vector2) mCachedType = typeof(Vector2);
-        else if(valueType == (int)ValueType.Vector3) mCachedType = typeof(Vector3);
-        else if(valueType == (int)ValueType.Vector4) mCachedType = typeof(Vector4);
-        else if(valueType == (int)ValueType.Color) mCachedType = typeof(Color);
-        else if(valueType == (int)ValueType.Rect) mCachedType = typeof(Rect);
-        else if(valueType == (int)ValueType.Object) mCachedType = typeof(UnityEngine.Object);
-        else if(valueType == (int)ValueType.Array) {
-            if(lsArray.Count <= 0) mCachedType = typeof(object[]);
-            else {
-                switch((ValueType)lsArray[0].valueType) {
-                    case ValueType.Integer:
-                        mCachedType = typeof(int[]); break;
-                    case ValueType.Long:
-                        mCachedType = typeof(long[]); break;
-                    case ValueType.Float:
-                        mCachedType = typeof(float[]); break;
-                    case ValueType.Double:
-                        mCachedType = typeof(double[]); break;
-                    case ValueType.Vector2:
-                        mCachedType = typeof(Vector2[]); break;
-                    case ValueType.Vector3:
-                        mCachedType = typeof(Vector3[]); break;
-                    case ValueType.Vector4:
-                        mCachedType = typeof(Vector4[]); break;
-                    case ValueType.Color:
-                        mCachedType = typeof(Color[]); break;
-                    case ValueType.Rect:
-                        mCachedType = typeof(Rect[]); break;
-                    case ValueType.String:
-                        mCachedType = typeof(string[]); break;
-                    case ValueType.Char:
-                        mCachedType = typeof(char[]); break;
-                    case ValueType.Object:
-                        mCachedType = typeof(UnityEngine.Object[]); break;
-                    case ValueType.Array:
-                        mCachedType = typeof(System.Array[]); break;
-                    case ValueType.Boolean:
-                        mCachedType = typeof(bool[]); break;
-                }
-            }
-            //else return lsArray[0].getParamType();
+    public virtual object toObject() {
+        if(valueType == (int)ValueType.Boolean) return (val_bool/* as object*/);
+        if(valueType == (int)ValueType.String) return (val_string/* as object*/);
+        if(valueType == (int)ValueType.Char) {
+            if(val_string == null || val_string.Length <= 0) return '\0';
+            return (val_string[0]/* as object*/);
         }
-        else if(valueType == (int)ValueType.String) mCachedType = typeof(string);
-        else if(valueType == (int)ValueType.Char) mCachedType = typeof(char);
+        if(valueType == (int)ValueType.Integer) return (val_int/* as object*/);
+        if(valueType == (int)ValueType.Long) return (val_long/* as object*/);
+        if(valueType == (int)ValueType.Float) return (val_float/* as object*/);
+        if(valueType == (int)ValueType.Double) return (val_double/* as object*/);
+        if(valueType == (int)ValueType.Vector2) return (val_vect2/* as object*/);
+        if(valueType == (int)ValueType.Vector3) return (val_vect3/* as object*/);
+        if(valueType == (int)ValueType.Vector4) return (val_vect4/* as object*/);
+        if(valueType == (int)ValueType.Color) return (val_color/* as object*/);
+        if(valueType == (int)ValueType.Rect) return (val_rect/* as object*/);
+        if(valueType == (int)ValueType.Object) return (val_obj/* as object*/);
+        if(valueType == (int)ValueType.Enum) return val_enum;
+        if(valueType == (int)ValueType.Array) return null;
+
+        Debug.LogError("Animator: Type not found for Event Parameter.");
+        return null;
+    }
+
+    public virtual Type getParamType() {
+        Type ret;
+
+        if(valueType == (int)ValueType.Boolean) ret = typeof(bool);
+        else if(valueType == (int)ValueType.Integer) ret = typeof(int);
+        else if(valueType == (int)ValueType.Long) ret = typeof(long);
+        else if(valueType == (int)ValueType.Float) ret = typeof(float);
+        else if(valueType == (int)ValueType.Double) ret = typeof(double);
+        else if(valueType == (int)ValueType.Vector2) ret = typeof(Vector2);
+        else if(valueType == (int)ValueType.Vector3) ret = typeof(Vector3);
+        else if(valueType == (int)ValueType.Vector4) ret = typeof(Vector4);
+        else if(valueType == (int)ValueType.Color) ret = typeof(Color);
+        else if(valueType == (int)ValueType.Rect) ret = typeof(Rect);
+        else if(valueType == (int)ValueType.Object) ret = typeof(UnityEngine.Object);
+        else if(valueType == (int)ValueType.String) ret = typeof(string);
+        else if(valueType == (int)ValueType.Char) ret = typeof(char);
         else if(valueType == (int)ValueType.Enum) {
-            mCachedType = System.Type.GetType(val_string);
-            if(mCachedType == null) {
+            ret = System.Type.GetType(val_string);
+            if(ret == null) {
                 try {
                     object obj = System.Activator.CreateInstance("UnityEngine.dll", val_string).Unwrap();
-                    mCachedType = obj != null ? obj.GetType() : null;
+                    ret = obj != null ? obj.GetType() : null;
                 }
                 catch(System.Exception e) {
-                    mCachedType = null;
+                    ret = null;
                     //TODO: find a better way
                     Debug.LogError(e.ToString());
                 }
             }
         }
         else {
-            mCachedType = null;
+            ret = null;
             Debug.LogError("Animator: Type not found for Event Parameter.");
         }
-        return mCachedType;
+        return ret;
     }
 
-    public void destroy() {
-        foreach(AMEventParameter param in lsArray)
-            param.destroy();
-    }
-
-    public string getStringValue() {
-        if(valueType == (int)ValueType.Boolean) return val_bool.ToString().ToLower();
-        if(valueType == (int)ValueType.String) return "\"" + val_string + "\"";
-        if(valueType == (int)ValueType.Char) {
-            if(val_string == null || val_string.Length <= 0) return "''";
-            else return "'" + val_string[0] + "'";
-        }
-        if(valueType == (int)ValueType.Integer || valueType == (int)ValueType.Long) return val_int.ToString();
-        if(valueType == (int)ValueType.Float || valueType == (int)ValueType.Double) return val_float.ToString();
-        if(valueType == (int)ValueType.Vector2) return val_vect2.ToString();
-        if(valueType == (int)ValueType.Vector3) return val_vect3.ToString();
-        if(valueType == (int)ValueType.Vector4) return val_vect4.ToString();
-        if(valueType == (int)ValueType.Color) return val_color.ToString();
-        if(valueType == (int)ValueType.Rect) return val_rect.ToString();
-        if(valueType == (int)ValueType.Object)
-            if(!val_obj) return "None";
-            else return val_obj.name;
-
-        if(valueType == (int)ValueType.Array) return "Array";
-        if(valueType == (int)ValueType.Enum) return val_enum.ToString();
-        Debug.LogError("Animator: Type not found for Event Parameter.");
-        return "object";
-    }
-
-    public void setValueType(Type t) {
-        valueType = GetValueType(t);
-        if(valueType == (int)ValueType.Enum)
-            val_string = t.ToString();
-        mCachedType = null;
-    }
-
-    public void fromObject(object dat) {
+    public virtual void fromObject(object dat) {
         switch((ValueType)valueType) {
             case ValueType.Integer:
                 val_int = Convert.ToInt32(dat);
@@ -324,24 +263,6 @@ public class AMEventParameter {
             case ValueType.Object:
                 val_obj = (UnityEngine.Object)dat;
                 break;
-            case ValueType.Array:
-                if(lsArray != null) {
-                    foreach(AMEventParameter param in lsArray)
-                        param.destroy();
-                }
-
-                System.Array arr = (System.Array)dat;
-                lsArray = new List<AMEventParameter>(arr.Length);
-                for(int i = 0; i < arr.Length; i++) {
-                    object arrElem = arr.GetValue(i);
-                    if(arrElem != null) {
-                        AMEventParameter a = new AMEventParameter();
-                        a.setValueType(arrElem.GetType());
-                        a.fromObject(arrElem);
-                        lsArray.Add(a);
-                    }
-                }
-                break;
             case ValueType.Boolean:
                 val_bool = Convert.ToBoolean(dat);
                 break;
@@ -351,37 +272,7 @@ public class AMEventParameter {
         }
     }
 
-    public object toObject() {
-        if(valueType == (int)ValueType.Boolean) return (val_bool/* as object*/);
-        if(valueType == (int)ValueType.String) return (val_string/* as object*/);
-        if(valueType == (int)ValueType.Char) {
-            if(val_string == null || val_string.Length <= 0) return '\0';
-            return (val_string[0]/* as object*/);
-        }
-        if(valueType == (int)ValueType.Integer) return (val_int/* as object*/);
-        if(valueType == (int)ValueType.Long) return (val_long/* as object*/);
-        if(valueType == (int)ValueType.Float) return (val_float/* as object*/);
-        if(valueType == (int)ValueType.Double) return (val_double/* as object*/);
-        if(valueType == (int)ValueType.Vector2) return (val_vect2/* as object*/);
-        if(valueType == (int)ValueType.Vector3) return (val_vect3/* as object*/);
-        if(valueType == (int)ValueType.Vector4) return (val_vect4/* as object*/);
-        if(valueType == (int)ValueType.Color) return (val_color/* as object*/);
-        if(valueType == (int)ValueType.Rect) return (val_rect/* as object*/);
-        if(valueType == (int)ValueType.Object) return (val_obj/* as object*/);
-        if(valueType == (int)ValueType.Enum) return val_enum;
-        if(valueType == (int)ValueType.Array && lsArray.Count > 0) {
-            System.Array array = System.Array.CreateInstance(GetType(), lsArray.Count);
-            for(int i = 0; i < lsArray.Count; i++) {
-                array.SetValue(lsArray[i].toObject(), i);
-            }
-            return array;
-
-        }
-        Debug.LogError("Animator: Type not found for Event Parameter.");
-        return null;
-    }
-
-    public AnimatorTimeline.JSONEventParameter toJSON() {
+    public virtual AnimatorTimeline.JSONEventParameter toJSON() {
         AnimatorTimeline.JSONEventParameter e = new AnimatorTimeline.JSONEventParameter();
         e.valueType = valueType;
         if(valueType == (int)ValueType.Boolean) e.val_bool = val_bool;
@@ -430,7 +321,147 @@ public class AMEventParameter {
             }
 
         }
+        //Debug.LogError("Animator: Type not found for Event Parameter.");
+        return e;
+    }
+}
+
+[System.Serializable]
+public class AMEventParameter : AMEventData {
+
+    public List<AMEventData> lsArray = new List<AMEventData>();
+
+    private System.Type mCachedType = null;
+                    
+    public AMEventParameter() {
+
+    }
+    
+    public bool checkArrayIntegrity() {
+        if(valueType == (int)ValueType.Array) {
+            if(lsArray != null && lsArray.Count > 0) {
+                int valElem = lsArray[0].valueType;
+                foreach(AMEventData elem in lsArray) {
+                    if(elem.valueType != valElem)
+                        return false;
+                }
+            }
+        }
+
+        return true;
+    }
+
+    public override void setValueType(Type t) {
+        base.setValueType(t);
+        mCachedType = null;
+    }
+
+    public override object toObject() {
+        if(valueType == (int)ValueType.Array) {
+            System.Array array = lsArray.Count > 0 ? System.Array.CreateInstance(lsArray[0].getParamType(), lsArray.Count) : System.Array.CreateInstance(typeof(object), 0);
+            for(int i = 0; i < lsArray.Count; i++) {
+                array.SetValue(lsArray[i].toObject(), i);
+            }
+            return array;
+        }
+
+        return base.toObject();
+    }
+
+    public override Type getParamType() {
+        if(mCachedType != null)
+            return mCachedType;
+
+        if(valueType == (int)ValueType.Array) {
+            if(lsArray.Count <= 0) mCachedType = typeof(object[]);
+            else {
+                switch((ValueType)lsArray[0].valueType) {
+                    case ValueType.Integer:
+                        mCachedType = typeof(int[]); break;
+                    case ValueType.Long:
+                        mCachedType = typeof(long[]); break;
+                    case ValueType.Float:
+                        mCachedType = typeof(float[]); break;
+                    case ValueType.Double:
+                        mCachedType = typeof(double[]); break;
+                    case ValueType.Vector2:
+                        mCachedType = typeof(Vector2[]); break;
+                    case ValueType.Vector3:
+                        mCachedType = typeof(Vector3[]); break;
+                    case ValueType.Vector4:
+                        mCachedType = typeof(Vector4[]); break;
+                    case ValueType.Color:
+                        mCachedType = typeof(Color[]); break;
+                    case ValueType.Rect:
+                        mCachedType = typeof(Rect[]); break;
+                    case ValueType.String:
+                        mCachedType = typeof(string[]); break;
+                    case ValueType.Char:
+                        mCachedType = typeof(char[]); break;
+                    case ValueType.Object:
+                        mCachedType = typeof(UnityEngine.Object[]); break;
+                    case ValueType.Array:
+                        mCachedType = null; break;
+                    case ValueType.Boolean:
+                        mCachedType = typeof(bool[]); break;
+                    default:
+                        mCachedType = null; break;
+                }
+            }
+            //else return lsArray[0].getParamType();
+        }
+        else
+            mCachedType = base.getParamType();
+
+       return mCachedType;
+    }
+
+    public override void fromObject(object dat) {
+        if(valueType == (int)ValueType.Array) {
+            System.Array arr = (System.Array)dat;
+            lsArray = new List<AMEventData>(arr.Length);
+            for(int i = 0; i < arr.Length; i++) {
+                object arrElem = arr.GetValue(i);
+                if(arrElem != null) {
+                    AMEventData a = new AMEventData();
+                    a.setValueType(arrElem.GetType());
+                    a.fromObject(arrElem);
+                    lsArray.Add(a);
+                }
+            }
+        }
+        else
+            base.fromObject(dat);
+    }
+
+    public string getStringValue() {
+        if(valueType == (int)ValueType.Boolean) return val_bool.ToString().ToLower();
+        if(valueType == (int)ValueType.String) return "\"" + val_string + "\"";
+        if(valueType == (int)ValueType.Char) {
+            if(val_string == null || val_string.Length <= 0) return "''";
+            else return "'" + val_string[0] + "'";
+        }
+        if(valueType == (int)ValueType.Integer || valueType == (int)ValueType.Long) return val_int.ToString();
+        if(valueType == (int)ValueType.Float || valueType == (int)ValueType.Double) return val_float.ToString();
+        if(valueType == (int)ValueType.Vector2) return val_vect2.ToString();
+        if(valueType == (int)ValueType.Vector3) return val_vect3.ToString();
+        if(valueType == (int)ValueType.Vector4) return val_vect4.ToString();
+        if(valueType == (int)ValueType.Color) return val_color.ToString();
+        if(valueType == (int)ValueType.Rect) return val_rect.ToString();
+        if(valueType == (int)ValueType.Object)
+            if(!val_obj) return "None";
+            else return val_obj.name;
+
+        if(valueType == (int)ValueType.Array) return "Array";
+        if(valueType == (int)ValueType.Enum) return val_enum.ToString();
+        Debug.LogError("Animator: Type not found for Event Parameter.");
+        return "object";
+    } 
+    
+    public override AnimatorTimeline.JSONEventParameter toJSON() {
         if(valueType == (int)ValueType.Array && lsArray.Count > 0) {
+            AnimatorTimeline.JSONEventParameter e = new AnimatorTimeline.JSONEventParameter();
+            e.valueType = valueType;
             AnimatorTimeline.JSONEventParameter[] arr = new AnimatorTimeline.JSONEventParameter[lsArray.Count];
             for(int i = 0; i < lsArray.Count; i++) {
                 //arrObj[i] = lsArray[i].val_bool;
@@ -517,10 +548,10 @@ public class AMEventParameter {
                 }
                 return arrObj;
             }*/
-
+            return e;
         }
-        //Debug.LogError("Animator: Type not found for Event Parameter.");
-        return e;
+
+        return base.toJSON();
     }
 
     public object[] toArray() {

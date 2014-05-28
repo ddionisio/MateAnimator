@@ -103,14 +103,18 @@ public class AMEventKey : AMKey {
                 oldParams = new Dictionary<string, ParamKeep>(parameters.Count);
                 for(int i = 0; i < parameters.Count; i++) {
                     if(!string.IsNullOrEmpty(parameters[i].paramName) && (parameters[i].valueType != (int)AMEventParameter.ValueType.Array || parameters[i].checkArrayIntegrity())) {
-                        oldParams.Add(parameters[i].paramName,
-                            new ParamKeep() { type = parameters[i].getParamType(), val = parameters[i].toObject() });
+                        try {
+                            object valObj = parameters[i].toObject();
+
+                            oldParams.Add(parameters[i].paramName, new ParamKeep() { type = parameters[i].getParamType(), val = valObj });
+                        }
+                        catch {
+                            continue;
+                        }
                     }
                 }
             }
-
-
-            destroyParameters();
+            
             this.parameters = new List<AMEventParameter>();
 
             // add parameters
@@ -149,15 +153,7 @@ public class AMEventKey : AMKey {
         }
         return false;
     }*/
-    public void destroyParameters() {
-        if(parameters == null) return;
-        foreach(AMEventParameter param in parameters)
-            param.destroy();
-    }
-    public override void destroy() {
-        destroyParameters();
-        base.destroy();
-    }
+    
     // copy properties from key
     public override void CopyTo(AMKey key) {
 
@@ -197,7 +193,7 @@ public class AMEventKey : AMKey {
     }
 
     #region action
-    public void setObjectInArray(ref object obj, List<AMEventParameter> lsArray) {
+    public void setObjectInArray(ref object obj, List<AMEventData> lsArray) {
         if(lsArray.Count <= 0) return;
         int valueType = lsArray[0].valueType;
         if(valueType == (int)AMEventParameter.ValueType.String) {
@@ -261,24 +257,7 @@ public class AMEventKey : AMKey {
             return;
         }
         if(valueType == (int)AMEventParameter.ValueType.Array) {
-            /*Type t = typeof(UnityEngine.Object);
-            if(lsArray.Count > 0) t = lsArray[0].GetType();
-
-            var list = typeof(List<>);
-            var listOfType = list.MakeGenericType(t);
-				
-            var ls = Activator.CreateInstance(listOfType);
-				
-            for(int i=0;i<lsArray.Count;i++) {
-                setObjectInArray(ref ls[i],ls[i].lsArray);
-            }
-            obj = ls.ToArray();*/
-            object[] arrArray = new object[lsArray.Count];
-            //t[] arrArray = new t[lsArray.Count];
-            for(int i = 0; i < lsArray.Count; i++) setObjectInArray(ref arrArray[i], lsArray[i].lsArray);//arrArray[i] = (object[])lsArray[i].toArray();
-            obj = arrArray;
-
-            return;
+            //TODO: array of array not supported...
         }
         obj = null;
     }
