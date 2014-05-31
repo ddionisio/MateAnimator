@@ -61,16 +61,17 @@ public class AMRotationKey : AMKey {
     public float getTime(int frameRate) {
         return (float)getNumberOfFrames() / (float)frameRate;
     }
-    public override Tweener buildTweener(AMITarget itarget, AMTrack track, UnityEngine.Object obj, Sequence sequence, int frameRate) {
+    public override void build(AMSequence seq, AMTrack track, UnityEngine.Object obj) {
+        int frameRate = seq.take.frameRate;
 		if(easeType == EaseTypeNone) {
-            return HOTween.To(obj, endFrame == -1 || endFrame == frame ? 1.0f/(float)frameRate : getTime(frameRate), new TweenParms().Prop(isLocal ? "localRotation" : "rotation", new AMPlugNoTween(rotation)));
+            seq.Insert(this, HOTween.To(obj, endFrame == -1 || endFrame == frame ? 1.0f/(float)frameRate : getTime(frameRate), new TweenParms().Prop(isLocal ? "localRotation" : "rotation", new AMPlugNoTween(rotation))));
 		}
-		else if(endFrame == -1) return null;
+		else if(endFrame == -1) return;
         else if(hasCustomEase()) {
-            return HOTween.To(obj, getTime(frameRate), new TweenParms().Prop(isLocal ? "localRotation" : "rotation", new AMPlugQuaternionSlerp(endRotation)).Ease(easeCurve));
+            seq.Insert(this, HOTween.To(obj, getTime(frameRate), new TweenParms().Prop(isLocal ? "localRotation" : "rotation", new AMPlugQuaternionSlerp(endRotation)).Ease(easeCurve)));
         }
         else {
-            return HOTween.To(obj, getTime(frameRate), new TweenParms().Prop(isLocal ? "localRotation" : "rotation", new AMPlugQuaternionSlerp(endRotation)).Ease((EaseType)easeType, amplitude, period));
+            seq.Insert(this, HOTween.To(obj, getTime(frameRate), new TweenParms().Prop(isLocal ? "localRotation" : "rotation", new AMPlugQuaternionSlerp(endRotation)).Ease((EaseType)easeType, amplitude, period)));
         }
     }
 

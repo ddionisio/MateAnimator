@@ -30,10 +30,10 @@ public class AMTriggerKey : AMKey {
 
     #region action
 
-    public override Tweener buildTweener(AMITarget itarget, AMTrack track, UnityEngine.Object target, Sequence sequence, int frameRate) {
-        sequence.InsertCallback(getWaitTime(frameRate, 0.0f), itarget.TargetGetTriggerCallback(),
+    public override void build(AMSequence seq, AMTrack track, UnityEngine.Object obj) {
+        seq.sequence.InsertCallback(getWaitTime(seq.take.frameRate, 0.0f), seq.triggerCallback,
+            this,
             new AMTriggerData() { valueString=this.valueString, valueInt=this.valueInt, valueFloat=this.valueFloat });
-        return null;
     }
 
     #endregion

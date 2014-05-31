@@ -16,16 +16,9 @@ public class AnimatorData : MonoBehaviour, AMITarget {
     }
 
     public delegate void OnTake(AnimatorData anim, AMTakeData take);
-    public delegate void OnTakeTrigger(AnimatorData anim, AMTakeData take, AMTriggerData data);
+    public delegate void OnTakeTrigger(AnimatorData anim, AMTakeData take, AMKey key, AMTriggerData data);
 
     // show
-
-	// obsolete stuff
-	[SerializeField]
-    List<AMTake> takes = new List<AMTake>();
-	[SerializeField]
-    AMTake playOnStart = null;
-	//
 
 	[SerializeField]
 	List<AMTakeData> takeData = new List<AMTakeData>();
@@ -81,6 +74,8 @@ public class AnimatorData : MonoBehaviour, AMITarget {
 		}
 	}
 
+    public int defaultTakeIndex { get { return playOnStartIndex; } }
+
     public bool isPlaying {
         get {
             Sequence seq = currentPlayingSequence;
@@ -116,14 +111,6 @@ public class AnimatorData : MonoBehaviour, AMITarget {
         }
     }
 
-    public string takeName {
-        get {
-			AMTakeData take = mCurrentPlayingTake;
-			if(take != null) return take.name;
-            return "";
-        }
-    }
-
     public float runningTime {
         get {
 			Sequence seq = currentPlayingSequence;
@@ -151,7 +138,7 @@ public class AnimatorData : MonoBehaviour, AMITarget {
     [SerializeField]
     private GameObject _dataHolder;
 
-	private Sequence[] mSequences;
+	private AMSequence[] mSequences;
 
     private int mNowPlayingTakeIndex = -1;
 
@@ -163,10 +150,11 @@ public class AnimatorData : MonoBehaviour, AMITarget {
 
 	private Dictionary<string, Transform> mCache;
 
-	private AMTakeData mCurrentPlayingTake { get { return mNowPlayingTakeIndex == -1 ? null : _takes[mNowPlayingTakeIndex]; } }
+	private AMTakeData mCurrentPlayingTake { get { return mNowPlayingTakeIndex == -1 ? null : mSequences[mNowPlayingTakeIndex].take; } }
 
 	public string currentPlayingTakeName { get { return mNowPlayingTakeIndex == -1 ? "" : mCurrentPlayingTake.name; } }
-	public Sequence currentPlayingSequence { get { return mNowPlayingTakeIndex == -1 ? null : mSequences[mNowPlayingTakeIndex]; } }
+    public int currentPlayingTakeIndex { get { return mNowPlayingTakeIndex; } }
+	public Sequence currentPlayingSequence { get { return mNowPlayingTakeIndex == -1 ? null : mSequences[mNowPlayingTakeIndex].sequence; } }
 
     public float animScale {
         get { return mAnimScale; }
@@ -185,12 +173,27 @@ public class AnimatorData : MonoBehaviour, AMITarget {
 	}
 
     public bool TakeExists(string takeName) {
-        List<AMTakeData> t = _takes;
-        for(int i = 0; i < t.Count; i++) {
-            if(t[i].name == takeName)
-                return true;
+        return GetTakeIndex(takeName) != -1;
+    }
+
+    public int GetTakeIndex(string takeName) {
+        for(int i = 0; i < mSequences.Length; i++) {
+            if(mSequences[i].take.name == takeName)
+                return i;
         }
-        return false;
+        return -1;
+    }
+
+    public int GetTakeIndex(AMTakeData take) {
+        for(int i = 0; i < mSequences.Length; i++) {
+            if(mSequences[i].take == take)
+                return i;
+        }
+        return -1;
+    }
+
+    public string GetTakeName(int takeIndex) {
+        return mSequences[takeIndex].take.name;
     }
 
     public void PlayDefault(bool loop = false) {
@@ -205,17 +208,49 @@ public class AnimatorData : MonoBehaviour, AMITarget {
     }
 
 	public void PlayAtFrame(string takeName, float frame, bool loop = false) {
-		int ind = getTakeIndex(takeName);
+        int ind = GetTakeIndex(takeName);
 		if(ind == -1) { Debug.LogError("Take not found: "+takeName); return; }
-		Play(ind, true, frame, loop);
+        PlayAtTime(ind, frame/mSequences[ind].take.frameRate, loop);
 	}
 	
 	public void PlayAtTime(string takeName, float time, bool loop = false) {
-		int ind = getTakeIndex(takeName);
+        int ind = GetTakeIndex(takeName);
 		if(ind == -1) { Debug.LogError("Take not found: "+takeName); return; }
-		Play(ind, false, time, loop);
+        PlayAtTime(ind, time, loop);
     }
 
+    public void PlayAtTime(int index, float time, bool loop = false) {
+        if(mNowPlayingTakeIndex != index) {
+            Pause();
+        }
+
+        AMSequence amSeq = mSequences[index];
+
+        AMTakeData newPlayTake = amSeq.take;
+
+        Sequence seq = amSeq.sequence;
+
+        if(seq == null)
+            mSequences[index].Build(gameObject.name, sequenceKillWhenDone, updateType);
+        else
+            mSequences[index].Reset(true);
+        
+        mNowPlayingTakeIndex = index;
+
+        newPlayTake.previewFrameStart(this, newPlayTake.frameRate * time);
+
+        if(seq != null) {
+            if(loop) {
+                seq.loops = -1;
+            }
+            else {
+                seq.loops = newPlayTake.numLoop;
+            }
+
+            seq.GoToAndPlay(time);
+            seq.timeScale = mAnimScale;
+        }
+    }
 
     public void Pause() {
 		AMTakeData take = mCurrentPlayingTake;
@@ -239,11 +274,7 @@ public class AnimatorData : MonoBehaviour, AMITarget {
 		take.stopAudio(this);
 		take.stopAnimations(this);
 
-		Sequence seq = currentPlayingSequence;
-		if(seq != null) {
-			seq.Pause();
-			seq.GoTo(0);
-        }
+        mSequences[mNowPlayingTakeIndex].Reset(false);
 
         mNowPlayingTakeIndex = -1;
     }
@@ -268,65 +299,24 @@ public class AnimatorData : MonoBehaviour, AMITarget {
 
     // preview a single frame (used for scrubbing)
     public void PreviewFrame(string takeName, float frame) {
-        PreviewValue(takeName, true, frame);
+        PreviewFrame(GetTakeIndex(takeName), frame);
+    }
+
+    public void PreviewFrame(int takeIndex, float frame) {
+        AMTakeData curTake = mSequences[takeIndex].take;
+        curTake.previewFrame(this, frame/curTake.frameRate);
     }
 
     // preview a single time (used for scrubbing)
     public void PreviewTime(string takeName, float time) {
-        PreviewValue(takeName, false, time);
+        PreviewTime(GetTakeIndex(takeName), time);
     }
 
-    void Play(int index, bool isFrame, float value, bool loop) {
-		AMTakeData newPlayTake = _takes[index];
-
-        if(newPlayTake == null) {
-            Stop();
-            return;
-        }
-
-        if(mNowPlayingTakeIndex != index) {
-            Pause();
-        }
-
-		mNowPlayingTakeIndex = index;
-
-        float startTime = value;
-		if(isFrame) startTime /= newPlayTake.frameRate;
-
-        //float startFrame = 0;//isFrame ? value : nowPlayingTake.frameRate * value;
-
-		Sequence seq = mSequences[index];
-
-		if(seq == null) {
-			//newPlayTake.previewFrame(startFrame, false, true);
-			seq = mSequences[index] = newPlayTake.BuildSequence(this, gameObject.name, sequenceKillWhenDone, updateType, OnTakeSequenceDone);
-		}
-
-		newPlayTake.previewFrameStart(this, isFrame ? value : newPlayTake.frameRate * value);
-
-		if(seq != null) {
-            if(loop) {
-				seq.loops = -1;
-            }
-            else {
-				seq.loops = newPlayTake.numLoop;
-            }
-
-			seq.GoTo(startTime);
-			seq.Play();
-			seq.timeScale = mAnimScale;
-        }
+    public void PreviewTime(int takeIndex, float time) {
+        AMTakeData curTake = mSequences[takeIndex].take;
+        curTake.previewFrame(this, time);
     }
 
-    void PreviewValue(string take_name, bool isFrame, float value) {
-		AMTakeData curTake = mCurrentPlayingTake;
-		AMTakeData take = curTake != null && curTake.name == takeName ? curTake : takeData[getTakeIndex(take_name)];
-		if(take == null) return;
-		float startFrame = value;
-		if(!isFrame) startFrame *= take.frameRate;	// convert time to frame
-		take.previewFrame(this, startFrame);
-	}
-	    
 	void OnDestroy() {
 #if UNITY_EDITOR
 		if(!Application.isPlaying) {
@@ -336,12 +326,11 @@ public class AnimatorData : MonoBehaviour, AMITarget {
 		}
 #endif
 
-		if(mSequences != null) {
-			for(int i = 0; i < mSequences.Length; i++) {
-				HOTween.Kill(mSequences[i]);
-				mSequences[i] = null;
-			}
-		}
+        if(mSequences != null) {
+            for(int i = 0; i < mSequences.Length; i++)
+                mSequences[i].Destroy();
+            mSequences = null;
+        }
 		
 		takeCompleteCallback = null;
         takeTriggerCallback = null;
@@ -375,25 +364,23 @@ public class AnimatorData : MonoBehaviour, AMITarget {
 	}
 	
 	void Awake() {
-		Upgrade();
-		
 		if(!Application.isPlaying)
 			return;
 		
-		mSequences = new Sequence[_takes.Count];
+		mSequences = new AMSequence[_takes.Count];
+        for(int i = 0; i < mSequences.Length; i++)
+            mSequences[i] = new AMSequence(this, i, _takes[i]);
 	}
 	
 	void Start() {
 		if(!Application.isPlaying)
 			return;
 
-		List<AMTakeData> _ts = _takes;
-
 		mStarted = true;
-		if(sequenceLoadAll && _ts != null) {
+		if(sequenceLoadAll && mSequences != null) {
 			string goName = gameObject.name;
-			for(int i = 0; i < _ts.Count; i++) {
-				mSequences[i] = _ts[i].BuildSequence(this, goName, sequenceKillWhenDone, updateType, OnTakeSequenceDone);
+			for(int i = 0; i < mSequences.Length; i++) {
+				mSequences[i].Build(goName, sequenceKillWhenDone, updateType);
 			}
 		}
 		
@@ -401,69 +388,6 @@ public class AnimatorData : MonoBehaviour, AMITarget {
 			Play(defaultTakeName, false);
 		}
 	}
-			
-	//returns true if upgraded
-	public bool Upgrade() {
-		//convert AMTakes
-		if(takes != null && takes.Count > 0) {
-			if(playOnStart != null) {
-				playOnStartIndex = takes.IndexOf(playOnStart);
-				playOnStart = null;
-			}
-			
-			takeData = new List<AMTakeData>(takes.Count);
-			foreach(AMTake take in takes) {
-				AMTakeData ntake = new AMTakeData();
-				ntake.name = take.name;
-				ntake.frameRate = take.frameRate;
-				ntake.numFrames = take.numFrames;
-				ntake.startFrame = take.startFrame;
-				ntake.endFrame = take.endFrame;
-				ntake.playbackSpeedIndex = take.playbackSpeedIndex;
-				ntake.numLoop = take.numLoop;
-				ntake.loopMode = take.loopMode;
-				ntake.loopBackToFrame = take.loopBackToFrame;
-				ntake.trackValues = new List<AMTrack>(take.trackValues.Count);
-				foreach(AMTrack track in take.trackValues) ntake.trackValues.Add(track);
-				ntake.track_count = take.track_count;
-				ntake.group_count = take.group_count;
-				ntake.rootGroup = take.rootGroup != null ? take.rootGroup.duplicate() : null;
-				ntake.groupValues = new List<AMGroup>(take.groupValues.Count);
-				foreach(AMGroup grp in take.groupValues) ntake.groupValues.Add(grp.duplicate());
-				
-				DestroyImmediate(take);
-				
-				takeData.Add(ntake);
-			}
-			
-			takes = null;
-			
-			return true;
-		}
-		
-		return false;
-	}
-
-	int getTakeIndex(string takeName) {
-		List<AMTakeData> _ts = _takes;
-		for(int i = 0; i < _ts.Count; i++) {
-			if(_ts[i].name == takeName)
-				return i;
-		}
-		return -1;
-	}
-
-	void OnTakeSequenceDone(AMTakeData aTake) {
-		if(takeCompleteCallback != null)
-			takeCompleteCallback(this, aTake);
-	}
-
-    void OnTrigger(TweenEvent dat) {
-        if(takeTriggerCallback != null) {
-            AMTriggerData trigDat = (AMTriggerData)dat.parms[0];
-            takeTriggerCallback(this, mCurrentPlayingTake, trigDat);
-        }
-    }
 
     #region AMITarget interface
     public Transform TargetGetRoot() {
@@ -546,8 +470,13 @@ public class AnimatorData : MonoBehaviour, AMITarget {
 #endif
 	}
 
-    public Holoville.HOTween.Core.TweenDelegate.TweenCallbackWParms TargetGetTriggerCallback() {
-        return OnTrigger;
+    public void TargetSequenceComplete(AMSequence seq) {
+        if(takeCompleteCallback != null)
+            takeCompleteCallback(this, seq.take);
+    }
+    public void TargetSequenceTrigger(AMSequence seq, AMKey key, AMTriggerData trigDat) {
+        if(takeTriggerCallback != null)
+            takeTriggerCallback(this, seq.take, key, trigDat);
     }
 
     #endregion
@@ -786,14 +715,8 @@ public class AnimatorData : MonoBehaviour, AMITarget {
 		}
 	}
 
-	public int e_takeCount { get { return _takes.Count; } }
-	
-	public int e_getPlayOnStartIndex() {
-		return playOnStartIndex;
-	}
-
 	public AMTakeData e_getTake(string takeName) {
-		int ind = getTakeIndex(takeName);
+        int ind = GetTakeIndex(takeName);
 		if(ind == -1) {
 			Debug.LogError("Animator: Take '" + takeName + "' not found.");
 			return null;
@@ -802,14 +725,6 @@ public class AnimatorData : MonoBehaviour, AMITarget {
 		return _takes[ind];
 	}
 
-	public int e_getTakeIndex(AMTakeData take) {
-		List<AMTakeData> _ts = _takes;
-		for(int i = 0; i < _ts.Count; i++) {
-			if(_ts[i] == take) return i;
-		}
-		return -1;
-	}
-		
 	public bool e_setCurrentTakeValue(int _take) {
 		if(_take != e_currentTake) {
 			e_prevTake = e_currentTake;

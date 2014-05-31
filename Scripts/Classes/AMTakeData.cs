@@ -906,68 +906,7 @@ public class AMTakeData {
 			}
 		}
 	}
-
-	public Sequence BuildSequence(AMITarget itarget, string goName, bool autoKill, UpdateType updateType, OnSequenceDone endCallback) {
-		if(loopBackToFrame > 0 && numLoop <= 0)
-			numLoop = 1;
-
-		Sequence sequence = new Sequence(
-			new SequenceParms()
-			.Id(string.Format("{0}:{1}", goName, name))
-			.UpdateType(updateType)
-			.AutoKill(autoKill)
-			.Loops(numLoop, loopMode)
-			.OnComplete(OnSequenceComplete, itarget, endCallback));
-		
-		maintainCaches(itarget);
-
-		int numTweensAdded = 0;
-
-		foreach(AMTrack track in trackValues) {
-            Object tgt = null;
-            if((tgt = track.GetTarget(itarget)) != null) {
-                track.buildSequenceStart(itarget, sequence, frameRate);
-
-                foreach(AMKey key in track.keys) {
-                    Tweener tween = key.buildTweener(itarget, track, tgt, sequence, frameRate);
-                    if(tween != null) {
-                        sequence.Insert(key.getWaitTime(frameRate, 0.0f), tween);
-                        numTweensAdded++;
-                    }
-                }
-            }
-		}
-		
-		if(numTweensAdded == 0) {
-			HOTween.Kill(sequence);
-			sequence = null;
-		}
-
-		return sequence;
-	}
-	
-	void OnSequenceComplete(TweenEvent dat) {
-		AMITarget itgt = dat.parms[0] as AMITarget;
-		stopAudio(itgt);
-		stopAnimations(itgt);
-		
-		if(!dat.tween.autoKillOnComplete) {
-			if(loopBackToFrame >= 0) {
-				if(dat.tween.isReversed)
-					dat.tween.Reverse();
-				dat.tween.GoTo(((float)loopBackToFrame) / ((float)frameRate));
-				dat.tween.Play();
-				return;
-			}
-		}
-
-		if(dat.parms != null && dat.parms.Length > 1) {
-			OnSequenceDone cb = dat.parms[1] as OnSequenceDone;
-			if(cb != null)
-				cb(this);
-		}
-	}
-
+    	
 	public float getElementsHeight(int group_id, float height_track, float height_track_foldin, float height_group) {
 		initGroups();
 		float height = 0;

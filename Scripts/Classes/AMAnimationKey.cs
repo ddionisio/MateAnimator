@@ -55,9 +55,8 @@ public class AMAnimationKey : AMKey {
         }
     }
 
-    public override Tweener buildTweener(AMITarget itarget, AMTrack track, UnityEngine.Object target, Sequence sequence, int frameRate) {
-        sequence.InsertCallback(getWaitTime(frameRate, 0.0f), OnMethodCallbackParams, (target as GameObject).animation, (float)frameRate);
-        return null;
+    public override void build(AMSequence seq, AMTrack track, UnityEngine.Object target) {
+        seq.sequence.InsertCallback(getWaitTime(seq.take.frameRate, 0.0f), OnMethodCallbackParams, (target as GameObject).animation, (float)seq.take.frameRate);
     }
     #endregion
 }

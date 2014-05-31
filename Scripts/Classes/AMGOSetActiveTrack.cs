@@ -66,13 +66,12 @@ public class AMGOSetActiveTrack : AMTrack {
         }
     }
 
-	public override void buildSequenceStart(AMITarget target, Sequence s, int frameRate) {
-		GameObject go = GetTarget(target) as GameObject;
+    public override void buildSequenceStart(AMSequence seq) {
+        GameObject go = GetTarget(seq.target) as GameObject;
 
         //need to add activate game object on start to 'reset' properly during reverse
         if(keys.Count > 0 && keys[0].frame > 0) {
-			s.Insert(0.0f, HOTween.To(go, ((float)keys[0].frame) / ((float)frameRate),
-			                          new TweenParms().Prop("active", new AMPlugGOActive(go, startActive))));
+            seq.Insert(new AMActionGOActive(0.0f, keys[0].getWaitTime(seq.take.frameRate, 0.0f), go, startActive));
         }
     }
 

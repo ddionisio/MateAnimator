@@ -45,33 +45,35 @@ public class AMTranslationKey : AMKey {
         return (float)getNumberOfFrames() / (float)frameRate;
     }
 
-    public override Tweener buildTweener(AMITarget itarget, AMTrack track, UnityEngine.Object obj, Sequence sequence, int frameRate) {
-		if(easeType == EaseTypeNone) {
-            return HOTween.To(obj, endFrame == -1 || endFrame == startFrame ? 1.0f/(float)frameRate : getTime(frameRate), new TweenParms().Prop(isLocal ? "localPosition" : "position", new AMPlugNoTween(position)));
-		}
-
-        if(path.Length <= 1) return null;
-        if(getNumberOfFrames() <= 0) return null;
-
-        object tweenTarget = obj;
-        string tweenProp = isLocal ? "localPosition" : "position";
-
-        Tweener ret = null;
-
-        if(hasCustomEase()) {
-            if(path.Length == 2)
-                ret = HOTween.To(tweenTarget, getTime(frameRate), new TweenParms().Prop(tweenProp, new PlugVector3Path(path, false, PathType.Linear)).Ease(easeCurve));
-            else
-                ret = HOTween.To(tweenTarget, getTime(frameRate), new TweenParms().Prop(tweenProp, new PlugVector3Path(path, false)).Ease(easeCurve));
+    public override void build(AMSequence seq, AMTrack track, UnityEngine.Object obj) {
+        int frameRate = seq.take.frameRate;
+        if(easeType == EaseTypeNone) {
+            seq.Insert(this, HOTween.To(obj, endFrame == -1 || endFrame == startFrame ? 1.0f/(float)frameRate : getTime(frameRate), new TweenParms().Prop(isLocal ? "localPosition" : "position", new AMPlugNoTween(position))));
         }
         else {
-            if(path.Length == 2)
-                ret = HOTween.To(tweenTarget, getTime(frameRate), new TweenParms().Prop(tweenProp, new PlugVector3Path(path, false, PathType.Linear)).Ease((EaseType)easeType, amplitude, period));
-            else
-                ret = HOTween.To(tweenTarget, getTime(frameRate), new TweenParms().Prop(tweenProp, new PlugVector3Path(path, false)).Ease((EaseType)easeType, amplitude, period));
-        }
+            if(path.Length <= 1) return;
+            if(getNumberOfFrames() <= 0) return;
 
-        return ret;
+            object tweenTarget = obj;
+            string tweenProp = isLocal ? "localPosition" : "position";
+
+            Tweener ret = null;
+
+            if(hasCustomEase()) {
+                if(path.Length == 2)
+                    ret = HOTween.To(tweenTarget, getTime(frameRate), new TweenParms().Prop(tweenProp, new PlugVector3Path(path, false, PathType.Linear)).Ease(easeCurve));
+                else
+                    ret = HOTween.To(tweenTarget, getTime(frameRate), new TweenParms().Prop(tweenProp, new PlugVector3Path(path, false)).Ease(easeCurve));
+            }
+            else {
+                if(path.Length == 2)
+                    ret = HOTween.To(tweenTarget, getTime(frameRate), new TweenParms().Prop(tweenProp, new PlugVector3Path(path, false, PathType.Linear)).Ease((EaseType)easeType, amplitude, period));
+                else
+                    ret = HOTween.To(tweenTarget, getTime(frameRate), new TweenParms().Prop(tweenProp, new PlugVector3Path(path, false)).Ease((EaseType)easeType, amplitude, period));
+            }
+
+            seq.Insert(this, ret);
+        }
     }
     #endregion
 }

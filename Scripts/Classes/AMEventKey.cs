@@ -286,34 +286,34 @@ public class AMEventKey : AMKey {
 		return ret.ToArray();
 	}
 
-    public override Tweener buildTweener(AMITarget itarget, AMTrack track, UnityEngine.Object target, Sequence sequence, int frameRate) {
-		if(methodName == null) return null;
+    public override void build(AMSequence seq, AMTrack track, UnityEngine.Object target) {
+		if(methodName == null) return;
 
 		//get component and fill the cached method info
 		Component comp;
-		if(itarget.TargetIsMeta()) {
-			if(string.IsNullOrEmpty(componentName)) return null;
+		if(seq.target.TargetIsMeta()) {
+			if(string.IsNullOrEmpty(componentName)) return;
 			comp = (target as GameObject).GetComponent(componentName);
 
 		}
 		else {
-			if(component == null) return null;
+			if(component == null) return;
 			comp = component;
 		}
 		if(cachedMethodInfo == null)
 			cachedMethodInfo = comp.GetType().GetMethod(methodName, GetParamTypes());
 
+        float waitTime = getWaitTime(seq.take.frameRate, 0.0f);
+
         if(useSendMessage) {
             if(parameters == null || parameters.Count <= 0)
-                sequence.InsertCallback(getWaitTime(frameRate, 0.0f), comp.gameObject, methodName, null, SendMessageOptions.DontRequireReceiver);
+                seq.sequence.InsertCallback(waitTime, comp.gameObject, methodName, null, SendMessageOptions.DontRequireReceiver);
             else
-                sequence.InsertCallback(getWaitTime(frameRate, 0.0f), comp.gameObject, methodName, parameters[0].toObject(), SendMessageOptions.DontRequireReceiver);
+                seq.sequence.InsertCallback(waitTime, comp.gameObject, methodName, parameters[0].toObject(), SendMessageOptions.DontRequireReceiver);
         }
         else {
-            sequence.InsertCallback(getWaitTime(frameRate, 0.0f), OnMethodCallbackParams, comp, (object)buildParams());
+            seq.sequence.InsertCallback(waitTime, OnMethodCallbackParams, comp, (object)buildParams());
         }
-
-        return null;
     }
 
     void OnMethodCallbackParams(TweenEvent dat) {

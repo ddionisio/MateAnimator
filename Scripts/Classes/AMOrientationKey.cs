@@ -229,22 +229,23 @@ public class AMOrientationKey : AMKey {
 	}
 
     #region action
-    public override Tweener buildTweener(AMITarget itarget, AMTrack track, UnityEngine.Object obj, Sequence sequence, int frameRate) {
-        if(!obj) return null;
+    public override void build(AMSequence seq, AMTrack track, UnityEngine.Object obj) {
+        if(!obj) return;
+        int frameRate = seq.take.frameRate;
 		if(easeType == EaseTypeNone) {
-            return HOTween.To(obj, endFrame == -1 || endFrame == frame ? 1.0f/(float)frameRate : getTime(frameRate), new TweenParms().Prop("rotation", new AMPlugOrientation(GetTarget(itarget), null)));
+            seq.Insert(this, HOTween.To(obj, endFrame == -1 || endFrame == frame ? 1.0f/(float)frameRate : getTime(frameRate), new TweenParms().Prop("rotation", new AMPlugOrientation(GetTarget(seq.target), null))));
 		}
-        if(endFrame == -1) return null;
-		Transform tgt = GetTarget(itarget), tgte = GetTargetEnd(itarget);
+        if(endFrame == -1) return;
+        Transform tgt = GetTarget(seq.target), tgte = GetTargetEnd(seq.target);
 		if(tgt == tgte) {
-			return HOTween.To(obj, getTime(frameRate), new TweenParms().Prop("rotation", new AMPlugOrientation(tgt, null)));
+			seq.Insert(this, HOTween.To(obj, getTime(frameRate), new TweenParms().Prop("rotation", new AMPlugOrientation(tgt, null))));
         }
         else {
             if(hasCustomEase()) {
-				return HOTween.To(obj, getTime(frameRate), new TweenParms().Prop("rotation", new AMPlugOrientation(tgt, tgte)).Ease(easeCurve));
+				seq.Insert(this, HOTween.To(obj, getTime(frameRate), new TweenParms().Prop("rotation", new AMPlugOrientation(tgt, tgte)).Ease(easeCurve)));
             }
             else {
-				return HOTween.To(obj, getTime(frameRate), new TweenParms().Prop("rotation", new AMPlugOrientation(tgt, tgte)).Ease((EaseType)easeType, amplitude, period));
+				seq.Insert(this, HOTween.To(obj, getTime(frameRate), new TweenParms().Prop("rotation", new AMPlugOrientation(tgt, tgte)).Ease((EaseType)easeType, amplitude, period)));
             }
         }
     }

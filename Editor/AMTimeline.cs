@@ -32,7 +32,6 @@ public class AMTimeline : EditorWindow {
 
                 if(_aData != null) {
                     //Debug.Log("previous data: " + _aData.name + " hash: " + _aData.GetHashCode());
-                    _aData.Upgrade();
                     _aData.e_isAnimatorOpen = false;
 
                     if(_aData._takes != null) {
@@ -56,10 +55,6 @@ public class AMTimeline : EditorWindow {
                 _aData = value;
 
                 if(_aData) {
-                    if(_aData.Upgrade()) {
-                        EditorUtility.SetDirty(_aData);
-                    }
-
                     if(window != null) {
                         _aData.e_isAnimatorOpen = true;
                     }
@@ -100,6 +95,7 @@ public class AMTimeline : EditorWindow {
     private bool isPlaying;						// is preview player playing
     private float playerStartTime;				// preview player start time
     private int playerStartFrame;				// preview player start frame
+    private int playerStartedFrame;
     private int playerCurLoop;                  // current number of loops made
     private bool playerBackward;                // playing backwards
     public static string[] easeTypeNames = {
@@ -326,7 +322,6 @@ public class AMTimeline : EditorWindow {
     private static ParameterInfo[] cachedParameterInfos = new ParameterInfo[] { };
     private static Dictionary<string, bool> arrayFieldFoldout = new Dictionary<string, bool>();	// used to store the foldout values for arrays in event methods
     private Vector2 inspectorScrollView = new Vector2(0f, 0f);
-    private FieldInfo undoCallback;
     private GenericMenu menu = new GenericMenu(); 			// add track menu
     private GenericMenu menu_drag = new GenericMenu(); 		// add track menu, on drag to window
     private GenericMenu contextMenu = new GenericMenu();	// context selection menu
@@ -648,7 +643,7 @@ public class AMTimeline : EditorWindow {
                 int curFrameI = Mathf.FloorToInt(curFrame);
                 AMTakeData.Range frameRange = take.getFrameRange();
                 //reached end?
-                if((playerBackward && curFrameI < frameRange.first) || curFrameI > frameRange.last) {
+                if((playerBackward && curFrameI < 0) || curFrameI > frameRange.last) {
                     bool restart = true;
                     // loop
                     if(take.numLoop > 0) {
@@ -692,7 +687,7 @@ public class AMTimeline : EditorWindow {
                     }
                     else {
                         isPlaying = false;
-                        curFrame = frameRange.first;
+                        curFrame = playerStartedFrame;
                     }
                     /*private int playerCurLoop;                  // current number of loops made
     private bool playerBackward;                // playing backwards*/
@@ -5173,7 +5168,7 @@ public class AMTimeline : EditorWindow {
         }
         // set preview player variables
         playerStartTime = Time.realtimeSinceStartup;
-        playerStartFrame = aData.e_getCurrentTake().selectedFrame;
+        playerStartedFrame = playerStartFrame = aData.e_getCurrentTake().selectedFrame;
         // start playing
         isPlaying = true;
         playerCurLoop = 0;

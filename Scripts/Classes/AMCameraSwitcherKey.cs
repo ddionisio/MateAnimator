@@ -254,24 +254,24 @@ public class AMCameraSwitcherKey : AMKey {
         return AMUtil.isTransitionReversed(cameraFadeType, cameraFadeParameters.ToArray());
     }
 
-    public override Tweener buildTweener(AMITarget itarget, AMTrack track, UnityEngine.Object target, Sequence sequence, int frameRate) {
-        Camera[] allCameras = (track as AMCameraSwitcherTrack).GetCachedCameras(itarget);
+    public override void build(AMSequence seq, AMTrack track, UnityEngine.Object target) {
+        Camera[] allCameras = (track as AMCameraSwitcherTrack).GetCachedCameras(seq.target);
 
         // if targets are equal do nothing
-        if(endFrame == -1 || !hasTargets(itarget) || targetsAreEqual(itarget)) return null;
+        if(endFrame == -1 || !hasTargets(seq.target) || targetsAreEqual(seq.target)) return;
 
         float[] fadeParams = cameraFadeParameters.ToArray();
         bool isReversed = AMUtil.isTransitionReversed(type, fadeParams);
-        Camera cam=getCamera(itarget), camEnd=getCameraEnd(itarget);
+        Camera cam=getCamera(seq.target), camEnd=getCameraEnd(seq.target);
 
-        sequence.InsertCallback(((float)frame - 1f) / (float)frameRate, OnFirstFrameEvent,
+        seq.sequence.InsertCallback(((float)frame - 1f) / (float)seq.take.frameRate, OnFirstFrameEvent,
             isReversed, cam, camEnd, (object)allCameras, (object)fadeParams);
 
-        sequence.InsertCallback(((float)endFrame - 1.01f) / (float)frameRate, OnLastFrameEvent,
+        seq.sequence.InsertCallback(((float)endFrame - 1.01f) / (float)seq.take.frameRate, OnLastFrameEvent,
             isReversed, cam, camEnd, (object)allCameras, (object)fadeParams);
 
         //use 'this' with property 'type' as a placeholder since AMPlugCameraSwitcher does not require any property
-        return HOTween.To(this, getTime(frameRate), new TweenParms().Prop("type", new AMPlugCameraSwitcher()));
+        seq.Insert(this, HOTween.To(this, getTime(seq.take.frameRate), new TweenParms().Prop("type", new AMPlugCameraSwitcher())));
     }
 
     void OnFirstFrameEvent(TweenEvent dat) {

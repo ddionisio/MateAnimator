@@ -64,7 +64,7 @@ public class AMOptions : EditorWindow {
             }
         }
 
-        if(aData) exportTakeIndex = aData.e_getTakeIndex(aData.e_getCurrentTake());
+        if(aData) exportTakeIndex = aData.GetTakeIndex(aData.e_getCurrentTake());
     }
     void OnDisable() {
         window = null;
@@ -465,7 +465,7 @@ public class AMOptions : EditorWindow {
         if(AMTimeline.window != null) {
             __aData = AMTimeline.window.aData;
             if(__aData) {
-                exportTakeIndex = __aData.e_getTakeIndex(__aData.e_getCurrentTake());
+                exportTakeIndex = __aData.GetTakeIndex(__aData.e_getCurrentTake());
             }
         }
     }

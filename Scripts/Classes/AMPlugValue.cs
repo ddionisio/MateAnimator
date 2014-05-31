@@ -10,7 +10,7 @@ public class AMPlugNoTween : ABSTweenPlugin {
 	protected override object endVal { get { return _endVal; } set { _endVal = value; } }
 	
 	public AMPlugNoTween(object val)
-        : base(val, false) { }
+        : base(val, false) { ignoreAccessor = true; }
 	
 	protected override float GetSpeedBasedDuration(float p_speed) {
 		return p_speed;

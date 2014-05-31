@@ -170,7 +170,7 @@ public abstract class AMTrack : MonoBehaviour {
 		sortKeys();
     }
 
-	public virtual void buildSequenceStart(AMITarget target, Sequence s, int frameRate) {
+	public virtual void buildSequenceStart(AMSequence sequence) {
     }
 
 	public virtual AnimatorTimeline.JSONInit getJSONInit(AMITarget target) {
