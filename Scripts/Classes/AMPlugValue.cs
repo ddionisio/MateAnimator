@@ -38,7 +38,7 @@ public class AMPlugAnimation : ABSTweenPlugin {
 
     protected override void DoUpdate(float p_totElapsed) {
         if(crossFade) {
-
+            Debug.Log("TODO " + crossFadeTime);
         }
         else {
             animState.enabled = true;

@@ -56,8 +56,6 @@ public class AMAnimationKey : AMKey {
     }
 
     public override void build(AMSequence seq, AMTrack track, UnityEngine.Object target) {
-        float max = seq.take.getLastFrame();
-
         int frameRate = seq.take.frameRate;
         float waitTime = getWaitTime(frameRate, 0.0f);
         Animation anim = (target as GameObject).animation;
