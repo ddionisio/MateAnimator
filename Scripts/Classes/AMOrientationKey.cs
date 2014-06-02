@@ -46,6 +46,7 @@ public class AMPlugOrientation : ABSTweenPlugin {
 
     protected override void SetIncremental(int p_diffIncr) {
     }
+    protected override void SetIncrementalRestart() { }
 
     protected override void DoUpdate(float p_totElapsed) {
         Transform t = tweenObj.target as Transform;

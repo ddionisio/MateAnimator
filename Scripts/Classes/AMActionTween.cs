@@ -65,6 +65,7 @@ public class AMActionTween : ABSTweenPlugin {
     protected override void SetChangeVal() { }
 
     protected override void SetIncremental(int p_diffIncr) { }
+    protected override void SetIncrementalRestart() { }
 
     protected override void DoUpdate(float p_totElapsed) {
         float t = mStartTime + p_totElapsed;

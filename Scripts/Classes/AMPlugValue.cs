@@ -35,6 +35,7 @@ public class AMPlugAnimation : ABSTweenPlugin {
     }
 
     protected override void SetIncremental(int p_diffIncr) { }
+    protected override void SetIncrementalRestart() { }
 
     protected override void DoUpdate(float p_totElapsed) {
         if(crossFade) {
@@ -124,6 +125,7 @@ public class AMPlugDouble : ABSTweenPlugin {
     protected override void SetIncremental(int p_diffIncr) {
         typedStartVal += changeVal * p_diffIncr;
     }
+    protected override void SetIncrementalRestart() { }
 
     protected override void DoUpdate(float p_totElapsed) {
         float t = ease(p_totElapsed, 0.0f, 1.0f, _duration, tweenObj.easeOvershootOrAmplitude, tweenObj.easePeriod);
@@ -201,6 +203,7 @@ public class AMPlugLong : ABSTweenPlugin {
     protected override void SetIncremental(int p_diffIncr) {
         typedStartVal += changeVal * p_diffIncr;
     }
+    protected override void SetIncrementalRestart() { }
 
     protected override void DoUpdate(float p_totElapsed) {
         float t = ease(p_totElapsed, 0.0f, 1.0f, _duration, tweenObj.easeOvershootOrAmplitude, tweenObj.easePeriod);

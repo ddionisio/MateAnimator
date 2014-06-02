@@ -235,6 +235,7 @@ public class AMPlugQuaternionSlerp : ABSTweenPlugin {
         for(int i = 0; i < p_diffIncr; i++)
             typedStartVal *= changeVal;
     }
+    protected override void SetIncrementalRestart() { }
 
     /// <summary>
     /// Updates the tween.
