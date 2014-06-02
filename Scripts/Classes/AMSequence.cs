@@ -112,7 +112,7 @@ public class AMSequence {
         }
 
         if(mActionTween != null)
-            mActionTween.ResetValueTrackIndices();
+            mActionTween.Reset();
     }
 
     /// <summary>

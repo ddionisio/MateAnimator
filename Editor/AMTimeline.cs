@@ -2962,7 +2962,7 @@ public class AMTimeline : EditorWindow {
                         if(action_endFrame > _track.keys[i + 1].getStartFrame()) action_endFrame = _track.keys[i + 1].getStartFrame();
                     }
                 }
-                else if((_track is AMAnimationTrack) && ((_track.keys[i] as AMAnimationKey).getNumberOfFrames(aData.e_getCurrentTake().frameRate)) > -1 && (_track.keys[i].getStartFrame() + (_track.keys[i] as AMAnimationKey).getNumberOfFrames(aData.e_getCurrentTake().frameRate) <= aData.e_getCurrentTake().numFrames)) {
+                else if((_track is AMAnimationTrack) && (_track.keys[i] as AMAnimationKey).wrapMode == WrapMode.Once && (_track.keys[i].getStartFrame() + (_track.keys[i] as AMAnimationKey).getNumberOfFrames(aData.e_getCurrentTake().frameRate) <= aData.e_getCurrentTake().numFrames)) {
                     // based on animation clip length
                     action_startFrame = _track.keys[i].getStartFrame();
                     action_endFrame = _track.keys[i].getStartFrame() + (_track.keys[i] as AMAnimationKey).getNumberOfFrames(aData.e_getCurrentTake().frameRate);
@@ -3321,10 +3321,8 @@ public class AMTimeline : EditorWindow {
             Rect rectObjectField = new Rect(rectLabelAnimClip.x + rectLabelAnimClip.width + 2f, rectLabelAnimClip.y + 3f, width_inspector - rectLabelAnimClip.width - margin, 16f);
             AnimationClip nclip = (AnimationClip)EditorGUI.ObjectField(rectObjectField, aKey.amClip, typeof(AnimationClip), false);
             if(aKey.amClip != nclip) {
-                recordUndoTrackAndKeys(sTrack, false, "Change Animation Clip");
+                Undo.RecordObject(aKey, "Change Animation Clip");
                 aKey.amClip = nclip;
-                // update cache when modifying varaibles
-                sTrack.updateCache(aData);
                 AMCodeView.refresh();
                 // preview new position
                 ctake.previewFrame(aData, ctake.selectedFrame);
@@ -3339,6 +3337,7 @@ public class AMTimeline : EditorWindow {
             WrapMode nwrapmode = indexToWrapMode(EditorGUI.Popup(rectPopupWrapMode, wrapModeToIndex(aKey.wrapMode), wrapModeNames));
             if(aKey.wrapMode != nwrapmode) {
                 Undo.RecordObject(aKey, "Wrap Mode");
+                aKey.wrapMode = nwrapmode;
                 AMCodeView.refresh();
                 // preview new position
                 ctake.previewFrame(aData, ctake.selectedFrame);
@@ -3352,6 +3351,7 @@ public class AMTimeline : EditorWindow {
             bool ncrossfade = EditorGUI.Toggle(rectToggleCrossfade, aKey.crossfade);
             if(aKey.crossfade != ncrossfade) {
                 Undo.RecordObject(aKey, "Cross Fade");
+                aKey.crossfade = ncrossfade;
                 AMCodeView.refresh();
                 // preview new position
                 ctake.previewFrame(aData, ctake.selectedFrame);
@@ -3365,6 +3365,7 @@ public class AMTimeline : EditorWindow {
             float ncrossfadet = EditorGUI.FloatField(rectFloatFieldCrossFade, aKey.crossfadeTime);
             if(aKey.crossfadeTime != ncrossfadet) {
                 Undo.RecordObject(aKey, "Cross Fade Time");
+                aKey.crossfadeTime = ncrossfadet;
                 AMCodeView.refresh();
                 // save data
                 EditorUtility.SetDirty(aKey);

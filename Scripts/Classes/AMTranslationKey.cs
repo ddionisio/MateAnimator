@@ -38,7 +38,9 @@ public class AMTranslationKey : AMKey {
     }
 
     public override int getNumberOfFrames() {
-        return endFrame - startFrame;
+        if(easeType == EaseTypeNone && (endFrame == -1 || endFrame == startFrame))
+            return 1;
+        return  endFrame - startFrame;
     }
 
     public float getTime(int frameRate) {
@@ -48,7 +50,8 @@ public class AMTranslationKey : AMKey {
     public override void build(AMSequence seq, AMTrack track, UnityEngine.Object obj) {
         int frameRate = seq.take.frameRate;
         if(easeType == EaseTypeNone) {
-            seq.Insert(this, HOTween.To(obj, endFrame == -1 || endFrame == startFrame ? 1.0f/(float)frameRate : getTime(frameRate), new TweenParms().Prop(isLocal ? "localPosition" : "position", new AMPlugNoTween(position))));
+            //TODO: world position
+            seq.Insert(new AMActionTransLocalPos(this, frameRate, obj as Transform, position));
         }
         else {
             if(path.Length <= 1) return;

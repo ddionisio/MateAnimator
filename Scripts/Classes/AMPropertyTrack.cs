@@ -72,7 +72,7 @@ public class AMPropertyTrack : AMTrack {
         return component ? component : targetGO.GetComponent(componentName);
     }
 
-	void RefreshData(Component comp) {
+	public void RefreshData(Component comp) {
         Type t = comp.GetType();
         if(!string.IsNullOrEmpty(propertyName)) {
             cachedPropertyInfo = t.GetProperty(propertyName);
@@ -87,11 +87,18 @@ public class AMPropertyTrack : AMTrack {
         if(cachedFieldInfo == null && cachedPropertyInfo == null)
             RefreshData(GetTargetComp(target));
 
-        if(cachedFieldInfo != null)
-            return cachedFieldInfo.FieldType;
-        else if(cachedPropertyInfo != null)
-            return cachedPropertyInfo.PropertyType;
-        return null;
+        return GetCachedInfoType();
+    }
+
+    /// <summary>
+    /// Assumes property info has been set
+    /// </summary>
+    /// <returns></returns>
+    public PropertyInfo GetCachedPropertyInfo() {
+        return cachedPropertyInfo;
+    }
+    public FieldInfo GetCachedFieldInfo() {
+        return cachedFieldInfo;
     }
     Type GetCachedInfoType() {
         if(cachedFieldInfo != null)

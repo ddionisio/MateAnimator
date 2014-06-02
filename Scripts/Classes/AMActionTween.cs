@@ -1,12 +1,16 @@
 ﻿using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
+using System.Reflection;
 
 using Holoville.HOTween;
 using Holoville.HOTween.Core;
 using Holoville.HOTween.Plugins.Core;
 
 public class AMActionTween : ABSTweenPlugin {
+    private const int trackValIndInit = -2;
+    private const int trackValIndStart = -1;
+
     private AMActionData[][] mValueTracks;
     private int[] mValueTrackCurIndices;
     private float mStartTime;
@@ -41,15 +45,16 @@ public class AMActionTween : ABSTweenPlugin {
             mDuration = maxEnd - mStartTime;
 
             mValueTrackCurIndices = new int[mValueTracks.Length];
-            for(int i = 0; i < mValueTracks.Length; i++)
-                mValueTrackCurIndices[i] = -1;
+            for(int i = 0; i < mValueTrackCurIndices.Length; i++)
+                mValueTrackCurIndices[i] = trackValIndInit;
         }
     }
 
-    public void ResetValueTrackIndices() {
+    public void Reset() {
         if(mValueTrackCurIndices != null) {
-            for(int i = 0; i < mValueTrackCurIndices.Length; i++)
-                mValueTrackCurIndices[i] = -1;
+            for(int i = 0; i < mValueTrackCurIndices.Length; i++) {
+                mValueTrackCurIndices[i] = trackValIndStart;
+            }
         }
     }
 
@@ -68,32 +73,44 @@ public class AMActionTween : ABSTweenPlugin {
             int curInd = mValueTrackCurIndices[i];
 
             //determine if we need to move
-            if(curInd == -1 || curInd >= mValueTracks[i].Length) {
+            if(curInd == trackValIndInit)
+                mValueTrackCurIndices[i] = trackValIndStart;
+            else if(curInd == trackValIndStart) {
                 int newInd = GetValueIndex(mValueTracks[i], t);
                 mValueTrackCurIndices[i] = newInd;
-                if(newInd >= 0 && newInd < mValueTracks[i].Length)
-                    mValueTracks[i][newInd].Apply();
+                AMActionData act = mValueTracks[i][newInd];
+                act.Apply(t - act.startTime);
             }
             else {
                 int newInd = GetNextValueTrackIndex(mValueTracks[i], curInd, t);
                 if(newInd != curInd) {
                     mValueTrackCurIndices[i] = newInd;
-                    if(newInd >= 0 && newInd < mValueTracks[i].Length)
-                        mValueTracks[i][newInd].Apply();
+                    AMActionData act = mValueTracks[i][newInd];
+                    act.Apply(t - act.startTime);
                 }
             }
         }
     }
 
+    /// <summary>
+    /// Returns index based on given time (clamped)
+    /// </summary>
     int GetValueIndex(AMActionData[] values, float curTime) {
-        for(int i = 0, max = values.Length; i < max; i++) {
+        if(values[0].startTime > curTime)
+            return 0;
+
+        int max = values.Length;
+        for(int i = 0; i < max; i++) {
             if(values[i].startTime <= curTime && curTime <= values[i].endTime) {
                 return i;
             }
         }
-        return -1;
+        return max-1;
     }
 
+    /// <summary>
+    /// Returns next index (clamped)
+    /// </summary>
     int GetNextValueTrackIndex(AMActionData[] values, int curInd, float curTime) {
         AMActionData val = values[curInd];
 
@@ -124,6 +141,9 @@ public class AMActionTween : ABSTweenPlugin {
             }
         }
 
+        if(retInd < 0) return 0;
+        else if(retInd >= values.Length) return values.Length - 1;
+
         return retInd;
     }
 
@@ -132,8 +152,8 @@ public class AMActionTween : ABSTweenPlugin {
 }
 
 public abstract class AMActionData {
-    private float mStartTime;
-    private float mEndTime;
+    protected float mStartTime;
+    protected float mEndTime;
 
     public float startTime { get { return mStartTime; } }
     public float endTime { get { return mEndTime; } }
@@ -148,7 +168,7 @@ public abstract class AMActionData {
         mEndTime = endTime;
     }
 
-    public abstract void Apply();
+    public abstract void Apply(float t);
 }
 
 public class AMActionGOActive : AMActionData {
@@ -167,7 +187,86 @@ public class AMActionGOActive : AMActionData {
         mVal = val;
     }
 
-    public override void Apply() {
+    public override void Apply(float t) {
         mGO.SetActive(mVal);
+    }
+}
+
+public class AMActionTransLocalPos : AMActionData {
+    private Transform mTrans;
+    private Vector3 mPos;
+
+    public AMActionTransLocalPos(AMKey key, int frameRate, Transform target, Vector3 pos)
+        : base(key, frameRate) {
+        mTrans = target;
+        mPos = pos;
+    }
+
+    public override void Apply(float t) {
+        mTrans.localPosition = mPos;
+    }
+}
+
+public class AMActionTransLocalRot : AMActionData {
+    private Transform mTrans;
+    private Quaternion mRot;
+
+    public AMActionTransLocalRot(AMKey key, int frameRate, Transform target, Quaternion rot)
+        : base(key, frameRate) {
+        mTrans = target;
+        mRot = rot;
+    }
+
+    public override void Apply(float t) {
+        mTrans.localRotation = mRot;
+    }
+}
+
+public class AMActionSpriteSet : AMActionData {
+    private SpriteRenderer mSpriteRender;
+    private Sprite mSprite;
+
+    public AMActionSpriteSet(AMKey key, int frameRate, SpriteRenderer target, Sprite spr)
+        : base(key, frameRate) {
+        mSpriteRender = target;
+        mSprite = spr;
+    }
+
+    public override void Apply(float t) {
+        mSpriteRender.sprite = mSprite;
+    }
+}
+
+public class AMActionPropertySet : AMActionData {
+    private object mObj;
+    private PropertyInfo mProp;
+    private object mVal;
+
+    public AMActionPropertySet(AMKey key, int frameRate, object target, PropertyInfo prop, object val) 
+    : base(key, frameRate) {
+        mObj = target;
+        mProp = prop;
+        mVal = val;
+    }
+
+    public override void Apply(float t) {
+        mProp.SetValue(mObj, mVal, null);
+    }
+}
+
+public class AMActionFieldSet : AMActionData {
+    private object mObj;
+    private FieldInfo mField;
+    private object mVal;
+
+    public AMActionFieldSet(AMKey key, int frameRate, object target, FieldInfo f, object val)
+        : base(key, frameRate) {
+        mObj = target;
+        mField = f;
+        mVal = val;
+    }
+
+    public override void Apply(float t) {
+        mField.SetValue(mObj, mVal);
     }
 }

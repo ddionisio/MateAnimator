@@ -56,6 +56,8 @@ public class AMRotationKey : AMKey {
 
     #region action
     public override int getNumberOfFrames() {
+        if(easeType == EaseTypeNone || (endFrame == -1 || endFrame == frame))
+            return 1;
         return endFrame - frame;
     }
     public float getTime(int frameRate) {
@@ -64,7 +66,7 @@ public class AMRotationKey : AMKey {
     public override void build(AMSequence seq, AMTrack track, UnityEngine.Object obj) {
         int frameRate = seq.take.frameRate;
 		if(easeType == EaseTypeNone) {
-            seq.Insert(this, HOTween.To(obj, endFrame == -1 || endFrame == frame ? 1.0f/(float)frameRate : getTime(frameRate), new TweenParms().Prop(isLocal ? "localRotation" : "rotation", new AMPlugNoTween(rotation))));
+            seq.Insert(new AMActionTransLocalRot(this, frameRate, obj as Transform, rotation));
 		}
 		else if(endFrame == -1) return;
         else if(hasCustomEase()) {

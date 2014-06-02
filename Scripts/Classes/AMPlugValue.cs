@@ -4,57 +4,54 @@ using UnityEngine;
 using Holoville.HOTween;
 using Holoville.HOTween.Plugins.Core;
 
-public class AMPlugNoTween : ABSTweenPlugin {
-	protected override object startVal { get { return _startVal; } set { _startVal = value; } }
-	
-	protected override object endVal { get { return _endVal; } set { _endVal = value; } }
-	
-	public AMPlugNoTween(object val)
-        : base(val, false) { ignoreAccessor = true; }
-	
-	protected override float GetSpeedBasedDuration(float p_speed) {
-		return p_speed;
-	}
+/// <summary>
+/// TODO: figure out using Play elegantly
+/// </summary>
+public class AMPlugAnimation : ABSTweenPlugin {
+    Animation anim;
+    AnimationState animState;
+    WrapMode wrap;
+    bool crossFade;
+    float crossFadeTime;
+
+    protected override object startVal { get { return _startVal; } set { _startVal = value; } }
+
+    protected override object endVal { get { return _endVal; } set { _endVal = value; } }
+
+    public AMPlugAnimation(Animation aAnim, string clipName, WrapMode aWrap, bool aCrossFade, float aCrossFadeTime) : base(null, false) {
+        ignoreAccessor = true;
+        anim = aAnim;
+        animState = anim[clipName];
+        wrap = aWrap;
+        crossFade = aCrossFade;
+        crossFadeTime = aCrossFadeTime;
+    }
+
+    protected override float GetSpeedBasedDuration(float p_speed) {
+        return p_speed;
+    }
 
     protected override void SetChangeVal() {
-        SetValue(_endVal);
     }
-	
-	protected override void SetIncremental(int p_diffIncr) {}
 
-	protected override void DoUpdate(float p_totElapsed) {
-        SetValue(_endVal);
-	}
-}
+    protected override void SetIncremental(int p_diffIncr) { }
 
-public class AMPlugSprite : ABSTweenPlugin {
+    protected override void DoUpdate(float p_totElapsed) {
+        if(crossFade) {
 
-	private SpriteRenderer mRender;
-	private Sprite mSprite;
-
-	protected override object startVal { get { return _startVal; } set { _startVal = value; } }
-	
-	protected override object endVal { get { return _endVal; } set { _endVal = value; } }
-	
-	public AMPlugSprite(SpriteRenderer renderer, Sprite val)
-        : base(null, false) { mRender = renderer; mSprite = val; ignoreAccessor = true; }
-	
-	protected override float GetSpeedBasedDuration(float p_speed) {
-		return p_speed;
-	}
-	
-	protected override void SetChangeVal() {
-        mRender.sprite = mSprite;
+        }
+        else {
+            animState.enabled = true;
+            animState.wrapMode = wrap;
+            animState.time = p_totElapsed;
+            animState.weight = 1.0f;
+            anim.Sample();
+            animState.enabled = false;
+        }
     }
-	
-	protected override void SetIncremental(int p_diffIncr) {}
-	
-	protected override void DoUpdate(float p_totElapsed) {
-		mRender.sprite = mSprite;
-	}
 
-	protected override void SetValue(object p_value) { }
-	protected override object GetValue() { return mSprite; }
+    protected override void SetValue(object p_value) { }
+    protected override object GetValue() { return null; }
 }
 
 public class AMPlugDouble : ABSTweenPlugin {

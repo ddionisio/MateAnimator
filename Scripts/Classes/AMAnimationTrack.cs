@@ -53,10 +53,7 @@ public class AMAnimationTrack : AMTrack {
             if(keys[i].frame <= frame) {
 
                 AnimationClip amClip = (keys[i] as AMAnimationKey).amClip;
-                if(!amClip) {
-                    // do nothing
-                }
-                else {
+                if(amClip) {
                     amClip.wrapMode = (keys[i] as AMAnimationKey).wrapMode;
 					go.SampleAnimation(amClip, getTime(frameRate, frame - keys[i].frame));
                 }
