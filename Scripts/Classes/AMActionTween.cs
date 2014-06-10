@@ -271,3 +271,25 @@ public class AMActionFieldSet : AMActionData {
         mField.SetValue(mObj, mVal);
     }
 }
+
+public class AMActionAudioPlay : AMActionData {
+    private AudioSource mSrc;
+    private AudioClip mClip;
+    private bool mLoop;
+
+    public AMActionAudioPlay(AMKey key, int frameRate, AudioSource src, AudioClip clip, bool loop)
+        : base(key, frameRate) {
+        mSrc = src;
+        mClip = clip;
+        mLoop = loop;
+    }
+
+    public override void Apply(float t) {
+        if(mSrc.isPlaying && mSrc.loop && mSrc.clip == mClip) return;
+
+        mSrc.loop = mLoop;
+        mSrc.clip = mClip;
+        //mSrc.time = t;
+        mSrc.Play();
+    }
+}
