@@ -23,10 +23,10 @@ public class AMAnimationKey : AMKey {
     }
 
     // get number of frames, -1 is infinite
-    public int getNumberOfFrames(int frameRate) {
+    public override int getNumberOfFrames(int frameRate) {
         if(!amClip) return -1;
         //if(wrapMode != WrapMode.Once) return -1;
-        return Mathf.CeilToInt(amClip.length * frameRate);
+        return Mathf.CeilToInt(amClip.length * (float)frameRate);
     }
 
     #region action
@@ -55,19 +55,29 @@ public class AMAnimationKey : AMKey {
         }
     }
 
-    public override void build(AMSequence seq, AMTrack track, UnityEngine.Object target) {
+    public override void build(AMSequence seq, AMTrack track, int index, UnityEngine.Object target) {
         int frameRate = seq.take.frameRate;
         float waitTime = getWaitTime(frameRate, 0.0f);
         Animation anim = (target as GameObject).animation;
-        if(wrapMode == WrapMode.Once) {
-            //HOTween.To(tweenTarget, getTime(frameRate), new TweenParms().Prop(tweenProp, new PlugVector3Path(path, false, PathType.Linear)).Ease(easeCurve));
-            seq.sequence.Insert(waitTime, HOTween.To(target, amClip.length, new TweenParms().Prop("animation", new AMPlugAnimation(anim, amClip.name, wrapMode, crossfade, crossfadeTime))));
+
+        float duration = wrapMode == WrapMode.Once ? amClip.length : seq.take.getLastFrame()/(float)frameRate;
+
+        Holoville.HOTween.Plugins.Core.ABSTweenPlugin plug;
+
+        if(crossfade) {
+            if(index > 0) {
+                AMAnimationKey prevKey = track.keys[index - 1] as AMAnimationKey;
+                plug = new AMPlugAnimationCrossFade(anim, crossfadeTime, prevKey.amClip.name, prevKey.wrapMode, prevKey.getWaitTime(frameRate, 0.0f), amClip.name, wrapMode, waitTime);
+            }
+            else
+                plug = new AMPlugAnimation(anim, amClip.name, wrapMode, true, crossfadeTime);
         }
-        else {
-            float endFrame = seq.take.getLastFrame();
-            float duration = endFrame/(float)frameRate;
-            seq.sequence.Insert(waitTime, HOTween.To(target, duration, new TweenParms().Prop("animation", new AMPlugAnimation(anim, amClip.name, wrapMode, crossfade, crossfadeTime))));
-        }
+        else
+            plug = new AMPlugAnimation(anim, amClip.name, wrapMode, false, 0.0f);
+
+        seq.sequence.Insert(waitTime, HOTween.To(target, duration, new TweenParms().Prop("animation", plug)));
+
+
         //seq.Insert(new AMActionAnimation(this, seq.take.frameRate, (target as GameObject).animation));
         //seq.sequence.InsertCallback(getWaitTime(seq.take.frameRate, 0.0f), OnMethodCallbackParams, (target as GameObject).animation, (float)seq.take.frameRate);
     }

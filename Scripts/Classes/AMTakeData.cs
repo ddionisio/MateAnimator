@@ -11,11 +11,6 @@ using Holoville.HOTween;
 public class AMTakeData {
 	public delegate void OnSequenceDone(AMTakeData take);
 
-    public struct Range {
-        public int first;
-        public int last;
-    }
-
 	#region Declarations
 	public string name;					// take name
 	public int frameRate = 24;				// frames per second
@@ -595,13 +590,13 @@ public class AMTakeData {
 		if(orientationOnly) {
 			foreach(AMTrack track in trackValues) {
 				if(track is AMOrientationTrack || track is AMRotationTrack)
-					track.previewFrame(itarget, _frame);
+					track.previewFrame(itarget, _frame, frameRate);
 			}
 		}
 		else {
 			foreach(AMTrack track in trackValues) {
 				if(track is AMAnimationTrack) (track as AMAnimationTrack).previewFrame(itarget, _frame, frameRate);
-				else track.previewFrame(itarget, _frame);
+				else track.previewFrame(itarget, _frame, frameRate);
 			}
 		}
 	}
@@ -618,7 +613,7 @@ public class AMTakeData {
         foreach(AMTrack track in trackValues) {
             if(track.keys.Count > 0 && (float)track.keys[0].getStartFrame() > _frame) {
                 if(track is AMAnimationTrack) (track as AMAnimationTrack).previewFrame(itarget, _frame, frameRate);
-                else track.previewFrame(itarget, _frame);
+                else track.previewFrame(itarget, _frame, frameRate);
             }
         }
     }
@@ -770,34 +765,13 @@ public class AMTakeData {
 		return false;
 	}
 
-    public Range getFrameRange() {
-        int numTrackWithKeys = 0;
-        Range rng = new Range() { first=int.MaxValue, last=0 };
-        foreach(AMTrack track in trackValues) {
-            if(track.keys.Count > 0) {
-                AMKey key = track.keys[track.keys.Count - 1];
-                if(key.frame > rng.last)
-                    rng.last = key.frame;
-
-                key = track.keys[0];
-                if(key.frame < rng.first)
-                    rng.first = key.frame;
-                numTrackWithKeys++;
-            }
-        }
-        if(numTrackWithKeys == 0) { rng.first = rng.last = 1; }
-        return rng;
-    }
-
     // returns the highest frame value of the last key
     public int getLastFrame() {
         int frame = 0;
         foreach(AMTrack track in trackValues) {
-            if(track.keys.Count > 0) {
-                AMKey key = track.keys[track.keys.Count - 1];
-                if(key.frame > frame)
-                    frame = key.frame;
-            }
+            int trackLastFrame = track.getLastFrame(frameRate);
+            if(trackLastFrame > frame)
+                frame = trackLastFrame;
         }
         return frame;
     }
@@ -824,13 +798,13 @@ public class AMTakeData {
 		foreach(AMTrack track in trackValues) {
 			// for each track, if rotation or translation then autokey
 			if(track is AMTranslationTrack) {
-                if((track as AMTranslationTrack).autoKey(itarget, addCall, obj, frame)) {
+                if((track as AMTranslationTrack).autoKey(itarget, addCall, obj, frame, frameRate)) {
 					if(!didKey) didKey = true;
 					//track.updateCache();
 				}
 			}
 			else if(track is AMRotationTrack) {
-                if((track as AMRotationTrack).autoKey(itarget, addCall, obj, frame)) {
+                if((track as AMRotationTrack).autoKey(itarget, addCall, obj, frame, frameRate)) {
 					if(!didKey) didKey = true;
 				}
 			}
@@ -873,8 +847,8 @@ public class AMTakeData {
 		foreach(AMTrack track in trackValues) {
 			if(track is AMAnimationTrack) continue;
 			if(track is AMOrientationTrack) 
-				track.previewFrame(itarget, 1f, getTranslationTrackForTransform(itarget, (track as AMOrientationTrack).getTargetForFrame(itarget, 1f)));
-			else track.previewFrame(itarget, 1f);
+				track.previewFrame(itarget, 1f, frameRate, getTranslationTrackForTransform(itarget, (track as AMOrientationTrack).getTargetForFrame(itarget, 1f)));
+			else track.previewFrame(itarget, 1f, frameRate);
 		}
 	}
 	

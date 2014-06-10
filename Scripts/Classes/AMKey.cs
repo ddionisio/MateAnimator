@@ -46,9 +46,9 @@ public class AMKey : MonoBehaviour {
 
     /// <summary>
     /// Use sequence to insert callbacks, or some other crap, just don't insert the tweener you are returning!
-	/// target is set if required.
+	/// target is set if required. index = this key's index in the track
     /// </summary>
-    public virtual void build(AMSequence seq, AMTrack track, UnityEngine.Object target) {
+    public virtual void build(AMSequence seq, AMTrack track, int index, UnityEngine.Object target) {
         Debug.LogError("Animator: No override for build.");
     }
 
@@ -60,8 +60,12 @@ public class AMKey : MonoBehaviour {
         return frame;
     }
 
-    public virtual int getNumberOfFrames() {
-        return 1;
+    public virtual int getNumberOfFrames(int frameRate) {
+        return 0;
+    }
+
+    public float getTime(int frameRate) {
+        return (float)getNumberOfFrames(frameRate) / (float)frameRate;
     }
 
     public virtual AnimatorTimeline.JSONAction getJSONAction(int frameRate) {

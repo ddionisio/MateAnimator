@@ -155,13 +155,10 @@ public class AMPropertyKey : AMKey {
 	}*/
 
     #region action
-    public override int getNumberOfFrames() {
+    public override int getNumberOfFrames(int frameRate) {
         if(easeType == EaseTypeNone && (endFrame == -1 || endFrame == frame))
             return 1;
         return endFrame - frame;
-    }
-    public float getTime(int frameRate) {
-        return (float)getNumberOfFrames() / (float)frameRate;
     }
 
     AMActionData GenerateActionData(AMPropertyTrack propTrack, int frameRate, Component comp, object obj) {
@@ -178,7 +175,7 @@ public class AMPropertyKey : AMKey {
         return null;
     }
 
-    public override void build(AMSequence seq, AMTrack track, UnityEngine.Object target) {
+    public override void build(AMSequence seq, AMTrack track, int index, UnityEngine.Object target) {
         AMPropertyTrack propTrack = track as AMPropertyTrack;
 
         if(endFrame == -1 && easeType != EaseTypeNone && propTrack.canTween) return;

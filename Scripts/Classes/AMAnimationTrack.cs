@@ -45,28 +45,40 @@ public class AMAnimationTrack : AMTrack {
 		updateCache(itarget);
     }
     // preview a frame in the scene view
-	public void previewFrame(AMITarget target, float frame, float frameRate) {
+    public override void previewFrame(AMITarget target, float frame, int frameRate, AMTrack extraTrack = null) {
 		GameObject go = GetTarget(target) as GameObject;
-		if(!go) return;
-        bool found = false;
+		if(!go || keys.Count == 0) return;
+
+        if(frame < keys[0].frame) {
+            AMAnimationKey amKey = keys[0] as AMAnimationKey;
+            if(amKey.amClip)
+                AMUtil.SampleAnimation(go.animation, amKey.amClip.name, amKey.wrapMode, amKey.crossfade ? 0.0f : 1.0f, 0.0f);
+            return;
+        }
+
         for(int i = keys.Count - 1; i >= 0; i--) {
             if(keys[i].frame <= frame) {
+                AMAnimationKey amKey = keys[i] as AMAnimationKey;
+                if(amKey.amClip) {
+                    float t = (frame - (float)amKey.frame) / (float)frameRate;
 
-                AnimationClip amClip = (keys[i] as AMAnimationKey).amClip;
-                if(amClip) {
-                    amClip.wrapMode = (keys[i] as AMAnimationKey).wrapMode;
-					go.SampleAnimation(amClip, getTime(frameRate, frame - keys[i].frame));
+                    if(amKey.crossfade) {
+                        if(i > 0) {
+                            AMAnimationKey amPrevKey = keys[i - 1] as AMAnimationKey;
+                            if(amPrevKey.amClip) {
+                                float prevT = (frame - (float)amPrevKey.frame) / (float)frameRate;
+                                AMUtil.SampleAnimationCrossFade(go.animation, amKey.crossfadeTime, amPrevKey.amClip.name, amPrevKey.wrapMode, prevT, amKey.amClip.name, amKey.wrapMode, t);
+                            }
+                        }
+                        else
+                            AMUtil.SampleAnimationFadeIn(go.animation, amKey.amClip.name, amKey.wrapMode, amKey.crossfadeTime, t);
+                    }
+                    else
+                        AMUtil.SampleAnimation(go.animation, amKey.amClip.name, amKey.wrapMode, 1.0f, t);
                 }
-                found = true;
                 break;
             }
-
         }
-        // sample default animation if not found
-		if(!found && go.animation.clip) go.SampleAnimation(go.animation.clip, 0f);
-    }
-    public float getTime(float frameRate, float numberOfFrames) {
-        return (float)numberOfFrames / (float)frameRate;
     }
 
 	public override AnimatorTimeline.JSONInit getJSONInit(AMITarget target) {

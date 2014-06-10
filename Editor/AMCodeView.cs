@@ -410,7 +410,7 @@ public class AMCodeView : EditorWindow {
             if((_track as AMOrientationTrack).keys.Count > 0) start_frame = (_track as AMOrientationTrack).keys[0].frame;
 			if(start_frame > 0) _translation_track = aData.e_getCurrentTake().getTranslationTrackForTransform(aData, _target);
             Vector3 _lookv3 = _target.transform.position;
-			if(_translation_track) _lookv3 = (_translation_track as AMTranslationTrack).getPositionAtFrame((_translation_track as AMTranslationTrack).GetTarget(aData) as Transform, start_frame, false);
+            if(_translation_track) _lookv3 = (_translation_track as AMTranslationTrack).getPositionAtFrame((_translation_track as AMTranslationTrack).GetTarget(aData) as Transform, start_frame, aData.e_getCurrentTake().frameRate, false);
 
             if(codeLanguage == 0) return varName + ".transform.LookAt (new Vector3(" + _lookv3.x + "f, " + _lookv3.y + "f, " + _lookv3.z + "f)); // Set Initial Orientation\n";
             else return varName + ".transform.LookAt (Vector3(" + _lookv3.x + ", " + _lookv3.y + ", " + _lookv3.z + ")); // Set Initial Orientation\n";

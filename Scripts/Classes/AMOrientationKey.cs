@@ -192,12 +192,10 @@ public class AMOrientationKey : AMKey {
         a.customEase = new List<float>(customEase);
     }
 
-	public override int getNumberOfFrames() {
-		return endFrame - frame;
-	}
-	
-	public float getTime(int frameRate) {
-		return (float)getNumberOfFrames() / (float)frameRate;
+	public override int getNumberOfFrames(int frameRate) {
+        if(easeType == EaseTypeNone && (endFrame == -1 || endFrame == frame))
+            return 1;
+        return endFrame - frame;
 	}
 	
 	public bool isLookFollow(AMITarget itarget) {
@@ -230,11 +228,11 @@ public class AMOrientationKey : AMKey {
 	}
 
     #region action
-    public override void build(AMSequence seq, AMTrack track, UnityEngine.Object obj) {
+    public override void build(AMSequence seq, AMTrack track, int index, UnityEngine.Object obj) {
         if(!obj) return;
         int frameRate = seq.take.frameRate;
 		if(easeType == EaseTypeNone) {
-            seq.Insert(this, HOTween.To(obj, endFrame == -1 || endFrame == frame ? 1.0f/(float)frameRate : getTime(frameRate), new TweenParms().Prop("rotation", new AMPlugOrientation(GetTarget(seq.target), null))));
+            seq.Insert(this, HOTween.To(obj, getTime(frameRate), new TweenParms().Prop("rotation", new AMPlugOrientation(GetTarget(seq.target), null))));
 		}
         if(endFrame == -1) return;
         Transform tgt = GetTarget(seq.target), tgte = GetTargetEnd(seq.target);

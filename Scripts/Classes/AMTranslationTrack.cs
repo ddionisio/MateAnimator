@@ -135,7 +135,7 @@ public class AMTranslationTrack : AMTrack {
     }
 
     // preview a frame in the scene view
-	public override void previewFrame(AMITarget itarget, float frame, AMTrack extraTrack = null) {
+    public override void previewFrame(AMITarget itarget, float frame, int frameRate, AMTrack extraTrack = null) {
 		Transform t = GetTarget(itarget) as Transform;
         if(!t) return;
         if(keys == null || keys.Count <= 0) return;
@@ -170,11 +170,11 @@ public class AMTranslationTrack : AMTrack {
             if(framePositionInPath < 0f) framePositionInPath = 0f;
 
             if(key.hasCustomEase()) {
-                _value = AMUtil.EaseCustom(0.0f, 1.0f, framePositionInPath / key.getNumberOfFrames(), key.easeCurve);
+                _value = AMUtil.EaseCustom(0.0f, 1.0f, framePositionInPath / key.getNumberOfFrames(frameRate), key.easeCurve);
             }
             else {
                 TweenDelegate.EaseFunc ease = AMUtil.GetEasingFunction((EaseType)key.easeType);
-                _value = ease(framePositionInPath, 0.0f, 1.0f, key.getNumberOfFrames(), key.amplitude, key.period);
+                _value = ease(framePositionInPath, 0.0f, 1.0f, key.getNumberOfFrames(frameRate), key.amplitude, key.period);
                 if(float.IsNaN(_value)) { //this really shouldn't happen...
                     return;
                 }
@@ -186,7 +186,7 @@ public class AMTranslationTrack : AMTrack {
 
     }
     // returns true if autoKey successful
-    public bool autoKey(AMITarget itarget, OnAddKey addCall, Transform aobj, int frame) {
+    public bool autoKey(AMITarget itarget, OnAddKey addCall, Transform aobj, int frame, int frameRate) {
 		Transform t = GetTarget(itarget) as Transform;
         if(!t || aobj != t) { return false; }
 
@@ -198,7 +198,7 @@ public class AMTranslationTrack : AMTrack {
             }
             return false;
         }
-        Vector3 oldPos = getPositionAtFrame(t, (float)frame, false);
+        Vector3 oldPos = getPositionAtFrame(t, frame, frameRate, false);
 		if(GetPosition(t) != oldPos) {
             // if updated position, addkey
 			addKey(itarget, addCall, frame, GetPosition(t));
@@ -207,17 +207,17 @@ public class AMTranslationTrack : AMTrack {
 
         return false;
     }
-	public Vector3 getPositionAtFrame(Transform t, float frame, bool forceWorld) {
+	public Vector3 getPositionAtFrame(Transform t, int frame, int frameRate, bool forceWorld) {
         Vector3 ret = Vector3.zero;
 
         if(keys.Count <= 0) ret = GetPosition(t);
         // if before first frame
-        else if(frame <= (float)(keys[0] as AMTranslationKey).startFrame) {
+        else if(frame <= (keys[0] as AMTranslationKey).startFrame) {
             AMTranslationKey key = keys[0] as AMTranslationKey;
             ret = key.easeType == AMKey.EaseTypeNone || key.path.Length == 0 ? key.position : key.path[0];
         }
         // if beyond last frame
-        else if(frame >= (float)(keys[keys.Count - 1] as AMTranslationKey).endFrame) {
+        else if(frame >= (keys[keys.Count - 1] as AMTranslationKey).endFrame) {
             AMTranslationKey key = keys[keys.Count - 1] as AMTranslationKey;
 			ret = key.easeType == AMKey.EaseTypeNone || key.path.Length == 0 ? key.position : key.path[key.path.Length - 1];
         }
@@ -225,8 +225,8 @@ public class AMTranslationTrack : AMTrack {
             bool retFound = false;
             // if lies on curve
             foreach(AMTranslationKey key in keys) {
-                if(((int)frame < key.startFrame) || ((int)frame > key.endFrame)) continue;
-				if(key.easeType == AMKey.EaseTypeNone && (int)frame < key.endFrame) {
+                if(frame < key.startFrame || frame > key.endFrame) continue;
+				if(key.easeType == AMKey.EaseTypeNone && frame < key.endFrame) {
 					ret = key.position;
 					retFound = true;
 					break;
@@ -240,18 +240,18 @@ public class AMTranslationTrack : AMTrack {
                     break;
                 }
 
-                float framePositionInPath = frame - (float)key.startFrame;
-                if(framePositionInPath < 0f) framePositionInPath = 0f;
+                int framePositionInPath = frame - key.startFrame;
+                if(framePositionInPath < 0) framePositionInPath = 0;
 
                 // ease
                 if(key.hasCustomEase()) {
-                    ret = AMUtil.PointOnPath(key.path, Mathf.Clamp(AMUtil.EaseCustom(0.0f, 1.0f, framePositionInPath / key.getNumberOfFrames(), key.easeCurve), 0.0f, 1.0f));
+                    ret = AMUtil.PointOnPath(key.path, Mathf.Clamp(AMUtil.EaseCustom(0.0f, 1.0f, (float)framePositionInPath / (float)key.getNumberOfFrames(frameRate), key.easeCurve), 0.0f, 1.0f));
                     retFound = true;
                     break;
                 }
                 else {
                     TweenDelegate.EaseFunc ease = AMUtil.GetEasingFunction((EaseType)key.easeType);
-                    ret = AMUtil.PointOnPath(key.path, Mathf.Clamp(ease(framePositionInPath, 0.0f, 1.0f, key.getNumberOfFrames(), key.amplitude, key.period), 0.0f, 1.0f));
+                    ret = AMUtil.PointOnPath(key.path, Mathf.Clamp(ease(framePositionInPath, 0.0f, 1.0f, key.getNumberOfFrames(frameRate), key.amplitude, key.period), 0.0f, 1.0f));
                     retFound = true;
                     break;
                 }

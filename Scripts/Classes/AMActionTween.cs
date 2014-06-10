@@ -161,7 +161,7 @@ public abstract class AMActionData {
 
     public AMActionData(AMKey key, int frameRate) {
         mStartTime = key.getWaitTime(frameRate, 0.0f);
-        mEndTime = mStartTime + ((float)key.getNumberOfFrames())/((float)frameRate);
+        mEndTime = mStartTime + ((float)key.getNumberOfFrames(frameRate))/((float)frameRate);
     }
 
     public AMActionData(float startTime, float endTime) {

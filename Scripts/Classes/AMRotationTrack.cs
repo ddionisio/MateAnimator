@@ -136,7 +136,7 @@ public class AMRotationTrack : AMTrack {
         }
     }
     // preview a frame in the scene view
-	public override void previewFrame(AMITarget target, float frame, AMTrack extraTrack = null) {
+    public override void previewFrame(AMITarget target, float frame, int frameRate, AMTrack extraTrack = null) {
 		Transform t = GetTarget(target) as Transform;
 
         if(!t) return;
@@ -173,18 +173,18 @@ public class AMRotationTrack : AMTrack {
             Quaternion qEnd = key.getEndQuaternion();
 
             if(key.hasCustomEase()) {
-				SetRotation(t, Quaternion.Slerp(qStart, qEnd, AMUtil.EaseCustom(0.0f, 1.0f, framePositionInAction / key.getNumberOfFrames(), key.easeCurve)));
+                SetRotation(t, Quaternion.Slerp(qStart, qEnd, AMUtil.EaseCustom(0.0f, 1.0f, framePositionInAction / key.getNumberOfFrames(frameRate), key.easeCurve)));
             }
             else {
                 TweenDelegate.EaseFunc ease = AMUtil.GetEasingFunction((EaseType)key.easeType);
-				SetRotation(t, Quaternion.Slerp(qStart, qEnd, ease(framePositionInAction, 0.0f, 1.0f, key.getNumberOfFrames(), key.amplitude, key.period)));
+                SetRotation(t, Quaternion.Slerp(qStart, qEnd, ease(framePositionInAction, 0.0f, 1.0f, key.getNumberOfFrames(frameRate), key.amplitude, key.period)));
             }
 
             return;
         }
     }
     // returns true if autoKey successful, sets output key
-    public bool autoKey(AMITarget itarget, OnAddKey addCall, Transform aObj, int frame) {
+    public bool autoKey(AMITarget itarget, OnAddKey addCall, Transform aObj, int frame, int frameRate) {
 		Transform t = GetTarget(itarget) as Transform;
         if(!t || t != aObj) { return false; }
 		Quaternion r = GetRotation(t);
@@ -197,7 +197,7 @@ public class AMRotationTrack : AMTrack {
 
             return false;
         }
-        Quaternion oldRot = getRotationAtFrame((float)frame);
+        Quaternion oldRot = getRotationAtFrame(frame, frameRate);
         if(r != oldRot) {
             // if updated position, addkey
             addKey(itarget, addCall, frame, r);
@@ -206,26 +206,26 @@ public class AMRotationTrack : AMTrack {
 
         return false;
     }
-    public Quaternion getRotationAtFrame(float frame) {
+    public Quaternion getRotationAtFrame(int frame, int frameRate) {
         // if before or equal to first frame, or is the only frame
-        if((frame <= (float)keys[0].frame) || ((keys[0] as AMRotationKey).endFrame == -1)) {
+        if((frame <= keys[0].frame) || ((keys[0] as AMRotationKey).endFrame == -1)) {
             //rotation = (cache[0] as AMRotationAction).getStartQuaternion();
             return (keys[0] as AMRotationKey).getStartQuaternion();
         }
         // if beyond or equal to last frame
-        if(frame >= (float)(keys[keys.Count - 2] as AMRotationKey).endFrame) {
+        if(frame >= (keys[keys.Count - 2] as AMRotationKey).endFrame) {
             //rotation = (cache[cache.Count-2] as AMRotationAction).getEndQuaternion();
             return (keys[keys.Count - 2] as AMRotationKey).getEndQuaternion();
         }
         // if lies on rotation action
         foreach(AMRotationKey key in keys) {
-            if((frame < (float)key.frame) || (frame > (float)key.endFrame)) continue;
+            if((frame < key.frame) || (frame > key.endFrame)) continue;
             // if on startFrame or no ease
-			if(frame == (float)key.frame || (key.easeType == AMKey.EaseTypeNone && frame < (float)key.endFrame)) {
+			if(frame == key.frame || (key.easeType == AMKey.EaseTypeNone && frame < key.endFrame)) {
                 return key.getStartQuaternion();
             }
             // if on endFrame
-            if(frame == (float)key.endFrame) {
+            if(frame == key.endFrame) {
                 return key.getEndQuaternion();
             }
             // else find Quaternion using easing function
@@ -233,15 +233,15 @@ public class AMRotationTrack : AMTrack {
             Quaternion qStart = key.getStartQuaternion();
             Quaternion qEnd = key.getEndQuaternion();
 
-            float framePositionInAction = frame - (float)key.frame;
-            if(framePositionInAction < 0f) framePositionInAction = 0f;
+            int framePositionInAction = frame - key.frame;
+            if(framePositionInAction < 0f) framePositionInAction = 0;
 
             if(key.hasCustomEase()) {
-                return Quaternion.Slerp(qStart, qEnd, AMUtil.EaseCustom(0.0f, 1.0f, framePositionInAction / key.getNumberOfFrames(), key.easeCurve));
+                return Quaternion.Slerp(qStart, qEnd, AMUtil.EaseCustom(0.0f, 1.0f, (float)framePositionInAction / (float)key.getNumberOfFrames(frameRate), key.easeCurve));
             }
             else {
                 TweenDelegate.EaseFunc ease = AMUtil.GetEasingFunction((EaseType)key.easeType);
-                return Quaternion.Slerp(qStart, qEnd, ease(framePositionInAction, 0.0f, 1.0f, key.getNumberOfFrames(), 0.0f, 0.0f));
+                return Quaternion.Slerp(qStart, qEnd, ease(framePositionInAction, 0.0f, 1.0f, key.getNumberOfFrames(frameRate), 0.0f, 0.0f));
             }
         }
         Debug.LogError("Animator: Could not get rotation at frame '" + frame + "'");

@@ -389,8 +389,8 @@ public class AMPropertyTrack : AMTrack {
         }
 
     }
-    
-    public override void previewFrame(AMITarget target, float frame, AMTrack extraTrack = null) {
+
+    public override void previewFrame(AMITarget target, float frame, int frameRate, AMTrack extraTrack = null) {
         if(keys == null || keys.Count <= 0) {
             return;
         }
@@ -454,11 +454,11 @@ public class AMPropertyTrack : AMTrack {
             if(key.easeType == AMKey.EaseTypeNone)
                 t = 0.0f;
             else if(key.hasCustomEase()) {
-                t = AMUtil.EaseCustom(0.0f, 1.0f, framePositionInAction / key.getNumberOfFrames(), key.easeCurve);
+                t = AMUtil.EaseCustom(0.0f, 1.0f, framePositionInAction / key.getNumberOfFrames(frameRate), key.easeCurve);
             }
             else {
                 TweenDelegate.EaseFunc ease = AMUtil.GetEasingFunction((EaseType)key.easeType);
-                t = ease(framePositionInAction, 0.0f, 1.0f, key.getNumberOfFrames(), key.amplitude, key.period);
+                t = ease(framePositionInAction, 0.0f, 1.0f, key.getNumberOfFrames(frameRate), key.amplitude, key.period);
             }
 
             //qCurrent.x = ease(qStart.x,qEnd.x,percentage);

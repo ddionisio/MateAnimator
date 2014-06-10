@@ -72,7 +72,7 @@ public class AMOrientationTrack : AMTrack {
 		return (keys[0] as AMOrientationKey).GetTarget(itarget);
     }
 
-	public override void previewFrame(AMITarget itarget, float frame, AMTrack extraTrack = null) {
+    public override void previewFrame(AMITarget itarget, float frame, int frameRate, AMTrack extraTrack = null) {
 		Transform t = GetTarget(itarget) as Transform;
 
         if(keys == null || keys.Count <= 0) {
@@ -97,7 +97,7 @@ public class AMOrientationTrack : AMTrack {
 				if(!keyt || !keyet) return;
                 float framePositionInPath = frame - (float)keys[i].frame;
                 if(framePositionInPath < 0f) framePositionInPath = 0f;
-                float percentage = framePositionInPath / keys[i].getNumberOfFrames();
+                float percentage = framePositionInPath / keys[i].getNumberOfFrames(frameRate);
 				t.rotation = key.getQuaternionAtPercent(itarget, t, percentage);
                 return;
                 // after last frame
@@ -188,7 +188,7 @@ public class AMOrientationTrack : AMTrack {
         AMTrack _translation_track = null;
         //if(start_frame > 0) _translation_track = parentTake.getTranslationTrackForTransform(_target);
         Vector3 _lookv3 = _target.transform.position;
-		if(_translation_track) _lookv3 = (_translation_track as AMTranslationTrack).getPositionAtFrame((_translation_track as AMTranslationTrack).GetTarget(target) as Transform, start_frame, true);
+		if(_translation_track) _lookv3 = (_translation_track as AMTranslationTrack).getPositionAtFrame((_translation_track as AMTranslationTrack).GetTarget(target) as Transform, start_frame, 0, true);
         AnimatorTimeline.JSONVector3 v = new AnimatorTimeline.JSONVector3();
         v.setValue(_lookv3);
         init.position = v;

@@ -48,17 +48,17 @@ public class AMAudioKey : AMKey {
         }
     }
 
-    public override void build(AMSequence seq, AMTrack track, UnityEngine.Object target) {
+    public override void build(AMSequence seq, AMTrack track, int index, UnityEngine.Object target) {
         seq.sequence.InsertCallback(getWaitTime(seq.take.frameRate, 0.0f), OnMethodCallbackParams, target, (float)seq.take.frameRate);
     }
 
     public ulong getTimeInSamples(int frequency, float time) {
         return (ulong)((44100 / frequency) * frequency * time);
     }
-    public int getNumberOfFrames(int frameRate) {
+    public override int getNumberOfFrames(int frameRate) {
         if(!audioClip) return -1;
         if(loop) return -1;
-        return Mathf.CeilToInt(audioClip.length * frameRate);
+        return Mathf.CeilToInt(audioClip.length * (float)frameRate);
     }
     #endregion
 }

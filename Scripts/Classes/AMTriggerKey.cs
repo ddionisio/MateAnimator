@@ -30,7 +30,7 @@ public class AMTriggerKey : AMKey {
 
     #region action
 
-    public override void build(AMSequence seq, AMTrack track, UnityEngine.Object obj) {
+    public override void build(AMSequence seq, AMTrack track, int index, UnityEngine.Object obj) {
         seq.sequence.InsertCallback(getWaitTime(seq.take.frameRate, 0.0f), seq.triggerCallback,
             this,
             new AMTriggerData() { valueString=this.valueString, valueInt=this.valueInt, valueFloat=this.valueFloat });

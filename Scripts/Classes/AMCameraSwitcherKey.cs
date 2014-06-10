@@ -204,14 +204,10 @@ public class AMCameraSwitcherKey : AMKey {
         a.still = still;
     }
 
-    public override int getNumberOfFrames() {
+    public override int getNumberOfFrames(int frameRate) {
         return endFrame - frame;
     }
-
-    public float getTime(int frameRate) {
-        return (float)getNumberOfFrames() / (float)frameRate;
-    }
-
+        
     public bool hasTargets(AMITarget itarget) {
         if(hasStartTarget(itarget) && hasEndTarget(itarget)) return true;
         return false;
@@ -255,7 +251,7 @@ public class AMCameraSwitcherKey : AMKey {
         return AMUtil.isTransitionReversed(cameraFadeType, cameraFadeParameters.ToArray());
     }
 
-    public override void build(AMSequence seq, AMTrack track, UnityEngine.Object target) {
+    public override void build(AMSequence seq, AMTrack track, int index, UnityEngine.Object target) {
         Camera[] allCameras = (track as AMCameraSwitcherTrack).GetCachedCameras(seq.target);
 
         // if targets are equal do nothing

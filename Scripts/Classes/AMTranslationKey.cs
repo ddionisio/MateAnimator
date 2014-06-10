@@ -37,17 +37,12 @@ public class AMTranslationKey : AMKey {
         return startFrame;
     }
 
-    public override int getNumberOfFrames() {
+    public override int getNumberOfFrames(int frameRate) {
         if(easeType == EaseTypeNone && (endFrame == -1 || endFrame == startFrame))
             return 1;
         return  endFrame - startFrame;
     }
-
-    public float getTime(int frameRate) {
-        return (float)getNumberOfFrames() / (float)frameRate;
-    }
-
-    public override void build(AMSequence seq, AMTrack track, UnityEngine.Object obj) {
+    public override void build(AMSequence seq, AMTrack track, int index, UnityEngine.Object obj) {
         int frameRate = seq.take.frameRate;
         if(easeType == EaseTypeNone) {
             //TODO: world position
@@ -55,7 +50,7 @@ public class AMTranslationKey : AMKey {
         }
         else {
             if(path.Length <= 1) return;
-            if(getNumberOfFrames() <= 0) return;
+            if(getNumberOfFrames(seq.take.frameRate) <= 0) return;
 
             object tweenTarget = obj;
             string tweenProp = isLocal ? "localPosition" : "position";

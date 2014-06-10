@@ -92,7 +92,7 @@ public class AMCameraSwitcherTrack : AMTrack {
         _cachedAllCameras = getAllCameras(itarget);
     }
 
-    public override void previewFrame(AMITarget itarget, float frame, AMTrack extraTrack = null) {
+    public override void previewFrame(AMITarget itarget, float frame, int frameRate, AMTrack extraTrack = null) {
         bool isPreview = !Application.isPlaying;
 
         AMCameraFade.getCameraFade(isPreview);

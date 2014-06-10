@@ -25,14 +25,11 @@ public class AMGOSetActiveKey : AMKey {
     }
 
     #region action
-    public override int getNumberOfFrames() {
+    public override int getNumberOfFrames(int frameRate) {
         return endFrame == -1 ? 1 : endFrame - frame;
     }
-    public float getTime(int frameRate) {
-        return (float)getNumberOfFrames() / (float)frameRate;
-    }
 
-    public override void build(AMSequence seq, AMTrack track, UnityEngine.Object target) {
+    public override void build(AMSequence seq, AMTrack track, int index, UnityEngine.Object target) {
 		GameObject go = target as GameObject;
 
         if(go == null) return;

@@ -163,7 +163,7 @@ public abstract class AMTrack : MonoBehaviour {
 	public virtual void drawGizmos(AMITarget target, float gizmo_size) { }
 
     // preview frame
-	public virtual void previewFrame(AMITarget target, float frame, AMTrack extraTrack = null) { }
+    public virtual void previewFrame(AMITarget target, float frame, int frameRate, AMTrack extraTrack = null) { }
 
     // update cache
     public virtual void updateCache(AMITarget target) {
@@ -375,6 +375,12 @@ public abstract class AMTrack : MonoBehaviour {
         if(keys.Count > 0) return keys[keys.Count - 1].frame;
         Debug.LogError("Animator: No key found before frame " + frame);
         return -1;
+    }
+
+    public int getLastFrame(int frameRate) {
+        if(keys.Count > 0)
+            return keys[keys.Count - 1].frame + keys[keys.Count - 1].getNumberOfFrames(frameRate);
+        return 0;
     }
 
     public AMKey[] getKeyFramesInBetween(int startFrame, int endFrame) {

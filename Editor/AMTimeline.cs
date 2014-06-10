@@ -641,9 +641,9 @@ public class AMTimeline : EditorWindow {
                 float speed = (float)take.frameRate * playbackSpeedValue[take.playbackSpeedIndex];
                 curFrame = playerStartFrame + (playerBackward ? -timeRunning * speed : timeRunning * speed);
                 int curFrameI = Mathf.FloorToInt(curFrame);
-                AMTakeData.Range frameRange = take.getFrameRange();
+                int lastFrame = take.getLastFrame();
                 //reached end?
-                if((playerBackward && curFrameI < 0) || curFrameI > frameRange.last) {
+                if((playerBackward && curFrameI < 0) || curFrameI > lastFrame) {
                     bool restart = true;
                     // loop
                     if(take.numLoop > 0) {
@@ -656,7 +656,7 @@ public class AMTimeline : EditorWindow {
                         if((take.loopMode == Holoville.HOTween.LoopType.Yoyo || take.loopMode == Holoville.HOTween.LoopType.YoyoInverse))
                             playerBackward = !playerBackward;
 
-                        startFrame = frameRange.first;
+                        startFrame = 1;
                     }
                     else if(take.loopBackToFrame > 0) {
                         startFrame = take.loopBackToFrame;
@@ -667,19 +667,19 @@ public class AMTimeline : EditorWindow {
                     if(restart) {
                         playerStartTime = Time.realtimeSinceStartup;
 
-                        if(curFrameI < frameRange.first) {
-                            curFrame = (float)frameRange.first - curFrame;
+                        if(curFrameI < 0) {
+                            curFrame = 1.0f;
                         }
                         else {
-                            curFrame = curFrame - (float)frameRange.last;
+                            curFrame = curFrame - (float)lastFrame;
                             if(playerBackward)
-                                curFrame += (float)frameRange.last;
+                                curFrame += (float)lastFrame;
                         }
 
                         playerStartFrame = Mathf.FloorToInt(curFrame);
                                                 
                         if(playerBackward) {
-                            if(playerStartFrame > frameRange.last) playerStartFrame = frameRange.last;
+                            if(playerStartFrame > lastFrame) playerStartFrame = lastFrame;
                         }
                         else {
                             if(playerStartFrame < startFrame) playerStartFrame = startFrame;
@@ -689,8 +689,6 @@ public class AMTimeline : EditorWindow {
                         isPlaying = false;
                         curFrame = playerStartedFrame;
                     }
-                    /*private int playerCurLoop;                  // current number of loops made
-    private bool playerBackward;                // playing backwards*/
                                         
                     // stop audio
                     take.stopAudio(aData);
@@ -2621,13 +2619,14 @@ public class AMTimeline : EditorWindow {
     void showFrames(AMTrack _track, ref float track_y, Event e, bool birdseye, Vector2 scrollViewBounds) {
         //string tooltip = "";
         int t = _track.id;
-        int selectedTrack = TakeEditCurrent().selectedTrack;
+        AMTakeData curTake = aData.e_getCurrentTake();
+        int selectedTrack = TakeEdit(curTake).selectedTrack;
         // frames start
         if(!_track.foldout && !oData.showFramesForCollapsedTracks) {
             track_y += height_track_foldin;
             return;
         }
-        float numFrames = (aData.e_getCurrentTake().numFrames < numFramesToRender ? aData.e_getCurrentTake().numFrames : numFramesToRender);
+        float numFrames = (curTake.numFrames < numFramesToRender ? curTake.numFrames : numFramesToRender);
         Rect rectFrames = new Rect(width_track, track_y, current_width_frame * numFrames, height_track);
         if(!_track.foldout) track_y += height_track_foldin;
         else track_y += height_track;
@@ -2647,7 +2646,7 @@ public class AMTimeline : EditorWindow {
         }
         else {
             texFrSet.wrapMode = TextureWrapMode.Repeat;
-            float startPos = aData.e_getCurrentTake().startFrame % 5f;
+            float startPos = curTake.startFrame % 5f;
             GUI.DrawTextureWithTexCoords(rectFramesBirdsEye, texFrSet, new Rect(startPos / 5f, 0f, numFrames / 5f, 1f));
             float birdsEyeFadeAlpha = (1f - (current_width_frame - width_frame_birdseye_min)) / 1.2f;
             if(birdsEyeFadeAlpha > 0f) {
@@ -2665,7 +2664,7 @@ public class AMTimeline : EditorWindow {
                 // dragging only one frame that has a key. do not show ghost selection
                 if(birdseye && TakeEditCurrent().contextSelection.Count == 2 && TakeEditCurrent().contextSelection[0] == TakeEditCurrent().contextSelection[1] && _track.hasKeyOnFrame(TakeEditCurrent().contextSelection[0])) {
                     GUI.color = new Color(0f, 0f, 1f, .5f);
-                    GUI.DrawTexture(new Rect(current_width_frame * (TakeEditCurrent().ghostSelection[0] - aData.e_getCurrentTake().startFrame) - width_birdseye / 2f + current_width_frame / 2f, 0f, width_birdseye, _current_height_frame), texKeyBirdsEye);
+                    GUI.DrawTexture(new Rect(current_width_frame * (TakeEditCurrent().ghostSelection[0] - curTake.startFrame) - width_birdseye / 2f + current_width_frame / 2f, 0f, width_birdseye, _current_height_frame), texKeyBirdsEye);
                     GUI.color = Color.white;
                 }
                 else if(TakeEditCurrent().ghostSelection != null) {
@@ -2674,18 +2673,18 @@ public class AMTimeline : EditorWindow {
                     for(int i = 0;i < TakeEditCurrent().ghostSelection.Count;i += 2) {
                         int contextFrameStart = TakeEditCurrent().ghostSelection[i];
                         int contextFrameEnd = TakeEditCurrent().ghostSelection[i + 1];
-                        if(contextFrameStart < (int)aData.e_getCurrentTake().startFrame) contextFrameStart = (int)aData.e_getCurrentTake().startFrame;
-                        if(contextFrameEnd > (int)aData.e_getCurrentTake().endFrame) contextFrameEnd = (int)aData.e_getCurrentTake().endFrame;
+                        if(contextFrameStart < (int)curTake.startFrame) contextFrameStart = (int)curTake.startFrame;
+                        if(contextFrameEnd > (int)curTake.endFrame) contextFrameEnd = (int)curTake.endFrame;
                         float contextWidth = (contextFrameEnd - contextFrameStart + 1) * current_width_frame;
-                        GUI.DrawTexture(new Rect(rectFramesBirdsEye.x + (contextFrameStart - aData.e_getCurrentTake().startFrame) * current_width_frame, rectFramesBirdsEye.y + 1f, contextWidth, rectFramesBirdsEye.height - 2f), EditorGUIUtility.whiteTexture);
+                        GUI.DrawTexture(new Rect(rectFramesBirdsEye.x + (contextFrameStart - curTake.startFrame) * current_width_frame, rectFramesBirdsEye.y + 1f, contextWidth, rectFramesBirdsEye.height - 2f), EditorGUIUtility.whiteTexture);
                     }
                     // draw birds eye ghost key frames
                     GUI.color = new Color(0f, 0f, 1f, .5f);
-                    foreach(int _key_frame in TakeEditCurrent().getKeyFramesInGhostSelection(aData.e_getCurrentTake(), (int)aData.e_getCurrentTake().startFrame, (int)aData.e_getCurrentTake().endFrame, t)) {
+                    foreach(int _key_frame in TakeEditCurrent().getKeyFramesInGhostSelection(curTake, (int)curTake.startFrame, (int)curTake.endFrame, t)) {
                         if(birdseye)
-                            GUI.DrawTexture(new Rect(current_width_frame * (_key_frame - aData.e_getCurrentTake().startFrame) - width_birdseye / 2f + current_width_frame / 2f, 0f, width_birdseye, _current_height_frame), texKeyBirdsEye);
+                            GUI.DrawTexture(new Rect(current_width_frame * (_key_frame - curTake.startFrame) - width_birdseye / 2f + current_width_frame / 2f, 0f, width_birdseye, _current_height_frame), texKeyBirdsEye);
                         else {
-                            Rect rectFrame = new Rect(current_width_frame * (_key_frame - aData.e_getCurrentTake().startFrame), 0f, current_width_frame, _current_height_frame);
+                            Rect rectFrame = new Rect(current_width_frame * (_key_frame - curTake.startFrame), 0f, current_width_frame, _current_height_frame);
                             GUI.DrawTexture(new Rect(rectFrame.x + 2f, rectFrame.y + rectFrame.height - (rectFrame.width - 4f) - 2f, rectFrame.width - 4f, rectFrame.width - 4f), texFrKey);
                         }
                     }
@@ -2699,10 +2698,10 @@ public class AMTimeline : EditorWindow {
                     GUI.color = new Color(86f / 255f, 95f / 255f, 178f / 255f, .8f);
                     int contextFrameStart = TakeEditCurrent().contextSelection[i];
                     int contextFrameEnd = TakeEditCurrent().contextSelection[i + 1];
-                    if(contextFrameStart < (int)aData.e_getCurrentTake().startFrame) contextFrameStart = (int)aData.e_getCurrentTake().startFrame;
-                    if(contextFrameEnd > (int)aData.e_getCurrentTake().endFrame) contextFrameEnd = (int)aData.e_getCurrentTake().endFrame;
+                    if(contextFrameStart < (int)curTake.startFrame) contextFrameStart = (int)curTake.startFrame;
+                    if(contextFrameEnd > (int)curTake.endFrame) contextFrameEnd = (int)curTake.endFrame;
                     float contextWidth = (contextFrameEnd - contextFrameStart + 1) * current_width_frame;
-                    Rect rectContextSelection = new Rect(rectFramesBirdsEye.x + (contextFrameStart - aData.e_getCurrentTake().startFrame) * current_width_frame, rectFramesBirdsEye.y + 1f, contextWidth, rectFramesBirdsEye.height - 2f);
+                    Rect rectContextSelection = new Rect(rectFramesBirdsEye.x + (contextFrameStart - curTake.startFrame) * current_width_frame, rectFramesBirdsEye.y + 1f, contextWidth, rectFramesBirdsEye.height - 2f);
                     GUI.DrawTexture(rectContextSelection, EditorGUIUtility.whiteTexture);
                     if(dragType != (int)DragType.ContextSelection) EditorGUIUtility.AddCursorRect(rectContextSelection, MouseCursor.SlideArrow);
                 }
@@ -2719,9 +2718,9 @@ public class AMTimeline : EditorWindow {
 
                 selected = ((isTrackSelected) && TakeEditCurrent().isFrameSelected(key.frame));
                 //_track.sortKeys();
-                if(key.frame < aData.e_getCurrentTake().startFrame) continue;
-                if(key.frame > aData.e_getCurrentTake().endFrame) break;
-                Rect rectKeyBirdsEye = new Rect(current_width_frame * (key.frame - aData.e_getCurrentTake().startFrame) - width_birdseye / 2f + current_width_frame / 2f, 0f, width_birdseye, _current_height_frame);
+                if(key.frame < curTake.startFrame) continue;
+                if(key.frame > curTake.endFrame) break;
+                Rect rectKeyBirdsEye = new Rect(current_width_frame * (key.frame - curTake.startFrame) - width_birdseye / 2f + current_width_frame / 2f, 0f, width_birdseye, _current_height_frame);
                 if(selected) GUI.color = Color.blue;
                 GUI.DrawTexture(rectKeyBirdsEye, texKeyBirdsEye);
                 GUI.color = Color.white;
@@ -2748,19 +2747,19 @@ public class AMTimeline : EditorWindow {
                 if(!key) continue;
 
                 //_track.sortKeys();
-                if(key.frame < aData.e_getCurrentTake().startFrame) continue;
-                if(key.frame > aData.e_getCurrentTake().endFrame) break;
-                Rect rectFrame = new Rect(current_width_frame * (key.frame - aData.e_getCurrentTake().startFrame), 0f, current_width_frame, _current_height_frame);
+                if(key.frame < curTake.startFrame) continue;
+                if(key.frame > curTake.endFrame) break;
+                Rect rectFrame = new Rect(current_width_frame * (key.frame - curTake.startFrame), 0f, current_width_frame, _current_height_frame);
                 GUI.DrawTexture(new Rect(rectFrame.x + 2f, rectFrame.y + rectFrame.height - (rectFrame.width - 4f) - 2f, rectFrame.width - 4f, rectFrame.width - 4f), texFrKey);
             }
         }
         // click on empty frames
         if(GUI.Button(rectFramesBirdsEye, "", "label") && dragType == (int)DragType.None) {
-            int prevFrame = aData.e_getCurrentTake().selectedFrame;
+            int prevFrame = curTake.selectedFrame;
             bool clickedOnBirdsEyeKey = false;
             for(int i = birdseyeKeyFrames.Count - 1;i >= 0;i--) {
-                if(birdseyeKeyFrames[i] > (int)aData.e_getCurrentTake().endFrame) continue;
-                if(birdseyeKeyFrames[i] < (int)aData.e_getCurrentTake().startFrame) break;
+                if(birdseyeKeyFrames[i] > (int)curTake.endFrame) continue;
+                if(birdseyeKeyFrames[i] < (int)curTake.startFrame) break;
                 if(birdseyeKeyRects[i].Contains(e.mousePosition)) {
                     clickedOnBirdsEyeKey = true;
                     // left click
@@ -2784,7 +2783,7 @@ public class AMTimeline : EditorWindow {
                 }
             }
             if(!clickedOnBirdsEyeKey) {
-                int _frame_num_birdseye = (int)aData.e_getCurrentTake().startFrame + Mathf.CeilToInt(e.mousePosition.x / current_width_frame) - 1;
+                int _frame_num_birdseye = (int)curTake.startFrame + Mathf.CeilToInt(e.mousePosition.x / current_width_frame) - 1;
                 // left click
                 if(e.button == 0) {
                     // select the frame
@@ -2815,7 +2814,7 @@ public class AMTimeline : EditorWindow {
             //AudioClip audioClip = null;
             bool drawEachAction = false;
             if(_track is AMAnimationTrack || _track is AMAudioTrack) drawEachAction = true;	// draw each action with seperate textures and buttons for these tracks
-            int _startFrame = (int)aData.e_getCurrentTake().startFrame;
+            int _startFrame = (int)curTake.startFrame;
             int _endFrame = (int)(_startFrame + numFrames - 1);
             int action_startFrame, action_endFrame, renderFrameStart, renderFrameEnd;
             int cached_action_startFrame = -1, cached_action_endFrame = -1;
@@ -2950,23 +2949,14 @@ public class AMTimeline : EditorWindow {
                 if(_track.keys[i].version != _track.version) {
                     // if cache is null, recheck for component and update caches
                     //aData = (AnimatorData)GameObject.Find("AnimatorData").GetComponent("AnimatorData");
-                    aData.e_getCurrentTake().maintainCaches(aData);
+                    curTake.maintainCaches(aData);
                 }
-                if((_track is AMAudioTrack) && ((_track.keys[i] as AMAudioKey).getNumberOfFrames(aData.e_getCurrentTake().frameRate)) > -1 && (_track.keys[i].getStartFrame() + (_track.keys[i] as AMAudioKey).getNumberOfFrames(aData.e_getCurrentTake().frameRate) <= aData.e_getCurrentTake().numFrames)) {
-                    // based on audio clip length
+                if((_track is AMAudioTrack || _track is AMAnimationTrack) && _track.keys[i].getNumberOfFrames(curTake.frameRate) > -1 && (_track.keys[i].getStartFrame() + _track.keys[i].getNumberOfFrames(curTake.frameRate) <= curTake.numFrames)) {
+                    //based on content length
                     action_startFrame = _track.keys[i].getStartFrame();
-                    action_endFrame = _track.keys[i].getStartFrame() + (_track.keys[i] as AMAudioKey).getNumberOfFrames(aData.e_getCurrentTake().frameRate);
+                    action_endFrame = _track.keys[i].getStartFrame() + _track.keys[i].getNumberOfFrames(curTake.frameRate);
                     //audioClip = (_track.cache[i] as AMAudioAction).audioClip;
                     // if intersects new audio clip, then cut
-                    if(i < _track.keys.Count - 1) {
-                        if(action_endFrame > _track.keys[i + 1].getStartFrame()) action_endFrame = _track.keys[i + 1].getStartFrame();
-                    }
-                }
-                else if((_track is AMAnimationTrack) && (_track.keys[i] as AMAnimationKey).wrapMode == WrapMode.Once && (_track.keys[i].getStartFrame() + (_track.keys[i] as AMAnimationKey).getNumberOfFrames(aData.e_getCurrentTake().frameRate) <= aData.e_getCurrentTake().numFrames)) {
-                    // based on animation clip length
-                    action_startFrame = _track.keys[i].getStartFrame();
-                    action_endFrame = _track.keys[i].getStartFrame() + (_track.keys[i] as AMAnimationKey).getNumberOfFrames(aData.e_getCurrentTake().frameRate);
-                    // if intersects new animation clip, then cut
                     if(i < _track.keys.Count - 1) {
                         if(action_endFrame > _track.keys[i + 1].getStartFrame()) action_endFrame = _track.keys[i + 1].getStartFrame();
                     }
@@ -2988,14 +2978,14 @@ public class AMTimeline : EditorWindow {
                     else {
                         clamped = 1;
                         action_endFrame = _endFrame;
-                        if(action_endFrame > aData.e_getCurrentTake().numFrames) action_endFrame = aData.e_getCurrentTake().numFrames + 1;
+                        if(action_endFrame > curTake.numFrames) action_endFrame = curTake.numFrames + 1;
                     }
                 }
                 else {
                     // tracks with start frame and end frame (do not clamp box, stop before last key)
-                    if(_track.keys[i].getNumberOfFrames() <= 0) continue;
+                    if(_track.keys[i].getNumberOfFrames(curTake.frameRate) <= 0) continue;
                     action_startFrame = _track.keys[i].getStartFrame();
-                    action_endFrame = _track.keys[i].getStartFrame() + _track.keys[i].getNumberOfFrames();
+                    action_endFrame = _track.keys[i].getStartFrame() + _track.keys[i].getNumberOfFrames(curTake.frameRate);
                 }
                 if(action_startFrame > _endFrame) {
                     last_action_startFrame = action_startFrame;
@@ -3060,7 +3050,7 @@ public class AMTimeline : EditorWindow {
                 if(rectBox.width > 5f) EditorGUI.DropShadowLabel(new Rect(rectBox.x, rectBox.y, rectBox.width - (!isLastAction ? current_width_frame : 0f), rectBox.height), txtInfo, styleTxtInfo);
                 // if clicked on info box, select the starting frame for action. show tooltip if text does not fit
                 if(drawEachAction && GUI.Button(rectBox, /*(hideTxtInfo ? new GUIContent("",txtInfo) : new GUIContent(""))*/"", "label") && dragType != (int)DragType.ResizeAction) {
-                    int prevFrame = aData.e_getCurrentTake().selectedFrame;
+                    int prevFrame = curTake.selectedFrame;
                     // timeline select
                     timelineSelectFrame(t, (clamped == -1 ? action_endFrame : action_startFrame));
                     // clear and add frame to context selection
@@ -3129,9 +3119,9 @@ public class AMTimeline : EditorWindow {
             if(!drawEachAction) {
                 // timeline action button
                 if(GUI.Button(rectTimelineActions,/*new GUIContent("",tooltip)*/"", "label") && dragType == (int)DragType.None) {
-                    int _frame_num_action = (int)aData.e_getCurrentTake().startFrame + Mathf.CeilToInt(e.mousePosition.x / current_width_frame) - 1;
+                    int _frame_num_action = (int)curTake.startFrame + Mathf.CeilToInt(e.mousePosition.x / current_width_frame) - 1;
                     AMKey _action = _track.getKeyContainingFrame(_frame_num_action);
-                    int prevFrame = aData.e_getCurrentTake().selectedFrame;
+                    int prevFrame = curTake.selectedFrame;
                     // timeline select
                     timelineSelectFrame(t, _action.getStartFrame());
                     // clear and add frame to context selection

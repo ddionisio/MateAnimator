@@ -6,6 +6,59 @@ using System.Text;
 public struct AMUtil {
     private static Transform[] mRoots; //generated to grab targets
 
+    public static void SampleAnimation(Animation anim, string clipName, WrapMode wrap, float weight, float time) {
+        AnimationState animState = anim[clipName];
+        animState.enabled = true;
+        animState.wrapMode = wrap;
+        animState.weight = weight;
+        animState.time = time;
+        anim.Sample();
+        animState.enabled = false;
+    }
+
+    public static void SampleAnimationFadeIn(Animation anim, string clipName, WrapMode wrap, float fadeDelay, float time) {
+        AnimationState animState = anim[clipName];
+        animState.enabled = true;
+        animState.wrapMode = wrap;
+        animState.weight = time < fadeDelay ? time/fadeDelay : 1.0f;
+        animState.time = time;
+        anim.Sample();
+        animState.enabled = false;
+    }
+
+    public static void SampleAnimationCrossFade(Animation anim, float fadeDelay, string prevClipName, WrapMode prevWrap, float prevTime, string clipName, WrapMode wrap, float time) {
+        float weight = time < fadeDelay ? time / fadeDelay : 1.0f;
+
+        if(weight < 1.0f) {
+            AnimationState animPrevState = anim[prevClipName];
+            AnimationState animState = anim[clipName];
+
+            animPrevState.enabled = true;
+            animPrevState.wrapMode = prevWrap;
+            animPrevState.weight = 1.0f - weight;
+            animPrevState.time = prevTime;
+
+            animState.enabled = true;
+            animState.wrapMode = wrap;
+            animState.weight = weight;
+            animState.time = time;
+
+            anim.Sample();
+
+            animPrevState.enabled = false;
+            animState.enabled = false;
+        }
+        else {
+            AnimationState animState = anim[clipName];
+            animState.enabled = true;
+            animState.wrapMode = wrap;
+            animState.weight = weight;
+            animState.time = time;
+            anim.Sample();
+            animState.enabled = false;
+        }
+    }
+    
     public static void SetTopCamera(Camera top, Camera bottom) {
         if(top) top.depth = 0;
         if(bottom) bottom.depth = -1;

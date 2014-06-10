@@ -55,15 +55,12 @@ public class AMRotationKey : AMKey {
     }
 
     #region action
-    public override int getNumberOfFrames() {
+    public override int getNumberOfFrames(int frameRate) {
         if(easeType == EaseTypeNone || (endFrame == -1 || endFrame == frame))
             return 1;
         return endFrame - frame;
     }
-    public float getTime(int frameRate) {
-        return (float)getNumberOfFrames() / (float)frameRate;
-    }
-    public override void build(AMSequence seq, AMTrack track, UnityEngine.Object obj) {
+    public override void build(AMSequence seq, AMTrack track, int index, UnityEngine.Object obj) {
         int frameRate = seq.take.frameRate;
 		if(easeType == EaseTypeNone) {
             seq.Insert(new AMActionTransLocalRot(this, frameRate, obj as Transform, rotation));

@@ -65,6 +65,10 @@ public class AMEventKey : AMKey {
 		cachedMethodInfo = null;
 	}
 
+    public override int getNumberOfFrames(int frameRate) {
+        return 1;
+    }
+
 	//set target to a valid ref. for meta
 	public MethodInfo getMethodInfo(GameObject target) {
 		if(target) {
@@ -286,7 +290,7 @@ public class AMEventKey : AMKey {
 		return ret.ToArray();
 	}
 
-    public override void build(AMSequence seq, AMTrack track, UnityEngine.Object target) {
+    public override void build(AMSequence seq, AMTrack track, int index, UnityEngine.Object target) {
 		if(methodName == null) return;
 
 		//get component and fill the cached method info

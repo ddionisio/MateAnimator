@@ -74,7 +74,7 @@ public class AMSequence {
                 if(keyMax > 0) {
                     for(int keyInd = 0; keyInd < keyMax; keyInd++) {
                         AMKey key = track.keys[keyInd];
-                        key.build(this, track, tgt);
+                        key.build(this, track, keyInd, tgt);
                     }
 
                     float waitTime = track.keys[0].getWaitTime(mTake.frameRate, 0.0f);
