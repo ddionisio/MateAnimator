@@ -204,7 +204,13 @@ public class AnimatorData : MonoBehaviour, AMITarget {
 
     // play take by name
     public void Play(string takeName, bool loop = false) {
-		PlayAtFrame(takeName, 0f, loop);
+        int ind = GetTakeIndex(takeName);
+        if(ind == -1) { Debug.LogError("Take not found: "+takeName); return; }
+        Play(ind, loop);
+    }
+
+    public void Play(int takeIndex, bool loop = false) {
+        PlayAtTime(takeIndex, 0f, loop);
     }
 
 	public void PlayAtFrame(string takeName, float frame, bool loop = false) {
@@ -212,6 +218,10 @@ public class AnimatorData : MonoBehaviour, AMITarget {
 		if(ind == -1) { Debug.LogError("Take not found: "+takeName); return; }
         PlayAtTime(ind, frame/mSequences[ind].take.frameRate, loop);
 	}
+
+    public void PlayAtFrame(int takeIndex, float frame, bool loop = false) {
+        PlayAtTime(takeIndex, frame/mSequences[takeIndex].take.frameRate, loop);
+    }
 	
 	public void PlayAtTime(string takeName, float time, bool loop = false) {
         int ind = GetTakeIndex(takeName);
@@ -220,9 +230,10 @@ public class AnimatorData : MonoBehaviour, AMITarget {
     }
 
     public void PlayAtTime(int index, float time, bool loop = false) {
-        if(mNowPlayingTakeIndex != index) {
-            Pause();
-        }
+        if(mNowPlayingTakeIndex == index)
+            return;
+
+        Pause();
 
         AMSequence amSeq = mSequences[index];
 
