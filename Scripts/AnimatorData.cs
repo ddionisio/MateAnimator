@@ -177,23 +177,25 @@ public class AnimatorData : MonoBehaviour, AMITarget {
     }
 
     public int GetTakeIndex(string takeName) {
-        for(int i = 0; i < mSequences.Length; i++) {
-            if(mSequences[i].take.name == takeName)
+        List<AMTakeData> _t = _takes;
+        for(int i = 0; i < _t.Count; i++) {
+            if(_t[i].name == takeName)
                 return i;
         }
         return -1;
     }
 
     public int GetTakeIndex(AMTakeData take) {
-        for(int i = 0; i < mSequences.Length; i++) {
-            if(mSequences[i].take == take)
+        List<AMTakeData> _t = _takes;
+        for(int i = 0; i < _t.Count; i++) {
+            if(_t[i] == take)
                 return i;
         }
         return -1;
     }
 
     public string GetTakeName(int takeIndex) {
-        return mSequences[takeIndex].take.name;
+        return _takes[takeIndex].name;
     }
 
     public void PlayDefault(bool loop = false) {
