@@ -137,9 +137,12 @@ public class AMPropertyTrack : AMTrack {
         cachedFieldInfo = null;
         cachedPropertyInfo = null;
 	}
+    public static bool CanTween(ValueType valueType) {
+        return !(valueType == ValueType.Bool || valueType == ValueType.String || valueType == ValueType.Sprite || valueType == ValueType.Enum);
+    }
 	public bool canTween {
 		get {
-			return !(valueType == (int)ValueType.Bool || valueType == (int)ValueType.String || valueType == (int)ValueType.Sprite || valueType == (int)ValueType.Enum);
+            return CanTween((ValueType)valueType);
 		}
 	}
     public string getMemberName() {
@@ -183,7 +186,7 @@ public class AMPropertyTrack : AMTrack {
         if(k == null) {
             k = addCall(gameObject, typeof(AMPropertyKey)) as AMPropertyKey;
             k.frame = _frame;
-            k.easeType = (int)EaseType.Linear;
+            k.easeType = canTween ? (int)EaseType.Linear : AMKey.EaseTypeNone;
             // add a new key
             keys.Add(k);
         }
@@ -297,7 +300,7 @@ public class AMPropertyTrack : AMTrack {
 
             if(keys.Count > (i + 1)) key.endFrame = keys[i + 1].frame;
             else {
-				if(i > 0 && keys[i-1].easeType == AMKey.EaseTypeNone)
+                if(!canTween || (i > 0 && keys[i-1].easeType == AMKey.EaseTypeNone))
 					key.easeType = AMKey.EaseTypeNone;
 
 				key.endFrame = -1;
@@ -306,7 +309,6 @@ public class AMPropertyTrack : AMTrack {
             Type _type = GetCachedInfoType();
             if(_type == null) {
                 Debug.LogError("Animator: Fatal Error; fieldInfo, propertyInfo and methodInfo are unset for Value Type " + valueType);
-                key.destroy();
                 return;
             }
             // set value
@@ -583,5 +585,6 @@ public class AMPropertyTrack : AMTrack {
         ntrack.component = component;
 		ntrack.componentName = componentName;
         ntrack.fieldName = fieldName;
+        ntrack.propertyName = propertyName;
     }
 }
