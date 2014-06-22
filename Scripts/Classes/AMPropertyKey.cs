@@ -158,6 +158,8 @@ public class AMPropertyKey : AMKey {
     public override int getNumberOfFrames(int frameRate) {
         if(easeType == EaseTypeNone && (endFrame == -1 || endFrame == frame))
             return 1;
+        else if(endFrame == -1)
+            return -1;
         return endFrame - frame;
     }
 

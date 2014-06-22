@@ -393,11 +393,12 @@ public class AnimatorData : MonoBehaviour, AMITarget {
 		if(sequenceLoadAll && mSequences != null) {
 			string goName = gameObject.name;
 			for(int i = 0; i < mSequences.Length; i++) {
-				mSequences[i].Build(goName, sequenceKillWhenDone, updateType);
+                if(mSequences[i].sequence == null)
+				    mSequences[i].Build(goName, sequenceKillWhenDone, updateType);
 			}
 		}
 		
-		if(!string.IsNullOrEmpty(defaultTakeName)) {
+		if(!isPlaying && !string.IsNullOrEmpty(defaultTakeName)) {
 			Play(defaultTakeName, false);
 		}
 	}

@@ -205,6 +205,8 @@ public class AMCameraSwitcherKey : AMKey {
     }
 
     public override int getNumberOfFrames(int frameRate) {
+        if(endFrame == -1)
+            return -1;
         return endFrame - frame;
     }
         

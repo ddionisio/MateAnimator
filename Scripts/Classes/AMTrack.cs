@@ -378,8 +378,12 @@ public abstract class AMTrack : MonoBehaviour {
     }
 
     public int getLastFrame(int frameRate) {
-        if(keys.Count > 0)
-            return keys[keys.Count - 1].frame + keys[keys.Count - 1].getNumberOfFrames(frameRate);
+        if(keys.Count > 0) {
+            int lastNumFrames = keys[keys.Count - 1].getNumberOfFrames(frameRate);
+            if(lastNumFrames < 0)
+                return keys[keys.Count - 1].frame;
+            return keys[keys.Count - 1].frame + lastNumFrames;
+        }
         return 0;
     }
 

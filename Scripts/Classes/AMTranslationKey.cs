@@ -40,6 +40,8 @@ public class AMTranslationKey : AMKey {
     public override int getNumberOfFrames(int frameRate) {
         if(easeType == EaseTypeNone && (endFrame == -1 || endFrame == startFrame))
             return 1;
+        else if(endFrame == -1)
+            return -1;
         return  endFrame - startFrame;
     }
     public override void build(AMSequence seq, AMTrack track, int index, UnityEngine.Object obj) {
