@@ -61,6 +61,7 @@ public class AMTransitionPicker : EditorWindow {
     public static int selectedSpeedIndex = 0;
     public static List<float> parameters = new List<float>();
     public static Texture2D irisShape;
+	public static bool texLoaded;
     private static bool useGameView = false;
     private static bool showTransitionList = true;
     // skins
@@ -71,10 +72,10 @@ public class AMTransitionPicker : EditorWindow {
     private Texture tex_transition_b;
     private Texture tex_default_view;
     private Texture tex_game_view;
-    private Texture tex_transition_toggle_bg;
-    private Texture tex_transition_toggle_button_bg;
-    private Texture texRightArrow;// inspector right arrow
-    private Texture texLeftArrow;	// inspector left arrow
+   // private Texture tex_transition_toggle_bg;
+    //private Texture tex_transition_toggle_button_bg;
+   // private Texture texRightArrow;// inspector right arrow
+   // private Texture texLeftArrow;	// inspector left arrow
     private Texture tex_angle_0;
     private Texture tex_angle_90;
     private Texture tex_angle_180;
@@ -116,22 +117,14 @@ public class AMTransitionPicker : EditorWindow {
     public static float waitPercent = 0.2f;
     private float percent = waitPercent*-1f;
     private float _value = 1f;
-    #endregion
+	
+	
+
+	#endregion
 
     #region Main
     void OnEnable() {
-        tex_transition_a = AMEditorResource.LoadEditorTexture("am_transition_a");
-        tex_transition_b = AMEditorResource.LoadEditorTexture("am_transition_b");
-        tex_default_view = AMEditorResource.LoadEditorTexture("am_icon_default_view");
-        tex_game_view = AMEditorResource.LoadEditorTexture("am_icon_game_view");
-        tex_transition_toggle_bg = AMEditorResource.LoadEditorTexture("am_transition_toggle_bg");
-        tex_transition_toggle_button_bg = AMEditorResource.LoadEditorTexture("am_transition_toggle_button_bg");
-        texRightArrow = AMEditorResource.LoadEditorTexture("am_nav_right");// inspector right arrow
-        texLeftArrow = AMEditorResource.LoadEditorTexture("am_nav_left");	// inspector left arrow
-        tex_angle_0 = AMEditorResource.LoadEditorTexture("am_angle_0");
-        tex_angle_90 = AMEditorResource.LoadEditorTexture("am_angle_90");
-        tex_angle_180 = AMEditorResource.LoadEditorTexture("am_angle_180");
-        tex_angle_270 = AMEditorResource.LoadEditorTexture("am_angle_270");
+    	LoadTextures();
 
         window = this;
         setWindowSize();
@@ -140,6 +133,24 @@ public class AMTransitionPicker : EditorWindow {
         oData = AMOptionsFile.loadFile();
         // set up here
     }
+
+	void LoadTextures() {
+		if (!texLoaded) {
+			tex_transition_a = AMEditorResource.LoadEditorTexture("am_transition_a");
+			tex_transition_b = AMEditorResource.LoadEditorTexture("am_transition_b");
+			tex_default_view = AMEditorResource.LoadEditorTexture(EditorGUIUtility.isProSkin ? "am_icon_default_view" : "am_icon_default_view_light");
+			tex_game_view = AMEditorResource.LoadEditorTexture(EditorGUIUtility.isProSkin ? "am_icon_game_view" : "am_icon_game_view_light");
+			//tex_transition_toggle_bg = AMEditorResource.LoadEditorTexture(EditorGUIUtility.isProSkin ? "am_transition_toggle_bg" : "am_transition_toggle_bg_light");
+			//tex_transition_toggle_button_bg = AMEditorResource.LoadEditorTexture("am_transition_toggle_button_bg");
+			//texRightArrow = AMEditorResource.LoadEditorTexture("am_nav_right");// inspector right arrow
+			//texLeftArrow = AMEditorResource.LoadEditorTexture("am_nav_left");	// inspector left arrow
+			tex_angle_0 = AMEditorResource.LoadEditorTexture(EditorGUIUtility.isProSkin ? "am_angle_0" : "am_angle_0_light");
+			tex_angle_90 = AMEditorResource.LoadEditorTexture(EditorGUIUtility.isProSkin ? "am_angle_90" : "am_angle_90_light");
+			tex_angle_180 = AMEditorResource.LoadEditorTexture(EditorGUIUtility.isProSkin ? "am_angle_180" : "am_angle_180_light");
+			tex_angle_270 = AMEditorResource.LoadEditorTexture(EditorGUIUtility.isProSkin ? "am_angle_270" : "am_angle_270_light");
+			texLoaded = true;
+		}
+	}
 
     void OnDisable() {
         window = null;
@@ -169,6 +180,7 @@ public class AMTransitionPicker : EditorWindow {
         this.title = "Fade: "+(oData.time_numbering ? AMTimeline.frameToTime(key.frame, (float)aData.e_getCurrentTake().frameRate)+" s" : key.frame.ToString());
         // load skin
         AMTimeline.loadSkin(ref skin, ref cachedSkinName, position);
+    	LoadTextures();
         EditorGUIUtility.LookLikeControls();
         #region drag logic
         Event e = Event.current;
@@ -358,6 +370,7 @@ public class AMTransitionPicker : EditorWindow {
         GUILayout.EndHorizontal();
         GUILayout.EndVertical();
         GUILayout.FlexibleSpace();
+		
         GUILayout.EndHorizontal();
         #endregion
         GUILayout.EndArea();
@@ -365,24 +378,24 @@ public class AMTransitionPicker : EditorWindow {
         #endregion
         #region transition list
         // show/hide list texture
-        Rect rectShowHideButton = new Rect(width_transition_list_closed-36f, 0f, 56f, height_toggle_button);
-        bool shouldMakeTransparent = (!showTransitionList && !rectShowHideButton.Contains(e.mousePosition));
+        //Rect rectShowHideButton = new Rect(width_transition_list_closed-36f, 0f, 56f, height_toggle_button);
+        //bool shouldMakeTransparent = (!showTransitionList && !rectShowHideButton.Contains(e.mousePosition));
         //GUI.color = new Color(31f/255f,37f/255f,45f/255f,(shouldMakeTransparent ? .5f : 1f));
-        GUI.color = AMTimeline.getSkinTextureStyleState("properties_bg").textColor;
-        GUI.color = new Color(GUI.color.r, GUI.color.g, GUI.color.b, (shouldMakeTransparent ? .5f : 1f));
-        Rect rectToggleBGFade = new Rect(width_transition_list_closed-24f, 0f, 27f, position.height);
-        GUI.DrawTexture(rectToggleBGFade, tex_transition_toggle_bg);
-        GUI.DrawTexture(new Rect(rectToggleBGFade.x+rectToggleBGFade.width, 0f, width_transition_list_open-width_transition_list_closed+24f-rectToggleBGFade.width, position.height), EditorGUIUtility.whiteTexture);
-        Rect rectToggleBG = new Rect(width_transition_list_closed-71f+35f, 0f, 56f, height_toggle_button);
-        GUI.DrawTexture(rectToggleBG, tex_transition_toggle_button_bg);
-        GUI.color = new Color(1f, 1f, 1f, (shouldMakeTransparent ? .5f : 1f));
-        GUI.DrawTexture(new Rect(rectToggleBG.x + 8f + (showTransitionList ? 1f : 0f), rectToggleBG.y + rectToggleBG.height/2f - 19f/2f, 22f, 19f), showTransitionList ? texLeftArrow : texRightArrow);
-        GUI.color = Color.white;
+        //GUI.color = AMTimeline.getSkinTextureStyleState("properties_bg").textColor;
+       // GUI.color = new Color(GUI.color.r, GUI.color.g, GUI.color.b, (shouldMakeTransparent ? .5f : 1f));
+        //Rect rectToggleBGFade = new Rect(width_transition_list_closed-24f, 0f, 27f, position.height);
+        //GUI.DrawTexture(rectToggleBGFade, tex_transition_toggle_bg);
+        //GUI.DrawTexture(new Rect(rectToggleBGFade.x+rectToggleBGFade.width, 0f, width_transition_list_open-width_transition_list_closed+24f-rectToggleBGFade.width, position.height), EditorGUIUtility.whiteTexture);
+        //Rect rectToggleBG = new Rect(width_transition_list_closed-71f+35f, 0f, 56f, height_toggle_button);
+        //GUI.DrawTexture(rectToggleBG, tex_transition_toggle_button_bg);
+       // GUI.color = new Color(1f, 1f, 1f, (shouldMakeTransparent ? .5f : 1f));
+        //GUI.DrawTexture(new Rect(rectToggleBG.x + 8f + (showTransitionList ? 1f : 0f), rectToggleBG.y + rectToggleBG.height/2f - 19f/2f, 22f, 19f), showTransitionList ? texLeftArrow : texRightArrow);
+        //GUI.color = Color.white;
         // show/hide list button
-        if(GUI.Button(rectShowHideButton, "", "label")) showTransitionList = !showTransitionList;
-        if(showTransitionList) {
+        //if(GUI.Button(rectShowHideButton, "", "label")) showTransitionList = !showTransitionList;
+        //if(showTransitionList) {
             GUILayout.BeginVertical(stylePadding, GUILayout.Width(153f));
-            #region search transition list
+            /*#region search transition list
             GUILayout.BeginVertical(GUILayout.Height(33f));
             GUILayout.Space(5f);
             GUILayout.FlexibleSpace();
@@ -402,7 +415,7 @@ public class AMTransitionPicker : EditorWindow {
             GUILayout.EndHorizontal();
             GUILayout.FlexibleSpace();
             GUILayout.EndVertical();
-            #endregion
+            #endregion*/
             GUILayout.Space(8f);
             #region transition list
             // set scrollview background
@@ -427,7 +440,7 @@ public class AMTransitionPicker : EditorWindow {
             GUILayout.EndScrollView();
             #endregion
             GUILayout.EndVertical();
-        }
+        //}
         #endregion
         GUILayout.EndHorizontal();
         #endregion
@@ -576,7 +589,8 @@ public class AMTransitionPicker : EditorWindow {
                 GUI.skin = null;
                 EditorGUIUtility.LookLikeControls();
                 GUILayout.BeginHorizontal();
-                irisShape = (Texture2D)EditorGUILayout.ObjectField("", irisShape, typeof(Texture2D), false);
+        		EditorGUIUtility.labelWidth = 0f;
+                irisShape = (Texture2D)EditorGUILayout.ObjectField("", irisShape, typeof(Texture2D), false, GUILayout.Width(64));
                 GUI.skin = skin;
                 EditorGUIUtility.labelWidth = 100f;
                 GUILayout.BeginVertical(GUILayout.Height(68f));
@@ -638,12 +652,14 @@ public class AMTransitionPicker : EditorWindow {
                 if(parameters.Count < 1) parameters.Add(AMCameraFade.Defaults.ShapeWipe.angle);
                 parameters[0] = (float)EditorGUILayout.IntField("Angle", (int)parameters[0]);
                 GUILayout.Space(height_parameter_space);
+        		
                 // shape texture
                 GUILayout.Label("Shape");
                 GUI.skin = null;
                 EditorGUIUtility.LookLikeControls();
                 GUILayout.BeginHorizontal();
-                irisShape = (Texture2D)EditorGUILayout.ObjectField("", irisShape, typeof(Texture2D), false);
+        		EditorGUIUtility.labelWidth = 0f;
+				irisShape = (Texture2D)EditorGUILayout.ObjectField("", irisShape, typeof(Texture2D), false, GUILayout.Width(64));
                 GUI.skin = skin;
                 EditorGUIUtility.labelWidth = 100f;
                 GUILayout.BeginVertical(GUILayout.Height(68f));

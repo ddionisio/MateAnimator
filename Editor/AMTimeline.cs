@@ -295,7 +295,7 @@ public class AMTimeline : EditorWindow {
     private Texture texIconEvent;
     private Texture texIconOrientation;
     private Texture texIconCameraSwitcher;
-    private static bool texLoaded = false;
+    public static bool texLoaded = false;
 
     // temporary variables
     private bool isPlayMode = false; 		// whether the user is in play mode, used to close AMTimeline when in play mode
@@ -2260,6 +2260,7 @@ public class AMTimeline : EditorWindow {
         if(_skin == null || newSkinName != skinName) {
             _skin = (GUISkin)AMEditorResource.LoadSkin(newSkinName); /*global_skin*/
         	skinName = newSkinName;
+            AMTransitionPicker.texLoaded = false;
         	texLoaded = false;
         }
 		
@@ -5525,7 +5526,9 @@ public class AMTimeline : EditorWindow {
                     addCompUndo ? Undo.AddComponent<AMEventTrack>(holder) : holder.AddComponent<AMEventTrack>());
                 break;
             case (int)Track.CameraSwitcher:
-                if(aData.e_getCurrentTake().cameraSwitcher) {
+            if (GameObject.FindObjectsOfType<Camera>().Length <= 1) {
+                EditorUtility.DisplayDialog("Cannot add Camera Switcher", "You need at least 2 cameras in your scene to start using the Camera Switcher track.", "Okay");
+            } else if (aData.e_getCurrentTake().cameraSwitcher) {
                     // already exists
                     EditorUtility.DisplayDialog("Camera Switcher Already Exists", "You can only have one Camera Switcher track. Transition between cameras by adding keyframes to the track.", "Okay");
                 }
