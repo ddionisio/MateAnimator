@@ -34,7 +34,7 @@ public class AMTakeImport : EditorWindow {
 	}
 	// Use this for initialization
 	void OnGUI() {
-		AMTimeline.loadSkin(oData, ref skin, ref cachedSkinName, position);
+		AMTimeline.loadSkin(ref skin, ref cachedSkinName, position);
 		GUIStyle padding = new GUIStyle();
 		padding.padding = new RectOffset(4,4,4,4);
 		GUILayout.BeginVertical(padding);

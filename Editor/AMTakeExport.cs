@@ -83,7 +83,7 @@ public class AMTakeExport : EditorWindow {
     }
     void OnGUI() {
 
-        AMTimeline.loadSkin(oData, ref skin, ref cachedSkinName, position);
+        AMTimeline.loadSkin(ref skin, ref cachedSkinName, position);
         GUIStyle padding = new GUIStyle();
         padding.padding = new RectOffset(3, 3, 3, 3);
         GUILayout.BeginVertical(padding);

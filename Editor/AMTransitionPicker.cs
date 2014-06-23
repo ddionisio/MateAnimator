@@ -168,7 +168,7 @@ public class AMTransitionPicker : EditorWindow {
         setWindowSize();
         this.title = "Fade: "+(oData.time_numbering ? AMTimeline.frameToTime(key.frame, (float)aData.e_getCurrentTake().frameRate)+" s" : key.frame.ToString());
         // load skin
-        AMTimeline.loadSkin(oData, ref skin, ref cachedSkinName, position);
+        AMTimeline.loadSkin(ref skin, ref cachedSkinName, position);
         EditorGUIUtility.LookLikeControls();
         #region drag logic
         Event e = Event.current;

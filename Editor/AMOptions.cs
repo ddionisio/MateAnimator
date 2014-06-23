@@ -36,11 +36,7 @@ public class AMOptions : EditorWindow {
 
     string[] tabNames = new string[] { "General", "Quick Add", "Import / Export", "About" };
 
-    // skin names
-    private string[] skin_names = new string[] { "Dark", "Classic Blue" };
-    private string[] skin_ids = new string[] { "am_skin_dark", "am_skin_blue" };
-    private int skinIndex = 0;
-
+    
     // skins
     private GUISkin skin = null;
     private string cachedSkinName = null;
@@ -55,15 +51,7 @@ public class AMOptions : EditorWindow {
 
         loadAnimatorData();
         oData = AMOptionsFile.loadFile();
-        // setup skin popup
-        skinIndex = 0;
-        for(int i = 1; i < skin_ids.Length; i++) {
-            if(skin_ids[i] == oData.skin) {
-                skinIndex = i;
-                break;
-            }
-        }
-
+        
         if(aData) exportTakeIndex = aData.GetTakeIndex(aData.e_getCurrentTake());
     }
     void OnDisable() {
@@ -73,7 +61,7 @@ public class AMOptions : EditorWindow {
         if(!aData) loadAnimatorData();
     }
     void OnGUI() {
-        AMTimeline.loadSkin(oData, ref skin, ref cachedSkinName, position);
+        AMTimeline.loadSkin(ref skin,ref cachedSkinName, position);
         if(!aData) {
             AMTimeline.MessageBox("Animator requires an AnimatorData component in your scene. Launch Animator to add the component.", AMTimeline.MessageBoxType.Warning);
             return;
@@ -103,7 +91,7 @@ public class AMOptions : EditorWindow {
         scrollView = GUILayout.BeginScrollView(scrollView, styleArea);
         List<string> takeNames = getTakeNames();
 
-        GUIStyle styleTitle = new GUIStyle(GUI.skin.label);
+    	GUIStyle styleTitle =  new GUIStyle(GUI.skin.label);
         styleTitle.fontSize = 20;
         styleTitle.fontStyle = FontStyle.Bold;
 
@@ -270,18 +258,6 @@ public class AMOptions : EditorWindow {
                     EditorUtility.SetDirty(oData);
                 }
             }
-            GUILayout.EndHorizontal();
-            GUI.enabled = true;
-            // skin
-            GUILayout.BeginHorizontal();
-            GUILayout.Space(width_indent);
-            GUILayout.BeginVertical(GUILayout.Height(26f));
-            GUILayout.Space(1f);
-            GUILayout.Label("Skin");
-            GUILayout.FlexibleSpace();
-            GUILayout.EndVertical();
-            skinIndex = EditorGUILayout.Popup(skinIndex, skin_names, GUILayout.Width(200f));
-			oData.setSkin(skin_ids[skinIndex]);
             GUILayout.EndHorizontal();
         }
         #endregion
