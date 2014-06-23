@@ -770,8 +770,10 @@ public class AMTimeline : EditorWindow {
         if(!oData) {
             oData = AMOptionsFile.loadFile();
         }
+		
 
-        if(EditorApplication.isPlayingOrWillChangePlaymode) {
+
+    	if(EditorApplication.isPlayingOrWillChangePlaymode) {
             this.ShowNotification(new GUIContent("Play Mode"));
             return;
         }
@@ -872,7 +874,10 @@ public class AMTimeline : EditorWindow {
                 return;
         }
 
-        if(aData.e_getCurrentTake() == null) { Repaint(); return; } //????
+		// This happens if you create a take then immediately Undo.
+        if(aData.e_getCurrentTake() == null) {
+			aData.e_selectTake(0);
+        }
 
         AMTimeline.loadSkin(ref skin, ref cachedSkinName, position);
 		LoadEditorTextures();
@@ -5011,6 +5016,7 @@ public class AMTimeline : EditorWindow {
     void timelineSelectTrack(int _track) {
         // select a track from the timeline
         cancelTextEditting();
+		
         if(aData.e_getCurrentTake().getTrackCount() <= 0) return;
         
         // select track

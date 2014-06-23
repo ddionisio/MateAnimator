@@ -10,7 +10,7 @@ public class AMTakeImport : EditorWindow {
 	public static List<GameObject> oldReference = new List<GameObject>();
 	List<int> actions;
 	
-	private AMOptionsFile oData;
+
 	
 	Vector2 scrollPos = new Vector2(0f,0f);
 	float width_button_action = 64f;
@@ -29,9 +29,8 @@ public class AMTakeImport : EditorWindow {
 		this.minSize = new Vector2(590f,120f);
 		actions = new List<int>();	
 		for(int i=0;i<newReference.Count;i++) actions.Add(0);
-		
-		oData = AMOptionsFile.loadFile();
 	}
+
 	// Use this for initialization
 	void OnGUI() {
 		AMTimeline.loadSkin(ref skin, ref cachedSkinName, position);
