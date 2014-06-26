@@ -5532,7 +5532,7 @@ public class AMTimeline : EditorWindow {
                     // already exists
                     EditorUtility.DisplayDialog("Camera Switcher Already Exists", "You can only have one Camera Switcher track. Transition between cameras by adding keyframes to the track.", "Okay");
                 }
-                else if(object_window) {
+                else {
                     aData.e_getCurrentTake().addTrack(TakeEditCurrent().selectedGroup, aData, object_window ? object_window.transform : null,
                         addCompUndo ? Undo.AddComponent<AMCameraSwitcherTrack>(holder) : holder.AddComponent<AMCameraSwitcherTrack>());
                     // preview selected frame

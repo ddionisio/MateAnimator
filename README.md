@@ -28,7 +28,7 @@ Installation
 ============
 * Make sure to get HOTween and install to your project: http://hotween.demigiant.com/download.html
 * Clone this project to your Assets folder (or Plugins if you are scripting in javascript).  If your project is already setup for Git, then clone this project as a submodule.
-* Open your project, you should be able to see Animator in the Windows menu, or M8/Animator in the 'Add Component' droplist.
+* Open your project, you should be able to see "Cutscene Editor" in the Window menu, or M8/Animator in the 'Add Component' droplist.
 
 TODO
 ====
