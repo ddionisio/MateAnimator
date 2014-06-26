@@ -9,9 +9,9 @@ using Holoville.HOTween.Core.Easing;
 
 public class AMTimeline : EditorWindow {
 
-    [MenuItem("Window/Animator Timeline Editor")]
+    [MenuItem("Window/Cutscene Editor")]
     static void Init() {
-        EditorWindow.GetWindow(typeof(AMTimeline));
+        EditorWindow.GetWindow(typeof(AMTimeline), false, "Cutscene Editor");
     }
 
     #region Declarations
@@ -210,7 +210,7 @@ public class AMTimeline : EditorWindow {
         "Trigger"
 	};
     // skins
-    public static string global_skin = "am_skin_blue";
+    public static string global_skin = "am_skin_dark";
     private GUISkin skin = null;
     private string cachedSkinName = null;
     // dimensions
@@ -249,7 +249,7 @@ public class AMTimeline : EditorWindow {
     private float current_width_frame;
     private float current_height_frame;
     // colors
-    private Color colBirdsEyeFrames = new Color(210f / 255f, 210f / 255f, 210f / 255f, 1f);
+	private Color colBirdsEyeFrames;
     // textures
     private Texture tex_cursor_zoomin;
     private Texture tex_cursor_zoomout;
@@ -273,6 +273,7 @@ public class AMTimeline : EditorWindow {
     private Texture texIndLine;
     private Texture texIndHead;
     private Texture texProperties;
+    private Texture texPropertiesTop;
     private Texture texRightArrow;// inspector right arrow
     private Texture texLeftArrow;	// inspector left arrow
     private Texture[] texInterpl = new Texture[2];
@@ -294,7 +295,7 @@ public class AMTimeline : EditorWindow {
     private Texture texIconEvent;
     private Texture texIconOrientation;
     private Texture texIconCameraSwitcher;
-    private bool texLoaded = false;
+    public static bool texLoaded = false;
 
     // temporary variables
     private bool isPlayMode = false; 		// whether the user is in play mode, used to close AMTimeline when in play mode
@@ -416,55 +417,9 @@ public class AMTimeline : EditorWindow {
     #region Main
 
     void OnEnable() {
-        if(!texLoaded) {
-            tex_cursor_zoomin = AMEditorResource.LoadEditorTexture("am_cursor_zoomin");
-            tex_cursor_zoomout = AMEditorResource.LoadEditorTexture("am_cursor_zoomout");
-            tex_cursor_zoom_blank = AMEditorResource.LoadEditorTexture("am_cursor_zoom_blank");
-            tex_cursor_zoom = null;
-            tex_cursor_grab = AMEditorResource.LoadEditorTexture("am_cursor_grab");
-            tex_icon_track = AMEditorResource.LoadEditorTexture("am_icon_track");
-            tex_icon_track_hover = AMEditorResource.LoadEditorTexture("am_icon_track_hover");
-            tex_icon_group_closed = AMEditorResource.LoadEditorTexture("am_icon_group_closed");
-            tex_icon_group_open = AMEditorResource.LoadEditorTexture("am_icon_group_open");
-            tex_icon_group_hover = AMEditorResource.LoadEditorTexture("am_icon_group_hover");
-            tex_element_position = AMEditorResource.LoadEditorTexture("am_element_position");
-            texFrKey = AMEditorResource.LoadEditorTexture("am_key");
-            texFrSet = AMEditorResource.LoadEditorTexture("am_frame_set");
-            //texFrU = AMEditorResource.LoadTexture("am_frame");
-            //texFrM = AMEditorResource.LoadTexture("am_frame-m");
-            //texFrUS = AMEditorResource.LoadTexture("am_frame-s"); 
-            //texFrMS = AMEditorResource.LoadTexture("am_frame-m-s"); 
-            //texFrUG = AMEditorResource.LoadTexture("am_frame-g"); 
-            texKeyBirdsEye = AMEditorResource.LoadEditorTexture("am_key_birdseye");
-            texIndLine = AMEditorResource.LoadEditorTexture("am_indicator_line");
-            texIndHead = AMEditorResource.LoadEditorTexture("am_indicator_head");
-            texProperties = AMEditorResource.LoadEditorTexture("am_information");
-            texRightArrow = AMEditorResource.LoadEditorTexture("am_nav_right");// inspector right arrow
-            texLeftArrow = AMEditorResource.LoadEditorTexture("am_nav_left");	// inspector left arrow
-            texInterpl[0] = AMEditorResource.LoadEditorTexture("am_interpl_curve"); texInterpl[1] = AMEditorResource.LoadEditorTexture("am_interpl_linear");
-            texBoxBorder = AMEditorResource.LoadEditorTexture("am_box_border");
-            texBoxRed = AMEditorResource.LoadEditorTexture("am_box_red");
-            //texBoxBlue = AMEditorResource.LoadTexture("am_box_blue");
-            texBoxLightBlue = AMEditorResource.LoadEditorTexture("am_box_lightblue");
-            texBoxDarkBlue = AMEditorResource.LoadEditorTexture("am_box_darkblue");
-            texBoxGreen = AMEditorResource.LoadEditorTexture("am_box_green");
-            texBoxPink = AMEditorResource.LoadEditorTexture("am_box_pink");
-            texBoxYellow = AMEditorResource.LoadEditorTexture("am_box_yellow");
-            texBoxOrange = AMEditorResource.LoadEditorTexture("am_box_orange");
-            texBoxPurple = AMEditorResource.LoadEditorTexture("am_box_purple");
-            texIconTranslation = AMEditorResource.LoadEditorTexture("am_icon_translation");
-            texIconRotation = AMEditorResource.LoadEditorTexture("am_icon_rotation");
-            texIconAnimation = AMEditorResource.LoadEditorTexture("am_icon_animation");
-            texIconAudio = AMEditorResource.LoadEditorTexture("am_icon_audio");
-            texIconProperty = AMEditorResource.LoadEditorTexture("am_icon_property");
-            texIconEvent = AMEditorResource.LoadEditorTexture("am_icon_event");
-            texIconOrientation = AMEditorResource.LoadEditorTexture("am_icon_orientation");
-            texIconCameraSwitcher = AMEditorResource.LoadEditorTexture("am_icon_cameraswitcher");
+    	LoadEditorTextures();
 
-            texLoaded = true;
-        }
-
-        this.title = "Animator";
+        this.title = "Cutscene Editor";
         this.minSize = new Vector2(width_track + width_playback_controls + width_inspector_open + 70f, 190f);
         this.wantsMouseMove = true;
         window = this;
@@ -528,6 +483,59 @@ public class AMTimeline : EditorWindow {
         isDragging = false;
         dragType = (int)DragType.None;
     }
+
+	void LoadEditorTextures() {
+		if (!texLoaded) {
+			colBirdsEyeFrames = EditorGUIUtility.isProSkin ? new Color(44f / 255f, 43f / 255f, 43f / 255f, 1f) : new Color(210f / 255f, 210f / 255f, 210f / 255f, 1f);
+			tex_cursor_zoomin = AMEditorResource.LoadEditorTexture("am_cursor_zoomin");
+			tex_cursor_zoomout = AMEditorResource.LoadEditorTexture("am_cursor_zoomout");
+			tex_cursor_zoom_blank = AMEditorResource.LoadEditorTexture("am_cursor_zoom_blank");
+			tex_cursor_zoom = null;
+			tex_cursor_grab = AMEditorResource.LoadEditorTexture("am_cursor_grab");
+			tex_icon_track = AMEditorResource.LoadEditorTexture("am_icon_track");
+			tex_icon_track_hover = AMEditorResource.LoadEditorTexture("am_icon_track_hover");
+			tex_icon_group_closed = AMEditorResource.LoadEditorTexture("am_icon_group_closed");
+			tex_icon_group_open = AMEditorResource.LoadEditorTexture("am_icon_group_open");
+			tex_icon_group_hover = AMEditorResource.LoadEditorTexture("am_icon_group_hover");
+			tex_element_position = AMEditorResource.LoadEditorTexture("am_element_position");
+			texFrKey = AMEditorResource.LoadEditorTexture(EditorGUIUtility.isProSkin ? "am_key" : "am_key_light");
+			texFrSet = AMEditorResource.LoadEditorTexture(EditorGUIUtility.isProSkin ? "am_frame_set" : "am_frame_set_light");
+			//texFrU = AMEditorResource.LoadTexture("am_frame");
+			//texFrM = AMEditorResource.LoadTexture("am_frame-m");
+			//texFrUS = AMEditorResource.LoadTexture("am_frame-s"); 
+			//texFrMS = AMEditorResource.LoadTexture("am_frame-m-s"); 
+			//texFrUG = AMEditorResource.LoadTexture("am_frame-g"); 
+			texKeyBirdsEye = AMEditorResource.LoadEditorTexture("am_key_birdseye");
+			texIndLine = AMEditorResource.LoadEditorTexture("am_indicator_line");
+			texIndHead = AMEditorResource.LoadEditorTexture("am_indicator_head");
+			texProperties = AMEditorResource.LoadEditorTexture(EditorGUIUtility.isProSkin ? "am_information" : "am_information_light");
+			texRightArrow = AMEditorResource.LoadEditorTexture(EditorGUIUtility.isProSkin ? "am_nav_right" : "am_nav_right_light");// inspector right arrow
+			texLeftArrow = AMEditorResource.LoadEditorTexture(EditorGUIUtility.isProSkin ? "am_nav_left" : "am_nav_left_light");	// inspector left arrow
+			texInterpl[0] = AMEditorResource.LoadEditorTexture(EditorGUIUtility.isProSkin ? "am_interpl_curve" : "am_interpl_curve_light"); 
+            texInterpl[1] = AMEditorResource.LoadEditorTexture(EditorGUIUtility.isProSkin ? "am_interpl_linear" : "am_interpl_linear_light");
+			texBoxBorder = AMEditorResource.LoadEditorTexture("am_box_border");
+			texBoxRed = AMEditorResource.LoadEditorTexture("am_box_red");
+			//texBoxBlue = AMEditorResource.LoadTexture("am_box_blue");
+			texBoxLightBlue = AMEditorResource.LoadEditorTexture("am_box_lightblue");
+			texBoxDarkBlue = AMEditorResource.LoadEditorTexture("am_box_darkblue");
+			texBoxGreen = AMEditorResource.LoadEditorTexture("am_box_green");
+			texBoxPink = AMEditorResource.LoadEditorTexture("am_box_pink");
+			texBoxYellow = AMEditorResource.LoadEditorTexture("am_box_yellow");
+			texBoxOrange = AMEditorResource.LoadEditorTexture("am_box_orange");
+			texBoxPurple = AMEditorResource.LoadEditorTexture("am_box_purple");
+			texIconTranslation = AMEditorResource.LoadEditorTexture("am_icon_translation");
+			texIconRotation = AMEditorResource.LoadEditorTexture("am_icon_rotation");
+			texIconAnimation = AMEditorResource.LoadEditorTexture("am_icon_animation");
+			texIconAudio = AMEditorResource.LoadEditorTexture("am_icon_audio");
+			texIconProperty = AMEditorResource.LoadEditorTexture("am_icon_property");
+			texIconEvent = AMEditorResource.LoadEditorTexture("am_icon_event");
+			texIconOrientation = AMEditorResource.LoadEditorTexture("am_icon_orientation");
+			texIconCameraSwitcher = AMEditorResource.LoadEditorTexture("am_icon_cameraswitcher");
+
+			texLoaded = true;
+		}
+	}
+
     public bool MetaInstantiate(string label) {
         if(aData.e_metaCanInstantiatePrefab) {
             //preserve the current take edit info
@@ -762,8 +770,10 @@ public class AMTimeline : EditorWindow {
         if(!oData) {
             oData = AMOptionsFile.loadFile();
         }
+		
 
-        if(EditorApplication.isPlayingOrWillChangePlaymode) {
+
+    	if(EditorApplication.isPlayingOrWillChangePlaymode) {
             this.ShowNotification(new GUIContent("Play Mode"));
             return;
         }
@@ -864,9 +874,13 @@ public class AMTimeline : EditorWindow {
                 return;
         }
 
-        if(aData.e_getCurrentTake() == null) { Repaint(); return; } //????
+		// This happens if you create a take then immediately Undo.
+        if(aData.e_getCurrentTake() == null) {
+			aData.e_selectTake(0);
+        }
 
-        AMTimeline.loadSkin(oData, ref skin, ref cachedSkinName, position);
+        AMTimeline.loadSkin(ref skin, ref cachedSkinName, position);
+		LoadEditorTextures();
 
         //retain animator open, this is mostly when recompiling AnimatorData
         aData.e_isAnimatorOpen = true;
@@ -1644,8 +1658,8 @@ public class AMTimeline : EditorWindow {
         GUIStyle styleScrubControl = new GUIStyle(GUI.skin.label);
         string stringTime = frameToTime(aData.e_getCurrentTake().selectedFrame, (float)aData.e_getCurrentTake().frameRate).ToString("N2") + " s";
         string stringFrame = aData.e_getCurrentTake().selectedFrame.ToString() + " fr";
-        int timeFontSize = findWidthFontSize(width_scrub_control, styleScrubControl, new GUIContent(stringTime), 8, 14);
-        int frameFontSize = findWidthFontSize(width_scrub_control, styleScrubControl, new GUIContent(stringFrame), 8, 14);
+        int timeFontSize = findWidthFontSize(width_scrub_control, styleScrubControl, new GUIContent(stringTime), 8, 11);
+        int frameFontSize = findWidthFontSize(width_scrub_control, styleScrubControl, new GUIContent(stringFrame), 8, 11);
         styleScrubControl.fontSize = (timeFontSize <= frameFontSize ? timeFontSize : frameFontSize);
         #region frame control
         Rect rectFrameControl = new Rect(rectPopupPlaybackSpeed.x + rectPopupPlaybackSpeed.width + margin, 1f, width_scrub_control, height_indicator_footer);
@@ -1799,9 +1813,11 @@ public class AMTimeline : EditorWindow {
 
         #endregion
         #region inspector toggle button
-        Rect rectPropertiesButton = new Rect(position.width - (aData.isInspectorOpen ? width_inspector_open : width_inspector_closed) - 1f, height_menu_bar + height_control_bar + 2f, width_inspector_closed, position.height);
+        Rect rectPropertiesButton = new Rect(position.width - (aData.isInspectorOpen ? width_inspector_open : width_inspector_closed), height_menu_bar + height_control_bar + 2f, 36, position.height);
+        Rect rectPropertiesTop = new Rect(position.width - (aData.isInspectorOpen ? width_inspector_open : width_inspector_closed), height_menu_bar - 2f, 251, 24);
         GUI.color = getSkinTextureStyleState("properties_bg").textColor;
         GUI.DrawTexture(rectPropertiesButton, getSkinTextureStyleState("properties_bg").background);
+		GUI.DrawTexture(rectPropertiesTop, getSkinTextureStyleState("properties_top").background);
         GUI.color = Color.white;
         // inspector toggle button
         if(GUI.Button(rectPropertiesButton, "", "label")) {
@@ -1842,6 +1858,7 @@ public class AMTimeline : EditorWindow {
             }
             if(i == 1) i--;
         }
+		
         #endregion
         #region main scrollview
         height_all_tracks = aData.e_getCurrentTake().getElementsHeight(0, height_track, height_track_foldin, height_group);
@@ -1908,8 +1925,9 @@ public class AMTimeline : EditorWindow {
         #endregion
         #region inspector
         Texture inspectorArrow;
+		
         if(aData.isInspectorOpen) {
-            Rect rectInspector = new Rect(position.width - width_inspector_open - 4f + width_inspector_closed, height_control_bar + height_menu_bar + 2f, width_inspector_open, position.height - height_menu_bar - height_control_bar);
+            Rect rectInspector = new Rect(position.width - width_inspector_open - 4f + width_inspector_closed, + height_menu_bar + height_control_bar + 6f, width_inspector_open, position.height - height_menu_bar - height_control_bar);
             GUI.BeginGroup(rectInspector);
             // inspector vertical
             GUI.enabled = true;
@@ -1934,8 +1952,9 @@ public class AMTimeline : EditorWindow {
             GUI.enabled = !isPlaying;
             inspectorArrow = texLeftArrow;
         }
-        GUI.DrawTexture(new Rect(position.width - (aData.isInspectorOpen ? width_inspector_open : width_inspector_closed) + 4f, 60f, 22f, 19f), inspectorArrow);
-        GUI.DrawTexture(new Rect(position.width - (aData.isInspectorOpen ? width_inspector_open : width_inspector_closed) - 8f, 73f, 48f, 48f), texProperties);
+
+        GUI.DrawTexture(new Rect(position.width - (aData.isInspectorOpen ? width_inspector_open : width_inspector_closed) + 9f, 47f, inspectorArrow.width, inspectorArrow.height), inspectorArrow);
+		GUI.DrawTexture(new Rect(position.width - (aData.isInspectorOpen ? width_inspector_open : width_inspector_closed) + 6f, 65f, texProperties.width, texProperties.height), texProperties);
         #endregion
         #region indicator
         if((oData.showFramesForCollapsedTracks || isAnyTrackFoldedOut) && (trackCount > 0)) drawIndicator(aData.e_getCurrentTake().selectedFrame);
@@ -2236,19 +2255,24 @@ public class AMTimeline : EditorWindow {
 
         EditorGUILayout.HelpBox(message, messageType);
     }
-    public static void loadSkin(AMOptionsFile oData, ref GUISkin _skin, ref string skinName, Rect position) {
-        if(_skin == null || skinName == null || skinName != oData.skin/*global_skin*/) {
-            //
-            _skin = (GUISkin)AMEditorResource.LoadSkin(oData.skin); /*global_skin*/
-            skinName = oData.skin/*global_skin*/;
+    public static void loadSkin(ref GUISkin _skin, ref string skinName, Rect position) {
+        string newSkinName = EditorGUIUtility.isProSkin ? "am_skin_dark" : "am_skin_light";
+        if(_skin == null || newSkinName != skinName) {
+            _skin = (GUISkin)AMEditorResource.LoadSkin(newSkinName); /*global_skin*/
+        	skinName = newSkinName;
+            AMTransitionPicker.texLoaded = false;
+        	texLoaded = false;
         }
+		
         GUI.skin = _skin;
         GUI.color = GUI.skin.window.normal.textColor;
         GUI.DrawTexture(new Rect(0f, 0f, position.width, position.height), EditorGUIUtility.whiteTexture);
         GUI.color = Color.white;
+    	
     }
     public static GUIStyleState getSkinTextureStyleState(string name) {
         if(name == "properties_bg") return GUI.skin.GetStyle("Textures_1").normal;
+        if(name == "properties_top") return GUI.skin.GetStyle("Textures_3").active;
         if(name == "delete") return GUI.skin.GetStyle("Textures_1").hover;
         if(name == "rename") return GUI.skin.GetStyle("Textures_1").active;
         if(name == "zoom") return GUI.skin.GetStyle("Textures_1").focused;
@@ -2612,8 +2636,7 @@ public class AMTimeline : EditorWindow {
                 rectTimelineActions.width = (cached_action_endFrame - (_startFrame >= cached_action_startFrame ? _startFrame : cached_action_startFrame) + 1) * current_width_frame;
             }
             // draw timeline action texture
-
-            if(rectTimelineActions.width > 0f) GUI.DrawTexture(rectTimelineActions, texBox);
+			if (rectTimelineActions.width > 0f) GUI.DrawTextureWithTexCoords(rectTimelineActions, texBox, new Rect(0, 0, rectTimelineActions.width/20f, rectTimelineActions.height/60f));
         }
     }
     void showFrames(AMTrack _track, ref float track_y, Event e, bool birdseye, Vector2 scrollViewBounds) {
@@ -3035,10 +3058,40 @@ public class AMTimeline : EditorWindow {
                 else if(_track is AMTriggerTrack) texBox = texBoxDarkBlue;
                 else texBox = texBoxBorder;
                 if(drawEachAction) {
-                    GUI.DrawTexture(rectBox, texBox);
+					GUI.DrawTextureWithTexCoords(rectBox, texBox, new Rect(0, 0, rectBox.width / 20f, rectBox.height / 60f));
                     //if(audioClip) GUI.DrawTexture(rectBox,AssetPreview.GetAssetPreview(audioClip));
                 }
-                // info tex label
+				// for audio draw waveform
+				if (_track is AMAudioTrack) {
+					AMAudioKey _key = (AMAudioKey) ((i >= 0) ? _track.keys[i] : _track.keys[0]);
+					if (_key.audioClip) {
+                        float oneShotLength = _key.audioClip.length * curTake.frameRate;
+                        Rect waveFormRect = new Rect(0,0,1,1);
+                        float endFrame = _key.getStartFrame() + _key.getNumberOfFrames(curTake.frameRate);
+                        if (_key.loop) {
+                            endFrame = curTake.endFrame;
+                            waveFormRect.width = (endFrame - _key.getStartFrame()) / oneShotLength;
+                        }
+                        if (_track.keys.Count > i + 1) {
+                            if (_track.keys[i+1].getStartFrame() < endFrame) {
+                                endFrame = _track.keys[i+1].getStartFrame();
+                                waveFormRect.width = (_track.keys[i+1].getStartFrame() - _key.getStartFrame())/oneShotLength;
+                            }
+                        }
+                        if (_key.getStartFrame() < curTake.startFrame) {
+                            waveFormRect.x = (curTake.startFrame - _key.getStartFrame()) / oneShotLength;
+                            waveFormRect.width -= waveFormRect.x;
+                        }
+                        if (curTake.endFrame < endFrame) {
+                            waveFormRect.width += (curTake.endFrame - endFrame) / oneShotLength;
+                        }
+						Texture2D waveform = AssetPreview.GetAssetPreview(_key.audioClip);
+                        if (!EditorGUIUtility.isProSkin) GUI.color = Color.black;
+						GUI.DrawTextureWithTexCoords(rectBox, waveform, waveFormRect);
+                        GUI.color = Color.white;
+					}
+				}
+            	// info tex label
                 bool hideTxtInfo = (GUI.skin.label.CalcSize(new GUIContent(txtInfo)).x > rectBox.width);
                 GUIStyle styleTxtInfo = new GUIStyle(GUI.skin.label);
                 styleTxtInfo.normal.textColor = Color.white;
@@ -3392,6 +3445,7 @@ public class AMTimeline : EditorWindow {
                 auKey.loop = nloop;
                 AMCodeView.refresh();
                 // save data
+				
                 EditorUtility.SetDirty(auKey);
             }
             return;
@@ -4963,6 +5017,7 @@ public class AMTimeline : EditorWindow {
     void timelineSelectTrack(int _track) {
         // select a track from the timeline
         cancelTextEditting();
+		
         if(aData.e_getCurrentTake().getTrackCount() <= 0) return;
         
         // select track
@@ -5471,7 +5526,9 @@ public class AMTimeline : EditorWindow {
                     addCompUndo ? Undo.AddComponent<AMEventTrack>(holder) : holder.AddComponent<AMEventTrack>());
                 break;
             case (int)Track.CameraSwitcher:
-                if(aData.e_getCurrentTake().cameraSwitcher) {
+            if (GameObject.FindObjectsOfType<Camera>().Length <= 1) {
+                EditorUtility.DisplayDialog("Cannot add Camera Switcher", "You need at least 2 cameras in your scene to start using the Camera Switcher track.", "Okay");
+            } else if (aData.e_getCurrentTake().cameraSwitcher) {
                     // already exists
                     EditorUtility.DisplayDialog("Camera Switcher Already Exists", "You can only have one Camera Switcher track. Transition between cameras by adding keyframes to the track.", "Okay");
                 }

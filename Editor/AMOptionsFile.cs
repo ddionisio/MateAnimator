@@ -9,7 +9,6 @@ public class AMOptionsFile : ScriptableObject {
 
 	
 	// options
-	public string skin = "am_skin_dark";
 	public bool time_numbering = false;
 	public bool scrubby_zoom_cursor = true;
 	public bool scrubby_zoom_slider = false;
@@ -26,14 +25,6 @@ public class AMOptionsFile : ScriptableObject {
 
 	private List<int> quickAdd_Combos_Flattened = new List<int>();
 	private bool unflattened = false;
-	
-	public bool setSkin(string _skin) {
-		if(skin != _skin) {
-			skin = _skin;
-			return true;
-		}
-		return false;
-	}
 	
 	public bool setIgnoreMinimumSizeWarning(bool _ignoreMinSize) {
 		if(ignoreMinSize != _ignoreMinSize) {

@@ -71,7 +71,7 @@ public class AMPropertySelect : EditorWindow {
     }
     void OnGUI() {
 
-        AMTimeline.loadSkin(oData, ref skin, ref cachedSkinName, position);
+        AMTimeline.loadSkin(ref skin, ref cachedSkinName, position);
         if(!aData) {
             AMTimeline.MessageBox("Animator requires an AnimatorData component in your scene. Launch Animator to add the component.", AMTimeline.MessageBoxType.Warning);
             return;

@@ -93,7 +93,7 @@ public class AMCodeView : EditorWindow {
         //if(EditorWindow.mouseOverWindow==this) this.Repaint();
     }
     void OnGUI() {
-        AMTimeline.loadSkin(oData, ref skin, ref cachedSkinName, position);
+        AMTimeline.loadSkin(ref skin, ref cachedSkinName, position);
         GUIStyle textStyle = new GUIStyle(GUI.skin.label);
         textStyle.wordWrap = false;
         textStyle.alignment = TextAnchor.UpperLeft;
