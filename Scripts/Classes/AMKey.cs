@@ -83,15 +83,16 @@ public class AMKey : MonoBehaviour {
     }
 
     public AnimationCurve getCustomEaseCurve() {
-
-        AnimationCurve curve = new AnimationCurve();
-        if(customEase.Count < 0) {
-            return curve;
+        if(customEase.Count == 0) {
+            return new AnimationCurve();
         }
         if(customEase.Count % 4 != 0) {
             Debug.LogError("Animator: Error retrieving custom ease.");
-            return curve;
+            return new AnimationCurve();
         }
+
+        AnimationCurve curve = new AnimationCurve();
+
         for(int i = 0; i < customEase.Count; i += 4) {
             curve.AddKey(new Keyframe(customEase[i], customEase[i + 1], customEase[i + 2], customEase[i + 3]));
         }
