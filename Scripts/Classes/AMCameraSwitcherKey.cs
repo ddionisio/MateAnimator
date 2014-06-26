@@ -254,67 +254,17 @@ public class AMCameraSwitcherKey : AMKey {
     }
 
     public override void build(AMSequence seq, AMTrack track, int index, UnityEngine.Object target) {
-        Camera[] allCameras = (track as AMCameraSwitcherTrack).GetCachedCameras(seq.target);
-
         // if targets are equal do nothing
         if(endFrame == -1 || !hasTargets(seq.target) || targetsAreEqual(seq.target)) return;
 
-        float[] fadeParams = cameraFadeParameters.ToArray();
-        bool isReversed = AMUtil.isTransitionReversed(type, fadeParams);
-        Camera cam=getCamera(seq.target), camEnd=getCameraEnd(seq.target);
+        Camera[] allCameras = (track as AMCameraSwitcherTrack).GetCachedCameras(seq.target);
 
-        seq.sequence.InsertCallback(((float)frame - 1f) / (float)seq.take.frameRate, OnFirstFrameEvent,
-            isReversed, cam, camEnd, (object)allCameras, (object)fadeParams);
-
-        seq.sequence.InsertCallback(((float)endFrame - 1.01f) / (float)seq.take.frameRate, OnLastFrameEvent,
-            isReversed, cam, camEnd, (object)allCameras, (object)fadeParams);
+        seq.Insert(new AMActionCameraSwitcher(this, seq.take.frameRate, seq.target, allCameras));
 
         //use 'this' with property 'type' as a placeholder since AMPlugCameraSwitcher does not require any property
         seq.Insert(this, HOTween.To(this, getTime(seq.take.frameRate), new TweenParms().Prop("type", new AMPlugCameraSwitcher())));
     }
-
-    void OnFirstFrameEvent(TweenEvent dat) {
-        bool isReversed = (bool)dat.parms[0];
-        Camera cam = dat.parms[1] as Camera;
-        Camera camEnd = dat.parms[2] as Camera;
-        Camera[] allCams = dat.parms[3] as Camera[];
-        float[] fadeParams = dat.parms[4] as float[];
-
-        if(dat.tween.isLoopingBack) {
-            CameraEnd(!isReversed, camEnd, cam, allCams);
-        }
-        else {
-            if(cameraFadeType == (int)Fade.None) {
-                CameraFadeNoneTargets(typeEnd, colorEnd, camEnd, allCams);
-                CameraEnd(isReversed, cam, camEnd, allCams);
-            }
-            else {
-                CameraGenerateFadeTargets(isReversed, cam, camEnd, allCams, fadeParams);
-            }
-        }
-    }
-
-    void OnLastFrameEvent(TweenEvent dat) {
-        bool isReversed = (bool)dat.parms[0];
-        Camera cam = dat.parms[1] as Camera;
-        Camera camEnd = dat.parms[2] as Camera;
-        Camera[] allCams = dat.parms[3] as Camera[];
-        float[] fadeParams = dat.parms[4] as float[];
-
-        if(dat.tween.isLoopingBack) {
-            if(cameraFadeType == (int)Fade.None) {
-                CameraFadeNoneTargets(typeEnd, colorEnd, camEnd, allCams);
-                CameraEnd(isReversed, cam, camEnd, allCams);
-            }
-            else {
-                CameraGenerateFadeTargets(isReversed, cam, camEnd, allCams, fadeParams);
-            }
-        }
-        else {
-            CameraEnd(isReversed, cam, camEnd, allCams);
-        }
-    }
-
+        
     void CameraFadeNoneTargets(int typeEnd, Color colorEnd, Camera camEnd, Camera[] allCams) {
         if(typeEnd == 0) {
             if(camEnd) AMUtil.SetTopCamera(camEnd, allCams);
@@ -439,6 +389,40 @@ public class AMCameraSwitcherKey : AMKey {
             AMCameraFade cf = AMCameraFade.getCameraFade();
             cf.clearTexture2D();
             if(cf.keepAlives > 0) cf.keepAlives--;
+        }
+    }
+
+    public class AMActionCameraSwitcher : AMActionData {
+        private AMCameraSwitcherKey mCamSwitcher;
+        private bool mIsReversed;
+        private Camera mCam;
+        private Camera mCamEnd;
+        private Camera[] mAllCams;
+        private float[] mFadeParams;
+
+        public AMActionCameraSwitcher(AMCameraSwitcherKey camSwitcher, int frameRate, AMITarget itarget, Camera[] allCameras)
+            : base(camSwitcher, frameRate) {
+            mCamSwitcher = camSwitcher;
+
+            mFadeParams = mCamSwitcher.cameraFadeParameters.ToArray();
+            mIsReversed = AMUtil.isTransitionReversed(mCamSwitcher.type, mFadeParams);
+            mCam = mCamSwitcher.getCamera(itarget);
+            mCamEnd = mCamSwitcher.getCameraEnd(itarget);
+            mAllCams = allCameras;
+        }
+
+        public override void Apply(float t, bool backward) {
+            if(mCamSwitcher.cameraFadeType == (int)Fade.None) {
+                mCamSwitcher.CameraFadeNoneTargets(mCamSwitcher.typeEnd, mCamSwitcher.colorEnd, mCamEnd, mAllCams);
+                mCamSwitcher.CameraEnd(mIsReversed, mCam, mCamEnd, mAllCams);
+            }
+            else {
+                mCamSwitcher.CameraGenerateFadeTargets(mIsReversed, mCam, mCamEnd, mAllCams, mFadeParams);
+            }
+        }
+
+        public override void End(bool backward) {
+            mCamSwitcher.CameraEnd(backward ? !mIsReversed : mIsReversed, mCam, mCamEnd, mAllCams);
         }
     }
 }

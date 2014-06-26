@@ -15,6 +15,7 @@ public class AMActionTween : ABSTweenPlugin {
     private int[] mValueTrackCurIndices;
     private float mStartTime;
     private float mDuration;
+    private float mLastT;
 
     protected override object startVal { get { return _startVal; } set { _startVal = value; } }
 
@@ -56,6 +57,8 @@ public class AMActionTween : ABSTweenPlugin {
                 mValueTrackCurIndices[i] = trackValIndStart;
             }
         }
+
+        mLastT = 0;
     }
 
     protected override float GetSpeedBasedDuration(float p_speed) {
@@ -70,24 +73,27 @@ public class AMActionTween : ABSTweenPlugin {
     protected override void DoUpdate(float p_totElapsed) {
         float t = mStartTime + p_totElapsed;
 
+        bool backward = mLastT > t;
+
         for(int i = 0, max = mValueTracks.Length; i < max; i++) {
             int curInd = mValueTrackCurIndices[i];
 
             //determine if we need to move
-            if(curInd == trackValIndInit)
+            if(curInd == trackValIndInit) //wait one frame
                 mValueTrackCurIndices[i] = trackValIndStart;
             else if(curInd == trackValIndStart) {
                 int newInd = GetValueIndex(mValueTracks[i], t);
                 mValueTrackCurIndices[i] = newInd;
                 AMActionData act = mValueTracks[i][newInd];
-                act.Apply(t - act.startTime);
+                act.Apply(t - act.startTime, backward);
             }
             else {
                 int newInd = GetNextValueTrackIndex(mValueTracks[i], curInd, t);
                 if(newInd != curInd) {
+                    mValueTracks[i][curInd].End(backward);
                     mValueTrackCurIndices[i] = newInd;
                     AMActionData act = mValueTracks[i][newInd];
-                    act.Apply(t - act.startTime);
+                    act.Apply(t - act.startTime, backward);
                 }
             }
         }
@@ -169,7 +175,8 @@ public abstract class AMActionData {
         mEndTime = endTime;
     }
 
-    public abstract void Apply(float t);
+    public abstract void Apply(float t, bool backward);
+    public abstract void End(bool backward);
 }
 
 public class AMActionGOActive : AMActionData {
@@ -188,9 +195,11 @@ public class AMActionGOActive : AMActionData {
         mVal = val;
     }
 
-    public override void Apply(float t) {
+    public override void Apply(float t, bool backward) {
         mGO.SetActive(mVal);
     }
+
+    public override void End(bool backward) { }
 }
 
 public class AMActionTransLocalPos : AMActionData {
@@ -203,9 +212,11 @@ public class AMActionTransLocalPos : AMActionData {
         mPos = pos;
     }
 
-    public override void Apply(float t) {
+    public override void Apply(float t, bool backward) {
         mTrans.localPosition = mPos;
     }
+
+    public override void End(bool backward) { }
 }
 
 public class AMActionTransLocalRot : AMActionData {
@@ -218,9 +229,11 @@ public class AMActionTransLocalRot : AMActionData {
         mRot = rot;
     }
 
-    public override void Apply(float t) {
+    public override void Apply(float t, bool backward) {
         mTrans.localRotation = mRot;
     }
+
+    public override void End(bool backward) { }
 }
 
 public class AMActionSpriteSet : AMActionData {
@@ -233,9 +246,11 @@ public class AMActionSpriteSet : AMActionData {
         mSprite = spr;
     }
 
-    public override void Apply(float t) {
+    public override void Apply(float t, bool backward) {
         mSpriteRender.sprite = mSprite;
     }
+
+    public override void End(bool backward) { }
 }
 
 public class AMActionPropertySet : AMActionData {
@@ -250,9 +265,11 @@ public class AMActionPropertySet : AMActionData {
         mVal = val;
     }
 
-    public override void Apply(float t) {
+    public override void Apply(float t, bool backward) {
         mProp.SetValue(mObj, mVal, null);
     }
+
+    public override void End(bool backward) { }
 }
 
 public class AMActionFieldSet : AMActionData {
@@ -267,9 +284,11 @@ public class AMActionFieldSet : AMActionData {
         mVal = val;
     }
 
-    public override void Apply(float t) {
+    public override void Apply(float t, bool backward) {
         mField.SetValue(mObj, mVal);
     }
+
+    public override void End(bool backward) { }
 }
 
 public class AMActionAudioPlay : AMActionData {
@@ -284,7 +303,7 @@ public class AMActionAudioPlay : AMActionData {
         mLoop = loop;
     }
 
-    public override void Apply(float t) {
+    public override void Apply(float t, bool backward) {
         if(mSrc.isPlaying && mSrc.loop && mSrc.clip == mClip) return;
 
         mSrc.loop = mLoop;
@@ -292,4 +311,7 @@ public class AMActionAudioPlay : AMActionData {
         //mSrc.time = t;
         mSrc.Play();
     }
+
+    public override void End(bool backward) { }
 }
+

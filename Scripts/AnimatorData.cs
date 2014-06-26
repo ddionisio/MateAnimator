@@ -243,10 +243,12 @@ public class AnimatorData : MonoBehaviour, AMITarget {
 
         Sequence seq = amSeq.sequence;
 
-        if(seq == null)
-            mSequences[index].Build(gameObject.name, sequenceKillWhenDone, updateType);
+        if(seq == null) {
+            amSeq.Build(gameObject.name, sequenceKillWhenDone, updateType);
+            seq = amSeq.sequence;
+        }
         else
-            mSequences[index].Reset(true);
+            amSeq.Reset(true);
         
         mNowPlayingTakeIndex = index;
 
