@@ -289,6 +289,12 @@ public class AnimatorData : MonoBehaviour, AMITarget {
 		take.stopAudio(this);
 		take.stopAnimations(this);
 
+        //end camera fade
+        if(AMCameraFade.hasInstance()) {
+            AMCameraFade cf = AMCameraFade.getCameraFade();
+            cf.playParam = null;
+        }
+
         mSequences[mNowPlayingTakeIndex].Reset(false);
 
         mNowPlayingTakeIndex = -1;
@@ -487,6 +493,14 @@ public class AnimatorData : MonoBehaviour, AMITarget {
 	}
 
     public void TargetSequenceComplete(AMSequence seq) {
+        //end camera fade
+        if(AMCameraFade.hasInstance()) {
+            AMCameraFade cf = AMCameraFade.getCameraFade();
+            cf.playParam = null;
+        }
+
+        mNowPlayingTakeIndex = -1;
+
         if(takeCompleteCallback != null)
             takeCompleteCallback(this, seq.take);
     }

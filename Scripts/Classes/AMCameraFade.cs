@@ -106,6 +106,22 @@ public class AMCameraFade : MonoBehaviour {
     public bool shouldUpdateRenderTexture = false;
     [HideInInspector]
     public bool preview = false;
+
+    private AMCameraSwitcherKey.PlayParam mPlayParam; //used for when playing a camera switcher
+
+    public AMCameraSwitcherKey.PlayParam playParam {
+        get { return mPlayParam; }
+        set {
+            if(value != null) {
+                mPlayParam = value;
+            }
+            else {
+                if(mPlayParam != null)
+                    mPlayParam.End();
+                mPlayParam = null;
+            }
+        }
+    }
     #endregion
 
     #region Main
@@ -770,7 +786,7 @@ public class AMCameraFade : MonoBehaviour {
                 for(int c = 0; c < 256; c++) {
                     _temp.SetPixel(c, r, isBlack && ((c/16) % 2) == 0 ? Color.black : Color.white);
                 }
-            }   
+            }
             _temp.Apply();
         }
         return _temp;
@@ -965,8 +981,13 @@ public class AMCameraFade : MonoBehaviour {
         this.OnGUI();
     }
 
-    public void incrementKeepAlives() {
-        keepAlives++;
+    /// <summary>
+    /// If inclusive, only increment if keepAlives == 0
+    /// </summary>
+    public void incrementKeepAlives(bool inclusive) {
+        if(!inclusive || (inclusive && keepAlives == 0))
+            keepAlives++;
+
         keepAliveAwake = false;
     }
     public void clearTexture() {

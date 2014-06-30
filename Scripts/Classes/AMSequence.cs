@@ -143,7 +143,7 @@ public class AMSequence {
                 return;
             }
         }
-
+                
         mTarget.TargetSequenceComplete(this);
     }
 
