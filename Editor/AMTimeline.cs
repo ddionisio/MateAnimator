@@ -2063,8 +2063,7 @@ public class AMTimeline : EditorWindow {
                 
         if(tempGO != null) {
             objects_window = new List<GameObject>();
-            if(Selection.gameObjects.Length <= 0) objects_window.Add(tempGO);
-            else objects_window.AddRange(Selection.gameObjects);
+            objects_window.Add(tempGO);
             buildAddTrackMenu_Drag();
             menu_drag.ShowAsContext();
         }
@@ -5583,27 +5582,36 @@ public class AMTimeline : EditorWindow {
                 //insert keys
                 AMTakeData take = aData.e_getCurrentTake();
 
-                float sprFPS = oData.spriteInsertFramePerSecond;
+                if(sprites.Count > 1) {
+                    float sprFPS = oData.spriteInsertFramePerSecond;
 
-                //expand num frames if needed
-                int spriteNumFrames = Mathf.RoundToInt(((float)sprites.Count/sprFPS)*(float)take.frameRate);
-                if(take.numFrames < frame + spriteNumFrames)
-                    take.numFrames += (frame + spriteNumFrames) - take.numFrames;
+                    //expand num frames if needed
+                    int spriteNumFrames = Mathf.RoundToInt(((float)sprites.Count/sprFPS)*(float)take.frameRate);
+                    if(take.numFrames < frame + spriteNumFrames)
+                        take.numFrames += (frame + spriteNumFrames) - take.numFrames;
 
-                track.offsetKeysFromBy(aData, frame, spriteNumFrames);
+                    track.offsetKeysFromBy(aData, frame, spriteNumFrames);
 
-                for(int i = 0;i < sprites.Count;i++) {
-                    AMPropertyKey key = track.addKey(aData, addCall, frame);
-                    key.setValue(sprites[i]);
-
-                    int nframe = Mathf.RoundToInt((((float)frame/(float)take.frameRate) + (1.0f/sprFPS))*(float)take.frameRate);
-                    frame = Mathf.Max(nframe, frame+1);
-
-                    //add final key if it's the last in track
-                    if(i == sprites.Count-1 && track.keys[track.keys.Count-1] == key) {
-                        key = track.addKey(aData, addCall, frame);
+                    for(int i = 0; i < sprites.Count; i++) {
+                        AMPropertyKey key = track.addKey(aData, addCall, frame);
                         key.setValue(sprites[i]);
+
+                        int nframe = Mathf.RoundToInt((((float)frame/(float)take.frameRate) + (1.0f/sprFPS))*(float)take.frameRate);
+                        frame = Mathf.Max(nframe, frame+1);
+
+                        //add final key if it's the last in track
+                        if(i == sprites.Count-1 && track.keys[track.keys.Count-1] == key) {
+                            key = track.addKey(aData, addCall, frame);
+                            key.setValue(sprites[i]);
+                        }
                     }
+                }
+                else { //just set key
+                    AMKey key = track.getKeyOnFrame(frame, false);
+                    if(key == null)
+                        key = track.addKey(aData, addCall, frame);
+
+                    (key as AMPropertyKey).setValue(sprites[0]);
                 }
                 
                 EditorUtility.SetDirty(track);

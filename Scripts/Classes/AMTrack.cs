@@ -179,11 +179,12 @@ public abstract class AMTrack : MonoBehaviour {
     }
 
     // get key on frame
-    public AMKey getKeyOnFrame(int _frame) {
+    public AMKey getKeyOnFrame(int _frame, bool showWarning = true) {
         foreach(AMKey key in keys) {
             if(key.frame == _frame) return key;
         }
-        Debug.LogError("Animator: No key found on frame " + _frame);
+        if(showWarning)
+            Debug.LogError("Animator: No key found on frame " + _frame);
         return null;
     }
 
