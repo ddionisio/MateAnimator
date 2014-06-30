@@ -287,6 +287,9 @@ public class AMPropertyTrack : AMTrack {
         base.updateCache(target);
 
 		Component comp = GetTargetComp(target);
+        if(comp == null)
+            return;
+
 		RefreshData(comp);
 
         for(int i = 0; i < keys.Count; i++) {
