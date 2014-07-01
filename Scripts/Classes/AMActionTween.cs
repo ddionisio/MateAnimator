@@ -15,6 +15,8 @@ public class AMActionTween : ABSTweenPlugin {
     private int[] mValueTrackCurIndices;
     private float mStartTime;
     private float mDuration;
+    private float mLastTime;
+    private bool mIsLoopBack;
 
     protected override object startVal { get { return _startVal; } set { _startVal = value; } }
 
@@ -56,6 +58,9 @@ public class AMActionTween : ABSTweenPlugin {
                 mValueTrackCurIndices[i] = trackValIndStart;
             }
         }
+
+        mLastTime = 0.0f;
+        mIsLoopBack = false;
     }
 
     protected override float GetSpeedBasedDuration(float p_speed) {
@@ -68,10 +73,14 @@ public class AMActionTween : ABSTweenPlugin {
     protected override void SetIncrementalRestart() { }
 
     protected override void DoUpdate(float p_totElapsed) {
+        bool backward = mLastTime > p_totElapsed;
+        bool changed = mIsLoopBack != backward;
+
+        mLastTime = p_totElapsed;
+        mIsLoopBack = backward;
+        
         float t = mStartTime + p_totElapsed;
-
-        //bool backward = mLastT > t;
-
+                
         for(int i = 0, max = mValueTracks.Length; i < max; i++) {
             int curInd = mValueTrackCurIndices[i];
 
@@ -82,14 +91,14 @@ public class AMActionTween : ABSTweenPlugin {
                 int newInd = GetValueIndex(mValueTracks[i], t);
                 mValueTrackCurIndices[i] = newInd;
                 AMActionData act = mValueTracks[i][newInd];
-                act.Apply(t - act.startTime);
+                act.Apply(t - act.startTime, tweenObj.isLoopingBack);
             }
             else {
                 int newInd = GetNextValueTrackIndex(mValueTracks[i], curInd, t);
-                if(newInd != curInd) {
+                if(newInd != curInd || changed) {
                     mValueTrackCurIndices[i] = newInd;
                     AMActionData act = mValueTracks[i][newInd];
-                    act.Apply(t - act.startTime);
+                    act.Apply(t - act.startTime, mIsLoopBack);
                 }
             }
         }
@@ -171,7 +180,7 @@ public abstract class AMActionData {
         mEndTime = endTime;
     }
 
-    public abstract void Apply(float t);
+    public abstract void Apply(float t, bool backwards);
 }
 
 public class AMActionGOActive : AMActionData {
@@ -190,7 +199,7 @@ public class AMActionGOActive : AMActionData {
         mVal = val;
     }
 
-    public override void Apply(float t) {
+    public override void Apply(float t, bool backwards) {
         mGO.SetActive(mVal);
     }
 }
@@ -205,7 +214,7 @@ public class AMActionTransLocalPos : AMActionData {
         mPos = pos;
     }
 
-    public override void Apply(float t) {
+    public override void Apply(float t, bool backwards) {
         mTrans.localPosition = mPos;
     }
 }
@@ -220,7 +229,7 @@ public class AMActionTransLocalRot : AMActionData {
         mRot = rot;
     }
 
-    public override void Apply(float t) {
+    public override void Apply(float t, bool backwards) {
         mTrans.localRotation = mRot;
     }
 }
@@ -235,7 +244,7 @@ public class AMActionSpriteSet : AMActionData {
         mSprite = spr;
     }
 
-    public override void Apply(float t) {
+    public override void Apply(float t, bool backwards) {
         mSpriteRender.sprite = mSprite;
     }
 }
@@ -252,7 +261,7 @@ public class AMActionPropertySet : AMActionData {
         mVal = val;
     }
 
-    public override void Apply(float t) {
+    public override void Apply(float t, bool backwards) {
         mProp.SetValue(mObj, mVal, null);
     }
 }
@@ -269,7 +278,7 @@ public class AMActionFieldSet : AMActionData {
         mVal = val;
     }
 
-    public override void Apply(float t) {
+    public override void Apply(float t, bool backwards) {
         mField.SetValue(mObj, mVal);
     }
 }
@@ -279,15 +288,15 @@ public class AMActionAudioPlay : AMActionData {
     private AudioClip mClip;
     private bool mLoop;
 
-    public AMActionAudioPlay(AMKey key, int frameRate, AudioSource src, AudioClip clip, bool loop)
-        : base(key, frameRate) {
+    public AMActionAudioPlay(float sTime, float eTime, AudioSource src, AudioClip clip, bool loop)
+        : base(sTime, eTime) {
         mSrc = src;
         mClip = clip;
         mLoop = loop;
     }
 
-    public override void Apply(float t) {
-        if(mSrc.isPlaying && mSrc.loop && mSrc.clip == mClip) return;
+    public override void Apply(float t, bool backwards) {
+        if((mSrc.isPlaying && mSrc.clip == mClip) || backwards) return;
 
         mSrc.loop = mLoop;
         mSrc.clip = mClip;

@@ -10,6 +10,7 @@ public class AMAudioTrack : AMTrack {
 
 	protected override void SetSerializeObject(UnityEngine.Object obj) {
 		audioSource = obj as AudioSource;
+        audioSource.playOnAwake = false;
 	}
 	
 	protected override UnityEngine.Object GetSerializeObject(GameObject targetGO) {
@@ -23,6 +24,12 @@ public class AMAudioTrack : AMTrack {
 	public override string GetRequiredComponent() {
 		return "AudioSource";
 	}
+
+    public override void updateCache(AMITarget target) {
+        base.updateCache(target);
+
+        audioSource.playOnAwake = false;
+    }
 
     // add a new key
     public void addKey(AMITarget itarget, OnAddKey addCall, int _frame, AudioClip _clip, bool _loop) {

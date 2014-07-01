@@ -21,36 +21,15 @@ public class AMAudioKey : AMKey {
     }
 
     #region action
-    void OnMethodCallbackParams(TweenEvent dat) {
-		AudioSource audioSource = dat.parms[0] as AudioSource;
-        if(audioSource) {
-            float elapsed = dat.tween.elapsed;
-            float frameRate = (float)dat.parms[1];
-            float curFrame = frameRate * elapsed;
-            float endFrame = frame + getNumberOfFrames(Mathf.RoundToInt(frameRate));
-
-            //Debug.Log("audio t: "+elapsed+" play: " + curFrame + " end: " + endFrame);
-
-            if(!loop && curFrame > endFrame) return;
-            if(loop && audioSource.isPlaying && audioSource.clip == audioClip) return;
-
-            audioSource.loop = loop;
-
-            if(!dat.tween.isReversed)
-                audioSource.time = (curFrame - ((float)frame)) / frameRate;
-            else //TODO: not possible when we are playing the sequence in reverse, so whatever
-                audioSource.time = 0.0f;
-
-            audioSource.clip = audioClip;
-            audioSource.pitch = 1.0f;
-
-            audioSource.Play();
-        }
-    }
-
+    
     public override void build(AMSequence seq, AMTrack track, int index, UnityEngine.Object target) {
-        seq.Insert(new AMActionAudioPlay(this, seq.take.frameRate, target as AudioSource, audioClip, loop));
-        //seq.sequence.InsertCallback(getWaitTime(seq.take.frameRate, 0.0f), OnMethodCallbackParams, target, (float)seq.take.frameRate);
+        float sTime = getWaitTime(seq.take.frameRate, 0.0f);
+
+        //if loop, get the last frame of the take and use that as the duration
+        float f = (float)seq.take.frameRate;
+        float eTime = loop ? (float)seq.take.getLastFrame()/f : sTime + (float)getNumberOfFrames(seq.take.frameRate)/f;
+
+        seq.Insert(new AMActionAudioPlay(sTime, eTime, target as AudioSource, audioClip, loop));
     }
 
     public ulong getTimeInSamples(int frequency, float time) {
