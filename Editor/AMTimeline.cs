@@ -2635,7 +2635,7 @@ public class AMTimeline : EditorWindow {
                 rectTimelineActions.width = (cached_action_endFrame - (_startFrame >= cached_action_startFrame ? _startFrame : cached_action_startFrame) + 1) * current_width_frame;
             }
             // draw timeline action texture
-			if (rectTimelineActions.width > 0f) GUI.DrawTextureWithTexCoords(rectTimelineActions, texBox, new Rect(0, 0, rectTimelineActions.width/20f, rectTimelineActions.height/60f));
+            if(rectTimelineActions.width > 0f) GUI.DrawTextureWithTexCoords(rectTimelineActions, texBox, new Rect(0, 0, rectTimelineActions.width/32f, rectTimelineActions.height/64f));
         }
     }
     void showFrames(AMTrack _track, ref float track_y, Event e, bool birdseye, Vector2 scrollViewBounds) {
@@ -3057,7 +3057,7 @@ public class AMTimeline : EditorWindow {
                 else if(_track is AMTriggerTrack) texBox = texBoxDarkBlue;
                 else texBox = texBoxBorder;
                 if(drawEachAction) {
-					GUI.DrawTextureWithTexCoords(rectBox, texBox, new Rect(0, 0, rectBox.width / 20f, rectBox.height / 60f));
+					GUI.DrawTextureWithTexCoords(rectBox, texBox, new Rect(0, 0, rectBox.width / 32f, rectBox.height / 64f));
                     //if(audioClip) GUI.DrawTexture(rectBox,AssetPreview.GetAssetPreview(audioClip));
                 }
 				// for audio draw waveform
