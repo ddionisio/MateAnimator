@@ -356,6 +356,9 @@ public class AMTimeline : EditorWindow {
     private Vector2 endHandMousePosition = new Vector2(0f, 0f);
     private int justFinishedHandDragTicker = 0;
     private int handDragAccelaration = 0;
+    private bool dragPan;
+    private float startScrollViewValue;
+    private float startFrame;
     private bool didPeakZoom = false;
     private bool wasZoomingIn = false;
     private float startZoomValue = 0f;
@@ -929,6 +932,13 @@ public class AMTimeline : EditorWindow {
         #region temporary variables
         Rect rectWindow = new Rect(0f, 0f, position.width, position.height);
         Event e = Event.current;
+
+        if (e.type == EventType.ScrollWheel) {
+            scrollViewValue.y -= e.delta.y*20;   
+            if (Mathf.Abs(e.delta.y) > 0) {
+                aData.zoom += Mathf.Clamp(Mathf.Abs(e.delta.y) *0.04f, 0.01f, 0.1f) * Mathf.Sign(e.delta.y);
+            }
+        }
         // get global mouseposition
         Vector2 globalMousePosition = getGlobalMousePosition(e);
         // resize track
@@ -946,6 +956,10 @@ public class AMTimeline : EditorWindow {
         bool wasDragging = false;
         UnityEngine.Object[] dragItems = null;
         Rect dropArea = new Rect(width_track, height_menu_bar + height_control_bar + 2f, position.width - 5f - 15f - width_track - (aData.isInspectorOpen ? width_inspector_open : width_inspector_closed), position.height - height_indicator_footer - height_menu_bar - height_control_bar);
+        if (e.type == EventType.mouseDown) {
+            dragPan = (e.button == 0);
+        }
+
         if(e.type == EventType.mouseDrag && EditorWindow.mouseOverWindow == this) {
             isDragging = true;
         }
@@ -4517,6 +4531,8 @@ public class AMTimeline : EditorWindow {
                 startZoomMousePosition = currentMousePosition;
                 zoomDirectionMousePosition = currentMousePosition;
                 startZoomValue = aData.zoom;
+                startFrame = aData.e_getCurrentTake().startFrame;
+                startScrollViewValue = scrollViewValue.y;
                 dragType = (int)DragType.CursorZoom;
                 didPeakZoom = false;
                 #endregion
@@ -4732,35 +4748,72 @@ public class AMTimeline : EditorWindow {
                 #region cursor zoom
             }
             else if(dragType == (int)DragType.CursorZoom) {
-                if(didPeakZoom) {
-                    if(wasZoomingIn && currentMousePosition.x <= cachedZoomMousePosition.x) {
-                        // direction change	
-                        startZoomValue = aData.zoom;
-                        zoomDirectionMousePosition = currentMousePosition;
+                if (dragPan) {
+                    if (didPeakZoom) {
+                        if (wasZoomingIn && currentMousePosition.x <= cachedZoomMousePosition.x) {
+                            startFrame = aData.e_getCurrentTake().startFrame;
+                            zoomDirectionMousePosition.x = currentMousePosition.x;
+                        } else if (!wasZoomingIn && currentMousePosition.x >= cachedZoomMousePosition.x) {
+                            startFrame = aData.e_getCurrentTake().startFrame;
+                            zoomDirectionMousePosition.x = currentMousePosition.x;
+                        }
+                        didPeakZoom = false;
                     }
-                    else if(!wasZoomingIn && currentMousePosition.x >= cachedZoomMousePosition.x) {
-                        // direction change	
-                        startZoomValue = aData.zoom;
-                        zoomDirectionMousePosition = currentMousePosition;
+                    float frameDiff = aData.e_getCurrentTake().endFrame - aData.e_getCurrentTake().startFrame;
+                    float framesInView = (aData.e_getCurrentTake().endFrame-aData.e_getCurrentTake().startFrame);
+                    float areaWidth = position.width - width_track - (aData.isInspectorOpen ? width_inspector_open - 4f : width_inspector_closed) - 21f;
+                    float currFrame = startFrame + (zoomDirectionMousePosition.x- currentMousePosition.x) * (framesInView/areaWidth);
+                    if (currFrame <= 1) {
+                        wasZoomingIn = false;
+                        cachedZoomMousePosition = currentMousePosition;
+                        currFrame = 1f;
+                        didPeakZoom = true;
                     }
-                    didPeakZoom = false;
+                    if (currFrame + frameDiff > aData.e_getCurrentTake().numFrames) {
+                        wasZoomingIn = true;
+                        cachedZoomMousePosition = currentMousePosition;
+                        zoomDirectionMousePosition.x = currentMousePosition.x;
+                        currFrame = aData.e_getCurrentTake().numFrames - frameDiff;
+                        didPeakZoom = true;
+                    }
+
+                    aData.e_getCurrentTake().startFrame = currFrame;
+                    aData.e_getCurrentTake().endFrame = aData.e_getCurrentTake().startFrame + frameDiff;
+                    scrollViewValue.y = startScrollViewValue + (zoomDirectionMousePosition.y - currentMousePosition.y);
+                } else {
+                    if(didPeakZoom) {
+                        if(wasZoomingIn && currentMousePosition.x <= cachedZoomMousePosition.x) {
+                            // direction change	
+                            startZoomValue = aData.zoom;
+                            zoomDirectionMousePosition = currentMousePosition;
+                        }
+                        else if(!wasZoomingIn && currentMousePosition.x >= cachedZoomMousePosition.x) {
+                            // direction change	
+                            startZoomValue = aData.zoom;
+                            zoomDirectionMousePosition = currentMousePosition;
+                        }
+                        didPeakZoom = false;
+                    }
+                    
+                    float zoomValue = startZoomValue + (zoomDirectionMousePosition.x - currentMousePosition.x)/300f;
+                    
+    				if (zoomValue < 0f) {
+    					zoomValue = 0f;
+    					cachedZoomMousePosition = currentMousePosition;
+    					wasZoomingIn = true;
+    					didPeakZoom = true;
+    				}
+    				else if (zoomValue > 1f) {
+    					zoomValue = 1f;
+    					cachedZoomMousePosition = currentMousePosition;
+    					wasZoomingIn = false;
+    					didPeakZoom = true;
+    				}
+
+    				if (zoomValue < aData.zoom) tex_cursor_zoom = tex_cursor_zoomin;
+    				else if (zoomValue > aData.zoom) tex_cursor_zoom = tex_cursor_zoomout;
+                    aData.zoom = zoomValue;
                 }
-                float zoomValue = startZoomValue + (zoomDirectionMousePosition.x - currentMousePosition.x) / 300f;
-                if(zoomValue < 0f) {
-                    zoomValue = 0f;
-                    cachedZoomMousePosition = currentMousePosition;
-                    wasZoomingIn = true;
-                    didPeakZoom = true;
-                }
-                else if(zoomValue > 1f) {
-                    zoomValue = 1f;
-                    cachedZoomMousePosition = currentMousePosition;
-                    wasZoomingIn = false;
-                    didPeakZoom = true;
-                }
-                if(zoomValue < aData.zoom) tex_cursor_zoom = tex_cursor_zoomin;
-                else if(zoomValue > aData.zoom) tex_cursor_zoom = tex_cursor_zoomout;
-                aData.zoom = zoomValue;
             }
                 #endregion
         }
