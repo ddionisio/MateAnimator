@@ -862,7 +862,8 @@ public class AMCameraFade : MonoBehaviour {
         }
         if(!cf) {
             go = new GameObject("AMCamera"+(preview ? "FadePreview" : "Fade"), typeof(AMCameraFade));
-            go.hideFlags = HideFlags.DontSave;
+            if(preview)
+                go.hideFlags = HideFlags.DontSave;
             cf = (AMCameraFade)go.GetComponent(typeof(AMCameraFade));
         }
         _cf = cf;

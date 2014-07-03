@@ -2144,54 +2144,12 @@ public class AMTimeline : EditorWindow {
         bool justHitPlay = EditorApplication.isPlayingOrWillChangePlaymode && !EditorApplication.isPlaying;
         // entered playmode
         if(justHitPlay) {
-            Selection.activeGameObject = null;
-            aData = null;
             if(dragType == (int)DragType.TimeScrub || dragType == (int)DragType.FrameScrub) dragType = (int)DragType.None;
             // destroy camerafade
             if(AMCameraFade.hasInstance() && AMCameraFade.isPreview()) {
                 AMCameraFade.destroyImmediateInstance();
             }
         }
-
-        /*bool justHitPlay = EditorApplication.isPlayingOrWillChangePlaymode && !EditorApplication.isPlaying;
-        // entered playmode
-        if(justHitPlay) {
-            if(aData) {
-                AnimatorData _playModeDataHolder = aData;
-                aData = null;
-                aData = _playModeDataHolder;
-                aData.inPlayMode = true;
-            }
-            //aData = null; //?????
-            //repaintBuffer = 0;	// used to repaint after user exits play mode
-            if(dragType == (int)DragType.TimeScrub || dragType == (int)DragType.FrameScrub) dragType = (int)DragType.None;
-
-            // exit playmode
-        }
-        else if(!EditorApplication.isPlayingOrWillChangePlaymode) {
-            if(aData) {
-                aData.inPlayMode = false;
-
-                //this.Repaint();
-                //repaintBuffer = repaintRefreshRate;
-                // reset inspector selected methodinfo
-                indexMethodInfo = -1;
-                // preview selected frame
-                if(aData.getCurrentTake()) aData.getCurrentTake().previewFrame(aData, aData.getCurrentTake().selectedFrame);
-            }
-            else {
-                GameObject go = Selection.activeGameObject;
-                if(go) {
-                    aData = go.GetComponent<AnimatorData>();
-                    //maintainCachesIn = 10;
-                }
-            }
-
-            ReloadOtherWindows();
-                        
-            // check for pro license
-            AMTakeData.isProLicense = PlayerSettings.advancedLicense;
-        }*/
     }
 
     #endregion
@@ -3099,9 +3057,11 @@ public class AMTimeline : EditorWindow {
                             waveFormRect.width += (curTake.endFrame - endFrame) / oneShotLength;
                         }
 						Texture2D waveform = AssetPreview.GetAssetPreview(_key.audioClip);
-                        if (!EditorGUIUtility.isProSkin) GUI.color = Color.black;
-						GUI.DrawTextureWithTexCoords(rectBox, waveform, waveFormRect);
-                        GUI.color = Color.white;
+                        if(waveform) {
+                            if(!EditorGUIUtility.isProSkin) GUI.color = Color.black;
+                            GUI.DrawTextureWithTexCoords(rectBox, waveform, waveFormRect);
+                            GUI.color = Color.white;
+                        }
 					}
 				}
             	// info tex label

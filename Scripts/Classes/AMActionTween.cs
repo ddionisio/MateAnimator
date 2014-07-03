@@ -88,10 +88,13 @@ public class AMActionTween : ABSTweenPlugin {
             if(curInd == trackValIndInit) //wait one frame
                 mValueTrackCurIndices[i] = trackValIndStart;
             else if(curInd == trackValIndStart) {
+                //get the starting act, make sure t is within act's timeframe
                 int newInd = GetValueIndex(mValueTracks[i], t);
-                mValueTrackCurIndices[i] = newInd;
                 AMActionData act = mValueTracks[i][newInd];
-                act.Apply(t - act.startTime, tweenObj.isLoopingBack);
+                if(t >= act.startTime) {
+                    mValueTrackCurIndices[i] = newInd;
+                    act.Apply(t - act.startTime, tweenObj.isLoopingBack);
+                }
             }
             else {
                 int newInd = GetNextValueTrackIndex(mValueTracks[i], curInd, t);
