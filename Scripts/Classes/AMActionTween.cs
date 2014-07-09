@@ -91,8 +91,8 @@ public class AMActionTween : ABSTweenPlugin {
                 //get the starting act, make sure t is within act's timeframe
                 int newInd = GetValueIndex(mValueTracks[i], t);
                 AMActionData act = mValueTracks[i][newInd];
-                if(t >= act.startTime) {
-                    mValueTrackCurIndices[i] = newInd;
+                if(t >= act.startTime) {	
+                	mValueTrackCurIndices[i] = newInd;
                     act.Apply(t - act.startTime, tweenObj.isLoopingBack);
                 }
             }
@@ -285,26 +285,31 @@ public class AMActionFieldSet : AMActionData {
         mField.SetValue(mObj, mVal);
     }
 }
-
+/*
 public class AMActionAudioPlay : AMActionData {
     private AudioSource mSrc;
     private AudioClip mClip;
+	private bool mOneShot;
     private bool mLoop;
 
-    public AMActionAudioPlay(float sTime, float eTime, AudioSource src, AudioClip clip, bool loop)
+    public AMActionAudioPlay(float sTime, float eTime, AudioSource src, AudioClip clip, bool loop, bool oneShot)
         : base(sTime, eTime) {
         mSrc = src;
         mClip = clip;
         mLoop = loop;
+    	mOneShot = oneShot;
     }
 
     public override void Apply(float t, bool backwards) {
-        if((mSrc.isPlaying && mSrc.clip == mClip) || backwards) return;
-
-        mSrc.loop = mLoop;
-        mSrc.clip = mClip;
-        //mSrc.time = t;
-        mSrc.Play();
+		if (mOneShot) {
+			mSrc.PlayOneShot(mClip);
+		} else {
+			if((mSrc.isPlaying && mSrc.clip == mClip) || backwards) return;
+			mSrc.loop = mLoop;
+			mSrc.clip = mClip;
+			//mSrc.time = t;
+			mSrc.Play();
+		}
     }
 }
-
+*/
