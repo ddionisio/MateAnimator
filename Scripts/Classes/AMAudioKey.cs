@@ -9,6 +9,7 @@ public class AMAudioKey : AMKey {
 
     public AudioClip audioClip;
     public bool loop;
+	public bool oneShot;
 
     // copy properties from key
     public override void CopyTo(AMKey key) {
@@ -18,6 +19,7 @@ public class AMAudioKey : AMKey {
         a.frame = frame;
         a.audioClip = audioClip;
         a.loop = loop;
+    	a.oneShot = oneShot;
     }
 
     #region action
@@ -29,7 +31,8 @@ public class AMAudioKey : AMKey {
         float f = (float)seq.take.frameRate;
         float eTime = loop ? (float)seq.take.getLastFrame()/f : sTime + (float)getNumberOfFrames(seq.take.frameRate)/f;
 
-        seq.Insert(new AMActionAudioPlay(sTime, eTime, target as AudioSource, audioClip, loop));
+		//seq.Insert(new AMActionAudioPlay(sTime, eTime, target as AudioSource, audioClip, loop, oneShot));
+		seq.sequence.InsertCallback(sTime, OnMethodCallbackParams, target as AudioSource);
     }
 
     public ulong getTimeInSamples(int frequency, float time) {
@@ -39,5 +42,23 @@ public class AMAudioKey : AMKey {
         if(!audioClip || loop) return -1;
         return Mathf.CeilToInt(audioClip.length * (float)frameRate);
     }
+
+	void OnMethodCallbackParams(TweenEvent dat) {
+		if (dat.tween.isLoopingBack) return;
+		AudioSource src = dat.parms[0] as AudioSource;
+		if (src == null) return;
+		
+		// just incase you changed the preview speed before playing the game
+		src.pitch = 1f;
+		if (oneShot) {
+			src.PlayOneShot(audioClip);
+		} else {
+			if ((src.isPlaying && src.clip == audioClip)) return;
+			src.loop = loop;
+			src.clip = audioClip;
+			src.Play();
+		}
+	}
+
     #endregion
 }

@@ -3412,15 +3412,27 @@ public class AMTimeline : EditorWindow {
             // loop audio
             GUI.Label(rectLabelLoop, "Loop");
             Rect rectToggleLoop = new Rect(rectLabelLoop.x + rectLabelLoop.width + margin, rectLabelLoop.y + 2f, 22f, 22f);
-            bool nloop = EditorGUI.Toggle(rectToggleLoop, auKey.loop);
+			bool nloop = EditorGUI.Toggle(rectToggleLoop, auKey.loop);
             if(auKey.loop != nloop) {
                 Undo.RecordObject(auKey, "Set Audio Loop");
                 auKey.loop = nloop;
                 AMCodeView.refresh();
                 // save data
-				
                 EditorUtility.SetDirty(auKey);
             }
+
+			// One Shot?
+			Rect rectLabelOneShot = new Rect(0f, rectLabelLoop.y + rectLabelLoop.height, 80f, 22f);
+			GUI.Label(rectLabelOneShot, "One Shot");
+			Rect rectToggleOneShot = new Rect(rectLabelOneShot.x + rectLabelOneShot.width + margin, rectLabelOneShot.y + 2f, 22f, 22f);
+			bool nOneShot = EditorGUI.Toggle(rectToggleOneShot, auKey.oneShot);
+			if (auKey.oneShot != nOneShot) {
+				Undo.RecordObject(auKey, "Set Audio One Shot");
+				auKey.oneShot = nOneShot;
+				AMCodeView.refresh();
+				// save data
+				EditorUtility.SetDirty(auKey);
+			}
             return;
         }
         #endregion
