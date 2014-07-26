@@ -46,6 +46,11 @@ public class AMTranslationKey : AMKey {
     }
     public override void build(AMSequence seq, AMTrack track, int index, UnityEngine.Object obj) {
         int frameRate = seq.take.frameRate;
+
+        //allow tracks with just one key
+        if(track.keys.Count == 1)
+            easeType = EaseTypeNone;
+
         if(easeType == EaseTypeNone) {
             //TODO: world position
             seq.Insert(new AMActionTransLocalPos(this, frameRate, obj as Transform, position));

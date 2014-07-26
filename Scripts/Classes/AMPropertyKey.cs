@@ -198,6 +198,10 @@ public class AMPropertyKey : AMKey {
         //change to use setvalue track in AMSequence
         if(!string.IsNullOrEmpty(varName)) {
             if(propTrack.canTween) {
+                //allow tracks with just one key
+                if(track.keys.Count == 1)
+                    easeType = EaseTypeNone;
+
                 if(easeType == EaseTypeNone) {
                     object obj = null;
 
