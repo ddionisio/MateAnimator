@@ -13,11 +13,9 @@ public class AMTranslationTrack : AMTrack {
     [SerializeField]
     private Transform _obj;
 
-    [SerializeField]
-    private bool _pixelSnap;
+    public bool pixelSnap;
 
-    [SerializeField]
-    private float _pixelPerUnit;
+    public float pixelPerUnit;
         
 	protected override void SetSerializeObject(UnityEngine.Object obj) {
 		_obj = obj as Transform;
@@ -34,6 +32,8 @@ public class AMTranslationTrack : AMTrack {
 	}
 
     public override int version { get { return 2; } }
+
+    public override bool hasTrackSettings { get { return true; } }
 
     [SerializeField]
     private bool _isLocal;
@@ -77,6 +77,7 @@ public class AMTranslationTrack : AMTrack {
 
 	void SetPosition(Transform t, Vector3 p) {
 		if(t) {
+            if(pixelSnap) p.Set(Mathf.Round(p.x*pixelPerUnit)/pixelPerUnit, Mathf.Round(p.y*pixelPerUnit)/pixelPerUnit, Mathf.Round(p.z*pixelPerUnit)/pixelPerUnit);
 			if(_isLocal) t.localPosition = p;
 			else t.position = p;
 		}
@@ -187,10 +188,7 @@ public class AMTranslationTrack : AMTrack {
                 }
             }
 
-            if(_isLocal)
-                t.localPosition = key.GetPoint(Mathf.Clamp(_value, 0f, 1f));
-            else
-                t.position = key.GetPoint(Mathf.Clamp(_value, 0f, 1f));
+            SetPosition(t, key.GetPoint(Mathf.Clamp(_value, 0f, 1f)));
 
             return;
         }
@@ -273,6 +271,8 @@ public class AMTranslationTrack : AMTrack {
             if(!retFound)
                 Debug.LogError("Animator: Could not get " + t.name + " position at frame '" + frame + "'");
         }
+
+        if(pixelSnap) ret.Set(Mathf.Round(ret.x*pixelPerUnit)/pixelPerUnit, Mathf.Round(ret.y*pixelPerUnit)/pixelPerUnit, Mathf.Round(ret.z*pixelPerUnit)/pixelPerUnit);
 
         if(forceWorld && _isLocal && t != null && t.parent != null)
             ret = t.parent.localToWorldMatrix.MultiplyPoint(ret);
@@ -407,7 +407,7 @@ public class AMTranslationTrack : AMTrack {
         ntrack._obj = _obj;
         ntrack._isLocal = _isLocal;
         ntrack.cachedInitialPosition = cachedInitialPosition;
-        ntrack._pixelSnap = _pixelSnap;
-        ntrack._pixelPerUnit = _pixelPerUnit;
+        ntrack.pixelSnap = pixelSnap;
+        ntrack.pixelPerUnit = pixelPerUnit;
     }
 }

@@ -88,6 +88,22 @@ public class AMTranslationKey : AMKey {
     }
 
     #region action
+
+    //for pixel-snapping
+    public class PlugVector3PathSnap : PlugVector3Path {
+        private float mUnitConv;
+
+        public PlugVector3PathSnap(Vector3[] p_path, float unitConv, PathType p_type = PathType.Curved) : base(p_path, p_type) { mUnitConv=unitConv; }
+        public PlugVector3PathSnap(Vector3[] p_path, float unitConv, bool p_isRelative, PathType p_type = PathType.Curved) : base(p_path, p_isRelative, p_type) { mUnitConv=unitConv; }
+        public PlugVector3PathSnap(Vector3[] p_path, float unitConv, EaseType p_easeType, PathType p_type = PathType.Curved) : base(p_path, p_easeType, p_type) { mUnitConv=unitConv; }
+        public PlugVector3PathSnap(Vector3[] p_path, float unitConv, AnimationCurve p_easeAnimCurve, bool p_isRelative, PathType p_type = PathType.Curved) : base(p_path, p_easeAnimCurve, p_isRelative, p_type) { mUnitConv=unitConv; }
+        public PlugVector3PathSnap(Vector3[] p_path, float unitConv, EaseType p_easeType, bool p_isRelative, PathType p_type = PathType.Curved) : base(p_path, p_easeType, p_isRelative, p_type) { mUnitConv=unitConv; }
+
+        protected override void SetValue(Vector3 p_value) {
+            base.SetValue(new Vector3(Mathf.Round(p_value.x*mUnitConv)/mUnitConv, Mathf.Round(p_value.y*mUnitConv)/mUnitConv, Mathf.Round(p_value.z*mUnitConv)/mUnitConv));
+        }
+    }
+
     public override int getStartFrame() {
         return startFrame;
     }
@@ -106,9 +122,13 @@ public class AMTranslationKey : AMKey {
         if(track.keys.Count == 1)
             easeType = EaseTypeNone;
 
+        AMTranslationTrack tTrack = track as AMTranslationTrack;
+        bool pixelSnap = tTrack.pixelSnap;
+        float ppu = tTrack.pixelPerUnit;
+
         if(easeType == EaseTypeNone) {
             //TODO: world position
-            seq.Insert(new AMActionTransLocalPos(this, frameRate, obj as Transform, position));
+            seq.Insert(new AMActionTransLocalPos(this, frameRate, obj as Transform, pixelSnap ? new Vector3(Mathf.Round(position.x*ppu)/ppu, Mathf.Round(position.y*ppu)/ppu, Mathf.Round(position.z*ppu)/ppu) : position));
         }
         else {
             if(path.Length <= 1) return;
@@ -121,18 +141,18 @@ public class AMTranslationKey : AMKey {
 
             if(hasCustomEase()) {
                 if(path.Length == 2)
-                    ret = HOTween.To(tweenTarget, getTime(frameRate), new TweenParms().Prop(tweenProp, new PlugVector3Path(path, false, PathType.Linear)).Ease(easeCurve));
+                    ret = HOTween.To(tweenTarget, getTime(frameRate), new TweenParms().Prop(tweenProp, pixelSnap ? new PlugVector3PathSnap(path, ppu, false, PathType.Linear) : new PlugVector3Path(path, false, PathType.Linear)).Ease(easeCurve));
                 else {
-                    PlugVector3Path p = new PlugVector3Path(path, false);
+                    PlugVector3Path p = pixelSnap ? new PlugVector3PathSnap(path, ppu, false) : new PlugVector3Path(path, false);
                     p.ClosePath(isClosed);
                     ret = HOTween.To(tweenTarget, getTime(frameRate), new TweenParms().Prop(tweenProp, p).Ease(easeCurve));
                 }
             }
             else {
                 if(path.Length == 2)
-                    ret = HOTween.To(tweenTarget, getTime(frameRate), new TweenParms().Prop(tweenProp, new PlugVector3Path(path, false, PathType.Linear)).Ease((EaseType)easeType, amplitude, period));
+                    ret = HOTween.To(tweenTarget, getTime(frameRate), new TweenParms().Prop(tweenProp, pixelSnap ? new PlugVector3PathSnap(path, ppu, false, PathType.Linear) : new PlugVector3Path(path, false, PathType.Linear)).Ease((EaseType)easeType, amplitude, period));
                 else {
-                    PlugVector3Path p = new PlugVector3Path(path, false);
+                    PlugVector3Path p = pixelSnap ? new PlugVector3PathSnap(path, ppu, false) : new PlugVector3Path(path, false);
                     p.ClosePath(isClosed);
                     ret = HOTween.To(tweenTarget, getTime(frameRate), new TweenParms().Prop(tweenProp, p).Ease((EaseType)easeType, amplitude, period));
                 }

@@ -21,6 +21,11 @@ public abstract class AMTrack : MonoBehaviour {
 
     public virtual int order { get { return 0; } }
 
+    /// <summary>
+    /// If true, then track has settings to display even if there is no key selected.
+    /// </summary>
+    public virtual bool hasTrackSettings { get { return false; } }
+
 	public string targetPath { get { return _targetPath; } }
 
     // set name based on index
