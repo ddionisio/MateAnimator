@@ -7,6 +7,7 @@ using Holoville.HOTween.Plugins;
 
 [AddComponentMenu("")]
 public class AMTranslationKey : AMKey {
+    public const int SUBDIVISIONS_MULTIPLIER = 16;
 
     public enum Interpolation {
         Curve = 0,
@@ -21,6 +22,59 @@ public class AMTranslationKey : AMKey {
     public bool isLocal;
     public Vector3[] path;
 
+    public bool isConstSpeed = true;
+
+    public bool isClosed { get { return path[0] == path[path.Length - 1]; } }
+
+    private AMPathPreview mPathPreview;
+
+    public AMPathPreview pathPreview {
+        get {
+            if(mPathPreview == null) {
+                int indMod = 1;
+                int pAdd = isClosed ? 1 : 0;
+                int len = path.Length;
+
+                Vector3[] pts = new Vector3[len + 2 + pAdd];
+                for (int i = 0; i < len; ++i)
+                    pts[i + indMod] = path[i];
+
+                len = pts.Length;
+
+                if(isClosed) {
+                    // Close path.
+                    pts[len - 2] = pts[1];
+                }
+
+                // Add control points.
+                if(isClosed) {
+                    pts[0] = pts[len - 3];
+                    pts[len - 1] = pts[2];
+                }
+                else {
+                    pts[0] = pts[1];
+                    Vector3 lastP = pts[len - 2];
+                    Vector3 diffV = lastP - pts[len - 3];
+                    pts[len - 1] = lastP + diffV;
+                }
+
+                // Create the path.
+                mPathPreview = new AMPathPreview((Interpolation)interp == Interpolation.Curve ? PathType.Curved : PathType.Linear, pts);
+
+                // Store arc lengths tables for constant speed.
+                mPathPreview.StoreTimeToLenTables(mPathPreview.path.Length * SUBDIVISIONS_MULTIPLIER);
+            }
+
+            return mPathPreview;
+        }
+
+        set { mPathPreview = value; }
+    }
+
+    public Vector3 GetPoint(float t) {
+        return isConstSpeed ? pathPreview.GetConstPoint(t) : pathPreview.GetPoint(t);
+    }
+
     // copy properties from key
     public override void CopyTo(AMKey key) {
 		AMTranslationKey a = key as AMTranslationKey;
@@ -30,6 +84,7 @@ public class AMTranslationKey : AMKey {
         a.interp = interp;
         a.easeType = easeType;
         a.customEase = new List<float>(customEase);
+        a.isConstSpeed = isConstSpeed;
     }
 
     #region action
@@ -67,14 +122,20 @@ public class AMTranslationKey : AMKey {
             if(hasCustomEase()) {
                 if(path.Length == 2)
                     ret = HOTween.To(tweenTarget, getTime(frameRate), new TweenParms().Prop(tweenProp, new PlugVector3Path(path, false, PathType.Linear)).Ease(easeCurve));
-                else
-                    ret = HOTween.To(tweenTarget, getTime(frameRate), new TweenParms().Prop(tweenProp, new PlugVector3Path(path, false)).Ease(easeCurve));
+                else {
+                    PlugVector3Path p = new PlugVector3Path(path, false);
+                    p.ClosePath(isClosed);
+                    ret = HOTween.To(tweenTarget, getTime(frameRate), new TweenParms().Prop(tweenProp, p).Ease(easeCurve));
+                }
             }
             else {
                 if(path.Length == 2)
                     ret = HOTween.To(tweenTarget, getTime(frameRate), new TweenParms().Prop(tweenProp, new PlugVector3Path(path, false, PathType.Linear)).Ease((EaseType)easeType, amplitude, period));
-                else
-                    ret = HOTween.To(tweenTarget, getTime(frameRate), new TweenParms().Prop(tweenProp, new PlugVector3Path(path, false)).Ease((EaseType)easeType, amplitude, period));
+                else {
+                    PlugVector3Path p = new PlugVector3Path(path, false);
+                    p.ClosePath(isClosed);
+                    ret = HOTween.To(tweenTarget, getTime(frameRate), new TweenParms().Prop(tweenProp, p).Ease((EaseType)easeType, amplitude, period));
+                }
             }
 
             seq.Insert(this, ret);

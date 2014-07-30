@@ -64,6 +64,9 @@ public class AMTimeline : EditorWindow {
 
                         // add take
                         _aData.e_addTake();
+
+                        mCurTakeInd = 0;
+
                         // save data
                         EditorUtility.SetDirty(_aData);
                     }
@@ -72,7 +75,9 @@ public class AMTimeline : EditorWindow {
                         // save data
                         EditorUtility.SetDirty(_aData);
                         // preview last selected frame
-                        if(!isPlayMode && _aData.e_getCurrentTake() != null) _aData.e_getCurrentTake().previewFrame(_aData, (float)_aData.e_getCurrentTake().selectedFrame);
+                        if(mCurTakeInd == -1) mCurTakeInd = 0;
+                        if(_aData._takes != null && _aData._takes.Count > 0 && !isPlayMode && _aData._takes[mCurTakeInd] != null)
+                            _aData._takes[mCurTakeInd].previewFrame(_aData, (float)_aData._takes[mCurTakeInd].selectedFrame);
                     }
 
                     indexMethodInfo = -1;	// re-check for methodinfo
@@ -81,11 +86,49 @@ public class AMTimeline : EditorWindow {
 
                     ReloadOtherWindows();
                 }
+                else {
+                    mCurTakeInd = -1;
+                    mPrevTakeInd = -1;
+                }
                 //else
                 //Debug.Log("no data");
             }
         }
     }// AnimatorData component, holds all data
+    public AMTakeData currentTake {
+        get {
+            if(aData) {
+                if(mCurTakeInd == -1 || mCurTakeInd >= aData._takes.Count) mCurTakeInd = 0;
+                return aData._takes[mCurTakeInd];
+            }
+            return null;
+        }
+    }
+    public int currentTakeInd {
+        get { return mCurTakeInd; }
+        set {
+            if(mCurTakeInd != value) {
+                if(mCurTakeInd < aData._takes.Count)
+                    mPrevTakeInd = mCurTakeInd;
+                mCurTakeInd = value;
+                currentTakeInd = mCurTakeInd;
+            }
+        }
+    }
+    public AMTakeData prevTake {
+        get {
+            if(aData && mPrevTakeInd != -1) {
+                return aData._takes[mPrevTakeInd];
+            }
+            return null;
+        }
+    }
+    public bool currentTakeIsPlayStart {
+        get {
+            AMTakeData t = currentTake;
+            return t != null && t.name == aData.defaultTakeName;
+        }
+    }
     public AMOptionsFile oData;
     private Vector2 scrollViewValue;			// current value in scrollview (vertical)
     private string[] playbackSpeed = { "x.25", "x.5", "x1", "x2", "x4" };
@@ -412,6 +455,8 @@ public class AMTimeline : EditorWindow {
     private string mMetaPath = "";
 
     private Dictionary<AMTakeData, AMTakeEdit> mTakeEdits = new Dictionary<AMTakeData,AMTakeEdit>();
+    private int mCurTakeInd = -1;
+    private int mPrevTakeInd = -1;
 
     private GameObject mTempHolder;
 
@@ -454,17 +499,19 @@ public class AMTimeline : EditorWindow {
 
         mTempHolder = new GameObject();
         mTempHolder.hideFlags = HideFlags.HideAndDontSave;
+
+        Undo.undoRedoPerformed += OnUndoRedo;
     }
     void OnDisable() {
         EditorApplication.playmodeStateChanged -= OnPlayMode;
 
         window = null;
-        if(aData && aData.e_getCurrentTake() != null) {
+        if(currentTake != null) {
             // stop audio if it's playing
-            aData.e_getCurrentTake().stopAudio(aData);
+            currentTake.stopAudio(aData);
 
             // preview first frame
-            aData.e_getCurrentTake().previewFrame(aData, 1f);
+            currentTake.previewFrame(aData, 1f);
 
             aData = null;
 
@@ -474,6 +521,15 @@ public class AMTimeline : EditorWindow {
 
         if(AMCameraFade.hasInstance() && AMCameraFade.isPreview())
             AMCameraFade.destroyImmediateInstance();
+
+        Undo.undoRedoPerformed -= OnUndoRedo;
+    }
+    void OnUndoRedo() {
+        foreach(AMTakeData take in aData._takes)
+            take.undoRedoPerformed();
+
+        ResetDragging();
+        Repaint();
     }
     void OnFocus() {
         ResetDragging();
@@ -543,7 +599,7 @@ public class AMTimeline : EditorWindow {
         if(aData.e_metaCanInstantiatePrefab) {
             //preserve the current take edit info
             AMTakeEdit curTakeEdit = null;
-            AMTakeData curTake = aData.e_getCurrentTake();
+            AMTakeData curTake = currentTake;
             foreach(AMTakeData take in aData._takes) {
                 if(take == curTake)
                     window.mTakeEdits.TryGetValue(take, out curTakeEdit);
@@ -553,8 +609,8 @@ public class AMTimeline : EditorWindow {
             aData.e_metaInstantiatePrefab(label);
 
             if(curTakeEdit != null) {
-                mTakeEdits.Add(aData.e_getCurrentTake(), curTakeEdit);
-                aData.e_getCurrentTake().selectedFrame = curTakeEdit.selectedFrame;
+                mTakeEdits.Add(currentTake, curTakeEdit);
+                currentTake.selectedFrame = curTakeEdit.selectedFrame;
             }
 
             EditorUtility.SetDirty(aData);
@@ -572,7 +628,7 @@ public class AMTimeline : EditorWindow {
         return ret;
     }
     AMTakeEdit TakeEditCurrent() {
-        return TakeEdit(aData.e_getCurrentTake());
+        return TakeEdit(currentTake);
     }
     void TakeEditRemove(AMTakeData take) {
         mTakeEdits.Remove(take);
@@ -639,22 +695,22 @@ public class AMTimeline : EditorWindow {
         if(isPlaying || dragType == (int)DragType.TimeScrub || dragType == (int)DragType.FrameScrub) {
             float timeRunning = Time.realtimeSinceStartup - playerStartTime;
             // determine current frame
-            float curFrame = aData.e_getCurrentTake().selectedFrame;
+            float curFrame = currentTake.selectedFrame;
             // if scrubbing
             if(dragType == (int)DragType.TimeScrub || dragType == (int)DragType.FrameScrub) {
                 if(scrubSpeed < 0) scrubSpeed *= 5;
                 curFrame += Mathf.CeilToInt(scrubSpeed);
-                curFrame = Mathf.Clamp(curFrame, 1, aData.e_getCurrentTake().numFrames);
+                curFrame = Mathf.Clamp(curFrame, 1, currentTake.numFrames);
             }
             else {
                 // determine speed
-                AMTakeData take = aData.e_getCurrentTake();
+                AMTakeData take = currentTake;
                 float speed = (float)take.frameRate * playbackSpeedValue[take.playbackSpeedIndex];
                 curFrame = playerStartFrame + (playerBackward ? -timeRunning * speed : timeRunning * speed);
                 int curFrameI = Mathf.FloorToInt(curFrame);
                 int lastFrame = take.getLastFrame();
                 //reached end?
-                if((playerBackward && curFrameI < 0) || curFrameI > lastFrame) {
+                if((playerBackward && curFrameI < 0) || curFrameI >= lastFrame) {
                     bool restart = true;
                     // loop
                     if(take.numLoop > 0) {
@@ -706,15 +762,15 @@ public class AMTimeline : EditorWindow {
                 }
             }
             // select the appropriate frame
-            if(Mathf.FloorToInt(curFrame) != aData.e_getCurrentTake().selectedFrame) {
-                TakeEditCurrent().selectFrame(aData.e_getCurrentTake(), TakeEditCurrent().selectedTrack, Mathf.FloorToInt(curFrame), numFramesToRender, false, false);
+            if(Mathf.FloorToInt(curFrame) != currentTake.selectedFrame) {
+                TakeEditCurrent().selectFrame(currentTake, TakeEditCurrent().selectedTrack, Mathf.FloorToInt(curFrame), numFramesToRender, false, false);
                 if(dragType != (int)DragType.TimeScrub && dragType != (int)DragType.FrameScrub) {
                     // sample audio
-                    aData.e_getCurrentTake().sampleAudioAtFrame(aData, Mathf.FloorToInt(curFrame), playbackSpeedValue[aData.e_getCurrentTake().playbackSpeedIndex]);
+                    currentTake.sampleAudioAtFrame(aData, Mathf.FloorToInt(curFrame), playbackSpeedValue[currentTake.playbackSpeedIndex]);
                 }
                 this.Repaint();
             }
-            aData.e_getCurrentTake().previewFrame(aData, curFrame);
+            currentTake.previewFrame(aData, curFrame);
         }
         else {
             // autokey
@@ -723,23 +779,23 @@ public class AMTimeline : EditorWindow {
                 AMTrack.OnAddKey addCall;
                 MonoBehaviour[] dats;
                 if(MetaInstantiate("Auto Key")) {
-                    take = aData.e_getCurrentTake();
+                    take = currentTake;
                     addCall = OnAddKeyComp;
                     dats = null;
                 }
                 else {
                     //NOTE: may need to selectively gather which ones to record if there are too many tracks, for now this is guaranteed
-                    take = aData.e_getCurrentTake();
+                    take = currentTake;
                     dats = getKeysAndTracks(take);
                     Undo.RecordObjects(dats, "Auto Key");
                     addCall = OnAddKeyUndoComp;
                 }
 
-                bool autoKeyMade = aData.e_getCurrentTake().autoKey(aData, addCall, Selection.activeTransform, aData.e_getCurrentTake().selectedFrame);
+                bool autoKeyMade = currentTake.autoKey(aData, addCall, Selection.activeTransform, currentTake.selectedFrame);
 
                 if(autoKeyMade) {
                     // preview frame, update orientation only
-                    aData.e_getCurrentTake().previewFrame(aData, aData.e_getCurrentTake().selectedFrame, true, false);
+                    currentTake.previewFrame(aData, currentTake.selectedFrame, true, false);
 
                     if(dats != null) {
                         foreach(MonoBehaviour dat in dats)
@@ -878,8 +934,8 @@ public class AMTimeline : EditorWindow {
         }
 
 		// This happens if you create a take then immediately Undo.
-        if(aData.e_getCurrentTake() == null) {
-			aData.e_selectTake(0);
+        if(currentTake == null) {
+            mCurTakeInd = 0;
         }
 
         AMTimeline.loadSkin(ref skin, ref cachedSkinName, position);
@@ -1062,7 +1118,7 @@ public class AMTimeline : EditorWindow {
             }
             else if(e.Equals(Event.KeyboardEvent("right"))) {
                 AMTakeEdit takeEdit = TakeEditCurrent();
-                if(takeEdit.selectedTrack != -1 && takeEdit.selectedFrame < aData.e_getCurrentTake().numFrames) {
+                if(takeEdit.selectedTrack != -1 && takeEdit.selectedFrame < currentTake.numFrames) {
                     int f = takeEdit.selectedFrame + 1;
                     takeEdit.contextSelection.Clear();
                     contextSelectFrame(f, f);
@@ -1072,7 +1128,7 @@ public class AMTimeline : EditorWindow {
             }
             else if(e.Equals(Event.KeyboardEvent("#right"))) {
                 AMTakeEdit takeEdit = TakeEditCurrent();
-                if(takeEdit.selectedTrack != -1 && takeEdit.selectedFrame < aData.e_getCurrentTake().numFrames) {
+                if(takeEdit.selectedTrack != -1 && takeEdit.selectedFrame < currentTake.numFrames) {
                     int f = takeEdit.selectedFrame;
                     if(takeEdit.isFrameInContextSelection(f+1) && !takeEdit.isFrameInContextSelection(f-1))
                         takeEdit.contextSelectFrame(f, true);
@@ -1086,7 +1142,7 @@ public class AMTimeline : EditorWindow {
             else if(e.type == EventType.ValidateCommand) {
                 if(e.commandName == "Copy") {
                     //are there keys?
-                    if(TakeEditCurrent().contextSelectionTracks.Count > 1 || TakeEditCurrent().contextSelectionHasKeys(aData.e_getCurrentTake())) {
+                    if(TakeEditCurrent().contextSelectionTracks.Count > 1 || TakeEditCurrent().contextSelectionHasKeys(currentTake)) {
                         contextCopyFrames();
                         done = true;
                     }
@@ -1099,14 +1155,14 @@ public class AMTimeline : EditorWindow {
                     }
                 }
                 else if(e.commandName == "Cut") {
-                    if(TakeEditCurrent().contextSelectionTracks.Count > 1 || TakeEditCurrent().contextSelectionHasKeys(aData.e_getCurrentTake())) {
+                    if(TakeEditCurrent().contextSelectionTracks.Count > 1 || TakeEditCurrent().contextSelectionHasKeys(currentTake)) {
                         contextCutKeys();
                         done = true;
                     }
                 }
                 else if(e.commandName == "Duplicate") {
                     AMTakeEdit takeEdit = TakeEditCurrent();
-                    if(takeEdit.contextSelectionTracks.Count > 1 || takeEdit.contextSelectionHasKeys(aData.e_getCurrentTake())) {
+                    if(takeEdit.contextSelectionTracks.Count > 1 || takeEdit.contextSelectionHasKeys(currentTake)) {
                         contextCopyFrames();
                         contextMenuFrame = takeEdit.contextSelection.Count > 0 ? takeEdit.contextSelection[takeEdit.contextSelection.Count-1] + 1 : takeEdit.selectedFrame;
                         contextPasteKeys();
@@ -1189,12 +1245,12 @@ public class AMTimeline : EditorWindow {
         // if is playing, disable all gui elements
         GUI.enabled = !(isPlaying);
         // if selected frame is out of range
-        if(aData.e_getCurrentTake().selectedFrame > aData.e_getCurrentTake().numFrames) {
+        if(currentTake.selectedFrame > currentTake.numFrames) {
             // select last frame
-            timelineSelectFrame(TakeEditCurrent().selectedTrack, aData.e_getCurrentTake().numFrames);
+            timelineSelectFrame(TakeEditCurrent().selectedTrack, currentTake.numFrames);
         }
         // get number of tracks in current take, use for tracks and keys, disabling zoom slider
-        int trackCount = aData.e_getCurrentTake().getTrackCount();
+        int trackCount = currentTake.getTrackCount();
         #endregion
         #region menu bar
         GUIStyle styleLabelMenu = new GUIStyle(EditorStyles.toolbarButton);
@@ -1250,21 +1306,24 @@ public class AMTimeline : EditorWindow {
             rectRenameTake.x += 4f;
             rectRenameTake.width -= 4f;
             rectRenameTake.y += 3f;
-            aData.e_getCurrentTake().name = GUI.TextField(rectRenameTake, aData.e_getCurrentTake().name, EditorStyles.toolbarTextField);
+            currentTake.name = GUI.TextField(rectRenameTake, currentTake.name, EditorStyles.toolbarTextField);
             GUI.FocusControl("RenameTake");
         }
         else {
             // show popup
-            if(aData.e_setCurrentTakeValue(EditorGUI.Popup(rectTakePopup, aData.e_currentTake, aData.e_getTakeNames(), EditorStyles.toolbarPopup))) {
+            int ntake = EditorGUI.Popup(rectTakePopup, currentTakeInd, aData.e_getTakeNames(), EditorStyles.toolbarPopup);
+            if(currentTakeInd != ntake) {
+                currentTakeInd = ntake;
+
                 // take changed
                 // destroy camera fade
                 if(AMCameraFade.hasInstance()) AMCameraFade.destroyImmediateInstance();
                 // reset code view dictionaries
                 AMCodeView.resetTrackDictionary();
                 // if not creating new take
-                if(aData.e_currentTake < aData._takes.Count) {
+                if(currentTakeInd < aData._takes.Count) {
                     // select current frame
-                    timelineSelectFrame(TakeEditCurrent().selectedTrack, aData.e_getCurrentTake().selectedFrame);
+                    timelineSelectFrame(TakeEditCurrent().selectedTrack, currentTake.selectedFrame);
                     // save data
                     EditorUtility.SetDirty(aData);
                 }
@@ -1288,14 +1347,14 @@ public class AMTimeline : EditorWindow {
         #region delete take button
         Rect rectBtnDeleteTake = new Rect(rectBtnRenameTake.x + rectBtnRenameTake.width + margin, rectBtnRenameTake.y, width_button_delete, height_button_delete);
         if(GUI.Button(rectBtnDeleteTake, new GUIContent("", "Delete Take"),/*GUI.skin.GetStyle("ButtonImage")*/EditorStyles.toolbarButton)) {
-            AMTakeData take = aData.e_getCurrentTake();
+            AMTakeData take = currentTake;
 
             if((EditorUtility.DisplayDialog("Delete Take", "Are you sure you want to delete take '" + take.name + "'?", "Delete", "Cancel"))) {
                 string label = "Delete Take: "+take.name;
 
                 if(aData._takes.Count == 1) {
                     bool instantiated = registerTakesUndo(aData, label, false);
-                    take = aData.e_getCurrentTake();
+                    take = currentTake;
                     MonoBehaviour[] behaviours = getKeysAndTracks(take);
 
                     //just delete the tracks and keys
@@ -1313,7 +1372,7 @@ public class AMTimeline : EditorWindow {
                 }
                 else {
                     bool instantiated = registerTakesUndo(aData, label, true);
-                    take = aData.e_getCurrentTake();
+                    take = currentTake;
                     if(!string.IsNullOrEmpty(aData.defaultTakeName)) {
                         if(take.name == aData.defaultTakeName)
                             aData.defaultTakeName = "";
@@ -1322,10 +1381,11 @@ public class AMTimeline : EditorWindow {
                         }
                     }
 
-                    if(aData.e_currentTake > 0)
-                        aData.e_currentTake--;
+                    int delTakeInd = aData._takes.IndexOf(take);
+                    if(currentTakeInd > 0 && delTakeInd <= currentTakeInd)
+                        currentTakeInd--;
 
-                    aData._takes.Remove(take);
+                    aData._takes.RemoveAt(delTakeInd);
                     TakeEditRemove(take);
 
                     MonoBehaviour[] behaviours = getKeysAndTracks(take);
@@ -1350,34 +1410,28 @@ public class AMTimeline : EditorWindow {
         if(GUI.color.a < 1f) GUI.color = new Color(GUI.color.r, GUI.color.g, GUI.color.b, 1f);
         #endregion
         #region Create/Duplicate Take
-        if(aData.e_currentTake == aData._takes.Count) {
+        if(currentTakeInd == aData._takes.Count) {
             isRenamingTake = false;
             cancelTextEditting();
-
-            aData.e_currentTake = aData._takes.Count - 1; // decrement for undo
 
             string label = "New Take";
 
             registerTakesUndo(aData, label, false);
 
-            aData.e_currentTake = aData._takes.Count;
-
             aData.e_addTake();
+
+            currentTakeInd = aData._takes.Count - 1;
 
             // save data
             setDirtyTakes(aData);
         }
-        else if(aData.e_currentTake == aData._takes.Count + 1) {
+        else if(currentTakeInd == aData._takes.Count + 1) {
             isRenamingTake = false;
             cancelTextEditting();
-
-            aData.e_currentTake = aData._takes.Count - 1; // decrement for undo
 
             string label = "New Duplicate Take";
 
             bool addCompUndo = !registerTakesUndo(aData, label, false);
-
-            AMTakeData prevTake = aData.e_getPreviousTake(); //if(takeData == null || currentTake >= takeData.Count) return null;
 
             if(prevTake != null) {
                 aData.e_duplicateTake(prevTake, true, addCompUndo);
@@ -1386,7 +1440,7 @@ public class AMTimeline : EditorWindow {
                 aData.e_addTake();
             }
 
-            aData.e_currentTake = aData._takes.Count - 1;
+            currentTakeInd = aData._takes.Count - 1;
 
             // save data
             setDirtyTakes(aData);
@@ -1394,15 +1448,14 @@ public class AMTimeline : EditorWindow {
         #endregion
         #region play on start button
         Rect rectBtnPlayOnStart = new Rect(rectBtnDeleteTake.x + rectBtnDeleteTake.width + margin, rectBtnDeleteTake.y, width_button_delete, height_button_delete);
-        bool isPlayOnStart = aData.e_isCurrentTakePlayOnStart;
         GUIStyle styleBtnPlayOnStart = new GUIStyle(/*GUI.skin.GetStyle("ButtonImage")*/EditorStyles.toolbarButton);
-        if(isPlayOnStart) {
+        if(currentTakeIsPlayStart) {
             styleBtnPlayOnStart.normal.background = styleBtnPlayOnStart.onNormal.background;
             styleBtnPlayOnStart.hover.background = styleBtnPlayOnStart.onNormal.background;
         }
         if(GUI.Button(rectBtnPlayOnStart, new GUIContent(getSkinTextureStyleState("playonstart").background, "Play On Start"), styleBtnPlayOnStart)) {
             Undo.RecordObject(aData, "Set Play On Start");
-            if(!isPlayOnStart) aData.defaultTakeName = aData.e_getCurrentTake().name;
+            if(!currentTakeIsPlayStart) aData.defaultTakeName = currentTake.name;
             else aData.defaultTakeName = "";
             EditorUtility.SetDirty(aData);
         }
@@ -1415,7 +1468,7 @@ public class AMTimeline : EditorWindow {
             GUI.Label(rectLabelSettings, "Settings", styleLabelMenu);
         }
         else {
-            string strSettings = "Settings: " + aData.e_getCurrentTake().numFrames + " Frames; " + aData.e_getCurrentTake().frameRate + " Fps";
+            string strSettings = "Settings: " + currentTake.numFrames + " Frames; " + currentTake.frameRate + " Fps";
             rectLabelSettings.width = GUI.skin.label.CalcSize(new GUIContent(strSettings)).x;
             GUI.Label(rectLabelSettings, strSettings, styleLabelMenu);
         }
@@ -1505,7 +1558,7 @@ public class AMTimeline : EditorWindow {
         if(GUI.Button(rectBtnNewGroup, new GUIContent("", "New Group"), "label")) {
             registerTakesUndo(aData, "New Group", false);
             cancelTextEditting();
-            TakeEditCurrent().addGroup(aData.e_getCurrentTake());
+            TakeEditCurrent().addGroup(currentTake);
             setDirtyTakes(aData);
             setScrollViewValue(maxScrollView());
         }
@@ -1528,7 +1581,7 @@ public class AMTimeline : EditorWindow {
         if(GUI.Button(rectBtnDeleteElement, gcDeleteButton, "label")) {
             cancelTextEditting();
             if(TakeEditCurrent().contextSelectionTracks.Count > 0) {
-                AMTakeData curTake = aData.e_getCurrentTake();
+                AMTakeData curTake = currentTake;
                 AMTrack track = TakeEdit(curTake).getSelectedTrack(curTake);
                 if(track) {
                     string strMsgDeleteTrack = (TakeEdit(curTake).contextSelectionTracks.Count > 1 ? "multiple tracks" : "track '" + track.name + "'");
@@ -1579,7 +1632,7 @@ public class AMTimeline : EditorWindow {
             else {
                 bool delete = true;
                 bool deleteContents = false;
-                AMTakeData take = aData.e_getCurrentTake();
+                AMTakeData take = currentTake;
                 AMGroup grp = take.getGroup(TakeEdit(take).selectedGroup);
                 List<MonoBehaviour> items = null;
 
@@ -1609,7 +1662,7 @@ public class AMTimeline : EditorWindow {
                 }
                 else { //no tracks inside group
                     registerTakesUndo(aData, "Delete Group", false);
-                    TakeEditCurrent().deleteSelectedGroup(aData.e_getCurrentTake(), false, ref items);
+                    TakeEditCurrent().deleteSelectedGroup(currentTake, false, ref items);
                     setDirtyTakes(aData);
                 }
             }
@@ -1628,7 +1681,7 @@ public class AMTimeline : EditorWindow {
             mouseOverElement = (int)ElementType.ResizeTrack;
         }
         if(GUI.enabled) EditorGUIUtility.AddCursorRect(rectResizeTrack, MouseCursor.ResizeHorizontal);
-        GUI.enabled = (aData.e_getCurrentTake().rootGroup != null && aData.e_getCurrentTake().rootGroup.elements.Count > 0 ? !isPlaying : false);
+        GUI.enabled = (currentTake.rootGroup != null && currentTake.rootGroup.elements.Count > 0 ? !isPlaying : false);
         #endregion
         #region select first frame button
         Rect rectBtnSkipBack = new Rect(width_track + margin, margin, 32f, height_playback_controls - margin * 2);
@@ -1642,7 +1695,7 @@ public class AMTimeline : EditorWindow {
         Texture playToggleTexture;
         if(isPlaying) playToggleTexture = getSkinTextureStyleState("nav_stop").background;
         else playToggleTexture = getSkinTextureStyleState("nav_play").background;
-        GUI.enabled = (aData.e_getCurrentTake().rootGroup != null && aData.e_getCurrentTake().rootGroup.elements.Count > 0 ? true : false);
+        GUI.enabled = (currentTake.rootGroup != null && currentTake.rootGroup.elements.Count > 0 ? true : false);
         Rect rectBtnTogglePlay = new Rect(rectBtnSkipBack.x + rectBtnSkipBack.width + margin, rectBtnSkipBack.y, rectBtnSkipBack.width, rectBtnSkipBack.height);
         if(GUI.Button(rectBtnTogglePlay, playToggleTexture, GUI.skin.GetStyle("ButtonImage"))) {
             if(isChangingTimeControl) isChangingTimeControl = false;
@@ -1657,21 +1710,21 @@ public class AMTimeline : EditorWindow {
         }
         #endregion
         #region select last frame button
-        GUI.enabled = (aData.e_getCurrentTake().rootGroup != null && aData.e_getCurrentTake().rootGroup.elements.Count > 0 ? !isPlaying : false);
+        GUI.enabled = (currentTake.rootGroup != null && currentTake.rootGroup.elements.Count > 0 ? !isPlaying : false);
         Rect rectSkipForward = new Rect(rectBtnTogglePlay.x + rectBtnTogglePlay.width + margin, rectBtnTogglePlay.y, rectBtnTogglePlay.width, rectBtnTogglePlay.height);
-        if(GUI.Button(rectSkipForward, getSkinTextureStyleState("nav_skip_forward").background, GUI.skin.GetStyle("ButtonImage"))) timelineSelectFrame(TakeEditCurrent().selectedTrack, aData.e_getCurrentTake().numFrames);
+        if(GUI.Button(rectSkipForward, getSkinTextureStyleState("nav_skip_forward").background, GUI.skin.GetStyle("ButtonImage"))) timelineSelectFrame(TakeEditCurrent().selectedTrack, currentTake.numFrames);
         if(rectSkipForward.Contains(e.mousePosition) && mouseOverElement == (int)ElementType.None) {
             mouseOverElement = (int)ElementType.Button;
         }
         #endregion
         #region playback speed popup
         Rect rectPopupPlaybackSpeed = new Rect(rectSkipForward.x + rectSkipForward.width + margin, height_indicator_footer / 2f - 15f / 2f, width_playback_speed, rectBtnTogglePlay.height);
-        aData._takes[aData.e_currentTake].playbackSpeedIndex = EditorGUI.Popup(rectPopupPlaybackSpeed, aData._takes[aData.e_currentTake].playbackSpeedIndex, playbackSpeed);
+        aData._takes[currentTakeInd].playbackSpeedIndex = EditorGUI.Popup(rectPopupPlaybackSpeed, aData._takes[currentTakeInd].playbackSpeedIndex, playbackSpeed);
         #endregion
         #region scrub controls
         GUIStyle styleScrubControl = new GUIStyle(GUI.skin.label);
-        string stringTime = frameToTime(aData.e_getCurrentTake().selectedFrame, (float)aData.e_getCurrentTake().frameRate).ToString("N2") + " s";
-        string stringFrame = aData.e_getCurrentTake().selectedFrame.ToString() + " fr";
+        string stringTime = frameToTime(currentTake.selectedFrame, (float)currentTake.frameRate).ToString("N2") + " s";
+        string stringFrame = currentTake.selectedFrame.ToString() + " fr";
         int timeFontSize = findWidthFontSize(width_scrub_control, styleScrubControl, new GUIContent(stringTime), 8, 11);
         int frameFontSize = findWidthFontSize(width_scrub_control, styleScrubControl, new GUIContent(stringFrame), 8, 11);
         styleScrubControl.fontSize = (timeFontSize <= frameFontSize ? timeFontSize : frameFontSize);
@@ -1689,15 +1742,15 @@ public class AMTimeline : EditorWindow {
                 }
             }
             // scrubbing cursor
-            if(!isPlaying && aData.e_getCurrentTake().rootGroup != null && aData.e_getCurrentTake().rootGroup.elements.Count > 0) EditorGUIUtility.AddCursorRect(rectFrameControl, MouseCursor.SlideArrow);
+            if(!isPlaying && currentTake.rootGroup != null && currentTake.rootGroup.elements.Count > 0) EditorGUIUtility.AddCursorRect(rectFrameControl, MouseCursor.SlideArrow);
             // check for drag
-            if(rectFrameControl.Contains(e.mousePosition) && aData.e_getCurrentTake().rootGroup != null && aData.e_getCurrentTake().rootGroup.elements.Count > 0) {
+            if(rectFrameControl.Contains(e.mousePosition) && currentTake.rootGroup != null && currentTake.rootGroup.elements.Count > 0) {
                 mouseOverElement = (int)ElementType.FrameScrub;
             }
         }
         else {
             // changing frame control
-            selectFrame((int)Mathf.Clamp(EditorGUI.FloatField(new Rect(rectFrameControl.x, rectFrameControl.y + 2f, rectFrameControl.width, rectFrameControl.height), aData.e_getCurrentTake().selectedFrame, GUI.skin.textField/*,styleButtonTimeControlEdit*/), 1, aData.e_getCurrentTake().numFrames));
+            selectFrame((int)Mathf.Clamp(EditorGUI.FloatField(new Rect(rectFrameControl.x, rectFrameControl.y + 2f, rectFrameControl.width, rectFrameControl.height), currentTake.selectedFrame, GUI.skin.textField/*,styleButtonTimeControlEdit*/), 1, currentTake.numFrames));
             if(rectFrameControl.Contains(e.mousePosition) && mouseOverElement == (int)ElementType.None) {
                 mouseOverElement = (int)ElementType.Other;
             }
@@ -1715,15 +1768,15 @@ public class AMTimeline : EditorWindow {
                 }
             }
             // scrubbing cursor
-            if(!isPlaying && aData.e_getCurrentTake().rootGroup != null && aData.e_getCurrentTake().rootGroup.elements.Count > 0) EditorGUIUtility.AddCursorRect(rectTimeControl, MouseCursor.SlideArrow);
+            if(!isPlaying && currentTake.rootGroup != null && currentTake.rootGroup.elements.Count > 0) EditorGUIUtility.AddCursorRect(rectTimeControl, MouseCursor.SlideArrow);
             // check for drag
-            if(rectTimeControl.Contains(e.mousePosition) && aData.e_getCurrentTake().rootGroup != null && aData.e_getCurrentTake().rootGroup.elements.Count > 0) {
+            if(rectTimeControl.Contains(e.mousePosition) && currentTake.rootGroup != null && currentTake.rootGroup.elements.Count > 0) {
                 mouseOverElement = (int)ElementType.TimeScrub;
             }
         }
         else {
             // changing time control
-            selectFrame(Mathf.Clamp(timeToFrame(EditorGUI.FloatField(new Rect(rectTimeControl.x, rectTimeControl.y + 2f, rectTimeControl.width, rectTimeControl.height), frameToTime(aData.e_getCurrentTake().selectedFrame, (float)aData.e_getCurrentTake().frameRate), GUI.skin.textField/*,styleButtonTimeControlEdit*/), (float)aData.e_getCurrentTake().frameRate), 1, aData.e_getCurrentTake().numFrames));
+            selectFrame(Mathf.Clamp(timeToFrame(EditorGUI.FloatField(new Rect(rectTimeControl.x, rectTimeControl.y + 2f, rectTimeControl.width, rectTimeControl.height), frameToTime(currentTake.selectedFrame, (float)currentTake.frameRate), GUI.skin.textField/*,styleButtonTimeControlEdit*/), (float)currentTake.frameRate), 1, currentTake.numFrames));
             if(rectTimeControl.Contains(e.mousePosition) && mouseOverElement == (int)ElementType.None) {
                 mouseOverElement = (int)ElementType.Other;
             }
@@ -1750,11 +1803,11 @@ public class AMTimeline : EditorWindow {
                 mouseOverElement = (int)ElementType.Other;
                 if(dragType == (int)DragType.MoveSelection || dragType == (int)DragType.ContextSelection || dragType == (int)DragType.ResizeAction) {
                     if(ticker == 0) {
-                        aData.e_getCurrentTake().startFrame = Mathf.Clamp(++aData.e_getCurrentTake().startFrame, 1, aData.e_getCurrentTake().numFrames);
-                        mouseXOverFrame = Mathf.Clamp((int)aData.e_getCurrentTake().startFrame + (int)numFramesToRender, 1, aData.e_getCurrentTake().numFrames);
+                        currentTake.startFrame = Mathf.Clamp(++currentTake.startFrame, 1, currentTake.numFrames);
+                        mouseXOverFrame = Mathf.Clamp((int)currentTake.startFrame + (int)numFramesToRender, 1, currentTake.numFrames);
                     }
                     else {
-                        mouseXOverFrame = Mathf.Clamp((int)aData.e_getCurrentTake().startFrame + (int)numFramesToRender, 1, aData.e_getCurrentTake().numFrames);
+                        mouseXOverFrame = Mathf.Clamp((int)currentTake.startFrame + (int)numFramesToRender, 1, currentTake.numFrames);
                     }
                 }
                 // drag left, over tracks
@@ -1764,25 +1817,25 @@ public class AMTimeline : EditorWindow {
                 tickerSpeed = Mathf.Clamp(50 - Mathf.CeilToInt(difference / 1.5f), 1, 50);
                 if(dragType == (int)DragType.MoveSelection || dragType == (int)DragType.ContextSelection || dragType == (int)DragType.ResizeAction) {
                     if(ticker == 0) {
-                        aData.e_getCurrentTake().startFrame = Mathf.Clamp(--aData.e_getCurrentTake().startFrame, 1, aData.e_getCurrentTake().numFrames);
-                        mouseXOverFrame = Mathf.Clamp((int)aData.e_getCurrentTake().startFrame - 2, 1, aData.e_getCurrentTake().numFrames);
+                        currentTake.startFrame = Mathf.Clamp(--currentTake.startFrame, 1, currentTake.numFrames);
+                        mouseXOverFrame = Mathf.Clamp((int)currentTake.startFrame - 2, 1, currentTake.numFrames);
                     }
                     else {
-                        mouseXOverFrame = Mathf.Clamp((int)aData.e_getCurrentTake().startFrame, 1, aData.e_getCurrentTake().numFrames);
+                        mouseXOverFrame = Mathf.Clamp((int)currentTake.startFrame, 1, currentTake.numFrames);
                     }
                 }
             }
         }
         Rect rectHScrollbar = new Rect(width_track + width_playback_controls, position.height - height_indicator_footer + 2f, position.width - (width_track + width_playback_controls) - (aData.isInspectorOpen ? width_inspector_open - 4f : width_inspector_closed) - 21f, height_indicator_footer - 2f);
-        float frame_width_HScrollbar = ((rectHScrollbar.width - 44f - (aData.isInspectorOpen ? 4f : 0f)) / ((float)aData.e_getCurrentTake().numFrames - 1f));
-        Rect rectResizeHScrollbarLeft = new Rect(rectHScrollbar.x + 18f + frame_width_HScrollbar * (aData.e_getCurrentTake().startFrame - 1f), rectHScrollbar.y + 2f, 15f, 15f);
-        Rect rectResizeHScrollbarRight = new Rect(rectHScrollbar.x + 18f + frame_width_HScrollbar * (aData.e_getCurrentTake().endFrame - 1f) - 3f, rectHScrollbar.y + 2f, 15f, 15f);
+        float frame_width_HScrollbar = ((rectHScrollbar.width - 44f - (aData.isInspectorOpen ? 4f : 0f)) / ((float)currentTake.numFrames - 1f));
+        Rect rectResizeHScrollbarLeft = new Rect(rectHScrollbar.x + 18f + frame_width_HScrollbar * (currentTake.startFrame - 1f), rectHScrollbar.y + 2f, 15f, 15f);
+        Rect rectResizeHScrollbarRight = new Rect(rectHScrollbar.x + 18f + frame_width_HScrollbar * (currentTake.endFrame - 1f) - 3f, rectHScrollbar.y + 2f, 15f, 15f);
         Rect rectHScrollbarThumb = new Rect(rectResizeHScrollbarLeft.x, rectResizeHScrollbarLeft.y - 2f, rectResizeHScrollbarRight.x - rectResizeHScrollbarLeft.x + rectResizeHScrollbarRight.width, rectResizeHScrollbarLeft.height);
         if(!aData.isInspectorOpen) rectHScrollbar.width += 4f;
         // if number of frames fit on screen, disable horizontal scrollbar and set startframe to 1
-        if(aData.e_getCurrentTake().numFrames < numFramesToRender) {
+        if(currentTake.numFrames < numFramesToRender) {
             GUI.HorizontalScrollbar(rectHScrollbar, 1f, 1f, 1f, 1f);
-            aData.e_getCurrentTake().startFrame = 1;
+            currentTake.startFrame = 1;
         }
         else {
             bool hideResizeThumbs = false;
@@ -1791,10 +1844,10 @@ public class AMTimeline : EditorWindow {
                 rectResizeHScrollbarLeft = new Rect(rectHScrollbarThumb.x - 4f, rectResizeHScrollbarLeft.y, rectHScrollbarThumb.width / 2f + 4f, rectResizeHScrollbarLeft.height);
                 rectResizeHScrollbarRight = new Rect(rectHScrollbarThumb.x + rectHScrollbarThumb.width - rectHScrollbarThumb.width / 2f, rectResizeHScrollbarRight.y, rectResizeHScrollbarLeft.width, rectResizeHScrollbarRight.height);
             }
-            mouseXOverHScrollbarFrame = Mathf.CeilToInt(aData.e_getCurrentTake().numFrames * ((e.mousePosition.x - rectHScrollbar.x - GUI.skin.horizontalScrollbarLeftButton.fixedWidth) / (rectHScrollbar.width - GUI.skin.horizontalScrollbarLeftButton.fixedWidth * 2)));
+            mouseXOverHScrollbarFrame = Mathf.CeilToInt(currentTake.numFrames * ((e.mousePosition.x - rectHScrollbar.x - GUI.skin.horizontalScrollbarLeftButton.fixedWidth) / (rectHScrollbar.width - GUI.skin.horizontalScrollbarLeftButton.fixedWidth * 2)));
             if(!rectResizeHScrollbarLeft.Contains(e.mousePosition) && !rectResizeHScrollbarRight.Contains(e.mousePosition) && EditorWindow.mouseOverWindow == this && dragType != (int)DragType.ResizeHScrollbarLeft && dragType != (int)DragType.ResizeHScrollbarRight && mouseOverElement != (int)ElementType.ResizeHScrollbarLeft && mouseOverElement != (int)ElementType.ResizeHScrollbarRight)
-                aData.e_getCurrentTake().startFrame = Mathf.Clamp((int)GUI.HorizontalScrollbar(rectHScrollbar, (float)aData.e_getCurrentTake().startFrame, (int)numFramesToRender - 1f, 1f, aData.e_getCurrentTake().numFrames), 1, aData.e_getCurrentTake().numFrames);
-            else Mathf.Clamp(GUI.HorizontalScrollbar(rectHScrollbar, (float)aData.e_getCurrentTake().startFrame, (int)numFramesToRender - 1f, 1f, aData.e_getCurrentTake().numFrames), 1f, aData.e_getCurrentTake().numFrames);
+                currentTake.startFrame = Mathf.Clamp((int)GUI.HorizontalScrollbar(rectHScrollbar, (float)currentTake.startFrame, (int)numFramesToRender - 1f, 1f, currentTake.numFrames), 1, currentTake.numFrames);
+            else Mathf.Clamp(GUI.HorizontalScrollbar(rectHScrollbar, (float)currentTake.startFrame, (int)numFramesToRender - 1f, 1f, currentTake.numFrames), 1f, currentTake.numFrames);
             // scrollbar bg overlay (used to hide inconsistent thumb)
             GUI.Box(new Rect(rectHScrollbar.x + 18f, rectHScrollbar.y, rectHScrollbar.width - 18f * 2f, rectHScrollbar.height), "", GUI.skin.horizontalScrollbar);
             // scrollbar thumb overlay (used to hide inconsistent thumb)
@@ -1820,7 +1873,7 @@ public class AMTimeline : EditorWindow {
                 mouseOverElement = (int)ElementType.ResizeHScrollbarRight;
             }
         }
-        aData.e_getCurrentTake().endFrame = aData.e_getCurrentTake().startFrame + (int)numFramesToRender - 1;
+        currentTake.endFrame = currentTake.startFrame + (int)numFramesToRender - 1;
         if(rectHScrollbar.Contains(e.mousePosition) && mouseOverElement == (int)ElementType.None) {
             mouseOverElement = (int)ElementType.Other;
         }
@@ -1848,15 +1901,15 @@ public class AMTimeline : EditorWindow {
         }
         int key_dist = 5;
         if(numFramesToRender >= 100) key_dist = Mathf.FloorToInt(numFramesToRender / 100) * 10;
-        int firstMarkedKey = (int)aData.e_getCurrentTake().startFrame;
+        int firstMarkedKey = (int)currentTake.startFrame;
         if(firstMarkedKey % key_dist != 0 && firstMarkedKey != 1) {
             firstMarkedKey += key_dist - firstMarkedKey % key_dist;
         }
         float lastNumberX = -1f;
-        for(int i = firstMarkedKey;i <= (int)aData.e_getCurrentTake().endFrame;i += key_dist) {
-            float newKeyNumberX = width_track + current_width_frame * (i - (int)aData.e_getCurrentTake().startFrame) - 1f;
+        for(int i = firstMarkedKey;i <= (int)currentTake.endFrame;i += key_dist) {
+            float newKeyNumberX = width_track + current_width_frame * (i - (int)currentTake.startFrame) - 1f;
             string key_number;
-            if(oData.time_numbering) key_number = frameToTime(i, (float)aData.e_getCurrentTake().frameRate).ToString("N2");
+            if(oData.time_numbering) key_number = frameToTime(i, (float)currentTake.frameRate).ToString("N2");
             else key_number = i.ToString();
             Rect rectKeyNumber = new Rect(newKeyNumberX, height_menu_bar, GUI.skin.label.CalcSize(new GUIContent(key_number)).x, height_control_bar);
             bool didCutLabel = false;
@@ -1864,7 +1917,7 @@ public class AMTimeline : EditorWindow {
                 rectKeyNumber.width = position.width - (aData.isInspectorOpen ? width_inspector_open : width_inspector_closed) - 20f - rectKeyNumber.x;
                 didCutLabel = true;
             }
-            if(!(didCutLabel && aData.e_getCurrentTake().endFrame == aData.e_getCurrentTake().numFrames)) {
+            if(!(didCutLabel && currentTake.endFrame == currentTake.numFrames)) {
                 if(rectKeyNumber.x > lastNumberX + 3f) {
                     GUI.Label(rectKeyNumber, key_number);
                     lastNumberX = rectKeyNumber.x + GUI.skin.label.CalcSize(new GUIContent(key_number)).x;
@@ -1875,7 +1928,7 @@ public class AMTimeline : EditorWindow {
 		
         #endregion
         #region main scrollview
-        height_all_tracks = aData.e_getCurrentTake().getElementsHeight(0, height_track, height_track_foldin, height_group);
+        height_all_tracks = currentTake.getElementsHeight(0, height_track, height_track_foldin, height_group);
         float height_scrollview = position.height - (height_control_bar + height_menu_bar) - height_indicator_footer;
         // check if mouse is beyond tracks and dragging group element
         difference = 0;
@@ -1906,9 +1959,9 @@ public class AMTimeline : EditorWindow {
         GUILayout.BeginVertical(GUILayout.Width(width_track));
         float track_y = 0f;		// the next track's y position
         // tracks vertical start
-        for(int i = 0;i < aData.e_getCurrentTake().rootGroup.elements.Count;i++) {
+        for(int i = 0;i < currentTake.rootGroup.elements.Count;i++) {
             if(track_y > scrollViewBounds.y) break;	// if start y is beyond max y
-            int id = aData.e_getCurrentTake().rootGroup.elements[i];
+            int id = currentTake.rootGroup.elements[i];
             float height_group_elements = 0f;
             showGroupElement(id, 0, ref track_y, ref isAnyTrackFoldedOut, ref height_group_elements, e, scrollViewBounds);
         }
@@ -1925,7 +1978,7 @@ public class AMTimeline : EditorWindow {
         GUILayout.BeginVertical();
         // frames vertical	
         GUILayout.BeginHorizontal(GUILayout.Height(height_track));
-        mouseXOverFrame = (int)aData.e_getCurrentTake().startFrame + Mathf.CeilToInt((e.mousePosition.x - width_track) / current_width_frame) - 1;
+        mouseXOverFrame = (int)currentTake.startFrame + Mathf.CeilToInt((e.mousePosition.x - width_track) / current_width_frame) - 1;
         if(dragType == (int)DragType.CursorHand && justStartedHandGrab) {
             startScrubFrame = mouseXOverFrame;
             justStartedHandGrab = false;
@@ -1953,7 +2006,7 @@ public class AMTimeline : EditorWindow {
             EditorStyles.textField.normal = GUI.skin.textField.normal;
             EditorStyles.textField.focused = GUI.skin.textField.focused;
             EditorStyles.label.normal = GUI.skin.label.normal;
-            showInspectorPropertiesFor(rectInspector, TakeEditCurrent().selectedTrack, aData.e_getCurrentTake().selectedFrame, e);
+            showInspectorPropertiesFor(rectInspector, TakeEditCurrent().selectedTrack, currentTake.selectedFrame, e);
             // reset editor styles
             EditorStyles.textField.normal = styleEditorTextField.normal;
             EditorStyles.textField.focused = styleEditorTextField.focused;
@@ -1971,11 +2024,11 @@ public class AMTimeline : EditorWindow {
 		GUI.DrawTexture(new Rect(position.width - (aData.isInspectorOpen ? width_inspector_open : width_inspector_closed) + 6f, 65f, texProperties.width, texProperties.height), texProperties);
         #endregion
         #region indicator
-        if((oData.showFramesForCollapsedTracks || isAnyTrackFoldedOut) && (trackCount > 0)) drawIndicator(aData.e_getCurrentTake().selectedFrame);
+        if((oData.showFramesForCollapsedTracks || isAnyTrackFoldedOut) && (trackCount > 0)) drawIndicator(currentTake.selectedFrame);
         #endregion
         #region horizontal scrollbar tooltip
-        string strHScrollbarLeftTooltip = (oData.time_numbering ? frameToTime((int)aData.e_getCurrentTake().startFrame, (float)aData.e_getCurrentTake().frameRate).ToString("N2") : aData.e_getCurrentTake().startFrame.ToString());
-        string strHScrollbarRightTooltip = (oData.time_numbering ? frameToTime((int)aData.e_getCurrentTake().endFrame, (float)aData.e_getCurrentTake().frameRate).ToString("N2") : aData.e_getCurrentTake().endFrame.ToString());
+        string strHScrollbarLeftTooltip = (oData.time_numbering ? frameToTime((int)currentTake.startFrame, (float)currentTake.frameRate).ToString("N2") : currentTake.startFrame.ToString());
+        string strHScrollbarRightTooltip = (oData.time_numbering ? frameToTime((int)currentTake.endFrame, (float)currentTake.frameRate).ToString("N2") : currentTake.endFrame.ToString());
         GUIStyle styleLabelCenter = new GUIStyle(GUI.skin.label);
         styleLabelCenter.alignment = TextAnchor.MiddleCenter;
         Vector2 _label_size;
@@ -2013,7 +2066,7 @@ public class AMTimeline : EditorWindow {
             if(objects_window.Count > 0) objects_window = new List<GameObject>();
             if(isRenamingGroup < 0) isRenamingGroup = 0;
             if(isRenamingTake) {
-                aData.e_makeTakeNameUnique(aData.e_getCurrentTake());
+                aData.e_makeTakeNameUnique(currentTake);
                 isRenamingTake = false;
             }
             if(isRenamingTrack != -1) isRenamingTrack = -1;
@@ -2036,12 +2089,12 @@ public class AMTimeline : EditorWindow {
             Texture dragElementIcon = null;
             float dragElementIconWidth = 12f;
             if(draggingGroupElementType == (int)ElementType.Group) {
-                dragElementName = aData.e_getCurrentTake().getGroup((int)draggingGroupElement.x).group_name;
+                dragElementName = currentTake.getGroup((int)draggingGroupElement.x).group_name;
                 dragElementIcon = tex_icon_group_closed;
                 dragElementIconWidth = 16f;
             }
             else if(draggingGroupElementType == (int)ElementType.Track) {
-                AMTrack dragTrack = aData.e_getCurrentTake().getTrack((int)draggingGroupElement.y);
+                AMTrack dragTrack = currentTake.getTrack((int)draggingGroupElement.y);
                 if(dragTrack) {
                     dragElementName = dragTrack.name;
                     dragElementIcon = getTrackIconTexture(dragTrack);
@@ -2053,7 +2106,7 @@ public class AMTimeline : EditorWindow {
             GUI.Label(new Rect(rectDragElement.x + 15f + 4f, rectDragElement.y, rectDragElement.width - 15f - 4f, rectDragElement.height), dragElementName);
         }
         mouseAboveGroupElements = e.mousePosition.y < (height_menu_bar + height_control_bar);
-        if(aData.e_getCurrentTake().rootGroup == null || aData.e_getCurrentTake().rootGroup.elements.Count <= 0) {
+        if(currentTake.rootGroup == null || currentTake.rootGroup.elements.Count <= 0) {
 
             if(aData.isInspectorOpen) aData.isInspectorOpen = false;
             float width_helpbox = position.width - width_inspector_closed - 28f - width_track;
@@ -2112,7 +2165,7 @@ public class AMTimeline : EditorWindow {
         if(e.alt && !isDragging) startZoomXOverFrame = mouseXOverFrame;
         if(isDragging && dragType != (int)DragType.None)
             e.Use();
-        else if(e.type == EventType.MouseMove || e.commandName == "UndoRedoPerformed")
+        else if(e.type == EventType.MouseMove)
             Repaint();
 
         if(doRefresh) {
@@ -2167,7 +2220,7 @@ public class AMTimeline : EditorWindow {
             //preserve the current take edit info
             AMTakeEdit curTakeEdit = null;
             if(window) {
-                AMTakeData curTake = dat.e_getCurrentTake();
+                AMTakeData curTake = window.currentTake;
                 foreach(AMTakeData take in dat._takes) {
                     if(take == curTake)
                         window.mTakeEdits.TryGetValue(take, out curTakeEdit);
@@ -2178,8 +2231,8 @@ public class AMTimeline : EditorWindow {
             dat.e_metaInstantiatePrefab(label);
 
             if(curTakeEdit != null) {
-                window.mTakeEdits.Add(dat.e_getCurrentTake(), curTakeEdit);
-                dat.e_getCurrentTake().selectedFrame = curTakeEdit.selectedFrame;
+                window.mTakeEdits.Add(window.currentTake, curTakeEdit);
+                window.currentTake.selectedFrame = curTakeEdit.selectedFrame;
             }
 
             EditorUtility.SetDirty(dat);
@@ -2290,7 +2343,7 @@ public class AMTimeline : EditorWindow {
     bool showGroupElement(int id, int group_lvl, ref float track_y, ref bool isAnyTrackFoldedOut, ref float height_group_elements, Event e, Vector2 scrollViewBounds) {
         // returns true if mouse over track
         if(id >= 0) {
-            AMTrack _track = aData.e_getCurrentTake().getTrack(id);
+            AMTrack _track = currentTake.getTrack(id);
             return _track ? showTrack(_track, id, group_lvl, ref track_y, ref isAnyTrackFoldedOut, ref height_group_elements, e, scrollViewBounds) : false;
         }
         else {
@@ -2304,7 +2357,7 @@ public class AMTimeline : EditorWindow {
         float group_x = width_subtrack_space * group_lvl;
         group_lvl++;	// increment group_lvl for sub-elements
         Rect rectGroup = new Rect(group_x, track_y, width_track - group_x, height_group);
-        AMGroup grp = aData.e_getCurrentTake().getGroup(id);
+        AMGroup grp = currentTake.getGroup(id);
         bool isGroupSelected = (TakeEditCurrent().selectedGroup == id && TakeEditCurrent().selectedTrack == -1);
         float local_height_group_elements = height_group;
         if(!isBeyondUpperBound) {
@@ -2335,7 +2388,7 @@ public class AMTimeline : EditorWindow {
                 }
                 string strStyle;
                 int numTracks = 0;
-                if(((grp.foldout && TakeEditCurrent().contextSelectionTracks.Count > 1) || (!grp.foldout && TakeEditCurrent().contextSelectionTracks.Count > 0)) && TakeEditCurrent().isGroupSelected(aData.e_getCurrentTake(), id, ref numTracks) && numTracks > 0) {
+                if(((grp.foldout && TakeEditCurrent().contextSelectionTracks.Count > 1) || (!grp.foldout && TakeEditCurrent().contextSelectionTracks.Count > 0)) && TakeEditCurrent().isGroupSelected(currentTake, id, ref numTracks) && numTracks > 0) {
                     if(isGroupSelected) strStyle = "GroupElementSelectedActive";
                     else strStyle = "GroupElementSelected";
                 }
@@ -2351,7 +2404,7 @@ public class AMTimeline : EditorWindow {
                     GUI.FocusControl("RenameGroup" + id);
                 }
                 else {
-                    GUI.Label(new Rect(33f, 0f, rectGroup.width, rectGroup.height), aData.e_getCurrentTake().getGroup(id).group_name);
+                    GUI.Label(new Rect(33f, 0f, rectGroup.width, rectGroup.height), currentTake.getGroup(id).group_name);
                 }
                 GUI.EndGroup();
                 if(rectGroup.width >= 15f) GUI.DrawTexture(new Rect(group_x, track_y + (height_group - 16f) / 2f, 16f, 16f), (grp.foldout ? GUI.skin.GetStyle("GroupElementFoldout").normal.background : GUI.skin.GetStyle("GroupElementFoldout").active.background));
@@ -2475,7 +2528,7 @@ public class AMTimeline : EditorWindow {
                 if(rectTrack.Contains(e.mousePosition) && mouseOverElement == (int)ElementType.None) {
                     mouseOverTrack = true;
                     mouseOverElement = (int)ElementType.Track;
-                    mouseOverGroupElement = new Vector2((inGroup ? aData.e_getCurrentTake().getTrackGroup(t) : 0), t);
+                    mouseOverGroupElement = new Vector2((inGroup ? currentTake.getTrackGroup(t) : 0), t);
                 }
                 GUI.BeginGroup(rectTrack, GUI.skin.GetStyle(strStyle));
                 GUI.DrawTexture(new Rect(17f, (height_track_foldin - 12f) / 2f, 12f, 12f), texIcon);
@@ -2501,7 +2554,7 @@ public class AMTimeline : EditorWindow {
                 if(rectTrack.Contains(e.mousePosition) && mouseOverElement == (int)ElementType.None) {
                     mouseOverTrack = true;
                     mouseOverElement = (int)ElementType.Track;
-                    mouseOverGroupElement = new Vector2((inGroup ? aData.e_getCurrentTake().getTrackGroup(t) : 0), t);
+                    mouseOverGroupElement = new Vector2((inGroup ? currentTake.getTrackGroup(t) : 0), t);
                 }
                 // draw track texture
                 GUI.BeginGroup(rectTrack, GUI.skin.GetStyle(strStyle));
@@ -2567,7 +2620,7 @@ public class AMTimeline : EditorWindow {
     }
     void showFramesForGroup(int group_id, ref float track_y, Event e, bool birdseye, Vector2 scrollViewBounds) {
         if(track_y > scrollViewBounds.y) return;	// if start y is beyond max y
-        AMGroup grp = aData.e_getCurrentTake().getGroup(group_id);
+        AMGroup grp = currentTake.getGroup(group_id);
         // add to track y
         if(group_id < 0) {
             // group height
@@ -2585,7 +2638,7 @@ public class AMTimeline : EditorWindow {
                 }
                 else {
                     if(track_y > scrollViewBounds.y) return;	// if start y is beyond max y
-                    AMTrack track = aData.e_getCurrentTake().getTrack(id);
+                    AMTrack track = currentTake.getTrack(id);
                     if(track)
                         showFrames(track, ref track_y, e, birdseye, scrollViewBounds);
                 }
@@ -2613,7 +2666,7 @@ public class AMTimeline : EditorWindow {
     void showFrames(AMTrack _track, ref float track_y, Event e, bool birdseye, Vector2 scrollViewBounds) {
         //string tooltip = "";
         int t = _track.id;
-        AMTakeData curTake = aData.e_getCurrentTake();
+        AMTakeData curTake = currentTake;
         int selectedTrack = TakeEdit(curTake).selectedTrack;
         // frames start
         if(!_track.foldout && !oData.showFramesForCollapsedTracks) {
@@ -3174,7 +3227,7 @@ public class AMTimeline : EditorWindow {
             return;
         }
 
-        AMTakeData ctake = aData.e_getCurrentTake();
+        AMTakeData ctake = currentTake;
 
         // if there are no tracks, return
         if(ctake.getTrackCount() <= 0) return;
@@ -3755,7 +3808,7 @@ public class AMTimeline : EditorWindow {
                 (sTrack as AMCameraSwitcherTrack).updateCache(aData);
                 AMCodeView.refresh();
                 // preview
-                aData.e_getCurrentTake().previewFrame(aData, TakeEditCurrent().selectedFrame);
+                currentTake.previewFrame(aData, TakeEditCurrent().selectedFrame);
                 // save data
                 EditorUtility.SetDirty(sTrack);
                 setDirtyKeys(sTrack);
@@ -3773,7 +3826,7 @@ public class AMTimeline : EditorWindow {
                     (sTrack as AMCameraSwitcherTrack).updateCache(aData);
                     AMCodeView.refresh();
                     // preview
-                    aData.e_getCurrentTake().previewFrame(aData, aData.e_getCurrentTake().selectedFrame);
+                    currentTake.previewFrame(aData, currentTake.selectedFrame);
                     // save data
                     EditorUtility.SetDirty(sTrack);
                     setDirtyKeys(sTrack);
@@ -3788,7 +3841,7 @@ public class AMTimeline : EditorWindow {
                     (sTrack as AMCameraSwitcherTrack).updateCache(aData);
                     AMCodeView.refresh();
                     // preview
-                    aData.e_getCurrentTake().previewFrame(aData, aData.e_getCurrentTake().selectedFrame);
+                    currentTake.previewFrame(aData, currentTake.selectedFrame);
                     // save data
                     EditorUtility.SetDirty(sTrack);
                     setDirtyKeys(sTrack);
@@ -3816,7 +3869,7 @@ public class AMTimeline : EditorWindow {
                         sTrack.updateCache(aData);
                         AMCodeView.refresh();
                         // preview
-                        aData.e_getCurrentTake().previewFrame(aData, aData.e_getCurrentTake().selectedFrame);
+                        currentTake.previewFrame(aData, currentTake.selectedFrame);
                         // save data
                         EditorUtility.SetDirty(sTrack);
                         setDirtyKeys(sTrack);
@@ -4230,7 +4283,7 @@ public class AMTimeline : EditorWindow {
                 EditorUtility.SetDirty(track);
                 setDirtyKeys(track);
                 // preview current frame
-                aData.e_getCurrentTake().previewFrame(aData, aData.e_getCurrentTake().selectedFrame);
+                currentTake.previewFrame(aData, currentTake.selectedFrame);
                 // refresh values
                 AMTransitionPicker.refreshValues();
                 // refresh code view
@@ -4269,7 +4322,7 @@ public class AMTimeline : EditorWindow {
                 EditorUtility.SetDirty(track);
                 setDirtyKeys(track);
                 // preview current frame
-                aData.e_getCurrentTake().previewFrame(aData, aData.e_getCurrentTake().selectedFrame);
+                currentTake.previewFrame(aData, currentTake.selectedFrame);
                 // refresh values
                 AMTransitionPicker.refreshValues();
                 // refresh code view
@@ -4304,7 +4357,7 @@ public class AMTimeline : EditorWindow {
                 track.updateCache(aData);
                 AMCodeView.refresh();
                 // preview new position
-                aData.e_getCurrentTake().previewFrame(aData, aData.e_getCurrentTake().selectedFrame);
+                window.currentTake.previewFrame(aData, window.currentTake.selectedFrame);
                 // save data
                 EditorUtility.SetDirty(track);
                 setDirtyKeys(track);
@@ -4361,7 +4414,7 @@ public class AMTimeline : EditorWindow {
                 track.updateCache(aData);
                 AMCodeView.refresh();
                 // preview new position
-                aData.e_getCurrentTake().previewFrame(aData, aData.e_getCurrentTake().selectedFrame);
+                window.currentTake.previewFrame(aData, window.currentTake.selectedFrame);
                 // save data
                 EditorUtility.SetDirty(track);
                 setDirtyKeys(track);
@@ -4391,7 +4444,7 @@ public class AMTimeline : EditorWindow {
 
     void drawIndicator(int frame) {
         // draw the indicator texture on the timeline
-        int _startFrame = (int)aData.e_getCurrentTake().startFrame;
+        int _startFrame = (int)currentTake.startFrame;
         // abort if frame not rendered
         if(frame < _startFrame) return;
         if(frame > (_startFrame + numFramesToRender - 1)) return;
@@ -4503,7 +4556,7 @@ public class AMTimeline : EditorWindow {
                 startZoomMousePosition = currentMousePosition;
                 zoomDirectionMousePosition = currentMousePosition;
                 startZoomValue = aData.zoom;
-                startFrame = aData.e_getCurrentTake().startFrame;
+                startFrame = currentTake.startFrame;
                 startScrollViewValue = scrollViewValue.y;
                 dragType = (int)DragType.CursorZoom;
                 didPeakZoom = false;
@@ -4536,10 +4589,10 @@ public class AMTimeline : EditorWindow {
                 bool instantiated;
                 AMTakeData take;
                 if(instantiated = MetaInstantiate("Move Keys")) {
-                    take = aData.e_getCurrentTake();
+                    take = currentTake;
                 }
                 else {
-                    take = aData.e_getCurrentTake();
+                    take = currentTake;
                     Undo.RegisterCompleteObjectUndo(getKeysAndTracks(take), "Move Keys");
                 }
 
@@ -4578,13 +4631,13 @@ public class AMTimeline : EditorWindow {
                 setDirtyTakes(aData);
             }
             else if(dragType == (int)DragType.ResizeAction) {
-                AMTrack _track = TakeEditCurrent().getSelectedTrack(aData.e_getCurrentTake());
+                AMTrack _track = TakeEditCurrent().getSelectedTrack(currentTake);
                 Undo.RegisterCompleteObjectUndo(_track, "Resize Action");
                 AMKey[] dKeys = _track.removeDuplicateKeys();
                 foreach(AMKey dkey in dKeys)
                     Undo.DestroyObjectImmediate(dkey);
                 // preview selected frame
-                aData.e_getCurrentTake().previewFrame(aData, aData.e_getCurrentTake().selectedFrame);
+                currentTake.previewFrame(aData, currentTake.selectedFrame);
             }
             else if(dragType == (int)DragType.CursorZoom) {
                 tex_cursor_zoom = null;
@@ -4635,15 +4688,15 @@ public class AMTimeline : EditorWindow {
             }
             else if(dragType == (int)DragType.TimelineScrub) {
                 int frame = mouseXOverFrame;
-                if(frame < (int)aData.e_getCurrentTake().startFrame) frame = (int)aData.e_getCurrentTake().startFrame;
-                else if(frame > (int)aData.e_getCurrentTake().endFrame) frame = (int)aData.e_getCurrentTake().endFrame;
+                if(frame < (int)currentTake.startFrame) frame = (int)currentTake.startFrame;
+                else if(frame > (int)currentTake.endFrame) frame = (int)currentTake.endFrame;
                 selectFrame(frame);
                 #endregion
                 #region resize action
                 // resize action
             }
             else if(dragType == (int)DragType.ResizeAction && mouseXOverFrame > 0) {
-                AMTrack selTrack = TakeEditCurrent().getSelectedTrack(aData.e_getCurrentTake());
+                AMTrack selTrack = TakeEditCurrent().getSelectedTrack(currentTake);
                 if(selTrack.hasKeyOnFrame(resizeActionFrame)) {
                     AMKey selKey = selTrack.getKeyOnFrame(resizeActionFrame);
                     if((startResizeActionFrame == -1 || mouseXOverFrame > startResizeActionFrame) && (endResizeActionFrame == -1 || mouseXOverFrame < endResizeActionFrame)) {
@@ -4704,18 +4757,18 @@ public class AMTimeline : EditorWindow {
                 #region resize horizontal scrollbar left
             }
             else if(dragType == (int)DragType.ResizeHScrollbarLeft) {
-                if(mouseXOverHScrollbarFrame <= 0) aData.e_getCurrentTake().startFrame = 1;
-                else if(mouseXOverHScrollbarFrame > aData.e_getCurrentTake().numFrames) aData.e_getCurrentTake().startFrame = aData.e_getCurrentTake().numFrames;
-                else aData.e_getCurrentTake().startFrame = mouseXOverHScrollbarFrame;
+                if(mouseXOverHScrollbarFrame <= 0) currentTake.startFrame = 1;
+                else if(mouseXOverHScrollbarFrame > currentTake.numFrames) currentTake.startFrame = currentTake.numFrames;
+                else currentTake.startFrame = mouseXOverHScrollbarFrame;
                 #endregion
                 #region resize horizontal scrollbar right
             }
             else if(dragType == (int)DragType.ResizeHScrollbarRight) {
-                if(mouseXOverHScrollbarFrame <= 0) aData.e_getCurrentTake().endFrame = 1;
-                else if(mouseXOverHScrollbarFrame > aData.e_getCurrentTake().numFrames) aData.e_getCurrentTake().endFrame = aData.e_getCurrentTake().numFrames;
-                else aData.e_getCurrentTake().endFrame = mouseXOverHScrollbarFrame;
+                if(mouseXOverHScrollbarFrame <= 0) currentTake.endFrame = 1;
+                else if(mouseXOverHScrollbarFrame > currentTake.numFrames) currentTake.endFrame = currentTake.numFrames;
+                else currentTake.endFrame = mouseXOverHScrollbarFrame;
                 int min = Mathf.FloorToInt((position.width - width_track - 18f - (aData.isInspectorOpen ? width_inspector_open : width_inspector_closed)) / (height_track - height_action_min));
-                if(aData.e_getCurrentTake().startFrame > aData.e_getCurrentTake().endFrame - min) aData.e_getCurrentTake().startFrame = aData.e_getCurrentTake().endFrame - min;
+                if(currentTake.startFrame > currentTake.endFrame - min) currentTake.startFrame = currentTake.endFrame - min;
                 #endregion
                 #region cursor zoom
             }
@@ -4723,16 +4776,16 @@ public class AMTimeline : EditorWindow {
                 if (dragPan) {
                     if (didPeakZoom) {
                         if (wasZoomingIn && currentMousePosition.x <= cachedZoomMousePosition.x) {
-                            startFrame = aData.e_getCurrentTake().startFrame;
+                            startFrame = currentTake.startFrame;
                             zoomDirectionMousePosition.x = currentMousePosition.x;
                         } else if (!wasZoomingIn && currentMousePosition.x >= cachedZoomMousePosition.x) {
-                            startFrame = aData.e_getCurrentTake().startFrame;
+                            startFrame = currentTake.startFrame;
                             zoomDirectionMousePosition.x = currentMousePosition.x;
                         }
                         didPeakZoom = false;
                     }
-                    float frameDiff = aData.e_getCurrentTake().endFrame - aData.e_getCurrentTake().startFrame;
-                    float framesInView = (aData.e_getCurrentTake().endFrame-aData.e_getCurrentTake().startFrame);
+                    float frameDiff = currentTake.endFrame - currentTake.startFrame;
+                    float framesInView = (currentTake.endFrame-currentTake.startFrame);
                     float areaWidth = position.width - width_track - (aData.isInspectorOpen ? width_inspector_open - 4f : width_inspector_closed) - 21f;
                     float currFrame = startFrame + (zoomDirectionMousePosition.x- currentMousePosition.x) * (framesInView/areaWidth);
                     if (currFrame <= 1) {
@@ -4741,16 +4794,16 @@ public class AMTimeline : EditorWindow {
                         currFrame = 1f;
                         didPeakZoom = true;
                     }
-                    if (currFrame + frameDiff > aData.e_getCurrentTake().numFrames) {
+                    if (currFrame + frameDiff > currentTake.numFrames) {
                         wasZoomingIn = true;
                         cachedZoomMousePosition = currentMousePosition;
                         zoomDirectionMousePosition.x = currentMousePosition.x;
-                        currFrame = aData.e_getCurrentTake().numFrames - frameDiff;
+                        currFrame = currentTake.numFrames - frameDiff;
                         didPeakZoom = true;
                     }
 
-                    aData.e_getCurrentTake().startFrame = currFrame;
-                    aData.e_getCurrentTake().endFrame = aData.e_getCurrentTake().startFrame + frameDiff;
+                    currentTake.startFrame = currFrame;
+                    currentTake.endFrame = currentTake.startFrame + frameDiff;
                     scrollViewValue.y = startScrollViewValue + (zoomDirectionMousePosition.y - currentMousePosition.y);
                 } else {
                     if(didPeakZoom) {
@@ -4794,24 +4847,24 @@ public class AMTimeline : EditorWindow {
     void processUpdateMethodInfoCache(bool now = false) {
         if(now) updateMethodInfoCacheBuffer = 0;
         // update methodinfo cache if necessary
-        if(!aData || aData.e_getCurrentTake() == null) return;
-        if(aData.e_getCurrentTake().getTrackCount() <= 0) return;
+        if(!aData || currentTake == null) return;
+        if(currentTake.getTrackCount() <= 0) return;
         if(TakeEditCurrent().selectedTrack <= -1) return;
         if(updateMethodInfoCacheBuffer > 0) updateMethodInfoCacheBuffer--;
         if((indexMethodInfo == -1) && (updateMethodInfoCacheBuffer <= 0)) {
 
             // if track is event
-            AMTrack selectedTrack = TakeEditCurrent().getSelectedTrack(aData.e_getCurrentTake());
+            AMTrack selectedTrack = TakeEditCurrent().getSelectedTrack(currentTake);
             if(TakeEditCurrent().selectedTrack > -1 && selectedTrack is AMEventTrack) {
                 // if event track has key on selected frame
-                if(selectedTrack.hasKeyOnFrame(aData.e_getCurrentTake().selectedFrame)) {
+                if(selectedTrack.hasKeyOnFrame(currentTake.selectedFrame)) {
                     // update methodinfo cache
                     updateCachedMethodInfo(selectedTrack.GetTarget(aData) as GameObject);
                     updateMethodInfoCacheBuffer = updateRateMethodInfoCache;
                     // set index to method info index
 
                     if(cachedMethodInfo.Count > 0) {
-                        AMEventKey eKey = (selectedTrack.getKeyOnFrame(aData.e_getCurrentTake().selectedFrame) as AMEventKey);
+                        AMEventKey eKey = (selectedTrack.getKeyOnFrame(currentTake.selectedFrame) as AMEventKey);
                         MethodInfo m = eKey.getMethodInfo(selectedTrack.GetTarget(aData) as GameObject);
                         if(m != null) {
                             for(int i = 0;i < cachedMethodInfo.Count;i++) {
@@ -4831,9 +4884,9 @@ public class AMTimeline : EditorWindow {
         float speed = (int)((Mathf.Clamp(Mathf.Abs(handDragAccelaration), 0, 200) / 12) * (aData.zoom + 0.2f));
         if(handDragAccelaration > 0) {
 
-            if(aData.e_getCurrentTake().endFrame < aData.e_getCurrentTake().numFrames) {
-                aData.e_getCurrentTake().startFrame += speed;
-                aData.e_getCurrentTake().endFrame += speed;
+            if(currentTake.endFrame < currentTake.numFrames) {
+                currentTake.startFrame += speed;
+                currentTake.endFrame += speed;
                 if(ticker % 2 == 0) handDragAccelaration--;
             }
             else {
@@ -4841,9 +4894,9 @@ public class AMTimeline : EditorWindow {
             }
         }
         else if(handDragAccelaration < 0) {
-            if(aData.e_getCurrentTake().startFrame > 1f) {
-                aData.e_getCurrentTake().startFrame -= speed;
-                aData.e_getCurrentTake().endFrame -= speed;
+            if(currentTake.startFrame > 1f) {
+                currentTake.startFrame -= speed;
+                currentTake.endFrame -= speed;
                 if(ticker % 2 == 0) handDragAccelaration++;
             }
             else {
@@ -4856,12 +4909,12 @@ public class AMTimeline : EditorWindow {
         if(destType == (int)ElementType.Group) {
             if(sourceType == (int)ElementType.Track) {
                 // drop track on group
-                aData.e_getCurrentTake().moveToGroup((int)sourceElement.y, (int)destElement.x, true);
+                currentTake.moveToGroup((int)sourceElement.y, (int)destElement.x, true);
             }
             else if(sourceType == (int)ElementType.Group) {
                 // drop group on group
                 if((int)sourceElement.x != (int)destElement.x)
-                    aData.e_getCurrentTake().moveToGroup((int)sourceElement.x, (int)destElement.x, true);
+                    currentTake.moveToGroup((int)sourceElement.x, (int)destElement.x, true);
             }
             // dropped outside group
         }
@@ -4869,7 +4922,7 @@ public class AMTimeline : EditorWindow {
             if(sourceType == (int)ElementType.Track) {
                 // drop track on group
 
-                aData.e_getCurrentTake().moveGroupElement((int)sourceElement.y, (int)destElement.x);
+                currentTake.moveGroupElement((int)sourceElement.y, (int)destElement.x);
             }
             else if(sourceType == (int)ElementType.Group) {
                 // drop group on group
@@ -4877,7 +4930,7 @@ public class AMTimeline : EditorWindow {
                 //if((int)sourceElement.x != destGroup)
                 //aData.getCurrentTake().moveToGroup((int)sourceElement.x,destGroup);
                 if((int)sourceElement.x != (int)destElement.x)
-                    aData.e_getCurrentTake().moveGroupElement((int)sourceElement.x, (int)destElement.x);
+                    currentTake.moveGroupElement((int)sourceElement.x, (int)destElement.x);
 
             }
             // dropped on track
@@ -4886,150 +4939,150 @@ public class AMTimeline : EditorWindow {
             if(sourceType == (int)ElementType.Track) {
                 // drop track on track
                 if((int)sourceElement.y != (int)destElement.y)
-                    aData.e_getCurrentTake().moveToGroup((int)sourceElement.y, (int)destElement.x, false, (int)destElement.y);
+                    currentTake.moveToGroup((int)sourceElement.y, (int)destElement.x, false, (int)destElement.y);
             }
             else if(sourceType == (int)ElementType.Group) {
                 // drop group on track
                 if((int)destElement.x == 0 || (int)sourceElement.x != (int)destElement.x)
-                    aData.e_getCurrentTake().moveToGroup((int)sourceElement.x, (int)destElement.x, false, (int)destElement.y);
+                    currentTake.moveToGroup((int)sourceElement.x, (int)destElement.x, false, (int)destElement.y);
             }
         }
         else {
             // drop on window, move to root group
             if(sourceType == (int)ElementType.Track) {
-                aData.e_getCurrentTake().moveToGroup((int)sourceElement.y, 0, mouseAboveGroupElements);
+                currentTake.moveToGroup((int)sourceElement.y, 0, mouseAboveGroupElements);
             }
             else if(sourceType == (int)ElementType.Group) {
                 // move group to last position
-                aData.e_getCurrentTake().moveToGroup((int)sourceElement.x, 0, mouseAboveGroupElements);
+                currentTake.moveToGroup((int)sourceElement.x, 0, mouseAboveGroupElements);
             }
         }
         // re-select track to update selected group
         if(sourceType == (int)ElementType.Track) timelineSelectTrack((int)sourceElement.y);
         // scroll to the track
         float scrollTo = -1f;
-        scrollTo = aData.e_getCurrentTake().getElementY((sourceType == (int)ElementType.Group ? (int)sourceElement.x : (int)sourceElement.y), height_track, height_track_foldin, height_group);
+        scrollTo = currentTake.getElementY((sourceType == (int)ElementType.Group ? (int)sourceElement.x : (int)sourceElement.y), height_track, height_track_foldin, height_group);
         setScrollViewValue(scrollTo);
     }
     public static void recalculateNumFramesToRender() {
         if(window) window.cachedZoom = -1f;
     }
     void calculateNumFramesToRender(bool clickedZoom, Event e) {
-        if(aData.e_getCurrentTake() == null) return;
+        if(currentTake == null) return;
 
         int min = Mathf.FloorToInt((position.width - width_track - 18f - (aData.isInspectorOpen ? width_inspector_open : width_inspector_closed)) / (oData.disableTimelineActions ? height_track / 2f : height_track - height_action_min));
-        int _mouseXOverFrame = (int)aData.e_getCurrentTake().startFrame + Mathf.CeilToInt((e.mousePosition.x - width_track) / current_width_frame) - 1;
+        int _mouseXOverFrame = (int)currentTake.startFrame + Mathf.CeilToInt((e.mousePosition.x - width_track) / current_width_frame) - 1;
         // move frames with hand cursor
         if(dragType == (int)DragType.CursorHand && !justStartedHandGrab) {
             if(_mouseXOverFrame != startScrubFrame) {
-                float numFrames = aData.e_getCurrentTake().endFrame - aData.e_getCurrentTake().startFrame;
+                float numFrames = currentTake.endFrame - currentTake.startFrame;
                 float dist_hand_drag = startScrubFrame - _mouseXOverFrame;
-                aData.e_getCurrentTake().startFrame += dist_hand_drag;
-                aData.e_getCurrentTake().endFrame += dist_hand_drag;
-                if(aData.e_getCurrentTake().startFrame < 1f) {
-                    aData.e_getCurrentTake().startFrame = 1f;
-                    aData.e_getCurrentTake().endFrame += numFrames - (aData.e_getCurrentTake().endFrame - aData.e_getCurrentTake().startFrame);
+                currentTake.startFrame += dist_hand_drag;
+                currentTake.endFrame += dist_hand_drag;
+                if(currentTake.startFrame < 1f) {
+                    currentTake.startFrame = 1f;
+                    currentTake.endFrame += numFrames - (currentTake.endFrame - currentTake.startFrame);
                 }
-                else if(aData.e_getCurrentTake().endFrame > aData.e_getCurrentTake().numFrames) {
-                    aData.e_getCurrentTake().endFrame = aData.e_getCurrentTake().numFrames;
-                    aData.e_getCurrentTake().startFrame -= numFrames - (aData.e_getCurrentTake().endFrame - aData.e_getCurrentTake().startFrame);
+                else if(currentTake.endFrame > currentTake.numFrames) {
+                    currentTake.endFrame = currentTake.numFrames;
+                    currentTake.startFrame -= numFrames - (currentTake.endFrame - currentTake.startFrame);
                 }
             }
             // calculate the number of frames to render based on zoom
         }
         else if(aData.zoom != cachedZoom && dragType != (int)DragType.ResizeHScrollbarLeft && dragType != (int)DragType.ResizeHScrollbarRight) {
             //numFramesToRender
-            if(oData.scrubby_zoom_slider) numFramesToRender = Mathf.Lerp(0.0f, 1.0f, aData.zoom) * ((float)aData.e_getCurrentTake().numFrames - min) + min;
-            else numFramesToRender = Expo.EaseIn(aData.zoom, 0.0f, 1.0f, 1.0f, 0.0f, 0.0f) * ((float)aData.e_getCurrentTake().numFrames - min) + min;
+            if(oData.scrubby_zoom_slider) numFramesToRender = Mathf.Lerp(0.0f, 1.0f, aData.zoom) * ((float)currentTake.numFrames - min) + min;
+            else numFramesToRender = Expo.EaseIn(aData.zoom, 0.0f, 1.0f, 1.0f, 0.0f, 0.0f) * ((float)currentTake.numFrames - min) + min;
             // frame dimensions
             current_width_frame = Mathf.Clamp((position.width - width_track - 18f - (aData.isInspectorOpen ? width_inspector_open : width_inspector_closed)) / numFramesToRender, 0f, (oData.disableTimelineActions ? height_track / 2f : height_track - height_action_min));
             current_height_frame = Mathf.Clamp(current_width_frame * 2f, 20f, (oData.disableTimelineActions ? height_track : 40f));
             float half = 0f;
             // zoom out			
-            if(aData.e_getCurrentTake().endFrame - aData.e_getCurrentTake().startFrame + 1 < Mathf.FloorToInt(numFramesToRender)) {
+            if(currentTake.endFrame - currentTake.startFrame + 1 < Mathf.FloorToInt(numFramesToRender)) {
                 if((oData.scrubby_zoom_cursor && dragType == (int)DragType.CursorZoom) /*|| (aData.scrubby_zoom_slider && dragType != (int)DragType.CursorZoom)*/) {
-                    int newPosFrame = (int)aData.e_getCurrentTake().startFrame + Mathf.CeilToInt((startZoomMousePosition.x - width_track) / current_width_frame) - 1;
+                    int newPosFrame = (int)currentTake.startFrame + Mathf.CeilToInt((startZoomMousePosition.x - width_track) / current_width_frame) - 1;
                     int _diff = startZoomXOverFrame - newPosFrame;
-                    aData.e_getCurrentTake().startFrame += _diff;
-                    aData.e_getCurrentTake().endFrame += _diff;
+                    currentTake.startFrame += _diff;
+                    currentTake.endFrame += _diff;
                 }
                 else {
 
-                    half = (((int)numFramesToRender - (aData.e_getCurrentTake().endFrame - aData.e_getCurrentTake().startFrame + 1)) / 2f);
-                    aData.e_getCurrentTake().startFrame -= Mathf.FloorToInt(half);
-                    aData.e_getCurrentTake().endFrame += Mathf.CeilToInt(half);
+                    half = (((int)numFramesToRender - (currentTake.endFrame - currentTake.startFrame + 1)) / 2f);
+                    currentTake.startFrame -= Mathf.FloorToInt(half);
+                    currentTake.endFrame += Mathf.CeilToInt(half);
                     // clicked zoom out
                     if(clickedZoom) {
-                        int newPosFrame = (int)aData.e_getCurrentTake().startFrame + Mathf.CeilToInt((e.mousePosition.x - width_track) / current_width_frame) - 1;
+                        int newPosFrame = (int)currentTake.startFrame + Mathf.CeilToInt((e.mousePosition.x - width_track) / current_width_frame) - 1;
                         int _diff = _mouseXOverFrame - newPosFrame;
-                        aData.e_getCurrentTake().startFrame += _diff;
-                        aData.e_getCurrentTake().endFrame += _diff;
+                        currentTake.startFrame += _diff;
+                        currentTake.endFrame += _diff;
                     }
                 }
                 // zoom in
             }
-            else if(aData.e_getCurrentTake().endFrame - aData.e_getCurrentTake().startFrame + 1 > Mathf.FloorToInt(numFramesToRender)) {
+            else if(currentTake.endFrame - currentTake.startFrame + 1 > Mathf.FloorToInt(numFramesToRender)) {
                 //targetPos = ((float)startZoomXOverFrame)/((float)aData.getCurrentTake().endFrame);
-                half = (((aData.e_getCurrentTake().endFrame - aData.e_getCurrentTake().startFrame + 1) - numFramesToRender) / 2f);
+                half = (((currentTake.endFrame - currentTake.startFrame + 1) - numFramesToRender) / 2f);
                 //float scrubby_startframe = (float)aData.getCurrentTake().startFrame+half;
-                aData.e_getCurrentTake().startFrame += Mathf.FloorToInt(half);
-                aData.e_getCurrentTake().endFrame -= Mathf.CeilToInt(half);
+                currentTake.startFrame += Mathf.FloorToInt(half);
+                currentTake.endFrame -= Mathf.CeilToInt(half);
                 int targetFrame = 0;
                 // clicked zoom in
                 if(clickedZoom) {
-                    int newPosFrame = (int)aData.e_getCurrentTake().startFrame + Mathf.CeilToInt((e.mousePosition.x - width_track) / current_width_frame) - 1;
+                    int newPosFrame = (int)currentTake.startFrame + Mathf.CeilToInt((e.mousePosition.x - width_track) / current_width_frame) - 1;
                     int _diff = _mouseXOverFrame - newPosFrame;
-                    aData.e_getCurrentTake().startFrame += _diff;
-                    aData.e_getCurrentTake().endFrame += _diff;
+                    currentTake.startFrame += _diff;
+                    currentTake.endFrame += _diff;
                     // scrubby zoom in
                 }
                 else if((oData.scrubby_zoom_cursor && dragType == (int)DragType.CursorZoom) || (oData.scrubby_zoom_slider && dragType != (int)DragType.CursorZoom)) {
                     if(dragType != (int)DragType.CursorZoom) {
                         // scrubby zoom slider to indicator
-                        targetFrame = aData.e_getCurrentTake().selectedFrame;
-                        float dist_scrubbyzoom = Mathf.Round(targetFrame - Mathf.FloorToInt(aData.e_getCurrentTake().startFrame + numFramesToRender / 2f));
+                        targetFrame = currentTake.selectedFrame;
+                        float dist_scrubbyzoom = Mathf.Round(targetFrame - Mathf.FloorToInt(currentTake.startFrame + numFramesToRender / 2f));
                         int offset = Mathf.RoundToInt(dist_scrubbyzoom * (1f - Mathf.Lerp(0.0f, 1.0f, aData.zoom)));
-                        aData.e_getCurrentTake().startFrame += offset;
-                        aData.e_getCurrentTake().endFrame += offset;
+                        currentTake.startFrame += offset;
+                        currentTake.endFrame += offset;
                     }
                     else {
                         // scrubby zoom cursor to mouse position
-                        int newPosFrame = (int)aData.e_getCurrentTake().startFrame + Mathf.CeilToInt((startZoomMousePosition.x - width_track) / current_width_frame) - 1;
+                        int newPosFrame = (int)currentTake.startFrame + Mathf.CeilToInt((startZoomMousePosition.x - width_track) / current_width_frame) - 1;
                         int _diff = startZoomXOverFrame - newPosFrame;
-                        aData.e_getCurrentTake().startFrame += _diff;
-                        aData.e_getCurrentTake().endFrame += _diff;
+                        currentTake.startFrame += _diff;
+                        currentTake.endFrame += _diff;
                     }
                 }
 
             }
             // if beyond boundaries, adjust
             int diff = 0;
-            if(aData.e_getCurrentTake().endFrame > aData.e_getCurrentTake().numFrames) {
-                diff = (int)aData.e_getCurrentTake().endFrame - aData.e_getCurrentTake().numFrames;
-                aData.e_getCurrentTake().endFrame -= diff;
-                aData.e_getCurrentTake().startFrame += diff;
+            if(currentTake.endFrame > currentTake.numFrames) {
+                diff = (int)currentTake.endFrame - currentTake.numFrames;
+                currentTake.endFrame -= diff;
+                currentTake.startFrame += diff;
             }
-            else if(aData.e_getCurrentTake().startFrame < 1) {
-                diff = 1 - (int)aData.e_getCurrentTake().startFrame;
-                aData.e_getCurrentTake().startFrame -= diff;
-                aData.e_getCurrentTake().endFrame += diff;
+            else if(currentTake.startFrame < 1) {
+                diff = 1 - (int)currentTake.startFrame;
+                currentTake.startFrame -= diff;
+                currentTake.endFrame += diff;
             }
-            if(half * 2 < (int)numFramesToRender) aData.e_getCurrentTake().endFrame++;
+            if(half * 2 < (int)numFramesToRender) currentTake.endFrame++;
             cachedZoom = aData.zoom;
             return;
         }
         // calculates the number of frames to render based on window width
-        if(aData.e_getCurrentTake().startFrame < 1) aData.e_getCurrentTake().startFrame = 1;
+        if(currentTake.startFrame < 1) currentTake.startFrame = 1;
 
-        if(aData.e_getCurrentTake().endFrame < aData.e_getCurrentTake().startFrame + min) aData.e_getCurrentTake().endFrame = aData.e_getCurrentTake().startFrame + min;
-        if(aData.e_getCurrentTake().endFrame > aData.e_getCurrentTake().numFrames) aData.e_getCurrentTake().endFrame = aData.e_getCurrentTake().numFrames;
-        if(aData.e_getCurrentTake().startFrame > aData.e_getCurrentTake().endFrame - min) aData.e_getCurrentTake().startFrame = aData.e_getCurrentTake().endFrame - min;
-        numFramesToRender = aData.e_getCurrentTake().endFrame - aData.e_getCurrentTake().startFrame + 1;
+        if(currentTake.endFrame < currentTake.startFrame + min) currentTake.endFrame = currentTake.startFrame + min;
+        if(currentTake.endFrame > currentTake.numFrames) currentTake.endFrame = currentTake.numFrames;
+        if(currentTake.startFrame > currentTake.endFrame - min) currentTake.startFrame = currentTake.endFrame - min;
+        numFramesToRender = currentTake.endFrame - currentTake.startFrame + 1;
         current_width_frame = Mathf.Clamp((position.width - width_track - 18f - (aData.isInspectorOpen ? width_inspector_open : width_inspector_closed)) / numFramesToRender, 0f, (oData.disableTimelineActions ? height_track / 2f : height_track - height_action_min));
         current_height_frame = Mathf.Clamp(current_width_frame * 2f, 20f, (oData.disableTimelineActions ? height_track : 40f));
         if(dragType == (int)DragType.ResizeHScrollbarLeft || dragType == (int)DragType.ResizeHScrollbarRight) {
-            if(oData.scrubby_zoom_slider) aData.zoom = Mathf.Lerp(0f, 1f, (numFramesToRender - min) / ((float)aData.e_getCurrentTake().numFrames - min));
-            else aData.zoom = AMUtil.EaseInExpoReversed(0f, 1f, (numFramesToRender - min) / ((float)aData.e_getCurrentTake().numFrames - min));
+            if(oData.scrubby_zoom_slider) aData.zoom = Mathf.Lerp(0f, 1f, (numFramesToRender - min) / ((float)currentTake.numFrames - min));
+            else aData.zoom = AMUtil.EaseInExpoReversed(0f, 1f, (numFramesToRender - min) / ((float)currentTake.numFrames - min));
             cachedZoom = aData.zoom;
         }
     }
@@ -5042,12 +5095,12 @@ public class AMTimeline : EditorWindow {
         // select a track from the timeline
         cancelTextEditting();
 		
-        if(aData.e_getCurrentTake().getTrackCount() <= 0) return;
+        if(currentTake.getTrackCount() <= 0) return;
         
         // select track
-        TakeEditCurrent().selectTrack(aData.e_getCurrentTake(), _track, isShiftDown, isControlDown);
+        TakeEditCurrent().selectTrack(currentTake, _track, isShiftDown, isControlDown);
 
-        AMTrack track = aData.e_getCurrentTake().getTrack(_track);
+        AMTrack track = currentTake.getTrack(_track);
 
         // check if target's path has been changed, if so, clear cache
         aData.e_maintainTargetCache(track);
@@ -5063,7 +5116,7 @@ public class AMTimeline : EditorWindow {
             timelineSelectObjectFor(track);
     }
     bool timelineSelectGroupOrTrackFromCurrent(int dir) {
-        AMTakeData take = aData.e_getCurrentTake();
+        AMTakeData take = currentTake;
         AMTakeEdit takeEdit = TakeEditCurrent();
 
         int parentGrpId = 0;
@@ -5178,20 +5231,20 @@ public class AMTimeline : EditorWindow {
     }
     void timelineSelectGroup(int group_id) {
         cancelTextEditting();
-        TakeEditCurrent().selectGroup(aData.e_getCurrentTake(), group_id, isShiftDown, isControlDown);
+        TakeEditCurrent().selectGroup(currentTake, group_id, isShiftDown, isControlDown);
         TakeEditCurrent().selectedTrack = -1;
     }
     void timelineSelectFrame(int _track, int _frame, bool deselectKeyboardFocus = true) {
         // select a frame from the timeline
         cancelTextEditting();
         indexMethodInfo = -1;	// reset methodinfo index to update caches
-        if(aData.e_getCurrentTake().getTrackCount() <= 0) return;
+        if(currentTake.getTrackCount() <= 0) return;
         // select frame
-        TakeEditCurrent().selectFrame(aData.e_getCurrentTake(), _track, _frame, numFramesToRender, isShiftDown, isControlDown);
+        TakeEditCurrent().selectFrame(currentTake, _track, _frame, numFramesToRender, isShiftDown, isControlDown);
         // preview frame
-        aData.e_getCurrentTake().previewFrame(aData, _frame);
+        currentTake.previewFrame(aData, _frame);
         // set active object
-        if(_track > -1) timelineSelectObjectFor(aData.e_getCurrentTake().getTrack(_track));
+        if(_track > -1) timelineSelectObjectFor(currentTake.getTrack(_track));
         // deselect keyboard focus
         if(deselectKeyboardFocus)
             GUIUtility.keyboardControl = 0;
@@ -5204,24 +5257,24 @@ public class AMTimeline : EditorWindow {
     }
     void timelineSelectNextKey() {
         // select next key
-        if(aData.e_getCurrentTake().getTrackCount() <= 0) return;
-        if(aData.e_getCurrentTake().getTrack(TakeEditCurrent().selectedTrack).keys.Count <= 0) return;
-        int frame = aData.e_getCurrentTake().getTrack(TakeEditCurrent().selectedTrack).getKeyFrameAfterFrame(aData.e_getCurrentTake().selectedFrame);
+        if(currentTake.getTrackCount() <= 0) return;
+        if(currentTake.getTrack(TakeEditCurrent().selectedTrack).keys.Count <= 0) return;
+        int frame = currentTake.getTrack(TakeEditCurrent().selectedTrack).getKeyFrameAfterFrame(currentTake.selectedFrame);
         if(frame <= -1) return;
         timelineSelectFrame(TakeEditCurrent().selectedTrack, frame);
 
     }
     void timelineSelectPrevKey() {
         // select previous key
-        if(aData.e_getCurrentTake().getTrackCount() <= 0) return;
-        if(aData.e_getCurrentTake().getTrack(TakeEditCurrent().selectedTrack).keys.Count <= 0) return;
-        int frame = aData.e_getCurrentTake().getTrack(TakeEditCurrent().selectedTrack).getKeyFrameBeforeFrame(aData.e_getCurrentTake().selectedFrame);
+        if(currentTake.getTrackCount() <= 0) return;
+        if(currentTake.getTrack(TakeEditCurrent().selectedTrack).keys.Count <= 0) return;
+        int frame = currentTake.getTrack(TakeEditCurrent().selectedTrack).getKeyFrameBeforeFrame(currentTake.selectedFrame);
         if(frame <= -1) return;
         timelineSelectFrame(TakeEditCurrent().selectedTrack, frame);
 
     }
     public void selectFrame(int frame) {
-        if(aData.e_getCurrentTake().selectedFrame != frame) {
+        if(currentTake.selectedFrame != frame) {
             timelineSelectFrame(TakeEditCurrent().selectedTrack, frame, false);
         }
     }
@@ -5232,19 +5285,19 @@ public class AMTimeline : EditorWindow {
         if(isPlaying) {
             isPlaying = false;
             // select where stopped
-            timelineSelectFrame(TakeEditCurrent().selectedTrack, aData.e_getCurrentTake().selectedFrame);
-            aData.e_getCurrentTake().stopAudio(aData);
+            timelineSelectFrame(TakeEditCurrent().selectedTrack, currentTake.selectedFrame);
+            currentTake.stopAudio(aData);
             return;
         }
         // set preview player variables
         playerStartTime = Time.realtimeSinceStartup;
-        playerStartedFrame = playerStartFrame = aData.e_getCurrentTake().selectedFrame;
+        playerStartedFrame = playerStartFrame = currentTake.selectedFrame;
         // start playing
         isPlaying = true;
         playerCurLoop = 0;
         playerBackward = false;
         // sample audio from current frame
-        aData.e_getCurrentTake().sampleAudio(aData, (float)aData.e_getCurrentTake().selectedFrame, playbackSpeedValue[aData.e_getCurrentTake().playbackSpeedIndex]);
+        currentTake.sampleAudio(aData, (float)currentTake.selectedFrame, playbackSpeedValue[currentTake.playbackSpeedIndex]);
     }
 
     #endregion
@@ -5461,11 +5514,11 @@ public class AMTimeline : EditorWindow {
         AMTrack sTrack;
         bool addCompUndo;
         if(MetaInstantiate("Add Target")) {
-            sTrack = TakeEditCurrent().getSelectedTrack(aData.e_getCurrentTake());
+            sTrack = TakeEditCurrent().getSelectedTrack(currentTake);
             addCompUndo = false;
         }
         else {
-            sTrack = TakeEditCurrent().getSelectedTrack(aData.e_getCurrentTake());
+            sTrack = TakeEditCurrent().getSelectedTrack(currentTake);
             recordUndoTrackAndKeys(sTrack, false, "Add Target");
             addCompUndo = true;
         }
@@ -5485,7 +5538,7 @@ public class AMTimeline : EditorWindow {
         sTrack.updateCache(aData);
         AMCodeView.refresh();
         // preview new frame
-        aData.e_getCurrentTake().previewFrame(aData, aData.e_getCurrentTake().selectedFrame);
+        currentTake.previewFrame(aData, currentTake.selectedFrame);
         // save data
         EditorUtility.SetDirty(sTrack);
         setDirtyKeys(sTrack);
@@ -5498,7 +5551,7 @@ public class AMTimeline : EditorWindow {
         }
     }
     void addTrack(object trackType, bool addCompUndo) {
-        AMTakeData take = aData.e_getCurrentTake();
+        AMTakeData take = currentTake;
 
         // add one null GameObject if no GameObject dragged onto timeline (when clicked on new track button)
         if(objects_window.Count <= 0) {
@@ -5522,55 +5575,55 @@ public class AMTimeline : EditorWindow {
         // add track based on index
         switch((int)trackType) {
             case (int)Track.Translation:
-                aData.e_getCurrentTake().addTrack(TakeEditCurrent().selectedGroup, aData, object_window ? object_window.transform : null,
+                currentTake.addTrack(TakeEditCurrent().selectedGroup, aData, object_window ? object_window.transform : null,
                     addCompUndo ? Undo.AddComponent<AMTranslationTrack>(holder) : holder.AddComponent<AMTranslationTrack>());
                 break;
             case (int)Track.Rotation:
-                aData.e_getCurrentTake().addTrack(TakeEditCurrent().selectedGroup, aData, object_window ? object_window.transform : null, 
+                currentTake.addTrack(TakeEditCurrent().selectedGroup, aData, object_window ? object_window.transform : null, 
                     addCompUndo ? Undo.AddComponent<AMRotationTrack>(holder) : holder.AddComponent<AMRotationTrack>());
                 break;
             case (int)Track.Orientation:
-                aData.e_getCurrentTake().addTrack(TakeEditCurrent().selectedGroup, aData, object_window ? object_window.transform : null, 
+                currentTake.addTrack(TakeEditCurrent().selectedGroup, aData, object_window ? object_window.transform : null, 
                     addCompUndo ? Undo.AddComponent<AMOrientationTrack>(holder) : holder.AddComponent<AMOrientationTrack>());
                 break;
             case (int)Track.Animation:
-                aData.e_getCurrentTake().addTrack(TakeEditCurrent().selectedGroup, aData, object_window ? object_window.transform : null, 
+                currentTake.addTrack(TakeEditCurrent().selectedGroup, aData, object_window ? object_window.transform : null, 
                     addCompUndo ? Undo.AddComponent<AMAnimationTrack>(holder) : holder.AddComponent<AMAnimationTrack>());
                 break;
             case (int)Track.Audio:
-                aData.e_getCurrentTake().addTrack(TakeEditCurrent().selectedGroup, aData, object_window ? object_window.transform : null, 
+                currentTake.addTrack(TakeEditCurrent().selectedGroup, aData, object_window ? object_window.transform : null, 
                     addCompUndo ? Undo.AddComponent<AMAudioTrack>(holder) : holder.AddComponent<AMAudioTrack>());
                 break;
             case (int)Track.Property:
-                aData.e_getCurrentTake().addTrack(TakeEditCurrent().selectedGroup, aData, object_window ? object_window.transform : null, 
+                currentTake.addTrack(TakeEditCurrent().selectedGroup, aData, object_window ? object_window.transform : null, 
                     addCompUndo ? Undo.AddComponent<AMPropertyTrack>(holder) : holder.AddComponent<AMPropertyTrack>());
                 break;
             case (int)Track.Event:
-                aData.e_getCurrentTake().addTrack(TakeEditCurrent().selectedGroup, aData, object_window ? object_window.transform : null, 
+                currentTake.addTrack(TakeEditCurrent().selectedGroup, aData, object_window ? object_window.transform : null, 
                     addCompUndo ? Undo.AddComponent<AMEventTrack>(holder) : holder.AddComponent<AMEventTrack>());
                 break;
             case (int)Track.CameraSwitcher:
             if (GameObject.FindObjectsOfType<Camera>().Length <= 1) {
                 EditorUtility.DisplayDialog("Cannot add Camera Switcher", "You need at least 2 cameras in your scene to start using the Camera Switcher track.", "Okay");
-            } else if (aData.e_getCurrentTake().cameraSwitcher) {
+            } else if (currentTake.cameraSwitcher) {
                     // already exists
                     EditorUtility.DisplayDialog("Camera Switcher Already Exists", "You can only have one Camera Switcher track. Transition between cameras by adding keyframes to the track.", "Okay");
                 }
                 else {
-                    aData.e_getCurrentTake().addTrack(TakeEditCurrent().selectedGroup, aData, object_window ? object_window.transform : null,
+                    currentTake.addTrack(TakeEditCurrent().selectedGroup, aData, object_window ? object_window.transform : null,
                         addCompUndo ? Undo.AddComponent<AMCameraSwitcherTrack>(holder) : holder.AddComponent<AMCameraSwitcherTrack>());
                     // preview selected frame
                     if(object_window != null) {
-                        aData.e_getCurrentTake().previewFrame(aData, TakeEditCurrent().selectedFrame);
+                        currentTake.previewFrame(aData, TakeEditCurrent().selectedFrame);
                     }
                 }
                 break;
             case (int)Track.GOSetActive:
-                aData.e_getCurrentTake().addTrack(TakeEditCurrent().selectedGroup, aData, object_window ? object_window.transform : null,
+                currentTake.addTrack(TakeEditCurrent().selectedGroup, aData, object_window ? object_window.transform : null,
                     addCompUndo ? Undo.AddComponent<AMGOSetActiveTrack>(holder) : holder.AddComponent<AMGOSetActiveTrack>());
                 break;
             case (int)Track.Trigger:
-                aData.e_getCurrentTake().addTrack(TakeEditCurrent().selectedGroup, aData, object_window ? object_window.transform : null,
+                currentTake.addTrack(TakeEditCurrent().selectedGroup, aData, object_window ? object_window.transform : null,
                     addCompUndo ? Undo.AddComponent<AMTriggerTrack>(holder) : holder.AddComponent<AMTriggerTrack>());
                 break;
             default:
@@ -5588,7 +5641,7 @@ public class AMTimeline : EditorWindow {
     }
 
     public bool addSpriteKeysToTrack(UnityEngine.Object[] objs, int trackId, int frame) {
-        AMPropertyTrack track = aData.e_getCurrentTake().getTrack(trackId) as AMPropertyTrack;
+        AMPropertyTrack track = currentTake.getTrack(trackId) as AMPropertyTrack;
         if(track && track.getTrackType() == "sprite") {
             List<Sprite> sprites = AMEditorUtil.GetSprites(objs);
             if(sprites.Count > 0) {
@@ -5596,7 +5649,7 @@ public class AMTimeline : EditorWindow {
                 const string label = "Add Sprite Keys";
                 AMTrack.OnAddKey addCall;
                 if(registerTakesUndo(aData, label, false)) {
-                    track = aData.e_getCurrentTake().getTrack(trackId) as AMPropertyTrack;
+                    track = currentTake.getTrack(trackId) as AMPropertyTrack;
                     addCall = OnAddKeyComp;
                 }
                 else {
@@ -5605,7 +5658,7 @@ public class AMTimeline : EditorWindow {
                 }
 
                 //insert keys
-                AMTakeData take = aData.e_getCurrentTake();
+                AMTakeData take = currentTake;
 
                 if(sprites.Count > 1) {
                     float sprFPS = oData.spriteInsertFramePerSecond;
@@ -5669,8 +5722,8 @@ public class AMTimeline : EditorWindow {
             //add track
             addTrack((int)Track.Property, !instantiated);
 
-            AMTakeData take = aData.e_getCurrentTake();
-            timelineSelectTrack(aData.e_getCurrentTake().track_count);
+            AMTakeData take = currentTake;
+            timelineSelectTrack(currentTake.track_count);
 
             AMPropertyTrack newTrack = TakeEdit(take).getSelectedTrack(take) as AMPropertyTrack;
             newTrack.SetTarget(aData, newGO.transform);
@@ -5709,23 +5762,23 @@ public class AMTimeline : EditorWindow {
     }
     void addKeyToFrame(int frame) {
         // add key if there are tracks
-        if(aData.e_getCurrentTake().getTrackCount() > 0) {
+        if(currentTake.getTrackCount() > 0) {
             // add a key
             addKey(TakeEditCurrent().selectedTrack, frame);
             // preview current frame
             //aData.getCurrentTake().previewFrame(aData, aData.getCurrentTake().selectedFrame);
         }
-        timelineSelectFrame(TakeEditCurrent().selectedTrack, aData.e_getCurrentTake().selectedFrame, false);
+        timelineSelectFrame(TakeEditCurrent().selectedTrack, currentTake.selectedFrame, false);
     }
     void addKeyToSelectedFrame() {
         // add key if there are tracks
-        if(aData.e_getCurrentTake().getTrackCount() > 0) {
+        if(currentTake.getTrackCount() > 0) {
             // add a key
-            addKey(TakeEditCurrent().selectedTrack, aData.e_getCurrentTake().selectedFrame);
+            addKey(TakeEditCurrent().selectedTrack, currentTake.selectedFrame);
             // preview current frame
-            aData.e_getCurrentTake().previewFrame(aData, aData.e_getCurrentTake().selectedFrame);
+            currentTake.previewFrame(aData, currentTake.selectedFrame);
         }
-        timelineSelectFrame(TakeEditCurrent().selectedTrack, aData.e_getCurrentTake().selectedFrame, false);
+        timelineSelectFrame(TakeEditCurrent().selectedTrack, currentTake.selectedFrame, false);
     }
     void addKey(int _track, int _frame) {
         // add a key to the track number and frame, used in OnGUI. Needs to be updated for every track type.
@@ -5733,11 +5786,11 @@ public class AMTimeline : EditorWindow {
         AMTrack amTrack;
         if(MetaInstantiate("New Key")) {
             addCall = OnAddKeyComp;
-            amTrack = aData.e_getCurrentTake().getTrack(_track);
+            amTrack = currentTake.getTrack(_track);
         }
         else {
             addCall = OnAddKeyUndoComp;
-            amTrack = aData.e_getCurrentTake().getTrack(_track);
+            amTrack = currentTake.getTrack(_track);
             recordUndoTrackAndKeys(amTrack, true, "New Key");
         }
         
@@ -5855,7 +5908,7 @@ public class AMTimeline : EditorWindow {
             (amTrack as AMTriggerTrack).addKey(aData, addCall, _frame);
         }
 
-        AMTrack selectedTrack = TakeEditCurrent().getSelectedTrack(aData.e_getCurrentTake());
+        AMTrack selectedTrack = TakeEditCurrent().getSelectedTrack(currentTake);
         if(selectedTrack) {
             EditorUtility.SetDirty(selectedTrack);
             setDirtyKeys(selectedTrack);
@@ -5864,11 +5917,11 @@ public class AMTimeline : EditorWindow {
     }
     void deleteKeyFromSelectedFrame() {
         bool instantiated = MetaInstantiate("Clear Frame");
-        AMTrack amTrack = TakeEditCurrent().getSelectedTrack(aData.e_getCurrentTake());
+        AMTrack amTrack = TakeEditCurrent().getSelectedTrack(currentTake);
         if(!instantiated)
             recordUndoTrackAndKeys(amTrack, true, "Clear Frame");
 
-        AMKey[] dkeys = amTrack.removeKeyOnFrame(aData.e_getCurrentTake().selectedFrame);
+        AMKey[] dkeys = amTrack.removeKeyOnFrame(currentTake.selectedFrame);
         if(!instantiated) {
             foreach(AMKey dkey in dkeys)
                 Undo.DestroyObjectImmediate(dkey);
@@ -5900,15 +5953,15 @@ public class AMTimeline : EditorWindow {
             bool instantiated = MetaInstantiate("Clear Frame");
 
             foreach(int track_id in TakeEditCurrent().contextSelectionTracks) {
-                int trackInd = aData.e_getCurrentTake().getTrackIndex(track_id);
+                int trackInd = currentTake.getTrackIndex(track_id);
                 if(trackInd == -1) continue;
 
-                AMTrack amTrack = aData.e_getCurrentTake().trackValues[trackInd];
+                AMTrack amTrack = currentTake.trackValues[trackInd];
 
                 if(!instantiated)
                     recordUndoTrackAndKeys(amTrack, true, "Clear Frames");
 
-                AMKey[] dkeys = TakeEditCurrent().removeSelectedKeysFromTrack(aData.e_getCurrentTake(), aData, track_id);
+                AMKey[] dkeys = TakeEditCurrent().removeSelectedKeysFromTrack(currentTake, aData, track_id);
                 if(!instantiated) {
                     foreach(AMKey dkey in dkeys)
                         Undo.DestroyObjectImmediate(dkey);
@@ -5994,7 +6047,7 @@ public class AMTimeline : EditorWindow {
         // GO Active
         menu_drag.AddItem(new GUIContent("GO Active"), false, addTrackFromMenu, (int)Track.GOSetActive);
         // Camera Switcher
-        if(hasCamera && !aData.e_getCurrentTake().cameraSwitcher) menu_drag.AddItem(new GUIContent("Camera Switcher"), false, addTrackFromMenu, (int)Track.CameraSwitcher);
+        if(hasCamera && !currentTake.cameraSwitcher) menu_drag.AddItem(new GUIContent("Camera Switcher"), false, addTrackFromMenu, (int)Track.CameraSwitcher);
         else menu_drag.AddDisabledItem(new GUIContent("Camera Switcher"));
 
         if(oData.quickAdd_Combos.Count > 0) {
@@ -6004,7 +6057,7 @@ public class AMTimeline : EditorWindow {
                 string combo_name = "";
                 for(int i = 0;i < combo.Count;i++) {
                     //combo_name += Enum.GetName(typeof(Track),combo[i])+" ";
-                    combo_name += TrackNames[combo[i]] + " "+(combo[i] == (int)Track.CameraSwitcher && aData.e_getCurrentTake().cameraSwitcher ? "(Key) " : "");
+                    combo_name += TrackNames[combo[i]] + " "+(combo[i] == (int)Track.CameraSwitcher && currentTake.cameraSwitcher ? "(Key) " : "");
                     if(i < combo.Count - 1) combo_name += "+ ";
                 }
                 if(canQuickAddCombo(combo, hasTransform, hasAnimation, hasAudioSource, hasCamera)) menu_drag.AddItem(new GUIContent(combo_name), false, addTrackFromMenu, 100 + oData.quickAdd_Combos.IndexOf(combo));
@@ -6029,7 +6082,7 @@ public class AMTimeline : EditorWindow {
     bool canPaste() {
         bool canPaste = false;
         bool singleTrack = contextSelectionKeysBuffer.Count == 1;
-        AMTrack selectedTrack = TakeEditCurrent().getSelectedTrack(aData.e_getCurrentTake());
+        AMTrack selectedTrack = TakeEditCurrent().getSelectedTrack(currentTake);
         if(contextSelectionKeysBuffer.Count > 0) {
             if(singleTrack) {
                 // if origin is property track
@@ -6069,7 +6122,7 @@ public class AMTimeline : EditorWindow {
         AMTakeEdit takeEdit = TakeEditCurrent();
         contextMenuFrame = frame;
         contextMenu = new GenericMenu();
-        bool selectionHasKeys = takeEdit.contextSelectionTracks.Count > 1 || takeEdit.contextSelectionHasKeys(aData.e_getCurrentTake());
+        bool selectionHasKeys = takeEdit.contextSelectionTracks.Count > 1 || takeEdit.contextSelectionHasKeys(currentTake);
         bool _canPaste = canPaste();
         
         contextMenu.AddItem(new GUIContent("Insert Keyframe"), false, invokeContextMenuItem, 0);
@@ -6111,7 +6164,7 @@ public class AMTimeline : EditorWindow {
     void contextReverseKeys() {
         bool instantiated = MetaInstantiate("Reverse Key Order");
         AMTakeEdit takeEdit = TakeEditCurrent();
-        AMTakeData take = aData.e_getCurrentTake();
+        AMTakeData take = currentTake;
         foreach(int track_id in takeEdit.contextSelectionTracks) {
             AMTrack track = take.getTrack(track_id);
 
@@ -6149,7 +6202,7 @@ public class AMTimeline : EditorWindow {
         bool addUndo = !MetaInstantiate("Paste Frames");
 
         if(singleTrack) {
-            AMTrack track = TakeEditCurrent().getSelectedTrack(aData.e_getCurrentTake());
+            AMTrack track = TakeEditCurrent().getSelectedTrack(currentTake);
 
             if(addUndo) recordUndoTrackAndKeys(track, true, "Paste Frames");
 
@@ -6207,7 +6260,7 @@ public class AMTimeline : EditorWindow {
         checkForOutOfBoundsFramesOnSelectedTrack();
         // update cache
         if(singleTrack) {
-            TakeEditCurrent().getSelectedTrack(aData.e_getCurrentTake()).updateCache(aData);
+            TakeEditCurrent().getSelectedTrack(currentTake).updateCache(aData);
         }
         else {
             for(int i = 0;i < contextSelectionTracksBuffer.Count;i++) {
@@ -6247,7 +6300,7 @@ public class AMTimeline : EditorWindow {
         contextSelectionTracksBuffer.Clear();
 
         foreach(int track_id in TakeEditCurrent().contextSelectionTracks) {
-            contextSelectionTracksBuffer.Add(aData.e_getCurrentTake().getTrack(track_id));
+            contextSelectionTracksBuffer.Add(currentTake.getTrack(track_id));
         }
         foreach(AMTrack track in contextSelectionTracksBuffer) {
             contextSelectionKeysBuffer.Add(new List<AMKey>());
@@ -6271,7 +6324,7 @@ public class AMTimeline : EditorWindow {
     }
     void contextSelectAllFrames() {
         registerTakesUndo(aData, "Select All Frames", false);
-        TakeEditCurrent().contextSelectAllFrames(aData.e_getCurrentTake().numFrames);
+        TakeEditCurrent().contextSelectAllFrames(currentTake.numFrames);
     }
     public void contextSelectFrame(int frame, int prevFrame) {
         // select range if shift down
@@ -6289,7 +6342,7 @@ public class AMTimeline : EditorWindow {
     public void contextSelectFrameRange(int startFrame, int endFrame) {
         // clear context selection if control is not down
         if(isShiftDown) {
-            TakeEditCurrent().contextSelectFrameRange(aData.e_getCurrentTake().selectedFrame, endFrame);
+            TakeEditCurrent().contextSelectFrameRange(currentTake.selectedFrame, endFrame);
             return;
         }
         if(!isControlDown) TakeEditCurrent().contextSelection.Clear();
@@ -6360,7 +6413,7 @@ public class AMTimeline : EditorWindow {
         
     //returns deleted keys
     AMKey[] checkForOutOfBoundsFramesOnSelectedTrack() {
-        AMTakeData take = aData.e_getCurrentTake();
+        AMTakeData take = currentTake;
         List<AMKey> dkeys = new List<AMKey>();
         List<AMTrack> selectedTracks = new List<AMTrack>();
         int shift = 1;
@@ -6404,7 +6457,7 @@ public class AMTimeline : EditorWindow {
         return dkeys.ToArray();
     }
     /*void checkForOutOfBoundsFramesOnTrack(int track_id) {
-        AMTrack _track = aData.e_getCurrentTake().getTrack(track_id);
+        AMTrack _track = currentTake.getTrack(track_id);
         if(_track.keys.Count <= 0) return;
         bool needsShift = false;
         bool needsIncrease = false;
@@ -6415,30 +6468,30 @@ public class AMTimeline : EditorWindow {
         }
         if(needsShift) {
             if(EditorUtility.DisplayDialog("Shift Frames?", "Keyframes have been moved out of bounds before the first frame. Some data will be lost if frames are not shifted.", "Shift", "No")) {
-                aData.e_getCurrentTake().shiftOutOfBoundsKeysOnSelectedTrack();
+                currentTake.shiftOutOfBoundsKeysOnSelectedTrack();
             }
             else {
                 // delete all keys beyond last frame
-                aData.e_getCurrentTake().deleteKeysBefore(1);
+                currentTake.deleteKeysBefore(1);
             }
         }
         // if last key is beyond last frame
-        if(_track.keys.Count >= 1 && _track.keys[_track.keys.Count - 1].frame > aData.e_getCurrentTake().numFrames) {
+        if(_track.keys.Count >= 1 && _track.keys[_track.keys.Count - 1].frame > currentTake.numFrames) {
             needsIncrease = true;
         }
         if(needsIncrease) {
             if(EditorUtility.DisplayDialog("Increase Number of Frames?", "Keyframes have been pushed out of bounds beyond the last frame. Some data will be lost if the number of frames is not increased.", "Increase", "No")) {
-                aData.e_getCurrentTake().numFrames = _track.keys[_track.keys.Count - 1].frame;
+                currentTake.numFrames = _track.keys[_track.keys.Count - 1].frame;
             }
             else {
                 // delete all keys beyond last frame
-                _track.deleteKeysAfter(aData.e_getCurrentTake().numFrames);
+                _track.deleteKeysAfter(currentTake.numFrames);
             }
         }
     }*/
     void resetPreview() {
         // reset all object transforms to frame 1
-        aData.e_getCurrentTake().previewFrame(aData, 1f);
+        currentTake.previewFrame(aData, 1f);
     }
     bool isTextEditting() {
         return isRenamingTrack != -1 || isRenamingTake || isRenamingGroup != 0;
@@ -6456,7 +6509,7 @@ public class AMTimeline : EditorWindow {
             isRenamingTrack = -1;
         }
         if(isRenamingTake) {
-            aData.e_makeTakeNameUnique(aData.e_getCurrentTake());
+            aData.e_makeTakeNameUnique(currentTake);
         }
         if(toggleIsRenamingTake) {
             isRenamingTake = !isRenamingTake;

@@ -170,6 +170,13 @@ public abstract class AMTrack : MonoBehaviour {
 		sortKeys();
     }
 
+    /// <summary>
+    /// Only called during editor
+    /// </summary>
+    public virtual void undoRedoPerformed() {
+
+    }
+
 	public virtual void buildSequenceStart(AMSequence sequence) {
     }
 

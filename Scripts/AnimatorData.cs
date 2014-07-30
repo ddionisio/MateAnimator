@@ -519,8 +519,6 @@ public class AnimatorData : MonoBehaviour, AMITarget {
     public bool e_isAnimatorOpen = false;
     [System.NonSerialized]
     public int e_currentTake;
-    [System.NonSerialized]
-    public int e_prevTake = -1;
 
 	void OnDrawGizmos() {
         if(!e_isAnimatorOpen || _takes == null || _takes.Count == 0) return;
@@ -560,22 +558,7 @@ public class AnimatorData : MonoBehaviour, AMITarget {
 		if(mCache != null)
 			mCache.Clear();
 	}
-
-	public bool e_isCurrentTakePlayOnStart {
-		get {
-			if(meta) {
-				AMTakeData cur = e_getCurrentTake();
-				if(cur != null) {
-					return playOnStartMeta == cur.name;
-				}
-			}
-			else
-				return playOnStartIndex == e_currentTake;
-
-			return false;
-		}
-	}
-
+    
 	public AnimatorMeta e_meta { 
 		get { return meta; }
 	}
@@ -755,30 +738,6 @@ public class AnimatorData : MonoBehaviour, AMITarget {
 		return _takes[ind];
 	}
 
-	public bool e_setCurrentTakeValue(int _take) {
-		if(_take != e_currentTake) {
-			e_prevTake = e_currentTake;
-			
-			// reset preview to frame 1
-			e_getCurrentTake().previewFrame(this, 1f);
-			// change take
-			e_currentTake = _take;
-			return true;
-		}
-		return false;
-	}
-	
-	public AMTakeData e_getCurrentTake() {
-		List<AMTakeData> _ts = _takes;
-		if(_ts == null || e_currentTake >= _ts.Count || e_currentTake < 0) return null;
-		return _ts[e_currentTake];
-    }
-
-    public AMTakeData e_getPreviousTake() {
-		List<AMTakeData> _ts = _takes;
-        return _ts != null && e_prevTake >= 0 && e_prevTake < _ts.Count ? _ts[e_prevTake] : null;
-    }
-
     public AMTakeData e_addTake() {
 		List<AMTakeData> _ts = _takes;
 		string name = "Take" + (_ts.Count + 1);
@@ -788,7 +747,6 @@ public class AnimatorData : MonoBehaviour, AMITarget {
         e_makeTakeNameUnique(a);
         
 		_ts.Add(a);
-		e_selectTake(_ts.Count - 1);
 
         return a;
     }
@@ -860,7 +818,6 @@ public class AnimatorData : MonoBehaviour, AMITarget {
 
 		List<AMTakeData> _ts = _takes;
 		_ts.Add(a);
-		e_selectTake(_ts.Count - 1);
     }
 
     public void e_deleteTake(int index) {
@@ -885,22 +842,6 @@ public class AnimatorData : MonoBehaviour, AMITarget {
 		}
     }
 
-    public void e_selectTake(int index) {
-        if(e_currentTake != index)
-            e_prevTake = e_currentTake;
-
-        e_currentTake = index;
-    }
-
-    public void e_selectTake(string name) {
-		List<AMTakeData> _ts = _takes;
-		for(int i = 0; i < _ts.Count; i++) {
-			if(_ts[i].name == name) {
-                e_selectTake(i);
-                break;
-            }
-		}
-    }
     public void e_makeTakeNameUnique(AMTakeData take) {
         bool loop = false;
         int count = 0;

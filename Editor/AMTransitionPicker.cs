@@ -177,7 +177,7 @@ public class AMTransitionPicker : EditorWindow {
 
     void OnGUI() {
         setWindowSize();
-        this.title = "Fade: "+(oData.time_numbering ? AMTimeline.frameToTime(key.frame, (float)aData.e_getCurrentTake().frameRate)+" s" : key.frame.ToString());
+        this.title = "Fade: "+(oData.time_numbering ? AMTimeline.frameToTime(key.frame, (float)AMTimeline.window.currentTake.frameRate)+" s" : key.frame.ToString());
         // load skin
         AMTimeline.loadSkin(ref skin, ref cachedSkinName, position);
     	LoadTextures();
@@ -456,7 +456,7 @@ public class AMTransitionPicker : EditorWindow {
             track.updateCache(aData);
             AMCodeView.refresh();
             // preview frame
-            aData.e_getCurrentTake().previewFrame(aData, aData.e_getCurrentTake().selectedFrame);
+            AMTimeline.window.currentTake.previewFrame(aData, AMTimeline.window.currentTake.selectedFrame);
             // save data
             EditorUtility.SetDirty(track);
             AMTimeline.setDirtyKeys(track);
@@ -1005,7 +1005,7 @@ public class AMTransitionPicker : EditorWindow {
     public void reloadAnimatorData() {
         aData = null;
         loadAnimatorData();
-        AMTakeData take = aData.e_getCurrentTake();
+        AMTakeData take = AMTimeline.window.currentTake;
         // update references for track and key
         bool shouldClose = true;
         foreach(AMTrack _track in take.trackValues) {

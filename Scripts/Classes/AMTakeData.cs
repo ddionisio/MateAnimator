@@ -595,8 +595,7 @@ public class AMTakeData {
 		}
 		else {
 			foreach(AMTrack track in trackValues) {
-				if(track is AMAnimationTrack) (track as AMAnimationTrack).previewFrame(itarget, _frame, frameRate);
-				else track.previewFrame(itarget, _frame, frameRate);
+				track.previewFrame(itarget, _frame, frameRate);
 			}
 		}
 	}
@@ -612,8 +611,7 @@ public class AMTakeData {
 
         foreach(AMTrack track in trackValues) {
             if(track.keys.Count > 0 && (float)track.keys[0].getStartFrame() > _frame) {
-                if(track is AMAnimationTrack) (track as AMAnimationTrack).previewFrame(itarget, _frame, frameRate);
-                else track.previewFrame(itarget, _frame, frameRate);
+                track.previewFrame(itarget, _frame, frameRate);
             }
         }
     }
@@ -814,7 +812,12 @@ public class AMTakeData {
 	#endregion
 	
 	#region Other Fns
-	
+
+    public void undoRedoPerformed() {
+        foreach(AMTrack track in trackValues)
+            track.undoRedoPerformed();
+    }
+
 	public void maintainTake(AMITarget itarget) {
 		foreach(AMTrack track in trackValues)
 			track.maintainTrack(itarget);

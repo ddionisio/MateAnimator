@@ -21,7 +21,7 @@ public class AMOptions : EditorWindow {
         }
     }
 
-    string version = "2.00";
+    string version = "2.1";
     Vector2 scrollView = new Vector2(0f, 0f);
     private int exportTakeIndex = 0;
     private bool exportAllTakes = false;
@@ -52,7 +52,7 @@ public class AMOptions : EditorWindow {
         loadAnimatorData();
         oData = AMOptionsFile.loadFile();
         
-        if(aData) exportTakeIndex = aData.GetTakeIndex(aData.e_getCurrentTake());
+        if(aData) exportTakeIndex = aData.GetTakeIndex(AMTimeline.window.currentTake);
     }
     void OnDisable() {
         window = null;
@@ -136,6 +136,19 @@ public class AMOptions : EditorWindow {
             GUILayout.FlexibleSpace();
             GUILayout.EndVertical();
             GUILayout.EndHorizontal();
+            // pixel/unit default
+            GUILayout.BeginHorizontal();
+            GUILayout.Space(width_indent);
+            EditorGUIUtility.labelWidth = 250.0f;
+            float ppu = EditorGUILayout.FloatField("Pixel/Unit Default", oData.pixelPerUnitDefault);
+            if(ppu <= 0.001f) ppu = 0.001f;
+            if(oData.pixelPerUnitDefault != ppu) {
+                oData.pixelPerUnitDefault = ppu;
+                // save
+                EditorUtility.SetDirty(oData);
+            }
+            GUILayout.EndHorizontal();
+            GUILayout.Space(4.0f);
             // sprite drag/drop fps
             GUILayout.BeginHorizontal();
             GUILayout.Space(width_indent);
@@ -441,7 +454,7 @@ public class AMOptions : EditorWindow {
         if(AMTimeline.window != null) {
             __aData = AMTimeline.window.aData;
             if(__aData) {
-                exportTakeIndex = __aData.GetTakeIndex(__aData.e_getCurrentTake());
+                exportTakeIndex = __aData.GetTakeIndex(AMTimeline.window.currentTake);
             }
         }
     }

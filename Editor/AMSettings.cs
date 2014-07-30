@@ -44,7 +44,7 @@ public class AMSettings : EditorWindow {
     void OnDisable() {
         window = null;
         if((aData) && saveChanges) {
-			AMTakeData take = aData.e_getCurrentTake();
+			AMTakeData take = AMTimeline.window.currentTake;
             bool saveNumFrames = true;
 			if((numFrames < take.numFrames) && (take.hasKeyAfter(numFrames))) {
                 if(!EditorUtility.DisplayDialog("Data Will Be Lost", "You will lose some keys beyond frame " + numFrames + " if you continue.", "Continue Anway", "Cancel")) {
@@ -54,7 +54,7 @@ public class AMSettings : EditorWindow {
 
 			string label = take.name+": Modify Settings";
 			AMTimeline.registerTakesUndo(aData, label, true);
-            take = aData.e_getCurrentTake();
+            take = AMTimeline.window.currentTake;
             
             if(saveNumFrames) {
 				Undo.RegisterCompleteObjectUndo(AMTimeline.getKeysAndTracks(take), label);
@@ -150,11 +150,12 @@ public class AMSettings : EditorWindow {
     void loadAnimatorData() {
         if(AMTimeline.window) {
             __aData = AMTimeline.window.aData;
-            numFrames = __aData.e_getCurrentTake().numFrames;
-            frameRate = __aData.e_getCurrentTake().frameRate;
-            loopCount = __aData.e_getCurrentTake().numLoop;
-            loopMode = __aData.e_getCurrentTake().loopMode;
-            loopBackFrame = __aData.e_getCurrentTake().loopBackToFrame;
+            AMTakeData take = AMTimeline.window.currentTake;
+            numFrames = take.numFrames;
+            frameRate = take.frameRate;
+            loopCount = take.numLoop;
+            loopMode = take.loopMode;
+            loopBackFrame = take.loopBackToFrame;
         }
     }
 }

@@ -13,6 +13,12 @@ public class AMTranslationTrack : AMTrack {
     [SerializeField]
     private Transform _obj;
 
+    [SerializeField]
+    private bool _pixelSnap;
+
+    [SerializeField]
+    private float _pixelPerUnit;
+        
 	protected override void SetSerializeObject(UnityEngine.Object obj) {
 		_obj = obj as Transform;
 	}
@@ -83,7 +89,7 @@ public class AMTranslationTrack : AMTrack {
 		return Vector3.zero;
 	}
 
-    public Vector3 cachedInitialPosition;
+    private Vector3 cachedInitialPosition;
 
     public override string getTrackType() {
         return "Local Position";
@@ -151,6 +157,7 @@ public class AMTranslationTrack : AMTrack {
 			SetPosition(t, key.easeType == AMKey.EaseTypeNone || key.path.Length == 0 ? key.position : key.path[key.path.Length - 1]);
             return;
         }
+
         // if lies on curve
         foreach(AMTranslationKey key in keys) {
             if(((int)frame < key.startFrame) || ((int)frame > key.endFrame)) continue;
@@ -180,11 +187,16 @@ public class AMTranslationTrack : AMTrack {
                 }
             }
 
-            AMUtil.PutOnPath(t, key.path, Mathf.Clamp(_value, 0f, 1f), _isLocal);
+            if(_isLocal)
+                t.localPosition = key.GetPoint(Mathf.Clamp(_value, 0f, 1f));
+            else
+                t.position = key.GetPoint(Mathf.Clamp(_value, 0f, 1f));
+
             return;
         }
 
     }
+
     // returns true if autoKey successful
     public bool autoKey(AMITarget itarget, OnAddKey addCall, Transform aobj, int frame, int frameRate) {
 		Transform t = GetTarget(itarget) as Transform;
@@ -198,6 +210,7 @@ public class AMTranslationTrack : AMTrack {
             }
             return false;
         }
+
         Vector3 oldPos = getPositionAtFrame(t, frame, frameRate, false);
 		if(GetPosition(t) != oldPos) {
             // if updated position, addkey
@@ -245,13 +258,13 @@ public class AMTranslationTrack : AMTrack {
 
                 // ease
                 if(key.hasCustomEase()) {
-                    ret = AMUtil.PointOnPath(key.path, Mathf.Clamp(AMUtil.EaseCustom(0.0f, 1.0f, (float)framePositionInPath / (float)key.getNumberOfFrames(frameRate), key.easeCurve), 0.0f, 1.0f));
+                    ret = key.GetPoint(Mathf.Clamp(AMUtil.EaseCustom(0.0f, 1.0f, (float)framePositionInPath / (float)key.getNumberOfFrames(frameRate), key.easeCurve), 0.0f, 1.0f));
                     retFound = true;
                     break;
                 }
                 else {
                     TweenDelegate.EaseFunc ease = AMUtil.GetEasingFunction((EaseType)key.easeType);
-                    ret = AMUtil.PointOnPath(key.path, Mathf.Clamp(ease(framePositionInPath, 0.0f, 1.0f, key.getNumberOfFrames(frameRate), key.amplitude, key.period), 0.0f, 1.0f));
+                    ret = key.GetPoint(Mathf.Clamp(ease(framePositionInPath, 0.0f, 1.0f, key.getNumberOfFrames(frameRate), key.amplitude, key.period), 0.0f, 1.0f));
                     retFound = true;
                     break;
                 }
@@ -276,54 +289,26 @@ public class AMTranslationTrack : AMTrack {
 					Gizmos.color = Color.green;
 					Gizmos.DrawSphere(key.position, gizmo_size);
 				}
-				else if(key.path.Length > 1) {
-	                if(_isLocal && t != null && t.parent != null) {
-	                    AMGizmo.DrawPathRelative(t.parent, key.path, new Color(255f, 255f, 255f, .5f));
-	                    Gizmos.color = Color.green;
-	                    Gizmos.DrawSphere(t.parent.localToWorldMatrix.MultiplyPoint(key.path[0]), gizmo_size);
-	                    Gizmos.DrawSphere(t.parent.localToWorldMatrix.MultiplyPoint(key.path[key.path.Length - 1]), gizmo_size);
-	                }
-	                else {
-	                    AMGizmo.DrawPath(key.path, new Color(255f, 255f, 255f, .5f));
-	                    Gizmos.color = Color.green;
-	                    Gizmos.DrawSphere(key.path[0], gizmo_size);
-	                    Gizmos.DrawSphere(key.path[key.path.Length - 1], gizmo_size);
-	                }
-				}
+				else if(key.path.Length > 1)
+                    key.pathPreview.GizmoDraw(_isLocal ? t.parent : null, gizmo_size);
             }
         }
     }
 
-    private AMPath getPathFromIndex(int startIndex) {
-        // sort the keys by frame		
-        List<Vector3> path = new List<Vector3>();
-        int endIndex, startFrame, endFrame;
-        endIndex = startIndex;
-        startFrame = keys[startIndex].frame;
-        endFrame = keys[startIndex].frame;
-
-        path.Add((keys[startIndex] as AMTranslationKey).position);
-
-        // get path from startIndex until the next linear interpolation key (inclusive)
-        for(int i = startIndex + 1; i < keys.Count; i++) {
-			AMTranslationKey key = keys[i] as AMTranslationKey;
-            path.Add(key.position);
-            endFrame = keys[i].frame;
-            endIndex = i;
-			if(keys[startIndex].easeType == AMKey.EaseTypeNone 
-			   || key.easeType == AMKey.EaseTypeNone 
-			   || key.interp == (int)AMTranslationKey.Interpolation.Linear) break;
-        }
-        return new AMPath(path.ToArray(), (keys[startIndex] as AMTranslationKey).interp, startFrame, endFrame, startIndex, endIndex);
+    public override void undoRedoPerformed() {
+        //path preview must be rebuilt
+        foreach(AMTranslationKey key in keys)
+            key.pathPreview = null;
     }
+
     // update cache (optimized)
     public override void updateCache(AMITarget target) {
 		base.updateCache(target);
 
+        //Debug.Log("update");
+
 		//force local, using global is useless
 		isLocal = true;
-
-        AMPath path;
 
         // get all paths and add them to the action list
         for(int i = 0; i < keys.Count; i++) {
@@ -332,12 +317,13 @@ public class AMTranslationTrack : AMTrack {
 			int easeType = key.easeType;
 
             key.version = version;
-			            
-            path = getPathFromIndex(i);
+
+            AMPath path = new AMPath(keys, i);
 
             key.isLocal = _isLocal;
             key.startFrame = path.startFrame;
             key.endFrame = path.endFrame;
+            key.pathPreview = null;
 
 			if(key.easeType == AMKey.EaseTypeNone) {
 				key.path = new Vector3[0];
@@ -421,5 +407,7 @@ public class AMTranslationTrack : AMTrack {
         ntrack._obj = _obj;
         ntrack._isLocal = _isLocal;
         ntrack.cachedInitialPosition = cachedInitialPosition;
+        ntrack._pixelSnap = _pixelSnap;
+        ntrack._pixelPerUnit = _pixelPerUnit;
     }
 }

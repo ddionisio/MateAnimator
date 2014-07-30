@@ -1,35 +1,39 @@
 using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
 
-// AMPath: holds a path and interpolation type
-[System.Serializable]
-public class AMPath {
-	public Vector3[] path;
-	public int interp;			// interpolation
-	public int startFrame;		// starting frame
-	public int endFrame;		// ending frame
-	public int startIndex;		// starting key index
-	public int endIndex;		// ending key index
-	
-	public AMPath() {
-		
-	}
-	public AMPath(Vector3[] _path, int _interp, int _startFrame, int _endFrame) {
-		path = _path;
-		interp = _interp;
-		startFrame = _startFrame;
-		endFrame = _endFrame;
-	}
-	public AMPath(Vector3[] _path, int _interp, int _startFrame, int _endFrame, int _startIndex, int _endIndex) {
-		path = _path;
-		interp = _interp;
-		startFrame = _startFrame;
-		endFrame = _endFrame;
-		startIndex = _startIndex;
-		endIndex = _endIndex;
-	}
-	// number of frames
-	public int getNumberOfFrames() {
-		return endFrame-startFrame;
-	}
+using Holoville.HOTween.Core;
+
+public struct AMPath {
+    public Vector3[] path;
+    public int interp;			// interpolation
+    public int startFrame;		// starting frame
+    public int endFrame;		// ending frame
+    public int startIndex;		// starting key index
+    public int endIndex;		// ending key index
+
+    public AMPath(List<AMKey> keys, int _startIndex) {
+        // sort the keys by frame		
+        List<Vector3> _path = new List<Vector3>();
+        startIndex = _startIndex;
+        endIndex = startIndex;
+        startFrame = keys[startIndex].frame;
+        endFrame = keys[startIndex].frame;
+
+        _path.Add((keys[startIndex] as AMTranslationKey).position);
+
+        // get path from startIndex until the next linear interpolation key (inclusive)
+        for(int i = startIndex + 1; i < keys.Count; i++) {
+            AMTranslationKey key = keys[i] as AMTranslationKey;
+            _path.Add(key.position);
+            endFrame = keys[i].frame;
+            endIndex = i;
+            if(keys[startIndex].easeType == AMKey.EaseTypeNone 
+			   || key.easeType == AMKey.EaseTypeNone 
+			   || key.interp == (int)AMTranslationKey.Interpolation.Linear) break;
+        }
+
+        interp = (keys[startIndex] as AMTranslationKey).interp;
+        path = _path.ToArray();
+    }
 }
