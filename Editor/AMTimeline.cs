@@ -76,8 +76,10 @@ public class AMTimeline : EditorWindow {
                         EditorUtility.SetDirty(_aData);
                         // preview last selected frame
                         if(mCurTakeInd == -1) mCurTakeInd = 0;
-                        if(_aData._takes != null && _aData._takes.Count > 0 && !isPlayMode && _aData._takes[mCurTakeInd] != null)
+                        if(_aData._takes != null && _aData._takes.Count > 0 && !isPlayMode) {
+                            if(mCurTakeInd >= _aData._takes.Count) mCurTakeInd = 0;
                             _aData._takes[mCurTakeInd].previewFrame(_aData, (float)_aData._takes[mCurTakeInd].selectedFrame);
+                        }
                     }
 
                     indexMethodInfo = -1;	// re-check for methodinfo
@@ -85,10 +87,6 @@ public class AMTimeline : EditorWindow {
                     //Debug.Log("new data: " + _aData.name + " hash: " + _aData.GetHashCode());
 
                     ReloadOtherWindows();
-                }
-                else {
-                    mCurTakeInd = -1;
-                    mPrevTakeInd = -1;
                 }
                 //else
                 //Debug.Log("no data");
@@ -117,7 +115,7 @@ public class AMTimeline : EditorWindow {
     }
     public AMTakeData prevTake {
         get {
-            if(aData && mPrevTakeInd != -1) {
+            if(aData && mPrevTakeInd != -1 && mPrevTakeInd < aData._takes.Count) {
                 return aData._takes[mPrevTakeInd];
             }
             return null;
