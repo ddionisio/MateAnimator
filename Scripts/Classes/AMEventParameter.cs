@@ -51,7 +51,7 @@ public class AMEventData {
         else if(t == typeof(Rect)) valueType = (int)ValueType.Rect;
         else if(t.IsArray) valueType = (int)ValueType.Array;
         else if(t.IsEnum) valueType = (int)ValueType.Enum;
-        else if(t.BaseType != null && t.BaseType.BaseType == typeof(UnityEngine.Object)) valueType = (int)ValueType.Object;
+        else if(t == typeof(UnityEngine.Object) || (t.BaseType != null && (t.BaseType == typeof(UnityEngine.Object) || t.BaseType == typeof(UnityEngine.Behaviour) || t.BaseType == typeof(UnityEngine.MonoBehaviour) || t.BaseType == typeof(UnityEngine.Component)))) valueType = (int)ValueType.Object;
         return valueType;
     }
 
@@ -160,7 +160,7 @@ public class AMEventData {
 
     public virtual void setValueType(Type t) {
         valueType = GetValueType(t);
-        if(valueType == (int)ValueType.Enum)
+        if(valueType == (int)ValueType.Object || valueType == (int)ValueType.Enum)
             val_string = t.ToString();
     }
 
@@ -201,10 +201,9 @@ public class AMEventData {
         else if(valueType == (int)ValueType.Vector4) ret = typeof(Vector4);
         else if(valueType == (int)ValueType.Color) ret = typeof(Color);
         else if(valueType == (int)ValueType.Rect) ret = typeof(Rect);
-        else if(valueType == (int)ValueType.Object) ret = typeof(UnityEngine.Object);
         else if(valueType == (int)ValueType.String) ret = typeof(string);
         else if(valueType == (int)ValueType.Char) ret = typeof(char);
-        else if(valueType == (int)ValueType.Enum) {
+        else if(valueType == (int)ValueType.Object || valueType == (int)ValueType.Enum) {
             ret = System.Type.GetType(val_string);
             if(ret == null) {
                 try {
@@ -262,6 +261,7 @@ public class AMEventData {
                 break;
             case ValueType.Object:
                 val_obj = (UnityEngine.Object)dat;
+                val_string = val_obj ? val_obj.GetType().Name : "";
                 break;
             case ValueType.Boolean:
                 val_bool = Convert.ToBoolean(dat);
@@ -420,14 +420,14 @@ public class AMEventParameter : AMEventData {
         if(valueType == (int)ValueType.Array) {
             System.Array arr = (System.Array)dat;
             lsArray = new List<AMEventData>(arr.Length);
+            System.Type t = arr.GetType().GetElementType();
             for(int i = 0; i < arr.Length; i++) {
                 object arrElem = arr.GetValue(i);
-                if(arrElem != null) {
-                    AMEventData a = new AMEventData();
-                    a.setValueType(arrElem.GetType());
-                    a.fromObject(arrElem);
-                    lsArray.Add(a);
-                }
+
+                AMEventData a = new AMEventData();
+                a.setValueType(arrElem != null ? arrElem.GetType() : t);
+                a.fromObject(arrElem);
+                lsArray.Add(a);
             }
         }
         else

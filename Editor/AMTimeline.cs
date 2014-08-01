@@ -3731,10 +3731,35 @@ public class AMTimeline : EditorWindow {
                 }
                 return;
             }
+                        
             bool sendMessageToggleEnabled = true;
             Rect rectPopup = new Rect(0f, start_y, width_inspector - margin, 22f);
             int curIndexMethod = indexMethodInfo;
             indexMethodInfo = EditorGUI.Popup(rectPopup, curIndexMethod, getMethodNames());
+
+            bool showObjectMessage = false;
+            Type showObjectType = null;
+            foreach(ParameterInfo p in cachedParameterInfos) {
+                Type elemType = p.ParameterType.GetElementType();
+                if(elemType != null && (elemType.BaseType == typeof(UnityEngine.Object) || elemType.BaseType == typeof(UnityEngine.Behaviour))) {
+                    showObjectMessage = true;
+                    showObjectType = elemType;
+                    break;
+                }
+            }
+            Rect rectLabelObjectMessage = new Rect(0f, rectPopup.y + rectPopup.height, width_inspector - margin * 2f - 20f, 0f);
+            if(showObjectMessage) {
+                rectLabelObjectMessage.height = 22f;
+                Rect rectButton = new Rect(width_inspector - 20f - margin, rectLabelObjectMessage.y + 1f, 20f, 20f);
+                GUI.color = Color.red;
+                GUI.Label(rectLabelObjectMessage, "* Use Object[] instead!");
+                GUI.color = Color.white;
+                if(GUI.Button(rectButton, "?")) {
+                    EditorUtility.DisplayDialog("Use Object[] Parameter Instead", "Array types derived from Object, such as GameObject[], cannot be cast correctly on runtime.\n\nUse UnityEngine.Object[] as a parameter type and then cast to (GameObject[]) in your method.\n\nIf you're trying to pass components" + (showObjectType != typeof(GameObject) ? " (such as " + showObjectType.ToString() + ")" : "") + ", you should get them from the casted GameObjects on runtime.\n\nPlease see the documentation for more information.", "Okay");
+                }
+                return;
+            }
+
             // if index out of range
             bool paramMatched = eKey.isMatch(cachedParameterInfos);
             if((indexMethodInfo != curIndexMethod && indexMethodInfo < cachedMethodInfo.Count) || !paramMatched) {
@@ -3757,28 +3782,7 @@ public class AMTimeline : EditorWindow {
                 }
                 sendMessageToggleEnabled = false;	// disable sendmessage toggle
             }
-            bool showObjectMessage = false;
-            Type showObjectType = null;
-            foreach(ParameterInfo p in cachedParameterInfos) {
-                Type elemType = p.ParameterType.GetElementType();
-                if(elemType != null && (elemType.BaseType == typeof(UnityEngine.Object) || elemType.BaseType == typeof(UnityEngine.Behaviour))) {
-                    showObjectMessage = true;
-                    showObjectType = elemType;
-                    break;
-                }
-            }
-            Rect rectLabelObjectMessage = new Rect(0f, rectPopup.y + rectPopup.height, width_inspector - margin * 2f - 20f, 0f);
-            if(showObjectMessage) {
-                rectLabelObjectMessage.height = 22f;
-                Rect rectButton = new Rect(width_inspector - 20f - margin, rectLabelObjectMessage.y + 1f, 20f, 20f);
-                GUI.color = Color.red;
-                GUI.Label(rectLabelObjectMessage, "* Use Object[] instead!");
-                GUI.color = Color.white;
-                if(GUI.Button(rectButton, "?")) {
-                    EditorUtility.DisplayDialog("Use Object[] Parameter Instead", "Array types derived from Object, such as GameObject[], cannot be cast correctly on runtime.\n\nUse UnityEngine.Object[] as a parameter type and then cast to (GameObject[]) in your method.\n\nIf you're trying to pass components" + (showObjectType != typeof(GameObject) ? " (such as " + showObjectType.ToString() + ")" : "") + ", you should get them from the casted GameObjects on runtime.\n\nPlease see the documentation for more information.", "Okay");
-                }
-
-            }
+            
             GUI.enabled = sendMessageToggleEnabled;
             Rect rectLabelSendMessage = new Rect(0f, rectLabelObjectMessage.y + rectLabelObjectMessage.height + height_inspector_space, 150f, 20f);
             GUI.Label(rectLabelSendMessage, "Use SendMessage");
@@ -3810,7 +3814,7 @@ public class AMTimeline : EditorWindow {
                     // show field for each parameter
                     float height_field = 0f;
                     if(showFieldFor(rectField, i.ToString(), cachedParameterInfos[i].Name, eKey.parameters[i], cachedParameterInfos[i].ParameterType, 0, ref height_field)) {
-                        sTrack.updateCache(aData);
+                        //sTrack.updateCache(aData);
                         AMCodeView.refresh();
                         // save data
                         EditorUtility.SetDirty(eKey);
@@ -4075,11 +4079,9 @@ public class AMTimeline : EditorWindow {
             GUI.Label(rectLabelField, name);
             // GameObject field
             GUI.skin = null;
-            EditorGUIUtility.LookLikeControls();
             Rect rectObjectField = new Rect(rect.x, rectLabelField.y + rectLabelField.height + margin, rect.width, 16f);
             if(data.setObject(EditorGUI.ObjectField(rectObjectField, data.val_obj, typeof(GameObject), true))) saveChanges = true;
             GUI.skin = skin;
-            EditorGUIUtility.LookLikeControls();
         }
         else if(t.BaseType == typeof(Behaviour) || t.BaseType == typeof(Component)) {
             height_field += 40f + margin;
@@ -4160,16 +4162,6 @@ public class AMTimeline : EditorWindow {
             GUI.skin = null;
             EditorGUIUtility.LookLikeControls();
             if(data.setObject(EditorGUI.ObjectField(rectObjectField, data.val_obj, typeof(UnityEngine.Object), true))) saveChanges = true;
-            GUI.skin = skin;
-            EditorGUIUtility.LookLikeControls();
-        }
-        else if(t == typeof(Component)) {
-            Rect rectLabelField = new Rect(rect);
-            GUI.Label(rectLabelField, name);
-            Rect rectObjectField = new Rect(rect.x, rectLabelField.y + rectLabelField.height + margin, rect.width, 16f);
-            GUI.skin = null;
-            EditorGUIUtility.LookLikeControls();
-            if(data.setObject(EditorGUI.ObjectField(rectObjectField, data.val_obj, typeof(Component), true))) saveChanges = true;
             GUI.skin = skin;
             EditorGUIUtility.LookLikeControls();
         }
