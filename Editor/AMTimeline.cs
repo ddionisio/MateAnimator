@@ -540,6 +540,8 @@ public class AMTimeline : EditorWindow {
         Undo.undoRedoPerformed -= OnUndoRedo;
     }
     void OnUndoRedo() {
+        if(aData == null) return;
+
         foreach(AMTakeData take in aData._takes)
             take.undoRedoPerformed();
 
