@@ -414,7 +414,8 @@ public class AMPathPreview {
                 t0 = timesTable[i];
             }
             // Find correct time.
-            t = t0 + ((tLen - l0) / (l1 - l0)) * (t1 - t0);
+            float dl = l1 - l0;
+            t = dl != 0.0f ? t0 + ((tLen - l0) / dl) * (t1 - t0) : t0;
         }
 
         // Clamp value because path has limited range of 0-1.
