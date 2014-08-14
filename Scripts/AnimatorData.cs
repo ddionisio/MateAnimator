@@ -20,22 +20,22 @@ public class AnimatorData : MonoBehaviour, AMITarget {
 
     // show
 
-	[SerializeField]
-	List<AMTakeData> takeData = new List<AMTakeData>();
-	[SerializeField]
-	int playOnStartIndex = -1;
+    [SerializeField]
+    List<AMTakeData> takeData = new List<AMTakeData>();
+    [SerializeField]
+    int playOnStartIndex = -1;
 
-	[SerializeField]
-	AnimatorMeta meta; //
-	[SerializeField]
-	string playOnStartMeta; //used for playing a take from AnimatorMeta
+    [SerializeField]
+    AnimatorMeta meta; //
+    [SerializeField]
+    string playOnStartMeta; //used for playing a take from AnimatorMeta
 
     public bool sequenceLoadAll = true;
     public bool sequenceKillWhenDone = false;
 
     public bool playOnEnable = false;
 
-	public bool isGlobal = false;
+    public bool isGlobal = false;
 
     public DisableAction onDisableAction = DisableAction.Pause;
 
@@ -45,34 +45,34 @@ public class AnimatorData : MonoBehaviour, AMITarget {
     public event OnTake takeCompleteCallback;
     public event OnTakeTrigger takeTriggerCallback;
 
-	public string defaultTakeName {
-		get {
-			if(meta)
-				return playOnStartMeta;
-			else
-				return playOnStartIndex == -1 ? "" : takeData[playOnStartIndex].name;
-		}
-		set {
-			if(meta) {
-				playOnStartMeta = value;
-				playOnStartIndex = -1;
-			}
-			else {
-				playOnStartMeta = "";
-				playOnStartIndex = -1;
-				if(!string.IsNullOrEmpty(value)) {
-					List<AMTakeData> _ts = _takes;
-					for(int i = 0; i < _ts.Count; i++) {
-						if(_ts[i].name == value) {
-							playOnStartIndex = i;
-							break;
-						}
-					}
-				}
-				//
-			}
-		}
-	}
+    public string defaultTakeName {
+        get {
+            if(meta)
+                return playOnStartMeta;
+            else
+                return playOnStartIndex == -1 ? "" : takeData[playOnStartIndex].name;
+        }
+        set {
+            if(meta) {
+                playOnStartMeta = value;
+                playOnStartIndex = -1;
+            }
+            else {
+                playOnStartMeta = "";
+                playOnStartIndex = -1;
+                if(!string.IsNullOrEmpty(value)) {
+                    List<AMTakeData> _ts = _takes;
+                    for(int i = 0; i < _ts.Count; i++) {
+                        if(_ts[i].name == value) {
+                            playOnStartIndex = i;
+                            break;
+                        }
+                    }
+                }
+                //
+            }
+        }
+    }
 
     public int defaultTakeIndex { get { return playOnStartIndex; } }
 
@@ -85,46 +85,46 @@ public class AnimatorData : MonoBehaviour, AMITarget {
 
     public bool isPaused {
         get {
-			Sequence seq = currentPlayingSequence;
-			return seq != null && seq.isPaused;
+            Sequence seq = currentPlayingSequence;
+            return seq != null && seq.isPaused;
         }
     }
 
     public bool isReversed {
         set {
-			Sequence seq = currentPlayingSequence;
-			if(seq != null) {
+            Sequence seq = currentPlayingSequence;
+            if(seq != null) {
                 if(value) {
-					if(!seq.isReversed)
-						seq.Reverse();
+                    if(!seq.isReversed)
+                        seq.Reverse();
                 }
                 else {
-					if(seq.isReversed)
-						seq.Reverse();
+                    if(seq.isReversed)
+                        seq.Reverse();
                 }
             }
         }
 
         get {
-			Sequence seq = currentPlayingSequence;
-			return seq != null && seq.isReversed;
+            Sequence seq = currentPlayingSequence;
+            return seq != null && seq.isReversed;
         }
     }
 
     public float runningTime {
         get {
-			Sequence seq = currentPlayingSequence;
-			return seq != null ? seq.elapsed : 0.0f;
+            Sequence seq = currentPlayingSequence;
+            return seq != null ? seq.elapsed : 0.0f;
         }
     }
     public float totalTime {
         get {
-			AMTakeData take = mCurrentPlayingTake;
-			if(take == null) return 0f;
-			else return (float)take.numFrames / (float)take.frameRate;
+            AMTakeData take = mCurrentPlayingTake;
+            if(take == null) return 0f;
+            else return (float)take.numFrames / (float)take.frameRate;
         }
     }
-        
+
     [System.NonSerialized]
     public bool isInspectorOpen = false;
     [HideInInspector]
@@ -133,44 +133,48 @@ public class AnimatorData : MonoBehaviour, AMITarget {
     public int codeLanguage = 0; 	// 0 = C#, 1 = Javascript
     [HideInInspector]
     public float width_track = 150f;
-        
+
     [HideInInspector]
     [SerializeField]
     private GameObject _dataHolder;
 
-	private AMSequence[] mSequences;
+    private AMSequence[] mSequences;
 
     private int mNowPlayingTakeIndex = -1;
+    private int mLastPlayingTakeIndex = -1;
 
     //private bool isLooping = false;
     //private float takeTime = 0f;
     private bool mStarted = false;
-        
+
     private float mAnimScale = 1.0f; //NOTE: this is reset during disable
 
-	private Dictionary<string, Transform> mCache;
+    private Dictionary<string, Transform> mCache;
 
-	private AMTakeData mCurrentPlayingTake { get { return mNowPlayingTakeIndex == -1 ? null : mSequences[mNowPlayingTakeIndex].take; } }
+    private AMTakeData mCurrentPlayingTake { get { return mNowPlayingTakeIndex == -1 ? null : mSequences[mNowPlayingTakeIndex].take; } }
 
-	public string currentPlayingTakeName { get { return mNowPlayingTakeIndex == -1 ? "" : mCurrentPlayingTake.name; } }
+    public string currentPlayingTakeName { get { return mNowPlayingTakeIndex == -1 ? "" : mCurrentPlayingTake.name; } }
     public int currentPlayingTakeIndex { get { return mNowPlayingTakeIndex; } }
-	public Sequence currentPlayingSequence { get { return mNowPlayingTakeIndex == -1 ? null : mSequences[mNowPlayingTakeIndex].sequence; } }
+    public Sequence currentPlayingSequence { get { return mNowPlayingTakeIndex == -1 ? null : mSequences[mNowPlayingTakeIndex].sequence; } }
+
+    public int lastPlayingTakeIndex { get { return mLastPlayingTakeIndex; } }
+    public string lastPlayingTakeName { get { return mLastPlayingTakeIndex == -1 ? "" : _takes[mLastPlayingTakeIndex].name; } }
 
     public float animScale {
         get { return mAnimScale; }
         set {
             if(mAnimScale != value) {
                 mAnimScale = value;
-				Sequence seq = currentPlayingSequence;
-				if(seq != null)
+                Sequence seq = currentPlayingSequence;
+                if(seq != null)
                     seq.timeScale = mAnimScale;
             }
         }
     }
 
-	public List<AMTakeData> _takes {
+    public List<AMTakeData> _takes {
         get { return meta ? meta.takes : takeData; }
-	}
+    }
 
     public bool TakeExists(string takeName) {
         return GetTakeIndex(takeName) != -1;
@@ -200,8 +204,8 @@ public class AnimatorData : MonoBehaviour, AMITarget {
 
     public void PlayDefault(bool loop = false) {
         if(!string.IsNullOrEmpty(defaultTakeName)) {
-			Play(defaultTakeName, loop);
-		}
+            Play(defaultTakeName, loop);
+        }
     }
 
     // play take by name
@@ -215,25 +219,27 @@ public class AnimatorData : MonoBehaviour, AMITarget {
         PlayAtTime(takeIndex, 0f, loop);
     }
 
-	public void PlayAtFrame(string takeName, float frame, bool loop = false) {
+    public void PlayAtFrame(string takeName, float frame, bool loop = false) {
         int ind = GetTakeIndex(takeName);
-		if(ind == -1) { Debug.LogError("Take not found: "+takeName); return; }
+        if(ind == -1) { Debug.LogError("Take not found: "+takeName); return; }
         PlayAtTime(ind, frame/mSequences[ind].take.frameRate, loop);
-	}
+    }
 
     public void PlayAtFrame(int takeIndex, float frame, bool loop = false) {
         PlayAtTime(takeIndex, frame/mSequences[takeIndex].take.frameRate, loop);
     }
-	
-	public void PlayAtTime(string takeName, float time, bool loop = false) {
+
+    public void PlayAtTime(string takeName, float time, bool loop = false) {
         int ind = GetTakeIndex(takeName);
-		if(ind == -1) { Debug.LogError("Take not found: "+takeName); return; }
+        if(ind == -1) { Debug.LogError("Take not found: "+takeName); return; }
         PlayAtTime(ind, time, loop);
     }
 
     public void PlayAtTime(int index, float time, bool loop = false) {
         if(mNowPlayingTakeIndex == index)
             return;
+
+        mLastPlayingTakeIndex = mNowPlayingTakeIndex;
 
         Pause();
 
@@ -249,7 +255,7 @@ public class AnimatorData : MonoBehaviour, AMITarget {
         }
         else
             amSeq.Reset(true);
-        
+
         mNowPlayingTakeIndex = index;
 
         newPlayTake.previewFrameStart(this, newPlayTake.frameRate * time);
@@ -267,27 +273,41 @@ public class AnimatorData : MonoBehaviour, AMITarget {
         }
     }
 
-    public void Pause() {
-		AMTakeData take = mCurrentPlayingTake;
-		if(take == null) return;
-		take.stopAudio(this);
+    IEnumerator PlayWait(string take) {
+        WaitForEndOfFrame wait = new WaitForEndOfFrame();
+        Play(take);
+        while(isPlaying)
+            yield return wait;
+    }
 
-		Sequence seq = currentPlayingSequence;
-		if(seq != null)
-			seq.Pause();
+    IEnumerator PlayWait(int take) {
+        WaitForEndOfFrame wait = new WaitForEndOfFrame();
+        Play(take);
+        while(isPlaying)
+            yield return wait;
+    }
+
+    public void Pause() {
+        AMTakeData take = mCurrentPlayingTake;
+        if(take == null) return;
+        take.stopAudio(this);
+
+        Sequence seq = currentPlayingSequence;
+        if(seq != null)
+            seq.Pause();
     }
 
     public void Resume() {
-		Sequence seq = currentPlayingSequence;
-		if(seq != null)
-			seq.Play();
+        Sequence seq = currentPlayingSequence;
+        if(seq != null)
+            seq.Play();
     }
 
     public void Stop() {
-		AMTakeData take = mCurrentPlayingTake;
-		if(take == null) return;
-		take.stopAudio(this);
-		take.stopAnimations(this);
+        AMTakeData take = mCurrentPlayingTake;
+        if(take == null) return;
+        take.stopAudio(this);
+        take.stopAnimations(this);
 
         //end camera fade
         if(AMCameraFade.hasInstance()) {
@@ -297,13 +317,14 @@ public class AnimatorData : MonoBehaviour, AMITarget {
 
         mSequences[mNowPlayingTakeIndex].Reset(false);
 
+        mLastPlayingTakeIndex = mNowPlayingTakeIndex;
         mNowPlayingTakeIndex = -1;
     }
 
     public void GotoFrame(float frame) {
-		AMTakeData take = mCurrentPlayingTake;
-		Sequence seq = currentPlayingSequence;
-		if(take != null && seq != null) {
+        AMTakeData take = mCurrentPlayingTake;
+        Sequence seq = currentPlayingSequence;
+        if(take != null && seq != null) {
             float t = frame / take.frameRate;
             seq.GoTo(t);
         }
@@ -313,9 +334,9 @@ public class AnimatorData : MonoBehaviour, AMITarget {
     }
 
     public void Reverse() {
-		Sequence seq = currentPlayingSequence;
+        Sequence seq = currentPlayingSequence;
         if(seq != null)
-			seq.Reverse();
+            seq.Reverse();
     }
 
     // preview a single frame (used for scrubbing)
@@ -338,13 +359,13 @@ public class AnimatorData : MonoBehaviour, AMITarget {
         curTake.previewFrame(this, time);
     }
 
-	void OnDestroy() {
+    void OnDestroy() {
 #if UNITY_EDITOR
-		if(!Application.isPlaying) {
-			if(_dataHolder) {
-				UnityEditor.Undo.DestroyObjectImmediate(_dataHolder);
-			}
-		}
+        if(!Application.isPlaying) {
+            if(_dataHolder) {
+                UnityEditor.Undo.DestroyObjectImmediate(_dataHolder);
+            }
+        }
 #endif
 
         if(mSequences != null) {
@@ -352,114 +373,114 @@ public class AnimatorData : MonoBehaviour, AMITarget {
                 mSequences[i].Destroy();
             mSequences = null;
         }
-		
-		takeCompleteCallback = null;
+
+        takeCompleteCallback = null;
         takeTriggerCallback = null;
-	}
-	
-	void OnEnable() {
-		if(mStarted) {
-			if(playOnEnable) {
-				if(mNowPlayingTakeIndex == -1 && !string.IsNullOrEmpty(defaultTakeName))
-					Play(defaultTakeName, false);
-				else
-					Resume();
-			}
-			//else if(playOnStart) {
-			//Play(playOnStart.name, true, 0f, false);
-			//}
-		}
-	}
-	
-	void OnDisable() {
-		switch(onDisableAction) {
-		case DisableAction.Pause:
-			Pause();
-			break;
-		case DisableAction.Stop:
-			Stop();
-			break;
-		}
-		
-		mAnimScale = 1.0f;
-	}
-	
-	void Awake() {
-		if(!Application.isPlaying)
-			return;
-		
-		mSequences = new AMSequence[_takes.Count];
+    }
+
+    void OnEnable() {
+        if(mStarted) {
+            if(playOnEnable) {
+                if(mNowPlayingTakeIndex == -1 && !string.IsNullOrEmpty(defaultTakeName))
+                    Play(defaultTakeName, false);
+                else
+                    Resume();
+            }
+            //else if(playOnStart) {
+            //Play(playOnStart.name, true, 0f, false);
+            //}
+        }
+    }
+
+    void OnDisable() {
+        switch(onDisableAction) {
+            case DisableAction.Pause:
+                Pause();
+                break;
+            case DisableAction.Stop:
+                Stop();
+                break;
+        }
+
+        mAnimScale = 1.0f;
+    }
+
+    void Awake() {
+        if(!Application.isPlaying)
+            return;
+
+        mSequences = new AMSequence[_takes.Count];
         for(int i = 0; i < mSequences.Length; i++)
             mSequences[i] = new AMSequence(this, i, _takes[i]);
-	}
-	
-	void Start() {
-		if(!Application.isPlaying)
-			return;
+    }
 
-		mStarted = true;
-		if(sequenceLoadAll && mSequences != null) {
-			string goName = gameObject.name;
-			for(int i = 0; i < mSequences.Length; i++) {
+    void Start() {
+        if(!Application.isPlaying)
+            return;
+
+        mStarted = true;
+        if(sequenceLoadAll && mSequences != null) {
+            string goName = gameObject.name;
+            for(int i = 0; i < mSequences.Length; i++) {
                 if(mSequences[i].sequence == null)
-				    mSequences[i].Build(goName, sequenceKillWhenDone, updateType);
-			}
-		}
-		
-		if(!isPlaying && !string.IsNullOrEmpty(defaultTakeName)) {
-			Play(defaultTakeName, false);
-		}
-	}
+                    mSequences[i].Build(goName, sequenceKillWhenDone, updateType);
+            }
+        }
+
+        if(!isPlaying && !string.IsNullOrEmpty(defaultTakeName)) {
+            Play(defaultTakeName, false);
+        }
+    }
 
     #region AMITarget interface
     public Transform TargetGetRoot() {
-		return transform;
-	}
+        return transform;
+    }
 
-	public Transform TargetGetDataHolder() {
-		if(meta) {
-			return meta.transform;
-		}
-		else {
-			if(_dataHolder == null) {
-				foreach(Transform child in transform) {
-					if(child.gameObject.name == "_animdata") {
-						_dataHolder = child.gameObject;
-						break;
-					}
-				}
-				
-				if(_dataHolder) {
-					//refresh data?
-				}
-				else {
-					_dataHolder = new GameObject("_animdata");
-					_dataHolder.transform.parent = transform;
-					_dataHolder.SetActive(false);
-				}
-			}
-			
-			return _dataHolder.transform;
-		}
-	}
+    public Transform TargetGetDataHolder() {
+        if(meta) {
+            return meta.transform;
+        }
+        else {
+            if(_dataHolder == null) {
+                foreach(Transform child in transform) {
+                    if(child.gameObject.name == "_animdata") {
+                        _dataHolder = child.gameObject;
+                        break;
+                    }
+                }
 
-	public bool TargetIsMeta() {
-		return meta != null;
-	}
+                if(_dataHolder) {
+                    //refresh data?
+                }
+                else {
+                    _dataHolder = new GameObject("_animdata");
+                    _dataHolder.transform.parent = transform;
+                    _dataHolder.SetActive(false);
+                }
+            }
+
+            return _dataHolder.transform;
+        }
+    }
+
+    public bool TargetIsMeta() {
+        return meta != null;
+    }
 
 #if UNITY_EDITOR
-	private HashSet<string> mTargetMissing;
-	public void TargetMissing(string path, bool isMissing) {
-		if(mTargetMissing == null) mTargetMissing = new HashSet<string>();
-		if(isMissing) {
-			mTargetMissing.Add(path);
+    private HashSet<string> mTargetMissing;
+    public void TargetMissing(string path, bool isMissing) {
+        if(mTargetMissing == null) mTargetMissing = new HashSet<string>();
+        if(isMissing) {
+            mTargetMissing.Add(path);
 
-			if(Application.isPlaying)
-				Debug.LogWarning(name+ " is missing Target: "+path);
-		}
-		else
-			mTargetMissing.Remove(path);
-	}
+            if(Application.isPlaying)
+                Debug.LogWarning(name+ " is missing Target: "+path);
+        }
+        else
+            mTargetMissing.Remove(path);
+    }
 #else
 	public void TargetMissing(string path, bool isMissing) {
 		if(isMissing)
@@ -467,30 +488,30 @@ public class AnimatorData : MonoBehaviour, AMITarget {
 	}
 #endif
 
-	public Transform TargetGetCache(string path) {
-		Transform ret = null;
-		if(mCache != null) {
-			if(mCache.TryGetValue(path, out ret)) {
+    public Transform TargetGetCache(string path) {
+        Transform ret = null;
+        if(mCache != null) {
+            if(mCache.TryGetValue(path, out ret)) {
 #if UNITY_EDITOR
-				if(mTargetMissing != null)
-					mTargetMissing.Remove(path);
+                if(mTargetMissing != null)
+                    mTargetMissing.Remove(path);
 #endif
-			}
-		}
-		return ret;
-	}
-	
-	public void TargetSetCache(string path, Transform obj) {
-		if(mCache == null) mCache = new Dictionary<string, Transform>();
-		if(mCache.ContainsKey(path))
-			mCache[path] = obj;
-		else
-			mCache.Add(path, obj);
+            }
+        }
+        return ret;
+    }
+
+    public void TargetSetCache(string path, Transform obj) {
+        if(mCache == null) mCache = new Dictionary<string, Transform>();
+        if(mCache.ContainsKey(path))
+            mCache[path] = obj;
+        else
+            mCache.Add(path, obj);
 #if UNITY_EDITOR
-		if(mTargetMissing != null)
-			mTargetMissing.Remove(path);
+        if(mTargetMissing != null)
+            mTargetMissing.Remove(path);
 #endif
-	}
+    }
 
     public void TargetSequenceComplete(AMSequence seq) {
         //end camera fade
@@ -499,6 +520,7 @@ public class AnimatorData : MonoBehaviour, AMITarget {
             cf.playParam = null;
         }
 
+        mLastPlayingTakeIndex = mNowPlayingTakeIndex;
         mNowPlayingTakeIndex = -1;
 
         if(takeCompleteCallback != null)
@@ -520,7 +542,7 @@ public class AnimatorData : MonoBehaviour, AMITarget {
     [System.NonSerialized]
     public int e_currentTake;
 
-	void OnDrawGizmos() {
+    void OnDrawGizmos() {
         if(!e_isAnimatorOpen || _takes == null || _takes.Count == 0) return;
         if(e_currentTake < 0) {
             e_currentTake = 0;
@@ -528,15 +550,15 @@ public class AnimatorData : MonoBehaviour, AMITarget {
         else if(e_currentTake >= _takes.Count)
             e_currentTake = _takes.Count - 1;
 
-		_takes[e_currentTake].drawGizmos(this, AnimatorTimeline.e_gizmoSize, Application.isPlaying);
-	}
+        _takes[e_currentTake].drawGizmos(this, AnimatorTimeline.e_gizmoSize, Application.isPlaying);
+    }
 
-	public string[] e_getMissingTargets() {
-		if(mTargetMissing != null)
-			return mTargetMissing.ToArray();
-		else
-			return new string[0];
-	}
+    public string[] e_getMissingTargets() {
+        if(mTargetMissing != null)
+            return mTargetMissing.ToArray();
+        else
+            return new string[0];
+    }
 
     public void e_maintainTargetCache(AMTrack track) {
         if(TargetIsMeta() && mCache.ContainsKey(track.targetPath)) {
@@ -550,18 +572,18 @@ public class AnimatorData : MonoBehaviour, AMITarget {
         }
     }
 
-	public void e_maintainTakes() {
-		foreach(AMTakeData take in _takes) {
-			take.maintainTake(this);
-		}
+    public void e_maintainTakes() {
+        foreach(AMTakeData take in _takes) {
+            take.maintainTake(this);
+        }
 
-		if(mCache != null)
-			mCache.Clear();
-	}
-    
-	public AnimatorMeta e_meta { 
-		get { return meta; }
-	}
+        if(mCache != null)
+            mCache.Clear();
+    }
+
+    public AnimatorMeta e_meta {
+        get { return meta; }
+    }
 
     public bool e_metaCanInstantiatePrefab {
         get {
@@ -616,137 +638,137 @@ public class AnimatorData : MonoBehaviour, AMITarget {
         }
     }
 
-	/// <summary>
-	/// if copyTakes is true, overrides all takes in newMeta (if null, then to our dataholder) with current data
-	/// </summary>
-	public void e_setMeta(AnimatorMeta newMeta, bool copyTakes) {
-		if(meta != newMeta) {
+    /// <summary>
+    /// if copyTakes is true, overrides all takes in newMeta (if null, then to our dataholder) with current data
+    /// </summary>
+    public void e_setMeta(AnimatorMeta newMeta, bool copyTakes) {
+        if(meta != newMeta) {
             AnimatorMeta prevMeta = meta;
-			List<AMTakeData> prevTakes = _takes;
-			string prevPlayOnStartName = defaultTakeName;
+            List<AMTakeData> prevTakes = _takes;
+            string prevPlayOnStartName = defaultTakeName;
 
-			meta = newMeta;
+            meta = newMeta;
 
-			if(meta) {
-				if(copyTakes) {
+            if(meta) {
+                if(copyTakes) {
                     meta.takes.Clear();
 
-					foreach(AMTakeData take in prevTakes)
+                    foreach(AMTakeData take in prevTakes)
                         e_duplicateTake(take, true, true);
-				}
+                }
 
-				//clear out non-meta stuff
-				if(_dataHolder) {
-					UnityEditor.Undo.DestroyObjectImmediate(_dataHolder);
-					_dataHolder = null;
-				}
-				takeData.Clear();
-			}
-			else {
-				//create data holder
-				_dataHolder = new GameObject("_animdata");
-				_dataHolder.transform.parent = transform;
-				_dataHolder.SetActive(false);
+                //clear out non-meta stuff
+                if(_dataHolder) {
+                    UnityEditor.Undo.DestroyObjectImmediate(_dataHolder);
+                    _dataHolder = null;
+                }
+                takeData.Clear();
+            }
+            else {
+                //create data holder
+                _dataHolder = new GameObject("_animdata");
+                _dataHolder.transform.parent = transform;
+                _dataHolder.SetActive(false);
                 UnityEditor.Undo.RegisterCreatedObjectUndo(_dataHolder, "Set Meta");
 
-				if(copyTakes) { //duplicate meta to takeData
-					foreach(AMTakeData take in prevTakes)
+                if(copyTakes) { //duplicate meta to takeData
+                    foreach(AMTakeData take in prevTakes)
                         e_duplicateTake(take, true, false);
-				}
-			}
+                }
+            }
 
-			if(_takes == null || _takes.Count == 0) { //add at least one take
-				e_addTake();
-			}
+            if(_takes == null || _takes.Count == 0) { //add at least one take
+                e_addTake();
+            }
 
-			//get new play on start
-			playOnStartMeta = "";
-			playOnStartIndex = -1;
+            //get new play on start
+            playOnStartMeta = "";
+            playOnStartIndex = -1;
 
-			if(!string.IsNullOrEmpty(prevPlayOnStartName)) {
-				string newPlayOnStart = "";
-				foreach(AMTakeData take in _takes) {
-					if(take.name == prevPlayOnStartName) {
-						newPlayOnStart = take.name;
-						break;
-					}
-				}
+            if(!string.IsNullOrEmpty(prevPlayOnStartName)) {
+                string newPlayOnStart = "";
+                foreach(AMTakeData take in _takes) {
+                    if(take.name == prevPlayOnStartName) {
+                        newPlayOnStart = take.name;
+                        break;
+                    }
+                }
 
-				defaultTakeName = newPlayOnStart;
-			}
-			//
+                defaultTakeName = newPlayOnStart;
+            }
+            //
 
-			//reset editor data
-			if(mTargetMissing != null)
-				mTargetMissing.Clear();
+            //reset editor data
+            if(mTargetMissing != null)
+                mTargetMissing.Clear();
 
             //destroy previous meta if it is not prefab
             if(prevMeta && UnityEditor.PrefabUtility.GetPrefabType(prevMeta) != UnityEditor.PrefabType.Prefab) {
                 UnityEditor.Undo.DestroyObjectImmediate(prevMeta.gameObject);
             }
-		}
-	}
+        }
+    }
 
-	/// <summary>
-	/// attempt to generate the missing targets
-	/// </summary>
-	public void e_generateMissingTargets() {
-		if(mTargetMissing != null && mTargetMissing.Count > 0) {
-			foreach(string missingPath in mTargetMissing) {
-				AMUtil.CreateTarget(transform, missingPath);
-			}
+    /// <summary>
+    /// attempt to generate the missing targets
+    /// </summary>
+    public void e_generateMissingTargets() {
+        if(mTargetMissing != null && mTargetMissing.Count > 0) {
+            foreach(string missingPath in mTargetMissing) {
+                AMUtil.CreateTarget(transform, missingPath);
+            }
 
-			//fill necessary components per track and key
-			foreach(AMTakeData take in _takes) {
-				foreach(AMTrack track in take.trackValues) {
-					Transform t = AMUtil.GetTarget(transform, track.targetPath);
+            //fill necessary components per track and key
+            foreach(AMTakeData take in _takes) {
+                foreach(AMTrack track in take.trackValues) {
+                    Transform t = AMUtil.GetTarget(transform, track.targetPath);
 
-					string compName = track.GetRequiredComponent();
-					if(!string.IsNullOrEmpty(compName)) {
-						Component comp = t.gameObject.GetComponent(compName);
-						if(comp == null) {
-							t.gameObject.AddComponent(compName);
-						}
-					}
+                    string compName = track.GetRequiredComponent();
+                    if(!string.IsNullOrEmpty(compName)) {
+                        Component comp = t.gameObject.GetComponent(compName);
+                        if(comp == null) {
+                            t.gameObject.AddComponent(compName);
+                        }
+                    }
 
-					foreach(AMKey key in track.keys) {
-						compName = key.GetRequiredComponent();
-						if(!string.IsNullOrEmpty(compName)) {
-							Component comp = t.gameObject.GetComponent(compName);
-							if(comp == null) {
-								t.gameObject.AddComponent(compName);
-							}
-						}
-					}
-				}
-			}
+                    foreach(AMKey key in track.keys) {
+                        compName = key.GetRequiredComponent();
+                        if(!string.IsNullOrEmpty(compName)) {
+                            Component comp = t.gameObject.GetComponent(compName);
+                            if(comp == null) {
+                                t.gameObject.AddComponent(compName);
+                            }
+                        }
+                    }
+                }
+            }
 
-			mTargetMissing.Clear();
+            mTargetMissing.Clear();
 
-			if(mCache != null)
-				mCache.Clear();
-		}
-	}
+            if(mCache != null)
+                mCache.Clear();
+        }
+    }
 
-	public AMTakeData e_getTake(string takeName) {
+    public AMTakeData e_getTake(string takeName) {
         int ind = GetTakeIndex(takeName);
-		if(ind == -1) {
-			Debug.LogError("Animator: Take '" + takeName + "' not found.");
-			return null;
-		}
-		
-		return _takes[ind];
-	}
+        if(ind == -1) {
+            Debug.LogError("Animator: Take '" + takeName + "' not found.");
+            return null;
+        }
+
+        return _takes[ind];
+    }
 
     public AMTakeData e_addTake() {
-		List<AMTakeData> _ts = _takes;
-		string name = "Take" + (_ts.Count + 1);
+        List<AMTakeData> _ts = _takes;
+        string name = "Take" + (_ts.Count + 1);
         AMTakeData a = new AMTakeData();
         // set defaults
         a.name = name;
         e_makeTakeNameUnique(a);
-        
-		_ts.Add(a);
+
+        _ts.Add(a);
 
         return a;
     }
@@ -756,7 +778,7 @@ public class AnimatorData : MonoBehaviour, AMITarget {
     /// </summary>
     /// <param name="take"></param>
     public void e_duplicateTake(AMTakeData dupTake, bool includeKeys, bool addCompUndo) {
-		AMTakeData a = new AMTakeData();
+        AMTakeData a = new AMTakeData();
 
         a.name = dupTake.name;
         e_makeTakeNameUnique(a);
@@ -795,51 +817,51 @@ public class AnimatorData : MonoBehaviour, AMITarget {
                 track.CopyTo(dupTrack);
                 a.trackValues.Add(dupTrack);
 
-				dupTrack.maintainTrack(this);
+                dupTrack.maintainTrack(this);
 
-				Object tgtObj = dupTrack.GetTarget(this);
+                Object tgtObj = dupTrack.GetTarget(this);
 
-				//if there's no target, then we can't add the keys for events and properties
-				if(includeKeys && !(tgtObj == null && (dupTrack is AMPropertyTrack || dupTrack is AMEventTrack))) {
-					foreach(AMKey key in track.keys) {
+                //if there's no target, then we can't add the keys for events and properties
+                if(includeKeys && !(tgtObj == null && (dupTrack is AMPropertyTrack || dupTrack is AMEventTrack))) {
+                    foreach(AMKey key in track.keys) {
                         AMKey dupKey = (addCompUndo ? UnityEditor.Undo.AddComponent(TargetGetDataHolder().gameObject, key.GetType()) : TargetGetDataHolder().gameObject.AddComponent(key.GetType())) as AMKey;
-						if(dupKey) {
+                        if(dupKey) {
                             key.CopyTo(dupKey);
                             dupKey.enabled = false;
                             dupKey.maintainKey(this, tgtObj);
-							dupTrack.keys.Add(dupKey);
-						}
-					}
+                            dupTrack.keys.Add(dupKey);
+                        }
+                    }
 
-					dupTrack.updateCache(this);
-				}
+                    dupTrack.updateCache(this);
+                }
             }
         }
 
-		List<AMTakeData> _ts = _takes;
-		_ts.Add(a);
+        List<AMTakeData> _ts = _takes;
+        _ts.Add(a);
     }
 
     public void e_deleteTake(int index) {
-		string prevDefaultTakeName = defaultTakeName;
+        string prevDefaultTakeName = defaultTakeName;
         //if(shouldCheckDependencies) shouldCheckDependencies = false;
 
-		//TODO: destroy tracks, keys
-		//_takes[index].destroy();
-		_takes.RemoveAt(index);
+        //TODO: destroy tracks, keys
+        //_takes[index].destroy();
+        _takes.RemoveAt(index);
         if((e_currentTake >= index) && (e_currentTake > 0)) e_currentTake--;
 
-		if(!string.IsNullOrEmpty(prevDefaultTakeName)) {
-			string newPlayOnStart = "";
-			foreach(AMTakeData take in _takes) {
-				if(take.name == prevDefaultTakeName) {
-					newPlayOnStart = take.name;
-					break;
-				}
-			}
-			
-			defaultTakeName = newPlayOnStart;
-		}
+        if(!string.IsNullOrEmpty(prevDefaultTakeName)) {
+            string newPlayOnStart = "";
+            foreach(AMTakeData take in _takes) {
+                if(take.name == prevDefaultTakeName) {
+                    newPlayOnStart = take.name;
+                    break;
+                }
+            }
+
+            defaultTakeName = newPlayOnStart;
+        }
     }
 
     public void e_makeTakeNameUnique(AMTakeData take) {
@@ -847,7 +869,7 @@ public class AnimatorData : MonoBehaviour, AMITarget {
         int count = 0;
         do {
             if(loop) loop = false;
-			foreach(AMTakeData _take in _takes) {
+            foreach(AMTakeData _take in _takes) {
                 if(_take != take && _take.name == take.name) {
                     if(count > 0) take.name = take.name.Substring(0, take.name.Length - 3);
                     count++;
@@ -860,16 +882,16 @@ public class AnimatorData : MonoBehaviour, AMITarget {
     }
 
     public string[] e_getTakeNames() {
-		List<AMTakeData> _ts = _takes;
-		string[] names = new string[_ts.Count + 2];
-		for(int i = 0; i < _ts.Count; i++) {
-			names[i] = _ts[i].name;
+        List<AMTakeData> _ts = _takes;
+        string[] names = new string[_ts.Count + 2];
+        for(int i = 0; i < _ts.Count; i++) {
+            names[i] = _ts[i].name;
         }
         names[names.Length - 2] = "Create new...";
         names[names.Length - 1] = "Duplicate current...";
         return names;
     }
-	    
+
     public bool e_setCodeLanguage(int codeLanguage) {
         if(this.codeLanguage != codeLanguage) {
             this.codeLanguage = codeLanguage;
@@ -886,21 +908,21 @@ public class AnimatorData : MonoBehaviour, AMITarget {
     }*/
 
     public void e_deleteAllTakesExcept(AMTakeData take) {
-		List<AMTakeData> _ts = _takes;
-		for(int index = 0; index < _ts.Count; index++) {
-			if(_ts[index] == take) continue;
+        List<AMTakeData> _ts = _takes;
+        for(int index = 0; index < _ts.Count; index++) {
+            if(_ts[index] == take) continue;
             e_deleteTake(index);
             index--;
         }
     }
 
     public void e_mergeWith(AnimatorData _aData) {
-		if(meta == null && _aData.meta == null) {
-			foreach(AMTakeData take in _aData._takes) {
-				_takes.Add(take);
-	            e_makeTakeNameUnique(take);
-	        }
-		}
+        if(meta == null && _aData.meta == null) {
+            foreach(AMTakeData take in _aData._takes) {
+                _takes.Add(take);
+                e_makeTakeNameUnique(take);
+            }
+        }
     }
 
     public List<GameObject> e_getDependencies(AMTakeData _take = null) {
@@ -917,11 +939,11 @@ public class AnimatorData : MonoBehaviour, AMITarget {
 
     public List<GameObject> e_updateDependencies(List<GameObject> newReferences, List<GameObject> oldReferences) {
         List<GameObject> lsFlagToKeep = new List<GameObject>();
-		foreach(AMTakeData take in _takes) {
+        foreach(AMTakeData take in _takes) {
             lsFlagToKeep = lsFlagToKeep.Union(take.updateDependencies(this, newReferences, oldReferences)).ToList();
         }
         return lsFlagToKeep;
     }
 #endif
-#endregion
+    #endregion
 }
