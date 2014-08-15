@@ -740,12 +740,10 @@ public class AMTimeline : EditorWindow {
                         if((take.loopMode == Holoville.HOTween.LoopType.Yoyo || take.loopMode == Holoville.HOTween.LoopType.YoyoInverse))
                             playerBackward = !playerBackward;
 
-                        startFrame = 1;
-                    }
-                    else if(take.loopBackToFrame > 0) {
-                        startFrame = take.loopBackToFrame;
-                        restart = true;
-                        playerBackward = false;
+                        if(!playerBackward && take.loopBackToFrame > 0)
+                            startFrame = take.loopBackToFrame;
+                        else
+                            startFrame = 1;
                     }
 
                     if(restart) {
