@@ -16,15 +16,22 @@ public class AnimatorDataInspector : Editor {
     private bool mMissingsFoldout = true;
 
     void OnEnable() {
-        AnimatorData dat = target as AnimatorData;
-
-        mTakeLabels = new string[dat._takes.Count + 1];
-        mTakeLabels[0] = "None";
-        for(int i = 0;i < dat._takes.Count;i++) {
-            mTakeLabels[i+1] = dat._takes[i].name;
-        }
+        GenerateTakeLabels();
 
         mMissingsFoldout = true;
+    }
+    
+    void GenerateTakeLabels() {
+        AnimatorData dat = target as AnimatorData;
+
+        if(mTakeLabels == null || dat._takes.Count + 1 != mTakeLabels.Length) {
+            mTakeLabels = new string[dat._takes.Count + 1];
+            mTakeLabels[0] = "None";
+        }
+
+        //match strings
+        for(int i = 0; i < dat._takes.Count; i++)
+            mTakeLabels[i+1] = dat._takes[i].name;
     }
 
     public override void OnInspectorGUI() {
@@ -96,6 +103,7 @@ public class AnimatorDataInspector : Editor {
             }
         }
 
+        GenerateTakeLabels();
         int newPlayTakeInd = EditorGUILayout.IntPopup("Play On Start", playTakeInd, mTakeLabels, null);
         if(newPlayTakeInd != playTakeInd) {
             Undo.RecordObject(dat, "Set Play On Start");
