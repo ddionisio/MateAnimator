@@ -273,14 +273,14 @@ public class AnimatorData : MonoBehaviour, AMITarget {
         }
     }
 
-    IEnumerator PlayWait(string take) {
+    public IEnumerator PlayWait(string take) {
         WaitForEndOfFrame wait = new WaitForEndOfFrame();
         Play(take);
         while(isPlaying)
             yield return wait;
     }
 
-    IEnumerator PlayWait(int take) {
+    public IEnumerator PlayWait(int take) {
         WaitForEndOfFrame wait = new WaitForEndOfFrame();
         Play(take);
         while(isPlaying)
