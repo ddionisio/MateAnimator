@@ -37,3 +37,8 @@ TODO
 * Work with MechAnim. - allow change state, etc. and preview.
 * Work with Particles - allow play/pause/stop and preview.
 * Triggers.
+
+License
+=======
+* MateAnimator is licensed under the CC BY 3.0 License:
+  - http://creativecommons.org/licenses/by/3.0/
