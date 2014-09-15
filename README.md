@@ -37,3 +37,9 @@ TODO
 * Work with MechAnim. - allow change state, etc. and preview.
 * Work with Particles - allow play/pause/stop and preview.
 * Triggers.
+
+License
+=======
+* MateAnimator is licensed under a Creative Commons Attribution-NonCommercial 3.0 Unported License
+Note: You may use the extension in commercial games and other Unity projects. This license applies to the source code of the extension only.
+  - http://creativecommons.org/licenses/by/3.0/
