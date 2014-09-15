@@ -836,6 +836,20 @@ public class AMTakeData {
 			(track as AMAudioTrack).stopAudio(itarget);
 		}
 	}
+
+    public void pauseAudio(AMITarget itarget) {
+        foreach(AMTrack track in trackValues) {
+            if(!(track is AMAudioTrack)) continue;
+            (track as AMAudioTrack).pauseAudio(itarget);
+        }
+    }
+
+    public void resumeAudio(AMITarget itarget) {
+        foreach(AMTrack track in trackValues) {
+            if(!(track is AMAudioTrack)) continue;
+            (track as AMAudioTrack).resumeAudio(itarget);
+        }
+    }
 	
 	public void stopAnimations(AMITarget itarget) {
 		foreach(AMTrack track in trackValues) {

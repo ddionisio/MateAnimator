@@ -290,7 +290,7 @@ public class AnimatorData : MonoBehaviour, AMITarget {
     public void Pause() {
         AMTakeData take = mCurrentPlayingTake;
         if(take == null) return;
-        take.stopAudio(this);
+        take.pauseAudio(this);
 
         Sequence seq = currentPlayingSequence;
         if(seq != null)
@@ -298,6 +298,10 @@ public class AnimatorData : MonoBehaviour, AMITarget {
     }
 
     public void Resume() {
+        AMTakeData take = mCurrentPlayingTake;
+        if(take == null) return;
+        take.resumeAudio(this);
+
         Sequence seq = currentPlayingSequence;
         if(seq != null)
             seq.Play();

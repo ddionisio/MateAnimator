@@ -8,6 +8,8 @@ public class AMAudioTrack : AMTrack {
 	[SerializeField]
     AudioSource audioSource;
 
+    bool paused;
+
 	protected override void SetSerializeObject(UnityEngine.Object obj) {
 		audioSource = obj as AudioSource;
         if(audioSource)
@@ -102,7 +104,26 @@ public class AMAudioTrack : AMTrack {
 	public void stopAudio(AMITarget target) {
 		AudioSource src = GetTarget(target) as AudioSource;
 		if(!src) return;
-		if(src.loop && src.isPlaying) src.Stop();
+		src.Stop();
+        paused = false;
+    }
+
+    public void resumeAudio(AMITarget target) {
+        AudioSource src = GetTarget(target) as AudioSource;
+        if(!src) return;
+        if(paused) {
+            src.Play();
+            paused = false;
+        }
+    }
+
+    public void pauseAudio(AMITarget target) {
+        AudioSource src = GetTarget(target) as AudioSource;
+        if(!src) return;
+        if(src.isPlaying) {
+            src.Pause();
+            paused = true;
+        }
     }
 
     public ulong getTimeInSamples(int frequency, float time) {
