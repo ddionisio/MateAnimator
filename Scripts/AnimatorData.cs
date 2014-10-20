@@ -458,9 +458,10 @@ public class AnimatorData : MonoBehaviour, AMITarget {
                     //refresh data?
                 }
                 else {
-                    _dataHolder = new GameObject("_animdata");
+                    _dataHolder = new GameObject("_animdata", typeof(AnimatorDataHolder));
                     _dataHolder.transform.parent = transform;
-                    _dataHolder.SetActive(false);
+                    //!DEBUG
+                    //_dataHolder.SetActive(false);
                 }
             }
 
@@ -670,9 +671,10 @@ public class AnimatorData : MonoBehaviour, AMITarget {
             }
             else {
                 //create data holder
-                _dataHolder = new GameObject("_animdata");
+                _dataHolder = new GameObject("_animdata", typeof(AnimatorDataHolder));
                 _dataHolder.transform.parent = transform;
-                _dataHolder.SetActive(false);
+                //!DEBUG
+                //_dataHolder.SetActive(false);
                 UnityEditor.Undo.RegisterCreatedObjectUndo(_dataHolder, "Set Meta");
 
                 if(copyTakes) { //duplicate meta to takeData

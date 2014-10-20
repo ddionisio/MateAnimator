@@ -97,6 +97,13 @@ public class AMTimeline : EditorWindow {
                         }
                     }
 
+                    //!DEBUG
+                    Transform holder = _aData.TargetGetDataHolder();
+                    if(holder.GetComponent<AnimatorDataHolder>() == null)
+                        holder.gameObject.AddComponent<AnimatorDataHolder>();
+                    if(!holder.gameObject.activeSelf)
+                        holder.gameObject.SetActive(true);
+
                     indexMethodInfo = -1;	// re-check for methodinfo
 
                     //Debug.Log("new data: " + _aData.name + " hash: " + _aData.GetHashCode());
