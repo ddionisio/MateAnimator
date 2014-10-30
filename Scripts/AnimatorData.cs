@@ -350,7 +350,7 @@ public class AnimatorData : MonoBehaviour, AMITarget {
 
     public void PreviewFrame(int takeIndex, float frame) {
         AMTakeData curTake = mSequences[takeIndex].take;
-        curTake.previewFrame(this, frame/curTake.frameRate);
+        curTake.previewFrame(this, frame);
     }
 
     // preview a single time (used for scrubbing)
@@ -360,7 +360,7 @@ public class AnimatorData : MonoBehaviour, AMITarget {
 
     public void PreviewTime(int takeIndex, float time) {
         AMTakeData curTake = mSequences[takeIndex].take;
-        curTake.previewFrame(this, time);
+        curTake.previewFrame(this, time*curTake.frameRate);
     }
 
     void OnDestroy() {
