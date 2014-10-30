@@ -15,8 +15,12 @@ Mega Morph has been removed.
 
 Import/Export, Code Generator are currently disabled. 
 
-Update
-======
+Updates
+=======
+### Update 2 ###
+* Added Mate Animator track.  Now you can play animations in your animation, while you animate.  Useful for choreography and ensuring timing between multiple animations on the scene.
+* Fixes with null exceptions here and there.
+### Update 1 ###
 * Undo/Redo reworked and changed to comply with Unity 4.3
 * Keyboard shortcuts: arrowkeys to select keys/tracks, copy/paste/duplicate for keys, delete to delete selected keys.
 * Shared Animator (AnimatorMeta) allows you to share animation per AnimatorData.  This helps with updating any shared animation reliably, and reduces overhead.
@@ -36,7 +40,12 @@ TODO
 * Add a way to make this tool extensive - will help with implementing tk2d, etc.
 * Work with MechAnim. - allow change state, etc. and preview.
 * Work with Particles - allow play/pause/stop and preview.
-* Triggers.
+* Preserve ease type when moving keys around.
+* Reverse selected keys feature.
+* Material property track - for animating shader variables.
+* Some glitches with mouse events.
+* Refactor the entire UI code...(might as well create a new project)
+* Camera transition fixes (too glitchy and poorly written, maybe do something like UE4's director)
 
 License
 =======
