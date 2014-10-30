@@ -366,11 +366,8 @@ public class AnimatorData : MonoBehaviour, AMITarget {
     void OnDestroy() {
 #if UNITY_EDITOR
         if(!Application.isPlaying) {
-            if(_dataHolder) {
-                //!DEBUG
-                Debug.LogWarning(name+": Deleting associated data holder.");
+            if(_dataHolder)
                 UnityEditor.Undo.DestroyObjectImmediate(_dataHolder);
-            }
         }
 #endif
 
