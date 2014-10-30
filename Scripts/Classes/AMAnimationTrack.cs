@@ -33,6 +33,7 @@ public class AMAnimationTrack : AMTrack {
                 key.wrapMode = _wrapMode;
                 // update cache
 				updateCache(itarget);
+                return;
             }
         }
         AMAnimationKey a = addCall(gameObject, typeof(AMAnimationKey)) as AMAnimationKey;

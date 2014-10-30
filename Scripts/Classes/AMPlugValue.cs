@@ -18,7 +18,8 @@ public class AMPlugAnimation : ABSTweenPlugin {
 
     protected override object endVal { get { return _endVal; } set { _endVal = value; } }
 
-    public AMPlugAnimation(Animation aAnim, string clipName, WrapMode aWrap, bool aFadeIn, float aFadeInTime) : base(null, false) {
+    public AMPlugAnimation(Animation aAnim, string clipName, WrapMode aWrap, bool aFadeIn, float aFadeInTime)
+        : base(null, false) {
         ignoreAccessor = true;
         anim = aAnim;
         animState = anim[clipName];
@@ -60,7 +61,7 @@ public class AMPlugAnimation : ABSTweenPlugin {
 /// </summary>
 public class AMPlugAnimationCrossFade : ABSTweenPlugin {
     Animation anim;
-    
+
     AnimationState animState;
     WrapMode wrap;
     float startTime;
@@ -137,6 +138,72 @@ public class AMPlugAnimationCrossFade : ABSTweenPlugin {
     protected override object GetValue() { return null; }
 }
 
+//TODO: PreviewFrame isn't quite ideal, but it's the most guaranteed way to synchronize play
+//Also, no crossfade, which is a whole can of worms to deal with in the actual system
+public class AMPlugMateAnimator : ABSTweenPlugin {
+    public enum LoopType {
+        None,
+        Restart,
+        Yoyo
+    }
+
+    AnimatorData anim;
+    AMTakeData take;
+    LoopType loopMode;
+    int lastFrame;
+    bool started;
+
+    protected override object startVal { get { return _startVal; } set { _startVal = value; } }
+
+    protected override object endVal { get { return _endVal; } set { _endVal = value; } }
+
+    public AMPlugMateAnimator(AnimatorData aAnim, AMTakeData aTake, LoopType aLoopMode)
+        : base(null, false) {
+        ignoreAccessor = true;
+        anim = aAnim;
+        take = aTake;
+        loopMode = aLoopMode;
+        lastFrame = take.getLastFrame();
+    }
+
+    protected override float GetSpeedBasedDuration(float p_speed) {
+        return p_speed;
+    }
+
+    protected override void SetChangeVal() {
+        started = false;
+    }
+
+    protected override void SetIncremental(int p_diffIncr) { }
+    protected override void SetIncrementalRestart() { }
+
+    protected override void DoUpdate(float p_totElapsed) {
+        if(!started) { started = true; return; } //TODO: for some reason DoUpdate is called with end elapse during startup
+
+        float frame = p_totElapsed*take.frameRate;
+
+        switch(loopMode) {
+            case LoopType.Restart:
+                frame %= (float)lastFrame;
+                break;
+            case LoopType.Yoyo:
+                int count = Mathf.FloorToInt(frame)/lastFrame;
+                if(count % 2 == 0)
+                    frame %= (float)lastFrame;
+                else {
+                    float flf = (float)lastFrame;
+                    frame = flf - (frame%lastFrame);
+                }
+                break;
+        }
+
+        take.previewFrame(anim, frame);
+    }
+
+    protected override void SetValue(object p_value) { }
+    protected override object GetValue() { return null; }
+}
+
 public class AMPlugDouble : ABSTweenPlugin {
     internal static Type[] validPropTypes = { typeof(double) };
     internal static Type[] validValueTypes = { typeof(double) };
@@ -167,7 +234,7 @@ public class AMPlugDouble : ABSTweenPlugin {
             _endVal = typedEndVal = Convert.ToDouble(value);
         }
     }
-    
+
     public AMPlugDouble(double p_endVal)
         : base(p_endVal, false) {
     }

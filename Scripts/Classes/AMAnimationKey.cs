@@ -60,7 +60,7 @@ public class AMAnimationKey : AMKey {
         float waitTime = getWaitTime(frameRate, 0.0f);
         Animation anim = (target as GameObject).animation;
 
-        float duration = wrapMode == WrapMode.Once ? amClip.length : seq.take.getLastFrame()/(float)frameRate;
+        float duration = wrapMode == WrapMode.Once ? amClip.length : ((seq.take.getLastFrame()-frame)+1)/(float)frameRate;
 
         Holoville.HOTween.Plugins.Core.ABSTweenPlugin plug;
 

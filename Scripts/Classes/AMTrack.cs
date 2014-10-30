@@ -82,6 +82,8 @@ public abstract class AMTrack : MonoBehaviour {
     /// Check to see if given GameObject has all the required components for this track
     /// </summary>
     public bool VerifyComponents(GameObject go) {
+        if(!go) return false;
+
         if(go.GetComponent(GetRequiredComponent()) == null)
             return false;
 

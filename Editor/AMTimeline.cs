@@ -8,9 +8,30 @@ using System;
 using Holoville.HOTween.Core.Easing;
 
 public class AMTimeline : EditorWindow {
-    public struct AnimatorEditData {
+    public class AnimatorEditData {
         public int currentTakeInd;
         public int prevTakeInd;
+
+        private string[] mTakeNames;
+
+        public string[] GetTakeNames(AnimatorData anim, bool includeNone) {
+            List<AMTakeData> takes = anim._takes;
+            //sync names
+            if(includeNone) {
+                if(mTakeNames == null || mTakeNames.Length-1 != takes.Count)
+                    mTakeNames = new string[takes.Count+1];
+                mTakeNames[0] = "(None)";
+                for(int i = 0; i < takes.Count; i++)
+                    mTakeNames[i+1] = takes[i].name;
+            }
+            else {
+                if(mTakeNames == null || mTakeNames.Length != takes.Count)
+                    mTakeNames = new string[takes.Count];
+                for(int i = 0; i < takes.Count; i++)
+                    mTakeNames[i] = takes[i].name;
+            }
+            return mTakeNames;
+        }
     }
 
     [MenuItem("Window/Cutscene Editor")]
@@ -38,10 +59,9 @@ public class AMTimeline : EditorWindow {
                     //Debug.Log("previous data: " + _aData.name + " hash: " + _aData.GetHashCode());
                     _aData.e_isAnimatorOpen = false;
 
-                    if(mAnimEdits.ContainsKey(_aData))
-                        mAnimEdits[_aData] = new AnimatorEditData() { currentTakeInd=mCurTakeInd, prevTakeInd=mPrevTakeInd };
-                    else
-                        mAnimEdits.Add(_aData, new AnimatorEditData() { currentTakeInd=mCurTakeInd, prevTakeInd=mPrevTakeInd });
+                    AnimatorEditData animEdit = AnimEdit(_aData);
+                    animEdit.currentTakeInd = mCurTakeInd;
+                    animEdit.prevTakeInd = mPrevTakeInd;
 
                     if(_aData._takes != null) {
                         foreach(AMTakeData take in _aData._takes) {
@@ -257,7 +277,8 @@ public class AMTimeline : EditorWindow {
         Event = 6,
         GOSetActive = 7,
         CameraSwitcher = 8,
-        Trigger = 9
+        Trigger = 9,
+        MateAnimator = 10
     }
 
     public static string[] TrackNames = new string[] {
@@ -270,7 +291,8 @@ public class AMTimeline : EditorWindow {
 		"Event",
         "GOSetActive",
         "Camera Switcher",
-        "Trigger"
+        "Trigger",
+        "Mate Animator"
 	};
     // skins
     public static string global_skin = "am_skin_dark";
@@ -642,6 +664,13 @@ public class AMTimeline : EditorWindow {
             return true;
         }
         return false;
+    }
+    AnimatorEditData AnimEdit(AnimatorData anim) {
+        AnimatorEditData animEdit;
+        if(!mAnimEdits.TryGetValue(anim, out animEdit)) {
+            mAnimEdits.Add(anim, animEdit = new AnimatorEditData() { currentTakeInd = -1, prevTakeInd = -1 });
+        }
+        return animEdit;
     }
     AMTakeEdit TakeEdit(AMTakeData take) {
         AMTakeEdit ret = null;
@@ -2877,7 +2906,7 @@ public class AMTimeline : EditorWindow {
             #region timeline actions
             //AudioClip audioClip = null;
             bool drawEachAction = false;
-            if(_track is AMAnimationTrack || _track is AMAudioTrack) drawEachAction = true;	// draw each action with seperate textures and buttons for these tracks
+            if(_track is AMAnimationTrack || _track is AMAnimatorMateTrack || _track is AMAudioTrack) drawEachAction = true;	// draw each action with seperate textures and buttons for these tracks
             int _startFrame = (int)curTake.startFrame;
             int _endFrame = (int)(_startFrame + numFrames - 1);
             int action_startFrame, action_endFrame, renderFrameStart, renderFrameEnd;
@@ -3015,10 +3044,10 @@ public class AMTimeline : EditorWindow {
                     //aData = (AnimatorData)GameObject.Find("AnimatorData").GetComponent("AnimatorData");
                     curTake.maintainCaches(aData);
                 }
-                if((_track is AMAudioTrack || _track is AMAnimationTrack) && _track.keys[i].getNumberOfFrames(curTake.frameRate) > -1 && (_track.keys[i].getStartFrame() + _track.keys[i].getNumberOfFrames(curTake.frameRate) <= curTake.numFrames)) {
+                if((_track is AMAudioTrack || _track is AMAnimationTrack || _track is AMAnimatorMateTrack) && _track.keys[i].getNumberOfFrames(curTake.frameRate) > -1 && (_track.keys[i].getStartFrame() + _track.keys[i].getNumberOfFrames(curTake.frameRate) <= curTake.numFrames)) {
                     //based on content length
                     action_startFrame = _track.keys[i].getStartFrame();
-                    action_endFrame = _track.keys[i].getStartFrame() + _track.keys[i].getNumberOfFrames(curTake.frameRate);
+                    action_endFrame = _track.keys[i].getStartFrame() + _track.keys[i].getNumberOfFrames(curTake.frameRate) - 1;
                     //audioClip = (_track.cache[i] as AMAudioAction).audioClip;
                     // if intersects new audio clip, then cut
                     if(i < _track.keys.Count - 1) {
@@ -3033,7 +3062,7 @@ public class AMTimeline : EditorWindow {
                     didClampBackwards = true;
                     clamped = -1;
                 }
-                else if(_track is AMAnimationTrack || _track is AMAudioTrack || _track is AMPropertyTrack || _track is AMEventTrack || _track is AMGOSetActiveTrack || _track is AMCameraSwitcherTrack || _track is AMTriggerTrack) {
+                else if(_track is AMAnimationTrack || _track is AMAudioTrack || _track is AMPropertyTrack || _track is AMEventTrack || _track is AMGOSetActiveTrack || _track is AMCameraSwitcherTrack || _track is AMTriggerTrack || _track is AMAnimatorMateTrack) {
                     // single frame tracks (clamp box to last frame) (if audio track not set, clamp)
                     action_startFrame = _track.keys[i].getStartFrame();
                     if(i < _track.keys.Count - 1) {
@@ -3087,7 +3116,7 @@ public class AMTimeline : EditorWindow {
                 rectBox = new Rect(rectLeft, rectTop, rectWidth, rectHeight);
                 #endregion
                 #region draw action
-                if(_track is AMAnimationTrack) texBox = texBoxRed;
+                if(_track is AMAnimationTrack || _track is AMAnimatorMateTrack) texBox = texBoxRed;
                 else if(_track is AMPropertyTrack) texBox = texBoxLightBlue;
                 else if(_track is AMTranslationTrack) texBox = texBoxGreen;
                 else if(_track is AMAudioTrack) texBox = texBoxPink;
@@ -3141,7 +3170,7 @@ public class AMTimeline : EditorWindow {
                 styleTxtInfo.alignment = (hideTxtInfo ? TextAnchor.MiddleLeft : TextAnchor.MiddleCenter);
                 bool isLastAction;
                 if(_track is AMPropertyTrack || _track is AMEventTrack || _track is AMGOSetActiveTrack || _track is AMCameraSwitcherTrack || _track is AMTriggerTrack) isLastAction = (i == _track.keys.Count - 1);
-                else if(_track is AMAudioTrack || _track is AMAnimationTrack) isLastAction = false;
+                else if(_track is AMAudioTrack || _track is AMAnimationTrack || _track is AMAnimatorMateTrack) isLastAction = false;
                 else isLastAction = (i == _track.keys.Count - 2);
                 if(rectBox.width > 5f) EditorGUI.DropShadowLabel(new Rect(rectBox.x, rectBox.y, rectBox.width - (!isLastAction ? current_width_frame : 0f), rectBox.height), txtInfo, styleTxtInfo);
                 // if clicked on info box, select the starting frame for action. show tooltip if text does not fit
@@ -3174,7 +3203,7 @@ public class AMTimeline : EditorWindow {
                                 if(_track.hasKeyOnFrame(last_action_startFrame)) startResizeActionFrame = last_action_startFrame;
                                 else startResizeActionFrame = -1;
                                 resizeActionFrame = action_startFrame;
-                                if(_track is AMAnimationTrack || _track is AMAudioTrack) {
+                                if(_track is AMAnimationTrack || _track is AMAnimatorMateTrack || _track is AMAudioTrack) {
                                     endResizeActionFrame = _track.getKeyFrameAfterFrame(action_startFrame, false);
                                 }
                                 else endResizeActionFrame = action_endFrame;
@@ -3444,8 +3473,7 @@ public class AMTimeline : EditorWindow {
                 // preview new position
                 ctake.previewFrame(aData, ctake.selectedFrame);
                 // save data
-                EditorUtility.SetDirty(sTrack);
-                setDirtyKeys(sTrack);
+                EditorUtility.SetDirty(aKey);
             }
             // wrap mode
             Rect rectLabelWrapMode = new Rect(0f, rectLabelAnimClip.y + rectLabelAnimClip.height + height_inspector_space, 85f, 22f);
@@ -3961,6 +3989,47 @@ public class AMTimeline : EditorWindow {
             return;
         }
         #endregion
+        #region mate animator inspector
+        if(sTrack is AMAnimatorMateTrack) {
+            AnimatorData anim = sTrack.GetTarget(aData) as AnimatorData;
+            AMAnimatorMateKey aKey = (AMAnimatorMateKey)(sTrack as AMAnimatorMateTrack).getKeyOnFrame(_frame);
+            // take
+            Rect rectLabelAnimClip = new Rect(0f, start_y, 100f, 22f);
+            GUI.Label(rectLabelAnimClip, "Take Name");
+            Rect rectObjectField = new Rect(rectLabelAnimClip.x + rectLabelAnimClip.width + 2f, rectLabelAnimClip.y + 3f, width_inspector - rectLabelAnimClip.width - margin, 16f);
+            string[] takeNames = AnimEdit(anim).GetTakeNames(anim, true);
+            int curEditInd = string.IsNullOrEmpty(aKey.take) ? -1 : System.Array.IndexOf(takeNames, aKey.take);
+            if(curEditInd == -1) curEditInd = 0;
+            int ind = EditorGUI.Popup(rectObjectField, curEditInd, takeNames);
+            if(curEditInd != ind) {
+                Undo.RecordObject(aKey, "Change Take");
+                aKey.take = ind > 0 ? takeNames[ind] : "";
+                aKey.updateDuration(sTrack, aData);
+                AMCodeView.refresh();
+                // preview new position
+                ctake.previewFrame(aData, ctake.selectedFrame);
+                // save data
+                EditorUtility.SetDirty(aKey);
+            }
+            // loop mode
+            GUI.enabled = ind > 0;
+            Rect rectLabelWrapMode = new Rect(0f, rectLabelAnimClip.y + rectLabelAnimClip.height + height_inspector_space, 85f, 22f);
+            GUI.Label(rectLabelWrapMode, "Loop");
+            Rect rectPopupWrapMode = new Rect(rectLabelWrapMode.x + rectLabelWrapMode.width, rectLabelWrapMode.y + 3f, 120f, 22f);
+            AMPlugMateAnimator.LoopType nloopmode = (AMPlugMateAnimator.LoopType)EditorGUI.EnumPopup(rectPopupWrapMode, aKey.loop);
+            if(aKey.loop != nloopmode) {
+                Undo.RecordObject(aKey, "Change Loop");
+                aKey.loop = nloopmode;
+                AMCodeView.refresh();
+                // preview new position
+                ctake.previewFrame(aData, ctake.selectedFrame);
+                // save data
+                EditorUtility.SetDirty(aKey);
+            }
+            GUI.enabled = true;
+            return;
+        }
+        #endregion
     }
 
     bool showFieldFor(Rect rect, string id, string name, AMEventData data, Type t, int level, ref float height_field) {
@@ -4099,64 +4168,7 @@ public class AMTimeline : EditorWindow {
             Rect rectObjectField = new Rect(rect.x, rectLabelField.y + rectLabelField.height + margin, rect.width, 16f);
             EditorGUIUtility.LookLikeControls();
             // field
-            if(t == typeof(Transform)) { if(data.setObject(EditorGUI.ObjectField(rectObjectField, data.val_obj, typeof(Transform), true))) saveChanges = true; }
-            else if(t == typeof(MeshFilter)) { if(data.setObject(EditorGUI.ObjectField(rectObjectField, data.val_obj, typeof(MeshFilter), true))) saveChanges = true; }
-            else if(t == typeof(TextMesh)) { if(data.setObject(EditorGUI.ObjectField(rectObjectField, data.val_obj, typeof(TextMesh), true))) saveChanges = true; }
-            else if(t == typeof(MeshRenderer)) { if(data.setObject(EditorGUI.ObjectField(rectObjectField, data.val_obj, typeof(MeshRenderer), true))) saveChanges = true; }
-            //else if(t == typeof(ParticleSystem)) { if(parameter.setObject(EditorGUI.ObjectField(rectObjectField,parameter.val_obj,typeof(ParticleSystem),true))) saveChanges = true; }
-            else if(t == typeof(TrailRenderer)) { if(data.setObject(EditorGUI.ObjectField(rectObjectField, data.val_obj, typeof(TrailRenderer), true))) saveChanges = true; }
-            else if(t == typeof(LineRenderer)) { if(data.setObject(EditorGUI.ObjectField(rectObjectField, data.val_obj, typeof(LineRenderer), true))) saveChanges = true; }
-            else if(t == typeof(LensFlare)) { if(data.setObject(EditorGUI.ObjectField(rectObjectField, data.val_obj, typeof(LensFlare), true))) saveChanges = true; }
-            // halo
-            else if(t == typeof(Projector)) { if(data.setObject(EditorGUI.ObjectField(rectObjectField, data.val_obj, typeof(Projector), true))) saveChanges = true; }
-            else if(t == typeof(Rigidbody)) { if(data.setObject(EditorGUI.ObjectField(rectObjectField, data.val_obj, typeof(Rigidbody), true))) saveChanges = true; }
-            else if(t == typeof(CharacterController)) { if(data.setObject(EditorGUI.ObjectField(rectObjectField, data.val_obj, typeof(CharacterController), true))) saveChanges = true; }
-            else if(t == typeof(BoxCollider)) { if(data.setObject(EditorGUI.ObjectField(rectObjectField, data.val_obj, typeof(BoxCollider), true))) saveChanges = true; }
-            else if(t == typeof(SphereCollider)) { if(data.setObject(EditorGUI.ObjectField(rectObjectField, data.val_obj, typeof(SphereCollider), true))) saveChanges = true; }
-            else if(t == typeof(CapsuleCollider)) { if(data.setObject(EditorGUI.ObjectField(rectObjectField, data.val_obj, typeof(CapsuleCollider), true))) saveChanges = true; }
-            else if(t == typeof(MeshCollider)) { if(data.setObject(EditorGUI.ObjectField(rectObjectField, data.val_obj, typeof(MeshCollider), true))) saveChanges = true; }
-            else if(t == typeof(WheelCollider)) { if(data.setObject(EditorGUI.ObjectField(rectObjectField, data.val_obj, typeof(WheelCollider), true))) saveChanges = true; }
-            else if(t == typeof(TerrainCollider)) { if(data.setObject(EditorGUI.ObjectField(rectObjectField, data.val_obj, typeof(TerrainCollider), true))) saveChanges = true; }
-            else if(t == typeof(InteractiveCloth)) { if(data.setObject(EditorGUI.ObjectField(rectObjectField, data.val_obj, typeof(InteractiveCloth), true))) saveChanges = true; }
-            else if(t == typeof(SkinnedCloth)) { if(data.setObject(EditorGUI.ObjectField(rectObjectField, data.val_obj, typeof(SkinnedCloth), true))) saveChanges = true; }
-            else if(t == typeof(ClothRenderer)) { if(data.setObject(EditorGUI.ObjectField(rectObjectField, data.val_obj, typeof(ClothRenderer), true))) saveChanges = true; }
-            else if(t == typeof(HingeJoint)) { if(data.setObject(EditorGUI.ObjectField(rectObjectField, data.val_obj, typeof(HingeJoint), true))) saveChanges = true; }
-            else if(t == typeof(FixedJoint)) { if(data.setObject(EditorGUI.ObjectField(rectObjectField, data.val_obj, typeof(FixedJoint), true))) saveChanges = true; }
-            else if(t == typeof(SpringJoint)) { if(data.setObject(EditorGUI.ObjectField(rectObjectField, data.val_obj, typeof(SpringJoint), true))) saveChanges = true; }
-            else if(t == typeof(CharacterJoint)) { if(data.setObject(EditorGUI.ObjectField(rectObjectField, data.val_obj, typeof(CharacterJoint), true))) saveChanges = true; }
-            else if(t == typeof(ConfigurableJoint)) { if(data.setObject(EditorGUI.ObjectField(rectObjectField, data.val_obj, typeof(ConfigurableJoint), true))) saveChanges = true; }
-            else if(t == typeof(ConstantForce)) { if(data.setObject(EditorGUI.ObjectField(rectObjectField, data.val_obj, typeof(ConstantForce), true))) saveChanges = true; }
-            //else if(t == typeof(NavMeshAgent)) { if(parameter.setObject(EditorGUI.ObjectField(rectObjectField,parameter.val_obj,typeof(NavMeshAgent),true))) saveChanges = true; }
-            //else if(t == typeof(OffMeshLink)) { if(parameter.setObject(EditorGUI.ObjectField(rectObjectField,parameter.val_obj,typeof(OffMeshLink),true))) saveChanges = true; }
-            else if(t == typeof(AudioListener)) { if(data.setObject(EditorGUI.ObjectField(rectObjectField, data.val_obj, typeof(AudioListener), true))) saveChanges = true; }
-            else if(t == typeof(AudioSource)) { if(data.setObject(EditorGUI.ObjectField(rectObjectField, data.val_obj, typeof(AudioSource), true))) saveChanges = true; }
-            else if(t == typeof(AudioReverbZone)) { if(data.setObject(EditorGUI.ObjectField(rectObjectField, data.val_obj, typeof(AudioReverbZone), true))) saveChanges = true; }
-            else if(t == typeof(AudioLowPassFilter)) { if(data.setObject(EditorGUI.ObjectField(rectObjectField, data.val_obj, typeof(AudioLowPassFilter), true))) saveChanges = true; }
-            else if(t == typeof(AudioHighPassFilter)) { if(data.setObject(EditorGUI.ObjectField(rectObjectField, data.val_obj, typeof(AudioHighPassFilter), true))) saveChanges = true; }
-            else if(t == typeof(AudioEchoFilter)) { if(data.setObject(EditorGUI.ObjectField(rectObjectField, data.val_obj, typeof(AudioEchoFilter), true))) saveChanges = true; }
-            else if(t == typeof(AudioDistortionFilter)) { if(data.setObject(EditorGUI.ObjectField(rectObjectField, data.val_obj, typeof(AudioDistortionFilter), true))) saveChanges = true; }
-            else if(t == typeof(AudioReverbFilter)) { if(data.setObject(EditorGUI.ObjectField(rectObjectField, data.val_obj, typeof(AudioReverbFilter), true))) saveChanges = true; }
-            else if(t == typeof(AudioChorusFilter)) { if(data.setObject(EditorGUI.ObjectField(rectObjectField, data.val_obj, typeof(AudioChorusFilter), true))) saveChanges = true; }
-            else if(t == typeof(Camera)) { if(data.setObject(EditorGUI.ObjectField(rectObjectField, data.val_obj, typeof(Camera), true))) saveChanges = true; }
-            else if(t == typeof(Skybox)) { if(data.setObject(EditorGUI.ObjectField(rectObjectField, data.val_obj, typeof(Skybox), true))) saveChanges = true; }
-            // flare layer
-            else if(t == typeof(GUILayer)) { if(data.setObject(EditorGUI.ObjectField(rectObjectField, data.val_obj, typeof(GUILayer), true))) saveChanges = true; }
-            else if(t == typeof(Light)) { if(data.setObject(EditorGUI.ObjectField(rectObjectField, data.val_obj, typeof(Light), true))) saveChanges = true; }
-            //else if(t == typeof(LightProbeGroup)) { if(parameter.setObject(EditorGUI.ObjectField(rectObjectField,parameter.val_obj,typeof(LightProbeGroup),true))) saveChanges = true; }
-            else if(t == typeof(OcclusionArea)) { if(data.setObject(EditorGUI.ObjectField(rectObjectField, data.val_obj, typeof(OcclusionArea), true))) saveChanges = true; }
-            //else if(t == typeof(OcclusionPortal)) { if(parameter.setObject(EditorGUI.ObjectField(rectObjectField,parameter.val_obj,typeof(OcclusionPortal),true))) saveChanges = true; }
-            //else if(t == typeof(LODGroup)) { if(parameter.setObject(EditorGUI.ObjectField(rectObjectField,parameter.val_obj,typeof(LODGroup),true))) saveChanges = true; }
-            else if(t == typeof(GUITexture)) { if(data.setObject(EditorGUI.ObjectField(rectObjectField, data.val_obj, typeof(GUITexture), true))) saveChanges = true; }
-            else if(t == typeof(GUIText)) { if(data.setObject(EditorGUI.ObjectField(rectObjectField, data.val_obj, typeof(GUIText), true))) saveChanges = true; }
-            else if(t == typeof(Animation)) { if(data.setObject(EditorGUI.ObjectField(rectObjectField, data.val_obj, typeof(Animation), true))) saveChanges = true; }
-            else if(t == typeof(NetworkView)) { if(data.setObject(EditorGUI.ObjectField(rectObjectField, data.val_obj, typeof(NetworkView), true))) saveChanges = true; }
-            // wind zone
-            else {
-
-                if(t.BaseType == typeof(Behaviour)) { if(data.setObject(EditorGUI.ObjectField(rectObjectField, data.val_obj, typeof(Behaviour), true))) saveChanges = true; }
-                else { if(data.setObject(EditorGUI.ObjectField(rectObjectField, data.val_obj, typeof(Component), true))) saveChanges = true; }
-
-            }
+            if(data.setObject(EditorGUI.ObjectField(rectObjectField, data.val_obj, t, true))) saveChanges = true;
             GUI.skin = skin;
             EditorGUIUtility.LookLikeControls();
             //return;
@@ -4226,7 +4238,7 @@ public class AMTimeline : EditorWindow {
             }
             else if(!amTrack.isTargetEqual(aData, nobj)) {
                 Undo.RecordObject(amTrack, "Set GameObject");
-                amTrack.SetTarget(aData, nobj.transform);
+                amTrack.SetTarget(aData, nobj ? nobj.transform : null);
                 EditorUtility.SetDirty(amTrack);
             }
         }
@@ -4236,7 +4248,7 @@ public class AMTimeline : EditorWindow {
             if(!amTrack.isTargetEqual(aData, nsrc)) {
                 Undo.RecordObject(amTrack, "Set Audio Source");
                 if(nsrc != null) nsrc.playOnAwake = false;
-                amTrack.SetTarget(aData, nsrc.transform);
+                amTrack.SetTarget(aData, nsrc ? nsrc.transform : null);
                 EditorUtility.SetDirty(amTrack);
             }
         }
@@ -4269,24 +4281,36 @@ public class AMTimeline : EditorWindow {
                         else {
                             //delete keys that require component
                             List<AMKey> nkeys = new List<AMKey>(amTrack.keys.Count);
-                            foreach(AMKey key in amTrack.keys) {
-                                if(ngo.GetComponent(key.GetRequiredComponent()) != null)
-                                    nkeys.Add(key);
-                                else
-                                    Undo.DestroyObjectImmediate(key);
+                            if(ngo) {
+                                foreach(AMKey key in amTrack.keys) {
+                                    if(ngo.GetComponent(key.GetRequiredComponent()) != null)
+                                        nkeys.Add(key);
+                                    else
+                                        Undo.DestroyObjectImmediate(key);
+                                }
                             }
 
                             amTrack.keys = nkeys;
                         }
                     }
 
-                    amTrack.SetTarget(aData, ngo.transform);
+                    amTrack.SetTarget(aData, ngo ? ngo.transform : null);
 
                     amTrack.updateCache(aData);
                     AMCodeView.refresh();
 
                     EditorUtility.SetDirty(amTrack);
                 }
+            }
+        }
+        //Mate Animator
+        else if(amTrack is AMAnimatorMateTrack) {
+            AnimatorData anim = (AnimatorData)EditorGUI.ObjectField(rect, amTrack.GetTarget(aData), typeof(AnimatorData), true);
+            if(!amTrack.isTargetEqual(aData, anim)) {
+                //TODO: make sure this animator does not have any animator tracks that reference our current animator
+                Undo.RecordObject(amTrack, "Set AnimatorData");
+                amTrack.SetTarget(aData, anim ? anim.transform : null);
+                EditorUtility.SetDirty(amTrack);
             }
         }
 
@@ -5489,6 +5513,12 @@ public class AMTimeline : EditorWindow {
             AMTriggerKey tkey = _key as AMTriggerKey;
             return string.Format("\"{0}\", {1}, {2}", tkey.valueString, tkey.valueInt, tkey.valueFloat);
             #endregion
+            #region mate animator
+        }
+        else if(_key is AMAnimatorMateKey) {
+            AMAnimatorMateKey akey = _key as AMAnimatorMateKey;
+            return string.IsNullOrEmpty(akey.take) ? "" : string.Format("\"{0}\" ({1})", akey.take, akey.loop);
+            #endregion
         }
 
         return "Unknown";
@@ -5522,6 +5552,7 @@ public class AMTimeline : EditorWindow {
         else if(_track is AMGOSetActiveTrack) return texIconProperty;
         else if(_track is AMCameraSwitcherTrack) return texIconCameraSwitcher;
         else if(_track is AMTriggerTrack) return texIconEvent;
+        else if(_track is AMAnimatorMateTrack) return texIconAnimation;
 
         Debug.LogWarning("Animator: Icon texture not found for track " + _track.getTrackType());
         return null;
@@ -5669,6 +5700,10 @@ public class AMTimeline : EditorWindow {
             case (int)Track.Trigger:
                 currentTake.addTrack(TakeEditCurrent().selectedGroup, aData, object_window ? object_window.transform : null,
                     addCompUndo ? Undo.AddComponent<AMTriggerTrack>(holder) : holder.AddComponent<AMTriggerTrack>());
+                break;
+            case (int)Track.MateAnimator:
+                currentTake.addTrack(TakeEditCurrent().selectedGroup, aData, object_window ? object_window.transform : null,
+                    addCompUndo ? Undo.AddComponent<AMAnimatorMateTrack>(holder) : holder.AddComponent<AMAnimatorMateTrack>());
                 break;
             default:
                 int combo_index = (int)trackType - 100;
@@ -5951,6 +5986,17 @@ public class AMTimeline : EditorWindow {
         else if(amTrack is AMTriggerTrack) {
             (amTrack as AMTriggerTrack).addKey(aData, addCall, _frame);
         }
+        else if(amTrack is AMAnimatorMateTrack) {
+            // animation
+            AnimatorData anim = amTrack.GetTarget(aData) as AnimatorData;
+            // if missing object, return
+            if(!anim) {
+                showAlertMissingObjectType("AnimatorData");
+                return;
+            }
+            // add key to animation track
+            (amTrack as AMAnimatorMateTrack).addKey(aData, addCall, _frame);
+        }
 
         AMTrack selectedTrack = TakeEditCurrent().getSelectedTrack(currentTake);
         if(selectedTrack) {
@@ -6042,29 +6088,30 @@ public class AMTimeline : EditorWindow {
         menu.AddItem(new GUIContent("GO Active"), false, addTrackFromMenu, (int)Track.GOSetActive);
         menu.AddItem(new GUIContent("Camera Switcher"), false, addTrackFromMenu, (int)Track.CameraSwitcher);
         menu.AddItem(new GUIContent("Trigger"), false, addTrackFromMenu, (int)Track.Trigger);
+        menu.AddItem(new GUIContent("Mate Animator"), false, addTrackFromMenu, (int)Track.MateAnimator);
     }
     void buildAddTrackMenu_Drag() {
         bool hasTransform = true;
         bool hasAnimation = true;
         bool hasAudioSource = true;
         bool hasCamera = true;
+        bool hasAnimatorData = true;
+        AnimatorData animDat;
 
         foreach(GameObject g in objects_window) {
             // break loop when all variables are false
             if(!hasTransform && !hasAnimation && !hasAudioSource && !hasCamera) break;
 
-            if(hasTransform && !g.GetComponent(typeof(Transform))) {
+            if(hasTransform && !g.GetComponent(typeof(Transform)))
                 hasTransform = false;
-            }
-            if(hasAnimation && !g.GetComponent(typeof(Animation))) {
+            if(hasAnimation && !g.GetComponent(typeof(Animation)))
                 hasAnimation = false;
-            }
-            if(hasAudioSource && !g.GetComponent(typeof(AudioSource))) {
+            if(hasAudioSource && !g.GetComponent(typeof(AudioSource)))
                 hasAudioSource = false;
-            }
-            if(hasCamera && !g.GetComponent(typeof(Camera))) {
+            if(hasCamera && !g.GetComponent(typeof(Camera)))
                 hasCamera = false;
-            }
+            if(hasAnimatorData && ((animDat = g.GetComponent<AnimatorData>()) == null || animDat == aData))
+                hasAnimatorData = false;
         }
         // add track menu
         menu_drag = new GenericMenu();
@@ -6093,6 +6140,8 @@ public class AMTimeline : EditorWindow {
         // Camera Switcher
         if(hasCamera && !currentTake.cameraSwitcher) menu_drag.AddItem(new GUIContent("Camera Switcher"), false, addTrackFromMenu, (int)Track.CameraSwitcher);
         else menu_drag.AddDisabledItem(new GUIContent("Camera Switcher"));
+        if(hasAnimatorData) menu_drag.AddItem(new GUIContent("Mate Animation"), false, addTrackFromMenu, (int)Track.MateAnimator);
+        else menu_drag.AddDisabledItem(new GUIContent("Mate Animation"));
 
         if(oData.quickAdd_Combos.Count > 0) {
             // multiple tracks
@@ -6104,13 +6153,13 @@ public class AMTimeline : EditorWindow {
                     combo_name += TrackNames[combo[i]] + " "+(combo[i] == (int)Track.CameraSwitcher && currentTake.cameraSwitcher ? "(Key) " : "");
                     if(i < combo.Count - 1) combo_name += "+ ";
                 }
-                if(canQuickAddCombo(combo, hasTransform, hasAnimation, hasAudioSource, hasCamera)) menu_drag.AddItem(new GUIContent(combo_name), false, addTrackFromMenu, 100 + oData.quickAdd_Combos.IndexOf(combo));
+                if(canQuickAddCombo(combo, hasTransform, hasAnimation, hasAudioSource, hasCamera, hasAnimatorData)) menu_drag.AddItem(new GUIContent(combo_name), false, addTrackFromMenu, 100 + oData.quickAdd_Combos.IndexOf(combo));
                 else menu_drag.AddDisabledItem(new GUIContent(combo_name));
             }
         }
 
     }
-    bool canQuickAddCombo(List<int> combo, bool hasTransform, bool hasAnimation, bool hasAudioSource, bool hasCamera) {
+    bool canQuickAddCombo(List<int> combo, bool hasTransform, bool hasAnimation, bool hasAudioSource, bool hasCamera, bool hasAnimatorData) {
         foreach(int _track in combo) {
             if(!hasTransform && (_track == (int)Track.Translation || _track == (int)Track.Rotation || _track == (int)Track.Orientation))
                 return false;
@@ -6119,6 +6168,8 @@ public class AMTimeline : EditorWindow {
             else if(!hasAudioSource && _track == (int)Track.Audio)
                 return false;
             else if(!hasCamera && _track == (int)Track.CameraSwitcher)
+                return false;
+            else if(!hasAnimatorData && _track == (int)Track.MateAnimator)
                 return false;
         }
         return true;

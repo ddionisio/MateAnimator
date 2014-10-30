@@ -188,6 +188,30 @@ public class AMEventData {
         return null;
     }
 
+    Type GetTypeFrom(string TypeName) {
+
+        // Try Type.GetType() first. This will work with types defined
+        // by the Mono runtime, etc.
+        var type = Type.GetType(TypeName);
+
+        // If it worked, then we're done here
+        if(type != null)
+            return type;
+
+        // Get the name of the assembly (Assumption is that we are using
+        // fully-qualified type names)
+        var assemblyName = TypeName.Substring(0, TypeName.IndexOf('.'));
+
+        // Attempt to load the indicated Assembly
+        var assembly = System.Reflection.Assembly.LoadWithPartialName(assemblyName);
+        if(assembly == null)
+            return null;
+
+        // Ask that assembly to return the proper Type
+        return assembly.GetType(TypeName);
+
+    }
+
     public virtual Type getParamType() {
         Type ret;
 
@@ -204,7 +228,7 @@ public class AMEventData {
         else if(valueType == (int)ValueType.String) ret = typeof(string);
         else if(valueType == (int)ValueType.Char) ret = typeof(char);
         else if(valueType == (int)ValueType.Object || valueType == (int)ValueType.Enum) {
-            ret = System.Type.GetType(val_string);
+            ret = GetTypeFrom(val_string);
             if(ret == null) {
                 try {
                     object obj = System.Activator.CreateInstance("UnityEngine.dll", val_string).Unwrap();
