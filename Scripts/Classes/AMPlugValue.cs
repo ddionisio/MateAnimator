@@ -150,8 +150,10 @@ public class AMPlugMateAnimator : ABSTweenPlugin {
     AnimatorData anim;
     AMTakeData take;
     LoopType loopMode;
-    int lastFrame;
+    int endFrame;
     bool started;
+
+    float prevFrame;
 
     protected override object startVal { get { return _startVal; } set { _startVal = value; } }
 
@@ -163,7 +165,7 @@ public class AMPlugMateAnimator : ABSTweenPlugin {
         anim = aAnim;
         take = aTake;
         loopMode = aLoopMode;
-        lastFrame = take.getLastFrame();
+        endFrame = take.getLastFrame();
     }
 
     protected override float GetSpeedBasedDuration(float p_speed) {
@@ -178,26 +180,27 @@ public class AMPlugMateAnimator : ABSTweenPlugin {
     protected override void SetIncrementalRestart() { }
 
     protected override void DoUpdate(float p_totElapsed) {
-        if(!started) { started = true; return; } //TODO: for some reason DoUpdate is called with end elapse during startup
+        if(!started) { started = true; prevFrame = 0;  return; } //TODO: for some reason DoUpdate is called with end elapse during startup
 
         float frame = p_totElapsed*take.frameRate;
 
         switch(loopMode) {
             case LoopType.Restart:
-                frame %= (float)lastFrame;
+                frame %= (float)endFrame;
                 break;
             case LoopType.Yoyo:
-                int count = Mathf.FloorToInt(frame)/lastFrame;
+                int count = Mathf.FloorToInt(frame)/endFrame;
                 if(count % 2 == 0)
-                    frame %= (float)lastFrame;
+                    frame %= (float)endFrame;
                 else {
-                    float flf = (float)lastFrame;
-                    frame = flf - (frame%lastFrame);
+                    float flf = (float)endFrame;
+                    frame = flf - (frame%endFrame);
                 }
                 break;
         }
 
-        take.previewFrame(anim, frame);
+        take.previewFrameRuntime(anim, frame, frame > prevFrame);
+        prevFrame = frame;
     }
 
     protected override void SetValue(object p_value) { }

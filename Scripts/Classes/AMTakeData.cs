@@ -600,6 +600,24 @@ public class AMTakeData {
 		}
 	}
 
+    public void previewFrameRuntime(AMITarget itarget, float _frame, bool playAudio) {
+        if(!mTracksSorted) {
+            trackValues.Sort(TrackCompare);
+            mTracksSorted = true;
+        }
+
+        renderCameraSwitcherStill(itarget, _frame);
+
+        foreach(AMTrack track in trackValues) {
+            if(playAudio) {
+                AMAudioTrack audioTrack = track as AMAudioTrack;
+                if(audioTrack) { audioTrack.sampleAudio(itarget, _frame, 1f, frameRate, false); continue; }
+            }
+
+            track.previewFrame(itarget, _frame, frameRate);
+        }
+    }
+
     /// <summary>
     /// Only preview tracks that have starting frame > _frame
     /// </summary>
@@ -826,7 +844,7 @@ public class AMTakeData {
 	public void sampleAudio(AMITarget itarget, float frame, float speed) {
 		foreach(AMTrack track in trackValues) {
 			if(!(track is AMAudioTrack)) continue;
-			(track as AMAudioTrack).sampleAudio(itarget, frame, speed, frameRate);
+			(track as AMAudioTrack).sampleAudio(itarget, frame, speed, frameRate, true);
 		}
 	}
 	

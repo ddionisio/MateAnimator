@@ -57,23 +57,26 @@ public class AMAudioTrack : AMTrack {
     }
 
     // sample audio between frames
-	public void sampleAudio(AMITarget target, float frame, float speed, int frameRate) {
+	public void sampleAudio(AMITarget target, float frame, float speed, int frameRate, bool forcePlay) {
 		AudioSource src = GetTarget(target) as AudioSource;
 		if(!src) return;
         float time;
         for(int i = keys.Count - 1; i >= 0; i--) {
-            if(!(keys[i] as AMAudioKey).audioClip) return;
-            if(keys[i].frame <= frame) {
+            AMAudioKey key = keys[i] as AMAudioKey;
+            if(!key.audioClip) return;
+            if(key.frame <= frame) {
+                if(!forcePlay && src.isPlaying && src.clip == key.audioClip) return;
+
                 // get time
-                time = ((frame - keys[i].frame) / frameRate);
+                time = ((frame - key.frame) / frameRate);
                 // if loop is set to false and is beyond length, then return
-                if(!(keys[i] as AMAudioKey).loop && time > (keys[i] as AMAudioKey).audioClip.length) return;
+                if(!key.loop && time > key.audioClip.length) return;
                 // find time based on length
-                time = time % (keys[i] as AMAudioKey).audioClip.length;
-				if(src.isPlaying) src.Stop();
+                time = time % key.audioClip.length;
+                src.Stop();
 				src.clip = null;
-				src.clip = (keys[i] as AMAudioKey).audioClip;
-				src.loop = (keys[i] as AMAudioKey).loop;
+                src.clip = key.audioClip;
+                src.loop = key.loop;
 				src.time = time;
 				src.pitch = speed;
 

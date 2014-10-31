@@ -203,7 +203,7 @@ public class AMEventData {
         var assemblyName = TypeName.Substring(0, TypeName.IndexOf('.'));
 
         // Attempt to load the indicated Assembly
-        var assembly = System.Reflection.Assembly.LoadWithPartialName(assemblyName);
+        var assembly = System.Reflection.Assembly.Load(assemblyName);
         if(assembly == null)
             return null;
 
