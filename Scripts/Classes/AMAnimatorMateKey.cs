@@ -55,7 +55,16 @@ public class AMAnimatorMateKey : AMKey {
 
         AMTakeData takeDat = anim._takes[takeInd];
 
-        float _duration = loop == AMPlugMateAnimator.LoopType.None ? duration : ((seq.take.getLastFrame()-frame)+1)/(float)frameRate;
+        int endFrame;
+        if(index < track.keys.Count-1) {
+            AMAnimatorMateKey nextKey = track.keys[index+1] as AMAnimatorMateKey;
+            endFrame = nextKey.frame;
+        }
+        else
+            endFrame = seq.take.getLastFrame();
+
+        float _endDuration = ((endFrame-frame)+1)/(float)frameRate;
+        float _duration = loop == AMPlugMateAnimator.LoopType.None ? Mathf.Min(duration, _endDuration) : _endDuration;
 
         Holoville.HOTween.Plugins.Core.ABSTweenPlugin plug;
 

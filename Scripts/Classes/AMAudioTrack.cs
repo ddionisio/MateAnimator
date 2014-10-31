@@ -55,22 +55,22 @@ public class AMAudioTrack : AMTrack {
         // update cache
 		updateCache(itarget);
     }
-
+    
     // sample audio between frames
-	public void sampleAudio(AMITarget target, float frame, float speed, int frameRate, bool forcePlay) {
+    public AudioSource sampleAudio(AMITarget target, float frame, float speed, int frameRate, bool forcePlay) {
 		AudioSource src = GetTarget(target) as AudioSource;
-		if(!src) return;
+		if(!src) return null;
         float time;
         for(int i = keys.Count - 1; i >= 0; i--) {
             AMAudioKey key = keys[i] as AMAudioKey;
-            if(!key.audioClip) return;
+            if(!key.audioClip) break;
             if(key.frame <= frame) {
-                if(!forcePlay && src.isPlaying && src.clip == key.audioClip) return;
+                if(!forcePlay && src.isPlaying && src.clip == key.audioClip) break;
 
                 // get time
                 time = ((frame - key.frame) / frameRate);
                 // if loop is set to false and is beyond length, then return
-                if(!key.loop && time > key.audioClip.length) return;
+                if(!key.loop && time > key.audioClip.length) break;
                 // find time based on length
                 time = time % key.audioClip.length;
                 src.Stop();
@@ -82,9 +82,11 @@ public class AMAudioTrack : AMTrack {
 
 				src.Play();
 
-                return;
+                break;
             }
         }
+
+        return src;
     }
     // sample audio at frame
 	public void sampleAudioAtFrame(AMITarget target, int frame, float speed, int frameRate) {

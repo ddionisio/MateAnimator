@@ -22,6 +22,22 @@ public class AMAnimatorMateTrack : AMTrack {
         return "AnimatorData";
     }
 
+    public void stopAudio(AMITarget itarget) {
+        AnimatorData anim = GetTarget(itarget) as AnimatorData;
+        if(anim) {
+            foreach(AMAnimatorMateKey key in keys) {
+                if(!string.IsNullOrEmpty(key.take)) {
+                    int takeInd = anim.GetTakeIndex(key.take);
+                    if(takeInd == -1)
+                        return;
+
+                    AMTakeData take = anim._takes[takeInd];
+                    take.stopAudio(anim);
+                }
+            }
+        }
+    }
+
     // add a new key
     public void addKey(AMITarget itarget, OnAddKey addCall, int _frame) {
         foreach(AMAnimatorMateKey key in keys) {

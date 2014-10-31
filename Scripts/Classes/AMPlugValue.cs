@@ -199,7 +199,9 @@ public class AMPlugMateAnimator : ABSTweenPlugin {
                 break;
         }
 
-        take.previewFrameRuntime(anim, frame, frame > prevFrame);
+        //only play audio when moving forward
+        //remove any audio loops if we reached the end
+        take.previewFrameRuntime(anim, frame, frame > prevFrame, (tweenObj.isReversed && p_totElapsed <= 0.0f) || (p_totElapsed >= _duration));
         prevFrame = frame;
     }
 
