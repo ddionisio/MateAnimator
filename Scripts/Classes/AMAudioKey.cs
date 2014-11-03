@@ -27,11 +27,6 @@ public class AMAudioKey : AMKey {
     public override void build(AMSequence seq, AMTrack track, int index, UnityEngine.Object target) {
         float sTime = getWaitTime(seq.take.frameRate, 0.0f);
 
-        //if loop, get the last frame of the take and use that as the duration
-        //float f = (float)seq.take.frameRate;
-        //float eTime = loop ? (float)seq.take.getLastFrame()/f : sTime + (float)getNumberOfFrames(seq.take.frameRate)/f;
-
-		//seq.Insert(new AMActionAudioPlay(sTime, eTime, target as AudioSource, audioClip, loop, oneShot));
 		seq.sequence.InsertCallback(sTime, OnMethodCallbackParams, target as AudioSource);
     }
 

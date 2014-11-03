@@ -572,8 +572,7 @@ public class AMTakeData {
         return t1.order - t2.order;
     }
 
-    // preview a frame
-    public void previewFrame(AMITarget itarget, float _frame, bool orientationOnly = false, bool renderStill = true) {
+    void sortTracks() {
 #if UNITY_EDITOR
         if(!Application.isPlaying)
             mTracksSorted = false;
@@ -583,6 +582,11 @@ public class AMTakeData {
             trackValues.Sort(TrackCompare);
             mTracksSorted = true;
         }
+    }
+
+    // preview a frame
+    public void previewFrame(AMITarget itarget, float _frame, bool orientationOnly = false, bool renderStill = true) {
+        sortTracks();
 
         // render camera switcher still texture if necessary
         if(renderStill) renderCameraSwitcherStill(itarget, _frame);
@@ -601,10 +605,7 @@ public class AMTakeData {
     }
 
     public void previewFrameRuntime(AMITarget itarget, float _frame, bool playAudio, bool noAudioLoop) {
-        if(!mTracksSorted) {
-            trackValues.Sort(TrackCompare);
-            mTracksSorted = true;
-        }
+        sortTracks();
 
         renderCameraSwitcherStill(itarget, _frame);
 
@@ -612,7 +613,7 @@ public class AMTakeData {
             AMAudioTrack audioTrack = track as AMAudioTrack;
             if(audioTrack) {
                 if(playAudio) {
-                    AudioSource src = audioTrack.sampleAudio(itarget, _frame, 1f, frameRate, false);
+                    AudioSource src = audioTrack.sampleAudioAtFrame(itarget, Mathf.FloorToInt(_frame), 1f, frameRate);
                     if(src && noAudioLoop)
                         src.loop = false;
                 }
@@ -628,14 +629,18 @@ public class AMTakeData {
     /// Only preview tracks that have starting frame > _frame
     /// </summary>
     public void previewFrameStart(AMITarget itarget, float _frame) {
-        if(!mTracksSorted) {
-            trackValues.Sort(TrackCompare);
-            mTracksSorted = true;
-        }
+        sortTracks();
 
         foreach(AMTrack track in trackValues) {
-            if(track.keys.Count > 0 && (float)track.keys[0].getStartFrame() > _frame) {
-                track.previewFrame(itarget, _frame, frameRate);
+            if(track.keys.Count > 0) {
+                if((float)track.keys[0].getStartFrame() > _frame)
+                    track.previewFrame(itarget, _frame, frameRate);
+                else if(_frame > 0) {
+                    //special case for audio when playing at a particular frame
+                    AMAudioTrack audioTrack = track as AMAudioTrack;
+                    if(audioTrack)
+                        audioTrack.sampleAudio(itarget, _frame, 1.0f, frameRate, false);
+                }
             }
         }
     }
@@ -722,8 +727,11 @@ public class AMTakeData {
 
     public void sampleAudioAtFrame(AMITarget itarget, int frame, float speed) {
         foreach(AMTrack track in trackValues) {
-            if(!(track is AMAudioTrack)) continue;
-            (track as AMAudioTrack).sampleAudioAtFrame(itarget, frame, speed, frameRate);
+            AMAudioTrack audioTrack = track as AMAudioTrack;
+            if(audioTrack) { audioTrack.sampleAudioAtFrame(itarget, frame, speed, frameRate); continue; }
+
+            AMAnimatorMateTrack mateAnimTrack = track as AMAnimatorMateTrack;
+            if(mateAnimTrack) { mateAnimTrack.sampleAudioAtFrame(itarget, frame, speed, frameRate); continue; }
         }
     }
 
@@ -847,10 +855,23 @@ public class AMTakeData {
             track.maintainTrack(itarget);
     }
 
-    public void sampleAudio(AMITarget itarget, float frame, float speed) {
+    public void sampleAudio(AMITarget itarget, float frame, float speed, bool playOneShots) {
         foreach(AMTrack track in trackValues) {
-            if(!(track is AMAudioTrack)) continue;
-            (track as AMAudioTrack).sampleAudio(itarget, frame, speed, frameRate, true);
+            AMAudioTrack audioTrack = track as AMAudioTrack;
+            if(audioTrack) { audioTrack.sampleAudio(itarget, frame, speed, frameRate, playOneShots); continue; }
+
+            AMAnimatorMateTrack mateAnimTrack = track as AMAnimatorMateTrack;
+            if(mateAnimTrack) { mateAnimTrack.sampleAudio(itarget, frame, speed, frameRate, playOneShots); continue; }
+        }
+    }
+
+    public void endAudioLoops(AMITarget itarget) {
+        foreach(AMTrack track in trackValues) {
+            AMAudioTrack audioTrack = track as AMAudioTrack;
+            if(audioTrack) { audioTrack.endAudioLoop(itarget); continue; }
+
+            AMAnimatorMateTrack mateAnimTrack = track as AMAnimatorMateTrack;
+            if(mateAnimTrack) { mateAnimTrack.endAudioLoops(itarget); continue; }
         }
     }
 

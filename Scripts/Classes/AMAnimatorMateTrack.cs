@@ -22,6 +22,72 @@ public class AMAnimatorMateTrack : AMTrack {
         return "AnimatorData";
     }
 
+    /// <summary>
+    /// Called via AMTakeData's sampleAudioAtFrame
+    /// </summary>
+    public void sampleAudioAtFrame(AMITarget itarget, int frame, float speed, int frameRate) {
+        AnimatorData anim = GetTarget(itarget) as AnimatorData;
+        if(anim) {
+            for(int i = keys.Count - 1; i >= 0; i--) {
+                if(keys[i].frame <= frame) {
+                    AMAnimatorMateKey key = keys[i] as AMAnimatorMateKey;
+                    int takeInd = anim.GetTakeIndex(key.take);
+                    if(takeInd != -1) {
+                        AMTakeData take = anim._takes[takeInd];
+                        int takeFrame = Mathf.FloorToInt(((float)frame/frameRate)*(float)take.frameRate);
+                        take.sampleAudioAtFrame(anim, takeFrame, speed);
+                    }
+                    else if(i > 0) {
+                        //null take, stop audio from previous take
+                        takeInd = anim.GetTakeIndex(((AMAnimatorMateKey)keys[i-1]).take);
+                        if(takeInd != -1) {
+                            AMTakeData take = anim._takes[takeInd];
+                            take.endAudioLoops(anim);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// Called via AMTakeData's sampleAudio
+    /// </summary>
+    public void sampleAudio(AMITarget itarget, float frame, float speed, int frameRate, bool playOneShots) {
+        AnimatorData anim = GetTarget(itarget) as AnimatorData;
+        if(anim) {
+            for(int i = keys.Count - 1; i >= 0; i--) {
+                if(keys[i].frame <= frame) {
+                    AMAnimatorMateKey key = keys[i] as AMAnimatorMateKey;
+
+                    int takeInd = anim.GetTakeIndex(key.take);
+                    if(takeInd != -1) {
+                        AMTakeData take = anim._takes[takeInd];
+                        float takeFrame = (frame/frameRate)*(float)take.frameRate;
+                        take.sampleAudio(anim, takeFrame, speed, playOneShots);
+                    }
+                    break;
+                }
+            }
+        }
+    }
+
+    public void endAudioLoops(AMITarget itarget) {
+        AnimatorData anim = GetTarget(itarget) as AnimatorData;
+        if(anim) {
+            foreach(AMAnimatorMateKey key in keys) {
+                if(!string.IsNullOrEmpty(key.take)) {
+                    int takeInd = anim.GetTakeIndex(key.take);
+                    if(takeInd == -1)
+                        return;
+
+                    AMTakeData take = anim._takes[takeInd];
+                    take.endAudioLoops(anim);
+                }
+            }
+        }
+    }
+
     public void stopAudio(AMITarget itarget) {
         AnimatorData anim = GetTarget(itarget) as AnimatorData;
         if(anim) {

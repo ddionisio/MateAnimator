@@ -9,6 +9,7 @@ public class AMAudioTrack : AMTrack {
     AudioSource audioSource;
 
     bool paused;
+    int lastSampleAtFrame = -1;
 
 	protected override void SetSerializeObject(UnityEngine.Object obj) {
 		audioSource = obj as AudioSource;
@@ -57,60 +58,85 @@ public class AMAudioTrack : AMTrack {
     }
     
     // sample audio between frames
-    public AudioSource sampleAudio(AMITarget target, float frame, float speed, int frameRate, bool forcePlay) {
+    public void sampleAudio(AMITarget target, float frame, float speed, int frameRate, bool playOneShots) {
 		AudioSource src = GetTarget(target) as AudioSource;
-		if(!src) return null;
+		if(!src) return;
         float time;
         for(int i = keys.Count - 1; i >= 0; i--) {
             AMAudioKey key = keys[i] as AMAudioKey;
             if(!key.audioClip) break;
             if(key.frame <= frame) {
-                if(!forcePlay && src.isPlaying && src.clip == key.audioClip) break;
+                if(key.oneShot) { //don't allow one-shot when sampling between frames
+                    if(playOneShots && key.frame == Mathf.FloorToInt(frame)) { src.PlayOneShot(key.audioClip); }
+                }
+                else {
+                    // get time
+                    time = ((frame - key.frame) / frameRate);
+                    // if loop is set to false and is beyond length, then return
+                    if(!key.loop && time > key.audioClip.length) break;
 
-                // get time
-                time = ((frame - key.frame) / frameRate);
-                // if loop is set to false and is beyond length, then return
-                if(!key.loop && time > key.audioClip.length) break;
-                // find time based on length
-                time = time % key.audioClip.length;
-                src.Stop();
-				src.clip = null;
-                src.clip = key.audioClip;
-                src.loop = key.loop;
-				src.time = time;
-				src.pitch = speed;
+                    if(src.isPlaying && src.clip != key.audioClip) src.Stop();
 
-				src.Play();
+                    // find time based on length
+                    time = time % key.audioClip.length;
+                
+                    src.clip = key.audioClip;
+                    src.loop = key.loop;
+				    src.time = time;
+				    src.pitch = speed;
 
+				    src.Play();
+                }
+                break;
+            }
+        }
+    }
+    // sample audio at frame
+    public AudioSource sampleAudioAtFrame(AMITarget target, int frame, float speed, int frameRate) {
+		AudioSource src = GetTarget(target) as AudioSource;
+		if(!src) return null;
+
+        for(int i = keys.Count - 1; i >= 0; i--) {
+            if(keys[i].frame == frame && lastSampleAtFrame != frame) {
+                lastSampleAtFrame = frame;
+
+                AMAudioKey ak = keys[i] as AMAudioKey;
+
+                src.pitch = speed;
+
+                if(ak.oneShot) {
+                    src.PlayOneShot(ak.audioClip);
+                    src = null;
+                }
+                else {
+                    if(src.isPlaying) {
+                        if(src.clip == ak.audioClip) break;
+                        src.Stop();
+                    }
+                    src.clip = ak.audioClip;
+                    src.time = 0f;
+                    src.loop = ak.loop;
+                    src.Play();
+                }
                 break;
             }
         }
 
         return src;
     }
-    // sample audio at frame
-	public void sampleAudioAtFrame(AMITarget target, int frame, float speed, int frameRate) {
-		AudioSource src = GetTarget(target) as AudioSource;
-		if(!src) return;
 
-        for(int i = keys.Count - 1; i >= 0; i--) {
-            if(keys[i].frame == frame) {
-				if(src.isPlaying) src.Stop();
-				src.clip = null;
-				src.clip = (keys[i] as AMAudioKey).audioClip;
-				src.time = 0f;
-				src.loop = (keys[i] as AMAudioKey).loop;
-				src.pitch = speed;
-				src.Play();
-                return;
-            }
-        }
+    public void endAudioLoop(AMITarget target) {
+        AudioSource src = GetTarget(target) as AudioSource;
+        if(!src) return;
+        src.loop = false;
     }
+
 	public void stopAudio(AMITarget target) {
 		AudioSource src = GetTarget(target) as AudioSource;
 		if(!src) return;
 		src.Stop();
         paused = false;
+        lastSampleAtFrame = -1;
     }
 
     public void resumeAudio(AMITarget target) {

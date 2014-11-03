@@ -816,8 +816,10 @@ public class AMTimeline : EditorWindow {
             if(Mathf.FloorToInt(curFrame) != currentTake.selectedFrame) {
                 TakeEditCurrent().selectFrame(currentTake, TakeEditCurrent().selectedTrack, Mathf.FloorToInt(curFrame), numFramesToRender, false, false);
                 if(dragType != (int)DragType.TimeScrub && dragType != (int)DragType.FrameScrub) {
-                    // sample audio
-                    currentTake.sampleAudioAtFrame(aData, Mathf.FloorToInt(curFrame), playbackSpeedValue[currentTake.playbackSpeedIndex]);
+                    if(isPlaying) {
+                        // sample audio
+                        currentTake.sampleAudioAtFrame(aData, Mathf.FloorToInt(curFrame), playbackSpeedValue[currentTake.playbackSpeedIndex]);
+                    }
                 }
                 this.Repaint();
             }
@@ -5363,7 +5365,7 @@ public class AMTimeline : EditorWindow {
         playerCurLoop = 0;
         playerBackward = false;
         // sample audio from current frame
-        currentTake.sampleAudio(aData, (float)currentTake.selectedFrame, playbackSpeedValue[currentTake.playbackSpeedIndex]);
+        currentTake.sampleAudio(aData, (float)currentTake.selectedFrame, playbackSpeedValue[currentTake.playbackSpeedIndex], true);
     }
 
     #endregion
