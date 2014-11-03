@@ -58,9 +58,9 @@ public class AMAudioTrack : AMTrack {
     }
 
     // sample audio between frames
-    public void sampleAudio(AMITarget target, float frame, float speed, int frameRate, bool playOneShots) {
+    public AudioSource sampleAudio(AMITarget target, float frame, float speed, int frameRate, bool playOneShots) {
         AudioSource src = GetTarget(target) as AudioSource;
-        if(!src) return;
+        if(!src) return null;
         float time;
         for(int i = keys.Count - 1; i >= 0; i--) {
             AMAudioKey key = keys[i] as AMAudioKey;
@@ -91,6 +91,7 @@ public class AMAudioTrack : AMTrack {
                 break;
             }
         }
+        return src;
     }
     // sample audio at frame
     public AudioSource sampleAudioAtFrame(AMITarget target, int frame, float speed, int frameRate) {

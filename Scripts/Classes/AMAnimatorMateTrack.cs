@@ -196,56 +196,24 @@ public class AMAnimatorMateTrack : AMTrack {
         for(int i = keys.Count - 1; i >= 0; i--) {
             if(keys[i].frame <= frame) {
                 AMAnimatorMateKey amKey = keys[i] as AMAnimatorMateKey;
-                amKey.updateDuration(this, target);
 
-                if(!RunKey(anim, amKey, frame, frameRate, animScale, playAudio, noAudioLoop)) {
-                    //preview last frame
-                    if(i > 0) {
-                        frame = amKey.frame;
-                        amKey = keys[i-1] as AMAnimatorMateKey;
-                        amKey.updateDuration(this, target);
-                        RunKey(anim, amKey, frame, frameRate, animScale, playAudio, noAudioLoop);
+                AMTakeData take = GrabTake(anim, amKey);
+                if(take != null) {
+                    float subFrame = GrabFrame(take, amKey, frame, frameRate, anim.TargetAnimScale());
+                    take.runFrame(anim, subFrame, animScale, playAudio, noAudioLoop);
+                }
+                else if(i > 0) { //jump to last frame of previous key
+                    frame = amKey.frame;
+                    amKey = keys[i-1] as AMAnimatorMateKey;
+                    take = GrabTake(anim, amKey);
+                    if(take != null) {
+                        float subFrame = GrabFrame(take, amKey, frame, frameRate, anim.TargetAnimScale());
+                        take.runFrame(anim, subFrame, animScale, playAudio, noAudioLoop);
                     }
                 }
                 break;
             }
         }
-    }
-
-    bool RunKey(AnimatorData anim, AMAnimatorMateKey amKey, float frame, int frameRate, float animScale, bool playAudio, bool noAudioLoop) {
-        if(!string.IsNullOrEmpty(amKey.take)) {
-            int takeInd = anim.GetTakeIndex(amKey.take);
-            if(takeInd == -1)
-                return false;
-
-            AMTakeData take = anim._takes[takeInd];
-
-            float t = ((frame - (float)amKey.frame + 1f) / (float)frameRate)*anim.animScale;
-
-            float aframe = t*take.frameRate;
-            int iLastFrame;
-
-            switch(amKey.loop) {
-                case AMPlugMateAnimator.LoopType.Restart:
-                    iLastFrame = take.getLastFrame();
-                    aframe %= (float)iLastFrame;
-                    break;
-                case AMPlugMateAnimator.LoopType.Yoyo:
-                    iLastFrame = take.getLastFrame();
-                    float fLastFrame = iLastFrame;
-                    int count = Mathf.FloorToInt(aframe)/iLastFrame;
-                    if(count % 2 == 0)
-                        aframe %= fLastFrame;
-                    else {
-                        aframe = fLastFrame - (aframe%fLastFrame);
-                    }
-                    break;
-            }
-
-            take.runFrame(anim, aframe, animScale, playAudio, noAudioLoop);
-            return true;
-        }
-        return false;
     }
 
     // preview a frame in the scene view
@@ -272,13 +240,19 @@ public class AMAnimatorMateTrack : AMTrack {
                 AMAnimatorMateKey amKey = keys[i] as AMAnimatorMateKey;
                 amKey.updateDuration(this, target);
 
-                if(!PreviewKey(anim, amKey, frame, frameRate)) {
-                    //preview last frame
-                    if(i > 0) {
-                        frame = amKey.frame;
-                        amKey = keys[i-1] as AMAnimatorMateKey;
-                        amKey.updateDuration(this, target);
-                        PreviewKey(anim, amKey, frame, frameRate);
+                AMTakeData take = GrabTake(anim, amKey);
+                if(take != null) {
+                    float subFrame = GrabFrame(take, amKey, frame, frameRate, anim.TargetAnimScale());
+                    take.previewFrame(anim, subFrame);
+                }
+                else if(i > 0) { //jump to last frame of previous key
+                    frame = amKey.frame;
+                    amKey = keys[i-1] as AMAnimatorMateKey;
+                    amKey.updateDuration(this, target);
+                    take = GrabTake(anim, amKey);
+                    if(take != null) {
+                        float subFrame = GrabFrame(take, amKey, frame, frameRate, anim.TargetAnimScale());
+                        take.previewFrame(anim, subFrame);
                     }
                 }
                 break;
@@ -286,41 +260,44 @@ public class AMAnimatorMateTrack : AMTrack {
         }
     }
 
-    bool PreviewKey(AnimatorData anim, AMAnimatorMateKey amKey, float frame, int frameRate) {
+    AMTakeData GrabTake(AnimatorData anim, AMAnimatorMateKey amKey) {
         if(!string.IsNullOrEmpty(amKey.take)) {
             int takeInd = anim.GetTakeIndex(amKey.take);
-            if(takeInd == -1)
-                return false;
-
-            AMTakeData take = anim._takes[takeInd];
-
-            float t = (frame - (float)amKey.frame + 1f) / (float)frameRate;
-
-            float aframe = t*take.frameRate;
-            int iLastFrame;
-
-            switch(amKey.loop) {
-                case AMPlugMateAnimator.LoopType.Restart:
-                    iLastFrame = take.getLastFrame();
-                    aframe %= (float)iLastFrame;
-                    break;
-                case AMPlugMateAnimator.LoopType.Yoyo:
-                    iLastFrame = take.getLastFrame();
-                    float fLastFrame = iLastFrame;
-                    int count = Mathf.FloorToInt(aframe)/iLastFrame;
-                    if(count % 2 == 0)
-                        aframe %= fLastFrame;
-                    else {
-                        aframe = fLastFrame - (aframe%fLastFrame);
-                    }
-                    break;
-            }
-
-            take.previewFrame(anim, aframe);
-            return true;
+            if(takeInd != -1)
+                return anim._takes[takeInd];
         }
-        return false;
+        return null;
     }
+
+    // get the frame of the take relative to frame (of parent take)
+    float GrabFrame(AMTakeData take, AMAnimatorMateKey amKey, float frame, int frameRate, float animScale) {
+        float t = ((frame - (float)amKey.frame + 1f) / (float)frameRate)*animScale;
+
+        float aframe = t*take.frameRate;
+        int iLastFrame;
+
+        switch(amKey.loop) {
+            case AMPlugMateAnimator.LoopType.Restart:
+                iLastFrame = take.getLastFrame();
+                aframe %= (float)iLastFrame;
+                break;
+            case AMPlugMateAnimator.LoopType.Yoyo:
+                iLastFrame = take.getLastFrame();
+                float fLastFrame = iLastFrame;
+                int count = Mathf.FloorToInt(aframe)/iLastFrame;
+                if(count % 2 == 0)
+                    aframe %= fLastFrame;
+                else {
+                    aframe = fLastFrame - (aframe%fLastFrame);
+                }
+                break;
+        }
+
+        return aframe;
+    }
+
+
+
 
     public override AnimatorTimeline.JSONInit getJSONInit(AMITarget target) {
         // no initial values to set

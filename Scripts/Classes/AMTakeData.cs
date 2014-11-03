@@ -613,11 +613,10 @@ public class AMTakeData {
             AMAudioTrack audioTrack = track as AMAudioTrack;
             if(audioTrack) {
                 if(playAudio) {
-                    AudioSource src = audioTrack.sampleAudioAtFrame(itarget, Mathf.FloorToInt(_frame), animScale, frameRate);
+                    AudioSource src = audioTrack.sampleAudio(itarget, _frame, animScale, frameRate, false);
                     if(src && noAudioLoop)
                         src.loop = false;
                 }
-
                 continue;
             }
 
