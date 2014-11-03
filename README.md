@@ -15,10 +15,14 @@ Mega Morph has been removed.
 
 Import/Export, Code Generator are currently disabled. 
 
+###Dependencies###
+* HOTween v1.3.380
+
+
 Updates
 =======
 ### Update 2 ###
-* Added Mate Animator track.  Now you can play animations in your animation, while you animate.  Useful for choreography and ensuring timing between multiple animations on the scene.
+* Added Mate Animator track.  Now you can play animations in your animation, while you animate.  Useful for choreography and ensuring timing between multiple animations on the scene.  Note: Currently doesn't execute event and trigger tracks.
 * Fixes with null exceptions here and there.
 ### Update 1 ###
 * Undo/Redo reworked and changed to comply with Unity 4.3
@@ -45,7 +49,7 @@ TODO
 * Material property track - for animating shader variables.
 * Some glitches with mouse events.
 * Refactor the entire UI code...(might as well create a new project)
-* Camera transition fixes (too glitchy and poorly written, maybe do something like UE4's director)
+* Camera transition fixes (too glitchy, maybe do something like UE4's director)
 
 License
 =======
