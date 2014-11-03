@@ -604,7 +604,7 @@ public class AMTakeData {
         }
     }
 
-    public void previewFrameRuntime(AMITarget itarget, float _frame, bool playAudio, bool noAudioLoop) {
+    public void runFrame(AMITarget itarget, float _frame, float animScale, bool playAudio, bool noAudioLoop) {
         sortTracks();
 
         renderCameraSwitcherStill(itarget, _frame);
@@ -613,11 +613,17 @@ public class AMTakeData {
             AMAudioTrack audioTrack = track as AMAudioTrack;
             if(audioTrack) {
                 if(playAudio) {
-                    AudioSource src = audioTrack.sampleAudioAtFrame(itarget, Mathf.FloorToInt(_frame), 1f, frameRate);
+                    AudioSource src = audioTrack.sampleAudioAtFrame(itarget, Mathf.FloorToInt(_frame), animScale, frameRate);
                     if(src && noAudioLoop)
                         src.loop = false;
                 }
 
+                continue;
+            }
+
+            AMAnimatorMateTrack mateAnimTrack = track as AMAnimatorMateTrack;
+            if(mateAnimTrack) {
+                mateAnimTrack.runFrame(itarget, _frame, frameRate, animScale, playAudio, noAudioLoop);
                 continue;
             }
 
@@ -628,7 +634,7 @@ public class AMTakeData {
     /// <summary>
     /// Only preview tracks that have starting frame > _frame
     /// </summary>
-    public void previewFrameStart(AMITarget itarget, float _frame) {
+    public void runStartUp(AMITarget itarget, float _frame, float animScale) {
         sortTracks();
 
         foreach(AMTrack track in trackValues) {
@@ -639,7 +645,7 @@ public class AMTakeData {
                     //special case for audio when playing at a particular frame
                     AMAudioTrack audioTrack = track as AMAudioTrack;
                     if(audioTrack)
-                        audioTrack.sampleAudio(itarget, _frame, 1.0f, frameRate, false);
+                        audioTrack.sampleAudio(itarget, _frame, itarget.TargetAnimScale()*animScale, frameRate, false);
                 }
             }
         }
@@ -887,23 +893,31 @@ public class AMTakeData {
 
     public void pauseAudio(AMITarget itarget) {
         foreach(AMTrack track in trackValues) {
-            if(!(track is AMAudioTrack)) continue;
-            (track as AMAudioTrack).pauseAudio(itarget);
+            AMAudioTrack audioTrack = track as AMAudioTrack;
+            if(audioTrack) { audioTrack.pauseAudio(itarget); continue; }
+
+            AMAnimatorMateTrack mateAnimTrack = track as AMAnimatorMateTrack;
+            if(mateAnimTrack) { mateAnimTrack.pauseAudio(itarget); continue; }
         }
     }
 
     public void resumeAudio(AMITarget itarget) {
         foreach(AMTrack track in trackValues) {
-            if(!(track is AMAudioTrack)) continue;
-            (track as AMAudioTrack).resumeAudio(itarget);
+            AMAudioTrack audioTrack = track as AMAudioTrack;
+            if(audioTrack) { audioTrack.resumeAudio(itarget); continue; }
+
+            AMAnimatorMateTrack mateAnimTrack = track as AMAnimatorMateTrack;
+            if(mateAnimTrack) { mateAnimTrack.resumeAudio(itarget); continue; }
         }
     }
 
-    public void stopAnimations(AMITarget itarget) {
+    public void setAudioSpeed(AMITarget itarget, float speed) {
         foreach(AMTrack track in trackValues) {
-            if(!(track is AMAnimationTrack)) continue;
-            GameObject go = track.GetTarget(itarget) as GameObject;
-            if(go && go.animation) go.animation.Stop();
+            AMAudioTrack audioTrack = track as AMAudioTrack;
+            if(audioTrack) { audioTrack.setAudioSpeed(itarget, speed); continue; }
+
+            AMAnimatorMateTrack mateAnimTrack = track as AMAnimatorMateTrack;
+            if(mateAnimTrack) { mateAnimTrack.setAudioSpeed(itarget, speed); continue; }
         }
     }
 

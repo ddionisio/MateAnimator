@@ -9,4 +9,5 @@ public interface AMITarget {
 	void TargetSetCache(string path, Transform obj);
     void TargetSequenceComplete(AMSequence seq);
     void TargetSequenceTrigger(AMSequence seq, AMKey key, AMTriggerData trigDat);
+    float TargetAnimScale();
 }

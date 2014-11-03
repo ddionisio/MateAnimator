@@ -132,7 +132,6 @@ public class AMSequence {
 
     void OnSequenceComplete() {
         mTake.stopAudio(mTarget);
-        mTake.stopAnimations(mTarget);
 
         if(!mSequence.autoKillOnComplete) {
             if(mTake.loopBackToFrame >= 0) {

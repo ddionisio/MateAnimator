@@ -147,6 +147,7 @@ public class AMPlugMateAnimator : ABSTweenPlugin {
         Yoyo
     }
 
+    AMITarget parent;
     AnimatorData anim;
     AMTakeData take;
     LoopType loopMode;
@@ -159,9 +160,10 @@ public class AMPlugMateAnimator : ABSTweenPlugin {
 
     protected override object endVal { get { return _endVal; } set { _endVal = value; } }
 
-    public AMPlugMateAnimator(AnimatorData aAnim, AMTakeData aTake, LoopType aLoopMode)
+    public AMPlugMateAnimator(AMITarget aParent, AnimatorData aAnim, AMTakeData aTake, LoopType aLoopMode)
         : base(null, false) {
         ignoreAccessor = true;
+        parent = aParent;
         anim = aAnim;
         take = aTake;
         loopMode = aLoopMode;
@@ -201,7 +203,7 @@ public class AMPlugMateAnimator : ABSTweenPlugin {
 
         //only play audio when moving forward
         //remove any audio loops if we reached the end
-        take.previewFrameRuntime(anim, frame, frame > prevFrame, (tweenObj.isReversed && p_totElapsed <= 0.0f) || (p_totElapsed >= _duration));
+        take.runFrame(anim, frame, parent.TargetAnimScale(), frame > prevFrame, (tweenObj.isReversed && p_totElapsed <= 0.0f) || (p_totElapsed >= _duration));
         prevFrame = frame;
     }
 

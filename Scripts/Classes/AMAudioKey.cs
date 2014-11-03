@@ -42,9 +42,13 @@ public class AMAudioKey : AMKey {
 		if (dat.tween.isLoopingBack) return;
 		AudioSource src = dat.parms[0] as AudioSource;
 		if (src == null) return;
-		
-		// just incase you changed the preview speed before playing the game
-		src.pitch = 1f;
+
+        Sequence seq = dat.tween as Sequence;
+        if(seq != null)
+            src.pitch = seq.timeScale;
+        else
+		    src.pitch = 1f;
+
 		if (oneShot) {
 			src.PlayOneShot(audioClip);
 		} else {

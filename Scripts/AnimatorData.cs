@@ -165,9 +165,14 @@ public class AnimatorData : MonoBehaviour, AMITarget {
         set {
             if(mAnimScale != value) {
                 mAnimScale = value;
-                Sequence seq = currentPlayingSequence;
-                if(seq != null)
-                    seq.timeScale = mAnimScale;
+
+                AMSequence amSeq;
+                if(mNowPlayingTakeIndex != -1 && (amSeq = mSequences[mNowPlayingTakeIndex]) != null) {
+                    if(amSeq.sequence != null)
+                        amSeq.sequence.timeScale = mAnimScale;
+                    if(amSeq.take != null)
+                        amSeq.take.setAudioSpeed(this, mAnimScale);
+                }
             }
         }
     }
@@ -258,7 +263,7 @@ public class AnimatorData : MonoBehaviour, AMITarget {
 
         mNowPlayingTakeIndex = index;
 
-        newPlayTake.previewFrameStart(this, newPlayTake.frameRate * time);
+        newPlayTake.runStartUp(this, newPlayTake.frameRate * time, 1.0f);
 
         if(seq != null) {
             if(loop) {
@@ -268,8 +273,8 @@ public class AnimatorData : MonoBehaviour, AMITarget {
                 seq.loops = newPlayTake.numLoop;
             }
 
-            seq.GoToAndPlay(time);
             seq.timeScale = mAnimScale;
+            seq.GoToAndPlay(time);
         }
     }
 
@@ -311,7 +316,6 @@ public class AnimatorData : MonoBehaviour, AMITarget {
         AMTakeData take = mCurrentPlayingTake;
         if(take == null) return;
         take.stopAudio(this);
-        take.stopAnimations(this);
 
         //end camera fade
         if(AMCameraFade.hasInstance()) {
@@ -533,6 +537,10 @@ public class AnimatorData : MonoBehaviour, AMITarget {
     public void TargetSequenceTrigger(AMSequence seq, AMKey key, AMTriggerData trigDat) {
         if(takeTriggerCallback != null)
             takeTriggerCallback(this, seq.take, key, trigDat);
+    }
+
+    public float TargetAnimScale() {
+        return mAnimScale;
     }
 
     #endregion

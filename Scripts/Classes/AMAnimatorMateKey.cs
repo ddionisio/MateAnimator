@@ -68,7 +68,7 @@ public class AMAnimatorMateKey : AMKey {
 
         Holoville.HOTween.Plugins.Core.ABSTweenPlugin plug;
 
-        plug = new AMPlugMateAnimator(anim, takeDat, loop);
+        plug = new AMPlugMateAnimator(seq.target, anim, takeDat, loop);
 
         seq.sequence.Insert(waitTime, HOTween.To(target, _duration, new TweenParms().Prop("width_track", plug)));
     }
