@@ -957,6 +957,23 @@ public class AnimatorData : MonoBehaviour, AMITarget {
         }
         return lsFlagToKeep;
     }
+
+    /// <summary>
+    /// Determine if given anim is referenced in any mate animator track
+    /// </summary>
+    public bool e_isReferencedInTrack(AnimatorData anim) {
+        foreach(AMTakeData take in _takes) {
+            foreach(AMTrack track in take.trackValues) {
+                AMAnimatorMateTrack mateAnimTrack = track as AMAnimatorMateTrack;
+                if(mateAnimTrack) {
+                    AnimatorData animTrack = mateAnimTrack.GetTarget(this) as AnimatorData;
+                    if(animTrack == anim)
+                        return true;
+                }
+            }
+        }
+        return false;
+    }
 #endif
     #endregion
 }

@@ -4309,10 +4309,13 @@ public class AMTimeline : EditorWindow {
         else if(amTrack is AMAnimatorMateTrack) {
             AnimatorData anim = (AnimatorData)EditorGUI.ObjectField(rect, amTrack.GetTarget(aData), typeof(AnimatorData), true);
             if(!amTrack.isTargetEqual(aData, anim)) {
-                //TODO: make sure this animator does not have any animator tracks that reference our current animator
-                Undo.RecordObject(amTrack, "Set AnimatorData");
-                amTrack.SetTarget(aData, anim ? anim.transform : null);
-                EditorUtility.SetDirty(amTrack);
+                if(anim && anim.e_isReferencedInTrack(aData))
+                    Debug.LogError("Animator: "+anim+" reference "+aData.name+" cannot add track.");
+                else {
+                    Undo.RecordObject(amTrack, "Set AnimatorData");
+                    amTrack.SetTarget(aData, anim ? anim.transform : null);
+                    EditorUtility.SetDirty(amTrack);
+                }
             }
         }
 
@@ -5704,8 +5707,14 @@ public class AMTimeline : EditorWindow {
                     addCompUndo ? Undo.AddComponent<AMTriggerTrack>(holder) : holder.AddComponent<AMTriggerTrack>());
                 break;
             case (int)Track.MateAnimator:
-                currentTake.addTrack(TakeEditCurrent().selectedGroup, aData, object_window ? object_window.transform : null,
-                    addCompUndo ? Undo.AddComponent<AMAnimatorMateTrack>(holder) : holder.AddComponent<AMAnimatorMateTrack>());
+                //make sure we are not referenced within this animator to avoid circular reference
+                AnimatorData dat = object_window ? object_window.GetComponent<AnimatorData>() : null;
+                if(dat == null || !dat.e_isReferencedInTrack(aData)) {
+                    currentTake.addTrack(TakeEditCurrent().selectedGroup, aData, object_window ? object_window.transform : null,
+                        addCompUndo ? Undo.AddComponent<AMAnimatorMateTrack>(holder) : holder.AddComponent<AMAnimatorMateTrack>());
+                }
+                else
+                    Debug.LogError("Animator: "+dat+" reference "+aData.name+" cannot add track.");
                 break;
             default:
                 int combo_index = (int)trackType - 100;
