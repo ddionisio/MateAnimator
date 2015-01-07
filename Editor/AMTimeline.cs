@@ -119,8 +119,10 @@ public class AMTimeline : EditorWindow {
 
                     //!DEBUG
                     Transform holder = _aData.TargetGetDataHolder();
+#if MATE_DEBUG_ANIMATOR
                     if(holder.GetComponent<AnimatorDataHolder>() == null)
                         holder.gameObject.AddComponent<AnimatorDataHolder>();
+#endif
                     if(!holder.gameObject.activeSelf)
                         holder.gameObject.SetActive(true);
 
@@ -1040,7 +1042,7 @@ public class AMTimeline : EditorWindow {
         if(e.type == EventType.ScrollWheel) {
             scrollViewValue.y -= e.delta.y*20;
             if(Mathf.Abs(e.delta.y) > 0) {
-                aData.zoom += Mathf.Clamp(Mathf.Abs(e.delta.y) *0.04f, 0.01f, 0.1f) * Mathf.Sign(e.delta.y);
+                aData.zoom = Mathf.Clamp01(aData.zoom + Mathf.Clamp(Mathf.Abs(e.delta.y) *0.04f, 0.01f, 0.1f) * Mathf.Sign(e.delta.y));
             }
         }
         // get global mouseposition
@@ -6007,6 +6009,11 @@ public class AMTimeline : EditorWindow {
             }
             // add key to animation track
             (amTrack as AMAnimatorMateTrack).addKey(aData, addCall, _frame);
+        }
+
+        //if the added key is the last key, set its ease type to the one before it
+        if(amTrack.keys.Count > 1 && amTrack.keys[amTrack.keys.Count - 1].frame == _frame) {
+            amTrack.keys[amTrack.keys.Count - 1].easeType = amTrack.keys[amTrack.keys.Count - 2].easeType;
         }
 
         AMTrack selectedTrack = TakeEditCurrent().getSelectedTrack(currentTake);

@@ -44,12 +44,17 @@ TODO
 * Add a way to make this tool extensive - will help with implementing tk2d, etc.
 * Work with MechAnim. - allow change state, etc. and preview.
 * Work with Particles - allow play/pause/stop and preview.
-* Preserve ease type when moving keys around.
 * Reverse selected keys feature.
 * Material property track - for animating shader variables.
 * Some glitches with mouse events.
 * Refactor the entire UI code...(might as well create a new project)
 * Camera transition fixes (too glitchy, maybe do something like UE4's director)
+
+DEBUG
+=====
+Add "MATE\_DEBUG_ANIMATOR" (without quotes) in Player Settings -> Scripting Define Symbols.
+
+For now it only shows a trace message whenever the GameObject "_animdata" is destroyed.
 
 License
 =======
