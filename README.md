@@ -44,11 +44,11 @@ TODO
 * Add a way to make this tool extensive - will help with implementing tk2d, etc.
 * Work with MechAnim. - allow change state, etc. and preview.
 * Work with Particles - allow play/pause/stop and preview.
-* Reverse selected keys feature.
 * Material property track - for animating shader variables.
 * Some glitches with mouse events.
 * Refactor the entire UI code...(might as well create a new project)
 * Camera transition fixes (too glitchy, maybe do something like UE4's director)
+* Upgrade to Unity 5 (once it is officially released)
 
 DEBUG
 =====

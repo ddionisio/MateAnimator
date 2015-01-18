@@ -10,8 +10,8 @@ public class AMOptionsFile : ScriptableObject {
 	
 	// options
 	public bool time_numbering = false;
-	public bool scrubby_zoom_cursor = true;
-	public bool scrubby_zoom_slider = false;
+	public bool scrubby_zoom_cursor = false;
+	public bool scrubby_zoom_slider = true;
 	public bool ignoreMinSize = false;
 	public bool showWarningForLostReferences = true;
 	public bool disableTimelineActions = false;
