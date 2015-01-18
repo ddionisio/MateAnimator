@@ -28,8 +28,8 @@ public struct AMPath {
             _path.Add(key.position);
             endFrame = keys[i].frame;
             endIndex = i;
-            if(keys[startIndex].easeType == AMKey.EaseTypeNone 
-			   || key.easeType == AMKey.EaseTypeNone 
+            if(!keys[startIndex].canTween
+               || !key.canTween
 			   || key.interp == (int)AMTranslationKey.Interpolation.Linear) break;
         }
 

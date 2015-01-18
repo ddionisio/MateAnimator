@@ -11,9 +11,9 @@ public class AMTranslationKey : AMKey {
 
     public enum Interpolation {
         Curve = 0,
-        Linear = 1
+        Linear = 1,
+        None = 2
     }
-    public static string[] InterpolationNames = new string[] { "Curve", "Linear" };
     public Vector3 position;
     public int interp = 0;			// interpolation
 
@@ -23,6 +23,8 @@ public class AMTranslationKey : AMKey {
     public Vector3[] path;
 
     public bool isConstSpeed = true;
+
+    public override bool canTween { get { return interp != (int)Interpolation.None && base.canTween; } }
 
     public bool isClosed { get { return path[0] == path[path.Length - 1]; } }
 
@@ -109,7 +111,7 @@ public class AMTranslationKey : AMKey {
     }
 
     public override int getNumberOfFrames(int frameRate) {
-        if(easeType == EaseTypeNone && (endFrame == -1 || endFrame == startFrame))
+        if(!canTween && (endFrame == -1 || endFrame == startFrame))
             return 1;
         else if(endFrame == -1)
             return -1;
@@ -126,7 +128,7 @@ public class AMTranslationKey : AMKey {
         bool pixelSnap = tTrack.pixelSnap;
         float ppu = tTrack.pixelPerUnit;
 
-        if(easeType == EaseTypeNone) {
+        if(!canTween) {
             //TODO: world position
             seq.Insert(new AMActionTransLocalPos(this, frameRate, obj as Transform, pixelSnap ? new Vector3(Mathf.Round(position.x*ppu)/ppu, Mathf.Round(position.y*ppu)/ppu, Mathf.Round(position.z*ppu)/ppu) : position));
         }

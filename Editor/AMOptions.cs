@@ -52,7 +52,7 @@ public class AMOptions : EditorWindow {
         loadAnimatorData();
         oData = AMOptionsFile.loadFile();
         
-        if(aData) exportTakeIndex = aData.GetTakeIndex(AMTimeline.window.currentTake);
+        //if(aData) exportTakeIndex = aData.GetTakeIndex(AMTimeline.window.currentTake);
     }
     void OnDisable() {
         window = null;

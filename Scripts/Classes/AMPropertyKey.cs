@@ -180,7 +180,7 @@ public class AMPropertyKey : AMKey {
     public override void build(AMSequence seq, AMTrack track, int index, UnityEngine.Object target) {
         AMPropertyTrack propTrack = track as AMPropertyTrack;
 
-        if(endFrame == -1 && easeType != EaseTypeNone && propTrack.canTween) return;
+        if(endFrame == -1 && canTween && propTrack.canTween) return;
 
         int valueType = propTrack.valueType;
 

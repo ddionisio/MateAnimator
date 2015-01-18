@@ -363,7 +363,7 @@ public class AMTimeline : EditorWindow {
     private Texture texPropertiesTop;
     private Texture texRightArrow;// inspector right arrow
     private Texture texLeftArrow;	// inspector left arrow
-    private Texture[] texInterpl = new Texture[2];
+    private Texture[] texInterpl = new Texture[3];
     private Texture texBoxBorder;
     private Texture texBoxRed;
     //private Texture texBoxBlue;
@@ -620,6 +620,7 @@ public class AMTimeline : EditorWindow {
             texLeftArrow = AMEditorResource.LoadEditorTexture(EditorGUIUtility.isProSkin ? "am_nav_left" : "am_nav_left_light");	// inspector left arrow
             texInterpl[0] = AMEditorResource.LoadEditorTexture(EditorGUIUtility.isProSkin ? "am_interpl_curve" : "am_interpl_curve_light");
             texInterpl[1] = AMEditorResource.LoadEditorTexture(EditorGUIUtility.isProSkin ? "am_interpl_linear" : "am_interpl_linear_light");
+            texInterpl[2] = AMEditorResource.LoadEditorTexture(EditorGUIUtility.isProSkin ? "am_interpl_none" : "am_interpl_none_light");
             texBoxBorder = AMEditorResource.LoadEditorTexture("am_box_border");
             texBoxRed = AMEditorResource.LoadEditorTexture("am_box_red");
             //texBoxBlue = AMEditorResource.LoadTexture("am_box_blue");
@@ -2984,8 +2985,8 @@ public class AMTimeline : EditorWindow {
                         for(int i = 0; i < _track.keys.Count; i++) {
                             bool draw = false;
 
-                            if(_track.keys[i].easeType == AMKey.EaseTypeNone) {
-                                if(i == 0 || _track.keys[i - 1].easeType == AMKey.EaseTypeNone) {
+                            if(!_track.keys[i].canTween) {
+                                if(i == 0 || !_track.keys[i - 1].canTween) {
                                     lastStartInd = i;
                                     draw = true;
                                 }
@@ -3005,8 +3006,8 @@ public class AMTimeline : EditorWindow {
                                 if(_track is AMTranslationTrack) {
                                     // translation track, from first action frame to end action frame
                                     cached_action_startFrame = _track.keys[lastStartInd].getStartFrame();
-                                    cached_action_endFrame = _track.keys[lastStartInd].easeType == AMKey.EaseTypeNone ? cached_action_startFrame : 
-										_track.keys[i].easeType == AMKey.EaseTypeNone ? (_track.keys[i] as AMTranslationKey).startFrame : 
+                                    cached_action_endFrame = !_track.keys[lastStartInd].canTween ? cached_action_startFrame : 
+										!_track.keys[i].canTween ? (_track.keys[i] as AMTranslationKey).startFrame : 
 											(_track.keys[i] as AMTranslationKey).endFrame;
                                     texBox = texBoxGreen;
                                 }
@@ -3324,10 +3325,13 @@ public class AMTimeline : EditorWindow {
                 Rect rectLabelInterp = rectPosition;
                 GUI.Label(rectLabelInterp, "Interpl.");
                 Rect rectSelGrid = new Rect(rectLabelInterp.x + rectLabelInterp.width + margin, rectLabelInterp.y, width_inspector - rectLabelInterp.width - margin * 2f, rectLabelInterp.height);
-                int nInterp = GUI.SelectionGrid(rectSelGrid, tKey.interp, texInterpl, 2, GUI.skin.GetStyle("ButtonImage"));
+                
+                int nInterp = GUI.SelectionGrid(rectSelGrid, tKey.interp, texInterpl, 3, GUI.skin.GetStyle("ButtonImage"));
                 if(tKey.interp != nInterp) {
                     recordUndoTrackAndKeys(sTrack, false, "Change Interpolation");
+                    
                     tKey.interp = nInterp;
+
                     sTrack.updateCache(aData);
                     AMCodeView.refresh();
                     // select the current frame
@@ -3355,14 +3359,12 @@ public class AMTimeline : EditorWindow {
                 // if not only key, show ease
                 bool isTKeyLastFrame = tKey == tTrack.keys[(sTrack as AMTranslationTrack).keys.Count - 1];
 
-                if(!isTKeyLastFrame) {
+                if(!isTKeyLastFrame && tKey.interp != (int)AMTranslationKey.Interpolation.None) {
                     rectPosition = new Rect(0f, rectPosition.y + rectPosition.height + height_inspector_space, width_inspector - margin, 0f);
-                    if(!isTKeyLastFrame && tKey.interp == (int)AMTranslationKey.Interpolation.Linear) {
+                    if(!isTKeyLastFrame && tKey.interp == (int)AMTranslationKey.Interpolation.Linear)
                         showEasePicker(sTrack, tKey, aData, rectPosition.x, rectPosition.y, rectPosition.width);
-                    }
-                    else {
+                    else
                         showEasePicker(sTrack, tTrack.getKeyStartFor(tKey.frame), aData, rectPosition.x, rectPosition.y, rectPosition.width);
-                    }
 
                     rectPosition.height = 80.0f;
                 }
@@ -5421,13 +5423,13 @@ public class AMTimeline : EditorWindow {
         // get text for track type
         #region translation
         if(_key is AMTranslationKey) {
-            if(easeInd == AMKey.EaseTypeNone) { return ""; }
+            if(!_key.canTween) { return ""; }
             return easeTypeNames[easeInd];
         #endregion
             #region rotation
         }
         else if(_key is AMRotationKey) {
-            if(easeInd == AMKey.EaseTypeNone) { return ""; }
+            if(!_key.canTween) { return ""; }
             return easeTypeNames[easeInd];
             #endregion
             #region animation
@@ -5449,8 +5451,8 @@ public class AMTimeline : EditorWindow {
             AMPropertyKey propkey = _key as AMPropertyKey;
 
             string info = propTrack.getTrackType() + "\n";
-            if(propkey.targetsAreEqual(propTrack.valueType) || easeInd == AMKey.EaseTypeNone || !propTrack.canTween) brief = true;
-            if(!brief && propkey.endFrame != -1 && easeInd != AMKey.EaseTypeNone) {
+            if(propkey.targetsAreEqual(propTrack.valueType) || !_key.canTween || !propTrack.canTween) brief = true;
+            if(!brief && propkey.endFrame != -1 && _key.canTween) {
                 info += easeTypeNames[easeInd] + ": ";
             }
             string detail = propkey.getValueString(propTrack.GetCachedInfoType(aData), propTrack.valueType, brief);	// extra details such as integer values ex. 1 -> 12
@@ -5481,7 +5483,7 @@ public class AMTimeline : EditorWindow {
             #region orientation
         }
         else if(_key is AMOrientationKey) {
-            if(easeInd == AMKey.EaseTypeNone) { return ""; }
+            if(!_key.canTween) { return ""; }
 
             if(!(_key as AMOrientationKey).GetTarget(aData)) return "No Target";
             string txtInfoOrientation = null;

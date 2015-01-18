@@ -29,6 +29,8 @@ public class AMKey : MonoBehaviour {
         }
     }
 
+    public virtual bool canTween { get { return easeType != EaseTypeNone; } }
+
     public virtual void destroy() {
         Object.DestroyImmediate(this);
     }
