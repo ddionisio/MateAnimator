@@ -35,6 +35,8 @@ public class AMTranslationTrack : AMTrack {
 
     public override bool hasTrackSettings { get { return true; } }
 
+    public override int interpCount { get { return 3; } }
+
     [SerializeField]
     private bool _isLocal;
     public bool isLocal {
@@ -314,6 +316,7 @@ public class AMTranslationTrack : AMTrack {
         for(int i = 0; i < keys.Count; i++) {
             AMTranslationKey key = keys[i] as AMTranslationKey;
 
+            int interp = key.interp;
 			int easeType = key.easeType;
 
             key.version = version;
@@ -326,8 +329,6 @@ public class AMTranslationTrack : AMTrack {
             key.pathPreview = null;
 
             if(!key.canTween) {
-				key.path = new Vector3[0];
-
 				if(path.endIndex == keys.Count - 1) {
 					AMTranslationKey lastKey = keys[path.endIndex] as AMTranslationKey;
                     lastKey.interp = (int)AMTranslationKey.Interpolation.None;
@@ -347,6 +348,7 @@ public class AMTranslationTrack : AMTrack {
                     key = keys[i] as AMTranslationKey;
 
                     key.version = version;
+                    key.interp = interp;
 					key.easeType = easeType;
                     key.isLocal = _isLocal;
                     key.startFrame = key.frame;

@@ -29,8 +29,7 @@ public struct AMPath {
             endFrame = keys[i].frame;
             endIndex = i;
             if(!keys[startIndex].canTween
-               || !key.canTween
-			   || key.interp == (int)AMTranslationKey.Interpolation.Linear) break;
+			   || key.interp != (int)AMTranslationKey.Interpolation.Curve) break;
         }
 
         interp = (keys[startIndex] as AMTranslationKey).interp;

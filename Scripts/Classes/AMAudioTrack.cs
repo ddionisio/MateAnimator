@@ -5,6 +5,8 @@ using System.Collections.Generic;
 [AddComponentMenu("")]
 public class AMAudioTrack : AMTrack {
 
+    public override bool canTween { get { return false; } }
+
     [SerializeField]
     AudioSource audioSource;
 

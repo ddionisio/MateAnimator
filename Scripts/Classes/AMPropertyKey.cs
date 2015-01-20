@@ -156,7 +156,7 @@ public class AMPropertyKey : AMKey {
 
     #region action
     public override int getNumberOfFrames(int frameRate) {
-        if(easeType == EaseTypeNone && (endFrame == -1 || endFrame == frame))
+        if(!canTween && (endFrame == -1 || endFrame == frame))
             return 1;
         else if(endFrame == -1)
             return -1;
@@ -200,9 +200,9 @@ public class AMPropertyKey : AMKey {
             if(propTrack.canTween) {
                 //allow tracks with just one key
                 if(track.keys.Count == 1)
-                    easeType = EaseTypeNone;
+                    interp = (int)Interpolation.None;
 
-                if(easeType == EaseTypeNone) {
+                if(!canTween) {
                     object obj = null;
 
                     switch((AMPropertyTrack.ValueType)valueType) {

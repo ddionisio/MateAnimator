@@ -3,6 +3,8 @@ using System.Collections;
 using System.Collections.Generic;
 [AddComponentMenu("")]
 public class AMAnimatorMateTrack : AMTrack {
+    public override bool canTween { get { return false; } }
+
     [SerializeField]
     AnimatorData obj;
 

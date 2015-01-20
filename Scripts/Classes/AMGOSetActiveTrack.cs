@@ -7,6 +7,8 @@ using Holoville.HOTween;
 
 [AddComponentMenu("")]
 public class AMGOSetActiveTrack : AMTrack {
+    public override bool canTween { get { return false; } }
+
     [SerializeField]
     GameObject obj;
 

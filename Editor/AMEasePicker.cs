@@ -44,7 +44,7 @@ public class AMEasePicker : EditorWindow {
 		key = _key;
 		track = _track;
 		//aData = _aData;
-		selectedIndex = key.easeType == AMKey.EaseTypeNone ? AMTimeline.easeTypeNames.Length - 1 : key.easeType;
+		selectedIndex = key.easeType;
 	}
 	
 	public static float waitPercent = 0.3f;
@@ -64,12 +64,9 @@ public class AMEasePicker : EditorWindow {
 		loadAnimatorData();
 		oData = AMOptionsFile.loadFile();
 		setupFilteredCategories();
+
 		selectedIndex = getCategoryIndexForEase(key.easeType);
-		if(selectedIndex < 0) {
-			selectedIndex = key.easeType == AMKey.EaseTypeNone ? AMTimeline.easeTypeNames.Length - 1 : key.easeType;
-			category = 0;
-		}
-		
+
 		if(getSelectedEaseName(category,selectedIndex) == "Custom") {
 			isCustomEase = true;
 		}
@@ -191,7 +188,6 @@ public class AMEasePicker : EditorWindow {
 			GUILayout.BeginHorizontal();
 				if(GUILayout.Button("Apply")) {
 					int nease = getSelectedEaseIndex(category,selectedIndex);
-					if(nease == AMTimeline.easeTypeNames.Length - 1) nease = AMKey.EaseTypeNone;
 					bool shouldUpdateCache = false;
 					if(isCustomEase) {
 						key.setCustomEase(curve);
@@ -275,10 +271,6 @@ public class AMEasePicker : EditorWindow {
 		return easeTypesFiltered[_category][_index];
 	}
 	private int getCategoryIndexForEase(int _index) {
-		if(_index == AMKey.EaseTypeNone) {
-			_index = AMTimeline.easeTypeNames.Length - 1;
-		}
-
 		string ease = easeTypesFiltered[0][_index];
 		return easeTypesFiltered[category].IndexOf(ease);
 	}

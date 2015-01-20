@@ -9,23 +9,15 @@ using Holoville.HOTween.Plugins;
 public class AMTranslationKey : AMKey {
     public const int SUBDIVISIONS_MULTIPLIER = 16;
 
-    public enum Interpolation {
-        Curve = 0,
-        Linear = 1,
-        None = 2
-    }
     public Vector3 position;
-    public int interp = 0;			// interpolation
-
+    
     public int startFrame;
     public int endFrame;
     public bool isLocal;
     public Vector3[] path;
 
     public bool isConstSpeed = true;
-
-    public override bool canTween { get { return interp != (int)Interpolation.None && base.canTween; } }
-
+        
     public bool isClosed { get { return path[0] == path[path.Length - 1]; } }
 
     private AMPathPreview mPathPreview;
@@ -91,8 +83,23 @@ public class AMTranslationKey : AMKey {
 
     #region action
 
+    public class PlugVector3PathEx : PlugVector3Path {
+        private Vector3 mStartPoint;
+
+        public PlugVector3PathEx(Vector3[] p_path, PathType p_type = PathType.Curved) : base(p_path, p_type) { mStartPoint=p_path[0]; }
+        public PlugVector3PathEx(Vector3[] p_path, bool p_isRelative, PathType p_type = PathType.Curved) : base(p_path, p_isRelative, p_type) { mStartPoint=p_path[0]; }
+        public PlugVector3PathEx(Vector3[] p_path, EaseType p_easeType, PathType p_type = PathType.Curved) : base(p_path, p_easeType, p_type) { mStartPoint=p_path[0]; }
+        public PlugVector3PathEx(Vector3[] p_path, AnimationCurve p_easeAnimCurve, bool p_isRelative, PathType p_type = PathType.Curved) : base(p_path, p_easeAnimCurve, p_isRelative, p_type) { mStartPoint=p_path[0]; }
+        public PlugVector3PathEx(Vector3[] p_path, EaseType p_easeType, bool p_isRelative, PathType p_type = PathType.Curved) : base(p_path, p_easeType, p_isRelative, p_type) { mStartPoint=p_path[0]; }
+
+        protected override void SetChangeVal() {
+            SetValue(mStartPoint);
+            base.SetChangeVal();
+        }
+    }
+
     //for pixel-snapping
-    public class PlugVector3PathSnap : PlugVector3Path {
+    public class PlugVector3PathSnap : PlugVector3PathEx {
         private float mUnitConv;
 
         public PlugVector3PathSnap(Vector3[] p_path, float unitConv, PathType p_type = PathType.Curved) : base(p_path, p_type) { mUnitConv=unitConv; }
@@ -122,7 +129,7 @@ public class AMTranslationKey : AMKey {
 
         //allow tracks with just one key
         if(track.keys.Count == 1)
-            easeType = EaseTypeNone;
+            interp = (int)Interpolation.None;
 
         AMTranslationTrack tTrack = track as AMTranslationTrack;
         bool pixelSnap = tTrack.pixelSnap;
@@ -141,20 +148,22 @@ public class AMTranslationKey : AMKey {
 
             Tweener ret = null;
 
+            bool isRelative = false;
+
             if(hasCustomEase()) {
                 if(path.Length == 2)
-                    ret = HOTween.To(tweenTarget, getTime(frameRate), new TweenParms().Prop(tweenProp, pixelSnap ? new PlugVector3PathSnap(path, ppu, false, PathType.Linear) : new PlugVector3Path(path, false, PathType.Linear)).Ease(easeCurve));
+                    ret = HOTween.To(tweenTarget, getTime(frameRate), new TweenParms().Prop(tweenProp, pixelSnap ? new PlugVector3PathSnap(path, ppu, isRelative, PathType.Linear) : new PlugVector3PathEx(path, isRelative, PathType.Linear)).Ease(easeCurve));
                 else {
-                    PlugVector3Path p = pixelSnap ? new PlugVector3PathSnap(path, ppu, false) : new PlugVector3Path(path, false);
+                    PlugVector3PathEx p = pixelSnap ? new PlugVector3PathSnap(path, ppu, isRelative) : new PlugVector3PathEx(path, isRelative);
                     p.ClosePath(isClosed);
                     ret = HOTween.To(tweenTarget, getTime(frameRate), new TweenParms().Prop(tweenProp, p).Ease(easeCurve));
                 }
             }
             else {
                 if(path.Length == 2)
-                    ret = HOTween.To(tweenTarget, getTime(frameRate), new TweenParms().Prop(tweenProp, pixelSnap ? new PlugVector3PathSnap(path, ppu, false, PathType.Linear) : new PlugVector3Path(path, false, PathType.Linear)).Ease((EaseType)easeType, amplitude, period));
+                    ret = HOTween.To(tweenTarget, getTime(frameRate), new TweenParms().Prop(tweenProp, pixelSnap ? new PlugVector3PathSnap(path, ppu, isRelative, PathType.Linear) : new PlugVector3PathEx(path, isRelative, PathType.Linear)).Ease((EaseType)easeType, amplitude, period));
                 else {
-                    PlugVector3Path p = pixelSnap ? new PlugVector3PathSnap(path, ppu, false) : new PlugVector3Path(path, false);
+                    PlugVector3PathEx p = pixelSnap ? new PlugVector3PathSnap(path, ppu, isRelative) : new PlugVector3PathEx(path, isRelative);
                     p.ClosePath(isClosed);
                     ret = HOTween.To(tweenTarget, getTime(frameRate), new TweenParms().Prop(tweenProp, p).Ease((EaseType)easeType, amplitude, period));
                 }

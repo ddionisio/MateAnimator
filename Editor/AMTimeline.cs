@@ -215,8 +215,7 @@ public class AMTimeline : EditorWindow {
         "easeInBounce",
         "easeOutBounce",
         "easeInOutBounce",
-		"Custom",
-		"None"
+		"Custom"
 	};
     private string[] wrapModeNames = {
 		"Once",	
@@ -363,7 +362,8 @@ public class AMTimeline : EditorWindow {
     private Texture texPropertiesTop;
     private Texture texRightArrow;// inspector right arrow
     private Texture texLeftArrow;	// inspector left arrow
-    private Texture[] texInterpl = new Texture[3];
+    private Texture[] texInterpl3 = new Texture[3];
+    private Texture[] texInterpl2 = new Texture[2];
     private Texture texBoxBorder;
     private Texture texBoxRed;
     //private Texture texBoxBlue;
@@ -618,9 +618,9 @@ public class AMTimeline : EditorWindow {
             texProperties = AMEditorResource.LoadEditorTexture(EditorGUIUtility.isProSkin ? "am_information" : "am_information_light");
             texRightArrow = AMEditorResource.LoadEditorTexture(EditorGUIUtility.isProSkin ? "am_nav_right" : "am_nav_right_light");// inspector right arrow
             texLeftArrow = AMEditorResource.LoadEditorTexture(EditorGUIUtility.isProSkin ? "am_nav_left" : "am_nav_left_light");	// inspector left arrow
-            texInterpl[0] = AMEditorResource.LoadEditorTexture(EditorGUIUtility.isProSkin ? "am_interpl_curve" : "am_interpl_curve_light");
-            texInterpl[1] = AMEditorResource.LoadEditorTexture(EditorGUIUtility.isProSkin ? "am_interpl_linear" : "am_interpl_linear_light");
-            texInterpl[2] = AMEditorResource.LoadEditorTexture(EditorGUIUtility.isProSkin ? "am_interpl_none" : "am_interpl_none_light");
+            texInterpl3[0] = AMEditorResource.LoadEditorTexture(EditorGUIUtility.isProSkin ? "am_interpl_curve" : "am_interpl_curve_light");
+            texInterpl2[0] = texInterpl3[1] = AMEditorResource.LoadEditorTexture(EditorGUIUtility.isProSkin ? "am_interpl_linear" : "am_interpl_linear_light");
+            texInterpl2[1] = texInterpl3[2] = AMEditorResource.LoadEditorTexture(EditorGUIUtility.isProSkin ? "am_interpl_none" : "am_interpl_none_light");
             texBoxBorder = AMEditorResource.LoadEditorTexture("am_box_border");
             texBoxRed = AMEditorResource.LoadEditorTexture("am_box_red");
             //texBoxBlue = AMEditorResource.LoadTexture("am_box_blue");
@@ -3314,34 +3314,48 @@ public class AMTimeline : EditorWindow {
         }
         GUI.DrawTexture(new Rect(rectBtnDeleteKey.x + (rectBtnDeleteKey.height - 10f) / 2f, rectBtnDeleteKey.y + (rectBtnDeleteKey.width - 10f) / 2f, 10f, 10f), (getSkinTextureStyleState((rectBtnDeleteKey.Contains(e.mousePosition) ? "delete_hover" : "delete")).background));
         float width_inspector = width_inspector_open - width_inspector_closed;
+
         float start_y = 30f + height_inspector_space;
+
+        AMKey key = sTrack.getKeyOnFrame(_frame, false);
+        if(!key) return;
+
+        //show interpolation if applicable
+        if(sTrack.canTween) {
+            Rect rectLabelInterp = new Rect(0f, start_y, 50f, 20f);
+            GUI.Label(rectLabelInterp, "Interpl.");
+            Rect rectSelGrid = new Rect(rectLabelInterp.x + rectLabelInterp.width + margin, rectLabelInterp.y, width_inspector - rectLabelInterp.width - margin * 2f, rectLabelInterp.height);
+
+            int nInterp = sTrack.interpCount == 3 ? 
+                GUI.SelectionGrid(rectSelGrid, key.interp, texInterpl3, 3, GUI.skin.GetStyle("ButtonImage")) :
+                GUI.SelectionGrid(rectSelGrid, key.interp > 0 ? key.interp - 1 : 0, texInterpl2, 3, GUI.skin.GetStyle("ButtonImage")) + 1;
+
+            if(key.interp != nInterp) {
+                recordUndoTrackAndKeys(sTrack, false, "Change Interpolation");
+
+                key.interp = nInterp;
+
+                sTrack.updateCache(aData);
+                AMCodeView.refresh();
+                // select the current frame
+                timelineSelectFrame(_track, _frame);
+                // save data
+                EditorUtility.SetDirty(sTrack);
+                setDirtyKeys(sTrack);
+            }
+
+            start_y = rectLabelInterp.max.y + height_inspector_space;
+        }
+
         #region translation inspector
         if(sTrack is AMTranslationTrack) {
             AMTranslationTrack tTrack = (AMTranslationTrack)sTrack;
-            Rect rectPosition = new Rect(0f, start_y, 50f, 20f);
+            Rect rectPosition = new Rect(0f, start_y, 0f, 0f);
             if(sTrack.hasKeyOnFrame(_frame)) {
-                AMTranslationKey tKey = (AMTranslationKey)sTrack.getKeyOnFrame(_frame);
-                // translation interpolation
-                Rect rectLabelInterp = rectPosition;
-                GUI.Label(rectLabelInterp, "Interpl.");
-                Rect rectSelGrid = new Rect(rectLabelInterp.x + rectLabelInterp.width + margin, rectLabelInterp.y, width_inspector - rectLabelInterp.width - margin * 2f, rectLabelInterp.height);
-                
-                int nInterp = GUI.SelectionGrid(rectSelGrid, tKey.interp, texInterpl, 3, GUI.skin.GetStyle("ButtonImage"));
-                if(tKey.interp != nInterp) {
-                    recordUndoTrackAndKeys(sTrack, false, "Change Interpolation");
-                    
-                    tKey.interp = nInterp;
+                AMTranslationKey tKey = (AMTranslationKey)key;
 
-                    sTrack.updateCache(aData);
-                    AMCodeView.refresh();
-                    // select the current frame
-                    timelineSelectFrame(_track, _frame);
-                    // save data
-                    EditorUtility.SetDirty(sTrack);
-                    setDirtyKeys(sTrack);
-                }
                 // translation position
-                rectPosition = new Rect(0f, rectSelGrid.y + rectSelGrid.height + height_inspector_space, width_inspector - margin, 40f);
+                rectPosition = new Rect(0f, start_y, width_inspector - margin, 40f);
                 Vector3 nPos = EditorGUI.Vector3Field(rectPosition, "Position", tKey.position);
                 if(tKey.position != nPos) {
                     recordUndoTrackAndKeys(sTrack, false, "Change Position");
@@ -3357,9 +3371,9 @@ public class AMTimeline : EditorWindow {
                 }
 
                 // if not only key, show ease
-                bool isTKeyLastFrame = tKey == tTrack.keys[(sTrack as AMTranslationTrack).keys.Count - 1];
+                bool isTKeyLastFrame = tKey == tTrack.keys[tTrack.keys.Count - 1];
 
-                if(!isTKeyLastFrame && tKey.interp != (int)AMTranslationKey.Interpolation.None) {
+                if(key.canTween && !isTKeyLastFrame) {
                     rectPosition = new Rect(0f, rectPosition.y + rectPosition.height + height_inspector_space, width_inspector - margin, 0f);
                     if(!isTKeyLastFrame && tKey.interp == (int)AMTranslationKey.Interpolation.Linear)
                         showEasePicker(sTrack, tKey, aData, rectPosition.x, rectPosition.y, rectPosition.width);
@@ -3399,7 +3413,7 @@ public class AMTimeline : EditorWindow {
         #endregion
         #region rotation inspector
         if(sTrack is AMRotationTrack) {
-            AMRotationKey rKey = (AMRotationKey)sTrack.getKeyOnFrame(_frame);
+            AMRotationKey rKey = (AMRotationKey)key;
             Rect rectQuaternion = new Rect(0f, start_y, width_inspector - margin, 40f);
             // quaternion
             Vector3 rot = rKey.rotation.eulerAngles;
@@ -3417,7 +3431,7 @@ public class AMTimeline : EditorWindow {
                 setDirtyKeys(sTrack);
             }
             // if not last key, show ease
-            if(rKey != (sTrack as AMRotationTrack).keys[(sTrack as AMRotationTrack).keys.Count - 1]) {
+            if(key.canTween && rKey != (sTrack as AMRotationTrack).keys[(sTrack as AMRotationTrack).keys.Count - 1]) {
                 Rect recEasePicker = new Rect(0f, rectQuaternion.y + rectQuaternion.height + height_inspector_space, width_inspector - margin, 0f);
                 if((sTrack as AMRotationTrack).getKeyIndexForFrame(_frame) > -1) {
                     showEasePicker(sTrack, rKey, aData, recEasePicker.x, recEasePicker.y, recEasePicker.width);
@@ -3454,7 +3468,7 @@ public class AMTimeline : EditorWindow {
                 addTargetMenu.ShowAsContext();
             }
             // if not last key, show ease
-            if(oKey != (sTrack as AMOrientationTrack).keys[(sTrack as AMOrientationTrack).keys.Count - 1]) {
+            if(key.canTween && oKey != (sTrack as AMOrientationTrack).keys[(sTrack as AMOrientationTrack).keys.Count - 1]) {
                 int oActionIndex = (sTrack as AMOrientationTrack).getKeyIndexForFrame(_frame);
                 if(oActionIndex > -1 && (sTrack.keys[oActionIndex] as AMOrientationKey).GetTarget(aData) != (sTrack.keys[oActionIndex] as AMOrientationKey).GetTargetEnd(aData)) {
                     Rect recEasePicker = new Rect(0f, rectNewTarget.y + rectNewTarget.height + height_inspector_space, width_inspector - margin, 0f);
@@ -3698,7 +3712,7 @@ public class AMTimeline : EditorWindow {
             }
             // property ease, show if not last key (check for action; there is no rotation action for last key). do not show for morph channels, because it is shown before the parameters
             // don't show on non-tweenable
-            if(pTrack.canTween && pKey != pTrack.keys[pTrack.keys.Count - 1]) {
+            if(pTrack.canTween && key.canTween && pKey != pTrack.keys[pTrack.keys.Count - 1]) {
                 Rect rectEasePicker = new Rect(0f, rectField.y + rectField.height + height_inspector_space, width_inspector - margin, 0f);
                 showEasePicker(sTrack, pKey, aData, rectEasePicker.x, rectEasePicker.y, rectEasePicker.width);
             }
@@ -3935,7 +3949,7 @@ public class AMTimeline : EditorWindow {
             }
             GUI.enabled = true;
             // if not last key, show transition and ease
-            if(notLastKey && showExtras) {
+            if(key.canTween && notLastKey && showExtras) {
                 // transition picker
                 Rect rectTransitionPicker = new Rect(0f, rectLabelCameraColor.y+rectLabelCameraColor.height+height_inspector_space, rectView.width, 22f);
                 showTransitionPicker(sTrack, cKey, rectTransitionPicker.x, rectTransitionPicker.y, rectTransitionPicker.width);
@@ -3969,7 +3983,7 @@ public class AMTimeline : EditorWindow {
         #region trigger inspector
         if(sTrack is AMTriggerTrack) {
             EditorGUIUtility.labelWidth = 55.0f;
-            AMTriggerKey tKey = (AMTriggerKey)sTrack.getKeyOnFrame(_frame);
+            AMTriggerKey tKey = (AMTriggerKey)key;
             Rect rectString = new Rect(0f, start_y, width_inspector - margin, 20f);
             string str = EditorGUI.TextField(rectString, "String", tKey.valueString);
             if(tKey.valueString != str) {
@@ -4420,9 +4434,7 @@ public class AMTimeline : EditorWindow {
             GUI.Label(rectLabel, "Ease");
             Rect rectPopup = new Rect(rectLabel.x + rectLabel.width + 2f, y + 3f, width - rectLabel.width - width_button_delete - 3f, height);
 
-            int popInd = key.easeType == AMKey.EaseTypeNone ? easeTypeNames.Length - 1 : key.easeType;
-            int nease = EditorGUI.Popup(rectPopup, popInd, easeTypeNames);
-            if(nease == easeTypeNames.Length - 1) nease = AMKey.EaseTypeNone;
+            int nease = EditorGUI.Popup(rectPopup, key.easeType, easeTypeNames);
             if(key.easeType != nease) {
                 recordUndoTrackAndKeys(track, false, "Change Ease");
                 key.setEaseType(nease);
@@ -4477,9 +4489,7 @@ public class AMTimeline : EditorWindow {
             GUILayout.EndVertical();
             GUILayout.BeginVertical();
             GUILayout.Space(3f);
-            int popInd = key.easeType == AMKey.EaseTypeNone ? easeTypeNames.Length - 1 : key.easeType;
-            int nease = EditorGUILayout.Popup(popInd, easeTypeNames);
-            if(nease == easeTypeNames.Length - 1) nease = AMKey.EaseTypeNone;
+            int nease = EditorGUILayout.Popup(key.easeType, easeTypeNames);
             if(key.easeType != nease) {
                 recordUndoTrackAndKeys(track, false, "Change Ease");
                 key.setEaseType(nease);

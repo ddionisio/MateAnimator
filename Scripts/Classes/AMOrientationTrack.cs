@@ -55,8 +55,8 @@ public class AMOrientationTrack : AMTrack {
 			
 			if(keys.Count > (i + 1)) key.endFrame = keys[i + 1].frame;
 			else {
-				if(i > 0 && keys[i-1].easeType == AMKey.EaseTypeNone)
-					key.easeType = AMKey.EaseTypeNone;
+				if(i > 0 && !keys[i-1].canTween)
+					key.interp = (int)AMKey.Interpolation.None;
 
 				key.endFrame = -1;
 			}
@@ -83,7 +83,7 @@ public class AMOrientationTrack : AMTrack {
 			Transform keyt = key.GetTarget(itarget);
 			Transform keyet = key.GetTargetEnd(itarget);
 
-			if(key.easeType == AMKey.EaseTypeNone && frame == (float)key.endFrame && i < keys.Count - 1)
+			if(!key.canTween && frame == (float)key.endFrame && i < keys.Count - 1)
 				continue;
 
             // before first frame

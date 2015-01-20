@@ -124,8 +124,8 @@ public class AMRotationTrack : AMTrack {
 
             if(keys.Count > (i + 1)) key.endFrame = keys[i + 1].frame;
             else {
-				if(i > 0 && keys[i-1].easeType == AMKey.EaseTypeNone)
-					key.easeType = AMKey.EaseTypeNone;
+                if(i > 0 && !keys[i-1].canTween)
+                    key.interp = (int)AMKey.Interpolation.None;
 
 				key.endFrame = -1;
 			}
@@ -155,7 +155,7 @@ public class AMRotationTrack : AMTrack {
         foreach(AMRotationKey key in keys) {
             if((frame < (float)key.frame) || (frame > (float)key.endFrame)) continue;
             // if on startFrame or is no ease
-            if(frame == (float)key.frame || (key.easeType == AMKey.EaseTypeNone && frame < (float)key.endFrame)) {
+            if(frame == (float)key.frame || (!key.canTween && frame < (float)key.endFrame)) {
 				SetRotation(t, key.getStartQuaternion());
                 return;
             }
@@ -221,7 +221,7 @@ public class AMRotationTrack : AMTrack {
         foreach(AMRotationKey key in keys) {
             if((frame < key.frame) || (frame > key.endFrame)) continue;
             // if on startFrame or no ease
-			if(frame == key.frame || (key.easeType == AMKey.EaseTypeNone && frame < key.endFrame)) {
+			if(frame == key.frame || (!key.canTween && frame < key.endFrame)) {
                 return key.getStartQuaternion();
             }
             // if on endFrame

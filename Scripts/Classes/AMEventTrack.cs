@@ -9,6 +9,8 @@ public class AMEventTrack : AMTrack {
 	[SerializeField]
     GameObject obj;
 
+    public override bool canTween { get { return false; } }
+
 	protected override void SetSerializeObject(UnityEngine.Object obj) {
 		this.obj = obj as GameObject;
 	}

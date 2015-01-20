@@ -3,6 +3,8 @@ using System.Collections;
 using System.Collections.Generic;
 [AddComponentMenu("")]
 public class AMAnimationTrack : AMTrack {
+    public override bool canTween { get { return false; } }
+
     // to do
     // sample currently selected clip
 	[SerializeField]

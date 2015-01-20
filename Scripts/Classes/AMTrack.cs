@@ -26,6 +26,10 @@ public abstract class AMTrack : MonoBehaviour {
     /// </summary>
     public virtual bool hasTrackSettings { get { return false; } }
 
+    public virtual bool canTween { get { return true; } }
+
+    public virtual int interpCount { get { return 2; } } //at some point, all tracks can potentially use curve...
+
 	public string targetPath { get { return _targetPath; } }
 
     // set name based on index

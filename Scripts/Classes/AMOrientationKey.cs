@@ -193,7 +193,7 @@ public class AMOrientationKey : AMKey {
     }
 
 	public override int getNumberOfFrames(int frameRate) {
-        if(easeType == EaseTypeNone && (endFrame == -1 || endFrame == frame))
+        if(!canTween && (endFrame == -1 || endFrame == frame))
             return 1;
         else if(endFrame == -1)
             return -1;
@@ -209,7 +209,7 @@ public class AMOrientationKey : AMKey {
 	public Quaternion getQuaternionAtPercent(AMITarget itarget, Transform obj, float percentage) {
 		Transform tgt = GetTarget(itarget);
 		Transform tgte = GetTargetEnd(itarget);
-		if(tgt == tgte || easeType == EaseTypeNone) {
+        if(tgt == tgte || !canTween) {
 			return Quaternion.LookRotation(tgt.position - obj.position);
 		}
 		
@@ -233,7 +233,7 @@ public class AMOrientationKey : AMKey {
     public override void build(AMSequence seq, AMTrack track, int index, UnityEngine.Object obj) {
         if(!obj) return;
         int frameRate = seq.take.frameRate;
-		if(easeType == EaseTypeNone) {
+        if(!canTween) {
             seq.Insert(this, HOTween.To(obj, getTime(frameRate), new TweenParms().Prop("rotation", new AMPlugOrientation(GetTarget(seq.target), null))));
 		}
         if(endFrame == -1) return;

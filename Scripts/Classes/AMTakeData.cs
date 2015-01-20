@@ -946,6 +946,12 @@ public class AMTakeData {
                 bool shouldUpdateCache = false;
                 if(track != null && track.keys != null) {
                     foreach(AMKey key in track.keys) {
+                        //update key's interpolation
+                        if(key.easeType == -1) {
+                            key.interp = (int)AMKey.Interpolation.None;
+                            key.easeType = 0;
+                        }
+
                         if(key.version != track.version) {
                             shouldUpdateCache = true;
                             break;

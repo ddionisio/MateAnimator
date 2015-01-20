@@ -5,6 +5,8 @@ using System.Collections.Generic;
 [AddComponentMenu("")]
 public class AMTriggerTrack : AMTrack {
 
+    public override bool canTween { get { return false; } }
+
     protected override void SetSerializeObject(UnityEngine.Object obj) { }
     protected override UnityEngine.Object GetSerializeObject(GameObject targetGO) { return this; }
 

@@ -6,9 +6,15 @@ using Holoville.HOTween;
 
 [AddComponentMenu("")]
 public class AMKey : MonoBehaviour {
-	public const int EaseTypeNone = -1;
+    public enum Interpolation {
+        Curve = 0,
+        Linear = 1,
+        None = 2
+    }
 
     public int version = 0; //for upgrading/initializing
+
+    public int interp = 0;			// interpolation
 
     public int frame;
     public int easeType = (int)0;//AMTween.EaseType.linear; 			// ease type, AMTween.EaseType enum
@@ -18,6 +24,9 @@ public class AMKey : MonoBehaviour {
     public float period = 0.0f;
 
     public List<float> customEase = new List<float>();
+
+    public virtual bool canTween { get { return interp != (int)Interpolation.None; } }
+
     private AnimationCurve _cachedEaseCurve;
     public AnimationCurve easeCurve {
         get {
@@ -28,8 +37,6 @@ public class AMKey : MonoBehaviour {
             _cachedEaseCurve = value;
         }
     }
-
-    public virtual bool canTween { get { return easeType != EaseTypeNone; } }
 
     public virtual void destroy() {
         Object.DestroyImmediate(this);

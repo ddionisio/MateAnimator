@@ -137,12 +137,10 @@ public class AMPropertyTrack : AMTrack {
         cachedFieldInfo = null;
         cachedPropertyInfo = null;
 	}
-    public static bool CanTween(ValueType valueType) {
-        return !(valueType == ValueType.Bool || valueType == ValueType.String || valueType == ValueType.Sprite || valueType == ValueType.Enum);
-    }
-	public bool canTween {
+	public override bool canTween {
 		get {
-            return CanTween((ValueType)valueType);
+            ValueType vt = (ValueType)valueType;
+            return !(vt == ValueType.Bool || vt == ValueType.String || vt == ValueType.Sprite || vt == ValueType.Enum);
 		}
 	}
     public string getMemberName() {
@@ -186,7 +184,7 @@ public class AMPropertyTrack : AMTrack {
         if(k == null) {
             k = addCall(gameObject, typeof(AMPropertyKey)) as AMPropertyKey;
             k.frame = _frame;
-            k.easeType = canTween ? (int)EaseType.Linear : AMKey.EaseTypeNone;
+            k.interp = (int)(canTween ? AMKey.Interpolation.Linear : AMKey.Interpolation.None);
             // add a new key
             keys.Add(k);
         }
@@ -303,8 +301,8 @@ public class AMPropertyTrack : AMTrack {
 
             if(keys.Count > (i + 1)) key.endFrame = keys[i + 1].frame;
             else {
-                if(!canTween || (i > 0 && keys[i-1].easeType == AMKey.EaseTypeNone))
-					key.easeType = AMKey.EaseTypeNone;
+                if(!canTween || (i > 0 && !keys[i-1].canTween))
+                    key.interp = (int)AMKey.Interpolation.None;
 
 				key.endFrame = -1;
 			}
@@ -434,14 +432,14 @@ public class AMPropertyTrack : AMTrack {
             if((frame < (float)key.frame) || (frame > (float)key.endFrame)) continue;
             //if(quickPreview && !key.targetsAreEqual()) return;	// quick preview; if action will execute then skip
             // if on startFrame or is no tween
-            if(frame == (float)key.frame || ((key.easeType == AMKey.EaseTypeNone || !canTween) && frame < (float)key.endFrame)) {
+            if(frame == (float)key.frame || ((!key.canTween || !canTween) && frame < (float)key.endFrame)) {
                 setComponentValueFromCachedInfo(comp, key.getStartValue(valueType));
                 refreshTransform(go);
                 return;
             }
             // if on endFrame
             if(frame == (float)key.endFrame) {
-                if(key.easeType == AMKey.EaseTypeNone || !canTween)
+                if(!key.canTween || !canTween)
                     continue;
                 else {
                     setComponentValueFromCachedInfo(comp, key.getEndValue(valueType));
@@ -456,7 +454,7 @@ public class AMPropertyTrack : AMTrack {
 
             float t;
 
-            if(key.easeType == AMKey.EaseTypeNone)
+            if(!key.canTween)
                 t = 0.0f;
             else if(key.hasCustomEase()) {
                 t = AMUtil.EaseCustom(0.0f, 1.0f, framePositionInAction / key.getNumberOfFrames(frameRate), key.easeCurve);
