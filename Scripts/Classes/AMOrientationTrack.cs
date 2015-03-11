@@ -60,9 +60,6 @@ public class AMOrientationTrack : AMTrack {
 
 				key.endFrame = -1;
 			}
-
-			// targets
-			if(key.endFrame != -1) key.SetTargetEnd(keys[i + 1] as AMOrientationKey);
 		}
 		// restore rotation
 		//if(restoreRotation) obj.rotation = temp;
@@ -81,7 +78,7 @@ public class AMOrientationTrack : AMTrack {
         for(int i = 0; i < keys.Count; i++) {
 			AMOrientationKey key = keys[i] as AMOrientationKey;
 			Transform keyt = key.GetTarget(itarget);
-			Transform keyet = key.GetTargetEnd(itarget);
+			Transform keyet = i + 1 < keys.Count ? (keys[i+1] as AMOrientationKey).GetTarget(itarget) : null;
 
 			if(!key.canTween && frame == (float)key.endFrame && i < keys.Count - 1)
 				continue;
@@ -98,7 +95,7 @@ public class AMOrientationTrack : AMTrack {
                 float framePositionInPath = frame - (float)keys[i].frame;
                 if(framePositionInPath < 0f) framePositionInPath = 0f;
                 float percentage = framePositionInPath / keys[i].getNumberOfFrames(frameRate);
-				t.rotation = key.getQuaternionAtPercent(itarget, t, percentage);
+				t.rotation = key.getQuaternionAtPercent(t, keyt, keyet, percentage);
                 return;
                 // after last frame
             }
@@ -118,7 +115,7 @@ public class AMOrientationTrack : AMTrack {
         return null;
     }
 	public Transform getEndTargetForFrame(AMITarget itarget, float frame) {
-		if(keys.Count > 1) return (keys[keys.Count - 2] as AMOrientationKey).GetTargetEnd(itarget);
+		if(keys.Count > 1) return (keys[keys.Count - 1] as AMOrientationKey).GetTarget(itarget);
         return null;
     }
 	public Transform getTargetForFrame(AMITarget itarget, float frame) {
@@ -126,24 +123,37 @@ public class AMOrientationTrack : AMTrack {
 		else return getStartTargetForFrame(itarget, frame);
     }
     // draw gizmos
-    public void drawGizmos(AMITarget itarget, float gizmo_size, bool inPlayMode, int frame) {
+    public override void drawGizmos(AMITarget itarget, float gizmo_size, bool inPlayMode, int frame) {
         if(!obj) return;
+
         // draw line to target
+        bool isLineDrawn = false;
         if(!inPlayMode) {
-            foreach(AMOrientationKey key in keys) {
+            for(int i = 0; i < keys.Count; i++) {
+                AMOrientationKey key = keys[i] as AMOrientationKey;
                 if(key == null)
                     continue;
 
-                if(key.frame > frame) break;
-                if(frame >= key.frame && frame <= key.endFrame) {
-					Transform t = key.GetTarget(itarget);
-					if(key.isLookFollow(itarget) && t) {
-                        Gizmos.color = new Color(245f / 255f, 107f / 255f, 30f / 255f, 0.2f);
-						Gizmos.DrawLine(obj.transform.position, t.position);
-                    }
-                    break;
-                }
+                AMOrientationKey keyNext = i + 1 < keys.Count ? keys[i + 1] as AMOrientationKey : null;
 
+                Transform t = key.GetTarget(itarget);
+                if(t) {
+                    //draw target
+                    Gizmos.color = new Color(245f/255f, 107f/255f, 30f/255f, 1f);
+                    Gizmos.DrawSphere(t.position, 0.2f * (AnimatorTimeline.e_gizmoSize/0.1f));
+
+                    //draw line
+                    if(!isLineDrawn) {
+                        if(key.frame > frame) isLineDrawn = true;
+                        if(frame >= key.frame && frame <= key.endFrame) {
+                            if(!keyNext || t == keyNext.GetTarget(itarget)) {
+                                Gizmos.color = new Color(245f / 255f, 107f / 255f, 30f / 255f, 0.2f);
+                                Gizmos.DrawLine(obj.transform.position, t.position);
+                            }
+                            isLineDrawn = true;
+                        }
+                    }
+                }
             }
         }
         // draw arrow
@@ -168,15 +178,6 @@ public class AMOrientationTrack : AMTrack {
         else if((int)frame > keys[keys.Count - 1].frame) return true;
         else return false;
     }
-
-
-	public bool hasTarget(AMITarget itarget, Transform obj) {
-        foreach(AMOrientationKey key in keys) {
-            if(key.GetTarget(itarget) == obj || key.GetTargetEnd(itarget) == obj) return true;
-        }
-        return false;
-    }
-
 
 	public override AnimatorTimeline.JSONInit getJSONInit(AMITarget target) {
         if(!obj || keys.Count <= 0) return null;

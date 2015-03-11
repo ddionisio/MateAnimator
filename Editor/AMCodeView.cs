@@ -12,7 +12,7 @@ public class AMCodeView : EditorWindow {
     public static AMCodeView window = null;
 
     public AMOptionsFile oData;
-    public AnimatorData aData;
+    public AnimatorDataEdit aData;
 
     private string[] selStrings = new string[] { "C#", "Javascript" };
     private Vector2 scrollView;
@@ -71,7 +71,7 @@ public class AMCodeView : EditorWindow {
         window = null;
     }
     void OnHierarchyChange() {
-        if(!aData) loadAnimatorData();
+        if(aData == null) loadAnimatorData();
     }
     public void reloadAnimatorData() {
         aData = null;
@@ -100,7 +100,7 @@ public class AMCodeView : EditorWindow {
         textStyle.padding = new RectOffset(0, 0, 10, 0);
         GUIStyle styleLabelCentered = new GUIStyle(GUI.skin.label);
         styleLabelCentered.alignment = TextAnchor.MiddleCenter;
-        if(!aData) {
+        if(aData == null) {
             AMTimeline.MessageBox("Animator requires an AnimatorData component in your scene. Launch Animator to add the component.", AMTimeline.MessageBoxType.Warning);
             return;
         }
@@ -133,9 +133,9 @@ public class AMCodeView : EditorWindow {
         #region code vertical
         GUILayout.BeginVertical(GUILayout.Height(position.height));
         GUILayout.Space(3f);
-        if(aData.e_setCodeLanguage(GUILayout.SelectionGrid(aData.codeLanguage, selStrings, 2/*,styleSelGrid*/))) {
+        if(aData.SetCodeLanguage(GUILayout.SelectionGrid(aData.codeLanguage, selStrings, 2/*,styleSelGrid*/))) {
             // save data	
-            EditorUtility.SetDirty(aData);
+            aData.SetDirty();
             refreshCode();
         }
         GUILayout.Space(3f);
@@ -200,8 +200,8 @@ public class AMCodeView : EditorWindow {
             GUILayout.BeginHorizontal();
             //GUILayout.Space(inspector_space);
             scrollPos = EditorGUILayout.BeginScrollView(scrollPos/*,styleScrollView*/);
-            for(int i = 0; i < AMTimeline.window.currentTake.rootGroup.elements.Count; i++) {
-                int id = AMTimeline.window.currentTake.rootGroup.elements[i];
+            for(int i = 0; i < aData.currentTake.rootGroup.elements.Count; i++) {
+                int id = aData.currentTake.rootGroup.elements[i];
                 //float height_group_elements = 0f;
                 showGroupElement(id, 0);
             }
@@ -247,7 +247,7 @@ public class AMCodeView : EditorWindow {
     void showGroupElement(int id, int group_lvl) {
         // returns true if mouse over track
         if(id >= 0) {
-            AMTrack _track = AMTimeline.window.currentTake.getTrack(id);
+            AMTrack _track = aData.currentTake.getTrack(id);
             showTrack(_track, id, group_lvl);
         }
         else {
@@ -261,7 +261,7 @@ public class AMCodeView : EditorWindow {
 
         //Rect rectGroup = new Rect(group_x,track_y,width_track-group_x,height_group);
         if(!dictGroups.ContainsKey(id)) dictGroups.Add(id, true);
-        AMGroup grp = AMTimeline.window.currentTake.getGroup(id);
+        AMGroup grp = aData.currentTake.getGroup(id);
         GUILayout.BeginHorizontal();
         GUILayout.Space(width_indent * (group_lvl));	// indent
         // foldout
@@ -311,13 +311,13 @@ public class AMCodeView : EditorWindow {
     bool hasTracks(AMGroup grp) {
         foreach(int id in grp.elements) {
             if(id >= 0) return true;
-            else if(hasTracks(AMTimeline.window.currentTake.getGroup(id))) return true;
+            else if(hasTracks(aData.currentTake.getGroup(id))) return true;
         }
         return false;
     }
     void toggleChildren(AMGroup grp, ref bool? newValue) {
         foreach(int _id in grp.elements) {
-            if(_id < 0) toggleChildren(AMTimeline.window.currentTake.getGroup(_id), ref newValue);
+            if(_id < 0) toggleChildren(aData.currentTake.getGroup(_id), ref newValue);
             else {
                 if(newValue == null) newValue = !dictTracks[_id];
                 dictTracks[_id] = (bool)newValue;
@@ -343,11 +343,11 @@ public class AMCodeView : EditorWindow {
         GUILayout.EndHorizontal();
     }
     string getCode() {
-        if(!aData) return "";
+        if(aData == null) return "";
         varNameDictionary = new Dictionary<string, string>();
-        string code = "// " + AMTimeline.window.currentTake.name;
+        string code = "// " + aData.currentTake.name;
         code += "\n";
-        appendGroupCode(AMTimeline.window.currentTake.getGroup(0), ref code);
+        appendGroupCode(aData.currentTake.getGroup(0), ref code);
         return code;
     }
 
@@ -372,13 +372,13 @@ public class AMCodeView : EditorWindow {
             if(element_id > 0) {
                 if(!dictTracks.ContainsKey(element_id)) dictTracks.Add(element_id, true);
                 if(dictTracks[element_id] == true) {
-                    AMTrack track = AMTimeline.window.currentTake.getTrack(element_id);
+                    AMTrack track = aData.currentTake.getTrack(element_id);
                     appendTrackCode(track, ref code);
                 }
             }
             // group
             else if(element_id < 0) {
-                AMGroup grp = AMTimeline.window.currentTake.getGroup(element_id);
+                AMGroup grp = aData.currentTake.getGroup(element_id);
                 //code += "\n// "+grp.group_name+"\n";
                 appendGroupCode(grp, ref code);
             }
@@ -402,15 +402,15 @@ public class AMCodeView : EditorWindow {
             if(codeLanguage == 0) return varName + ".transform.rotation = new Quaternion(" + _rotation.x + "f, " + _rotation.y + "f, " + _rotation.z + "f, " + _rotation.w + "f); // Set Initial Rotation\n";
             else return varName + ".transform.rotation = Quaternion(" + _rotation.x + ", " + _rotation.y + ", " + _rotation.z + ", " + _rotation.w + "); // Set Initial Rotation\n";
         }
-        else if(_track is AMOrientationTrack && (_track as AMOrientationTrack).getInitialTarget(aData)) {
+        else if(_track is AMOrientationTrack && (_track as AMOrientationTrack).getInitialTarget(aData.target)) {
             // orientation, set initial look
-            Transform _target = (_track as AMOrientationTrack).getInitialTarget(aData);
+            Transform _target = (_track as AMOrientationTrack).getInitialTarget(aData.target);
             int start_frame = 0;
             AMTrack _translation_track = null;
             if((_track as AMOrientationTrack).keys.Count > 0) start_frame = (_track as AMOrientationTrack).keys[0].frame;
-            if(start_frame > 0) _translation_track = AMTimeline.window.currentTake.getTranslationTrackForTransform(aData, _target);
+            if(start_frame > 0) _translation_track = aData.currentTake.getTranslationTrackForTransform(aData.target, _target);
             Vector3 _lookv3 = _target.transform.position;
-            if(_translation_track) _lookv3 = (_translation_track as AMTranslationTrack).getPositionAtFrame((_translation_track as AMTranslationTrack).GetTarget(aData) as Transform, start_frame, AMTimeline.window.currentTake.frameRate, false);
+            if(_translation_track) _lookv3 = (_translation_track as AMTranslationTrack).getPositionAtFrame((_translation_track as AMTranslationTrack).GetTarget(aData.target) as Transform, start_frame, aData.currentTake.frameRate, false);
 
             if(codeLanguage == 0) return varName + ".transform.LookAt (new Vector3(" + _lookv3.x + "f, " + _lookv3.y + "f, " + _lookv3.z + "f)); // Set Initial Orientation\n";
             else return varName + ".transform.LookAt (Vector3(" + _lookv3.x + ", " + _lookv3.y + ", " + _lookv3.z + ")); // Set Initial Orientation\n";

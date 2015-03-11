@@ -6,11 +6,9 @@ using System.Reflection;
 using System;
 
 public class AMPropertySelect : EditorWindow {
-    public AMOptionsFile oData;
+    private AnimatorDataEdit __aData;
 
-    private AnimatorData __aData;
-
-    public AnimatorData aData {
+    public AnimatorDataEdit aData {
         get {
             if(AMTimeline.window != null && AMTimeline.window.aData != __aData) {
                 track = null;
@@ -39,8 +37,6 @@ public class AMPropertySelect : EditorWindow {
         window = this;
         this.title = "Property";
         this.minSize = new Vector2(273f, 102f);
-        this.wantsMouseMove = true;
-        oData = AMOptionsFile.loadFile();
         loadAnimatorData();
         scrollView = new Vector2(0f, 0f);
         // define styles		
@@ -50,7 +46,7 @@ public class AMPropertySelect : EditorWindow {
         track = null;
     }
     void OnHierarchyChange() {
-        if(!aData) reloadAnimatorData();
+        if(aData == null) reloadAnimatorData();
     }
     public void reloadAnimatorData() {
         __aData = null;
@@ -60,26 +56,23 @@ public class AMPropertySelect : EditorWindow {
         if(AMTimeline.window) {
             __aData = AMTimeline.window.aData;
             if(track) {
-                _go = track.GetTarget(__aData) as GameObject;
+                _go = track.GetTarget(__aData.target) as GameObject;
                 // refresh	
                 updateComponentArray();
             }
         }
     }
-    void Update() {
-        if(EditorWindow.mouseOverWindow == this) this.Repaint();
-    }
     void OnGUI() {
 
         AMTimeline.loadSkin(ref skin, ref cachedSkinName, position);
-        if(!aData) {
+        if(aData == null) {
             AMTimeline.MessageBox("Animator requires an AnimatorData component in your scene. Launch Animator to add the component.", AMTimeline.MessageBoxType.Warning);
             return;
         }
         if(!track) {
             return;
         }
-        if(!(track.GetTarget(aData) as GameObject)) {
+        if(!(track.GetTarget(aData.target) as GameObject)) {
             AMTimeline.MessageBox("Assign a GameObject to the track first.", AMTimeline.MessageBoxType.Warning);
             return;
         }
@@ -193,7 +186,7 @@ public class AMPropertySelect : EditorWindow {
 
     void processSelectProperty(Component propertyComponent, FieldInfo fieldInfo, PropertyInfo propertyInfo, MethodInfo methodMegaMorphSetPercent = null) {
 
-        if(!aData || !track) this.Close();
+        if(aData == null || !track) this.Close();
 
         bool changePropertyValue = true;
         if((track.keys.Count > 0) && (!EditorUtility.DisplayDialog("Data Will Be Lost", "You will lose all of the keyframes on track '" + track.name + "' if you continue.", "Continue Anway", "Cancel"))) {
@@ -220,8 +213,8 @@ public class AMPropertySelect : EditorWindow {
             else if(propertyInfo != null)
                 track.setPropertyInfo(propertyInfo);
             // set component
-            track.setComponent(aData, propertyComponent);
-			track.updateCache(aData);
+            track.setComponent(aData.target, propertyComponent);
+			track.updateCache(aData.target);
             EditorUtility.SetDirty(track);
         }
         this.Close();

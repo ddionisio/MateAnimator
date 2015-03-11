@@ -15,6 +15,8 @@ public class AMPropertyKey : AMKey {
 	public string valString; //string
 	public UnityEngine.Object valObj;
 
+    public bool valb { get { return val > 0.0; } set { val = value ? 1.0 : -1.0; } }
+
     //union for vectors, color, rect
     public Vector4 vect4;
     public Vector2 vect2 { get { return new Vector2(vect4.x, vect4.y); } set { vect4.Set(value.x, value.y, 0, 0); } }
@@ -22,114 +24,6 @@ public class AMPropertyKey : AMKey {
     public Color color { get { return new Color(vect4.x, vect4.y, vect4.z, vect4.w); } set { vect4.Set(value.r, value.g, value.b, value.a); } }
     public Rect rect { get { return new Rect(vect4.x, vect4.y, vect4.z, vect4.w); } set { vect4.Set(value.xMin, value.yMin, value.width, value.height); } }
     public Quaternion quat { get { return new Quaternion(vect4.x, vect4.y, vect4.z, vect4.w); } set { vect4.Set(value.x, value.y, value.z, value.w); } }
-
-    public double end_val;			// value as double (includes int/long)
-    public Vector4 end_vect4;
-
-    public Vector2 end_vect2 { get { return new Vector2(end_vect4.x, end_vect4.y); } set { end_vect4.Set(value.x, value.y, 0, 0); } }
-    public Vector3 end_vect3 { get { return new Vector3(end_vect4.x, end_vect4.y, end_vect4.z); } set { end_vect4.Set(value.x, value.y, value.z, 0); } }
-    public Color end_color { get { return new Color(end_vect4.x, end_vect4.y, end_vect4.z, end_vect4.w); } set { end_vect4.Set(value.r, value.g, value.b, value.a); } }
-    public Rect end_rect { get { return new Rect(end_vect4.x, end_vect4.y, end_vect4.z, end_vect4.w); } set { end_vect4.Set(value.xMin, value.yMin, value.width, value.height); } }
-    public Quaternion end_quat { get { return new Quaternion(end_vect4.x, end_vect4.y, end_vect4.z, end_vect4.w); } set { end_vect4.Set(value.x, value.y, value.z, value.w); } }
-
-	public bool setValue(UnityEngine.Object val) {
-		if(this.valObj != val) {
-			this.valObj = val;
-			return true;
-		}
-		return false;
-	}
-
-	public bool setValue(bool val) {
-		double nval = val ? 1.0 : -1.0;
-		if(this.val != nval) {
-			this.val = nval;
-			return true;
-		}
-		return false;
-	}
-
-	public bool setValue(string val) {
-		if(this.valString != val) {
-			this.valString = val;
-			return true;
-		}
-		return false;
-	}
-
-    public bool setValue(float val) {
-        if(this.val != (double)val) {
-            this.val = (double)val;
-            return true;
-        }
-        return false;
-    }
-    public bool setValue(Quaternion quat) {
-        if(this.quat != quat) {
-            this.quat = quat;
-            return true;
-        }
-        return false;
-    }
-    public bool setValue(Vector4 vect4) {
-        if(this.vect4 != vect4) {
-            this.vect4 = vect4;
-            return true;
-        }
-        return false;
-    }
-    public bool setValue(Vector3 vect3) {
-        if(this.vect3 != vect3) {
-            this.vect3 = vect3;
-            return true;
-        }
-        return false;
-    }
-    public bool setValue(Color color) {
-        if(this.color != color) {
-            this.color = color;
-            return true;
-        }
-        return false;
-    }
-    public bool setValue(Rect rect) {
-        if(this.rect != rect) {
-            this.rect = rect;
-            return true;
-        }
-        return false;
-    }
-    public bool setValue(Vector2 vect2) {
-        if(this.vect2 != vect2) {
-            this.vect2 = vect2;
-            return true;
-        }
-        return false;
-    }
-    // set value from double
-    public bool setValue(double val) {
-        if(this.val != val) {
-            this.val = val;
-            return true;
-        }
-        return false;
-    }
-    // set value from int
-    public bool setValue(int val) {
-        if(this.val != (double)val) {
-            this.val = (double)val;
-            return true;
-        }
-        return false;
-    }
-    // set value from long
-    public bool setValue(long val) {
-        if(this.val != (double)val) {
-            this.val = (double)val;
-            return true;
-        }
-        return false;
-    }
 
     // copy properties from key
     public override void CopyTo(AMKey key) {
@@ -183,9 +77,7 @@ public class AMPropertyKey : AMKey {
         if(endFrame == -1 && canTween && propTrack.canTween) return;
 
         int valueType = propTrack.valueType;
-
-        if(targetsAreEqual(valueType)) return;
-
+                
 		//get component and fill the cached method info
         Component comp = propTrack.GetTargetComp(target as GameObject);
 
@@ -231,52 +123,59 @@ public class AMPropertyKey : AMKey {
                     if(obj != null)
                         seq.Insert(GenerateActionData(propTrack, frameRate, comp, obj));
                 }
-                else if(hasCustomEase()) {
-                    switch((AMPropertyTrack.ValueType)valueType) {
-                        case AMPropertyTrack.ValueType.Integer:
-                            seq.Insert(this, HOTween.To(comp, getTime(frameRate), new TweenParms().Prop(varName, System.Convert.ToInt32(end_val)).Ease(easeCurve))); break;
-                        case AMPropertyTrack.ValueType.Float:
-                            seq.Insert(this, HOTween.To(comp, getTime(frameRate), new TweenParms().Prop(varName, System.Convert.ToSingle(end_val)).Ease(easeCurve))); break;
-                        case AMPropertyTrack.ValueType.Double:
-                            seq.Insert(this, HOTween.To(comp, getTime(frameRate), new TweenParms().Prop(varName, new AMPlugDouble(end_val)).Ease(easeCurve))); break;
-                        case AMPropertyTrack.ValueType.Long:
-                            seq.Insert(this, HOTween.To(comp, getTime(frameRate), new TweenParms().Prop(varName, new AMPlugLong(System.Convert.ToInt64(end_val))).Ease(easeCurve))); break;
-                        case AMPropertyTrack.ValueType.Vector2:
-                            seq.Insert(this, HOTween.To(comp, getTime(frameRate), new TweenParms().Prop(varName, end_vect2).Ease(easeCurve))); break;
-                        case AMPropertyTrack.ValueType.Vector3:
-                            seq.Insert(this, HOTween.To(comp, getTime(frameRate), new TweenParms().Prop(varName, end_vect3).Ease(easeCurve))); break;
-                        case AMPropertyTrack.ValueType.Color:
-                            seq.Insert(this, HOTween.To(comp, getTime(frameRate), new TweenParms().Prop(varName, end_color).Ease(easeCurve))); break;
-                        case AMPropertyTrack.ValueType.Rect:
-                            seq.Insert(this, HOTween.To(comp, getTime(frameRate), new TweenParms().Prop(varName, end_rect).Ease(easeCurve))); break;
-                        case AMPropertyTrack.ValueType.Vector4:
-                            seq.Insert(this, HOTween.To(comp, getTime(frameRate), new TweenParms().Prop(varName, end_vect4).Ease(easeCurve))); break;
-                        case AMPropertyTrack.ValueType.Quaternion:
-                            seq.Insert(this, HOTween.To(comp, getTime(frameRate), new TweenParms().Prop(varName, new AMPlugQuaternionSlerp(end_quat)).Ease(easeCurve))); break;
-                    }
-                }
                 else {
-                    switch((AMPropertyTrack.ValueType)valueType) {
-                        case AMPropertyTrack.ValueType.Integer:
-                            seq.Insert(this, HOTween.To(comp, getTime(frameRate), new TweenParms().Prop(varName, System.Convert.ToInt32(end_val)).Ease((EaseType)easeType, amplitude, period))); break;
-                        case AMPropertyTrack.ValueType.Float:
-                            seq.Insert(this, HOTween.To(comp, getTime(frameRate), new TweenParms().Prop(varName, System.Convert.ToSingle(end_val)).Ease((EaseType)easeType, amplitude, period))); break;
-                        case AMPropertyTrack.ValueType.Double:
-                            seq.Insert(this, HOTween.To(comp, getTime(frameRate), new TweenParms().Prop(varName, new AMPlugDouble(end_val)).Ease((EaseType)easeType, amplitude, period))); break;
-                        case AMPropertyTrack.ValueType.Long:
-                            seq.Insert(this, HOTween.To(comp, getTime(frameRate), new TweenParms().Prop(varName, new AMPlugLong(System.Convert.ToInt64(end_val))).Ease((EaseType)easeType, amplitude, period))); break;
-                        case AMPropertyTrack.ValueType.Vector2:
-                            seq.Insert(this, HOTween.To(comp, getTime(frameRate), new TweenParms().Prop(varName, end_vect2).Ease((EaseType)easeType, amplitude, period))); break;
-                        case AMPropertyTrack.ValueType.Vector3:
-                            seq.Insert(this, HOTween.To(comp, getTime(frameRate), new TweenParms().Prop(varName, end_vect3).Ease((EaseType)easeType, amplitude, period))); break;
-                        case AMPropertyTrack.ValueType.Color:
-                            seq.Insert(this, HOTween.To(comp, getTime(frameRate), new TweenParms().Prop(varName, end_color).Ease((EaseType)easeType, amplitude, period))); break;
-                        case AMPropertyTrack.ValueType.Rect:
-                            seq.Insert(this, HOTween.To(comp, getTime(frameRate), new TweenParms().Prop(varName, end_rect).Ease((EaseType)easeType, amplitude, period))); break;
-                        case AMPropertyTrack.ValueType.Vector4:
-                            seq.Insert(this, HOTween.To(comp, getTime(frameRate), new TweenParms().Prop(varName, end_vect4).Ease((EaseType)easeType, amplitude, period))); break;
-                        case AMPropertyTrack.ValueType.Quaternion:
-                            seq.Insert(this, HOTween.To(comp, getTime(frameRate), new TweenParms().Prop(varName, new AMPlugQuaternionSlerp(end_quat)).Ease((EaseType)easeType, amplitude, period))); break;
+                    //grab end frame
+                    AMPropertyKey endKey = track.keys[index + 1] as AMPropertyKey;
+
+                    if(targetsAreEqual(valueType, endKey)) return;
+
+                    if(hasCustomEase()) {
+                        switch((AMPropertyTrack.ValueType)valueType) {
+                            case AMPropertyTrack.ValueType.Integer:
+                                seq.Insert(this, HOTween.To(comp, getTime(frameRate), new TweenParms().Prop(varName, System.Convert.ToInt32(endKey.val)).Ease(easeCurve))); break;
+                            case AMPropertyTrack.ValueType.Float:
+                                seq.Insert(this, HOTween.To(comp, getTime(frameRate), new TweenParms().Prop(varName, System.Convert.ToSingle(endKey.val)).Ease(easeCurve))); break;
+                            case AMPropertyTrack.ValueType.Double:
+                                seq.Insert(this, HOTween.To(comp, getTime(frameRate), new TweenParms().Prop(varName, new AMPlugDouble(endKey.val)).Ease(easeCurve))); break;
+                            case AMPropertyTrack.ValueType.Long:
+                                seq.Insert(this, HOTween.To(comp, getTime(frameRate), new TweenParms().Prop(varName, new AMPlugLong(System.Convert.ToInt64(endKey.val))).Ease(easeCurve))); break;
+                            case AMPropertyTrack.ValueType.Vector2:
+                                seq.Insert(this, HOTween.To(comp, getTime(frameRate), new TweenParms().Prop(varName, endKey.vect2).Ease(easeCurve))); break;
+                            case AMPropertyTrack.ValueType.Vector3:
+                                seq.Insert(this, HOTween.To(comp, getTime(frameRate), new TweenParms().Prop(varName, endKey.vect3).Ease(easeCurve))); break;
+                            case AMPropertyTrack.ValueType.Color:
+                                seq.Insert(this, HOTween.To(comp, getTime(frameRate), new TweenParms().Prop(varName, endKey.color).Ease(easeCurve))); break;
+                            case AMPropertyTrack.ValueType.Rect:
+                                seq.Insert(this, HOTween.To(comp, getTime(frameRate), new TweenParms().Prop(varName, endKey.rect).Ease(easeCurve))); break;
+                            case AMPropertyTrack.ValueType.Vector4:
+                                seq.Insert(this, HOTween.To(comp, getTime(frameRate), new TweenParms().Prop(varName, endKey.vect4).Ease(easeCurve))); break;
+                            case AMPropertyTrack.ValueType.Quaternion:
+                                seq.Insert(this, HOTween.To(comp, getTime(frameRate), new TweenParms().Prop(varName, new AMPlugQuaternionSlerp(endKey.quat)).Ease(easeCurve))); break;
+                        }
+                    }
+                    else {
+                        switch((AMPropertyTrack.ValueType)valueType) {
+                            case AMPropertyTrack.ValueType.Integer:
+                                seq.Insert(this, HOTween.To(comp, getTime(frameRate), new TweenParms().Prop(varName, System.Convert.ToInt32(endKey.val)).Ease((EaseType)easeType, amplitude, period))); break;
+                            case AMPropertyTrack.ValueType.Float:
+                                seq.Insert(this, HOTween.To(comp, getTime(frameRate), new TweenParms().Prop(varName, System.Convert.ToSingle(endKey.val)).Ease((EaseType)easeType, amplitude, period))); break;
+                            case AMPropertyTrack.ValueType.Double:
+                                seq.Insert(this, HOTween.To(comp, getTime(frameRate), new TweenParms().Prop(varName, new AMPlugDouble(endKey.val)).Ease((EaseType)easeType, amplitude, period))); break;
+                            case AMPropertyTrack.ValueType.Long:
+                                seq.Insert(this, HOTween.To(comp, getTime(frameRate), new TweenParms().Prop(varName, new AMPlugLong(System.Convert.ToInt64(endKey.val))).Ease((EaseType)easeType, amplitude, period))); break;
+                            case AMPropertyTrack.ValueType.Vector2:
+                                seq.Insert(this, HOTween.To(comp, getTime(frameRate), new TweenParms().Prop(varName, endKey.vect2).Ease((EaseType)easeType, amplitude, period))); break;
+                            case AMPropertyTrack.ValueType.Vector3:
+                                seq.Insert(this, HOTween.To(comp, getTime(frameRate), new TweenParms().Prop(varName, endKey.vect3).Ease((EaseType)easeType, amplitude, period))); break;
+                            case AMPropertyTrack.ValueType.Color:
+                                seq.Insert(this, HOTween.To(comp, getTime(frameRate), new TweenParms().Prop(varName, endKey.color).Ease((EaseType)easeType, amplitude, period))); break;
+                            case AMPropertyTrack.ValueType.Rect:
+                                seq.Insert(this, HOTween.To(comp, getTime(frameRate), new TweenParms().Prop(varName, endKey.rect).Ease((EaseType)easeType, amplitude, period))); break;
+                            case AMPropertyTrack.ValueType.Vector4:
+                                seq.Insert(this, HOTween.To(comp, getTime(frameRate), new TweenParms().Prop(varName, endKey.vect4).Ease((EaseType)easeType, amplitude, period))); break;
+                            case AMPropertyTrack.ValueType.Quaternion:
+                                seq.Insert(this, HOTween.To(comp, getTime(frameRate), new TweenParms().Prop(varName, new AMPlugQuaternionSlerp(endKey.quat)).Ease((EaseType)easeType, amplitude, period))); break;
+                        }
                     }
                 }
             }
@@ -323,53 +222,54 @@ public class AMPropertyKey : AMKey {
         else s += "]";
         return s;
     }
-    public string getValueString(System.Type type, int valueType, bool brief) {
-        string s = "";
+    public string getValueString(System.Type type, int valueType, AMPropertyKey nextKey, bool brief) {
+        System.Text.StringBuilder s = new System.Text.StringBuilder();
+
         if(AMPropertyTrack.isValueTypeNumeric(valueType)) {
             //s+= start_val.ToString();
-            s += formatNumeric(val);
-            if(!brief && endFrame != -1) s += " -> " + formatNumeric(end_val);
+            s.Append(formatNumeric(val));
+            if(!brief && nextKey) { s.Append(" -> "); s.Append(formatNumeric(nextKey.val)); }
             //if(!brief && endFrame != -1) s += " -> "+end_val.ToString();
         }
 		else if(valueType == (int)AMPropertyTrack.ValueType.Bool) {
-			s += (val > 0.0 ? "(true)" : "(false)");
+			s.Append(val > 0.0 ? "(true)" : "(false)");
 		}
 		else if(valueType == (int)AMPropertyTrack.ValueType.String) {
-			s += string.Format("\"{0}\"", valString);
+			s.AppendFormat("\"{0}\"", valString);
 		}
         else if(valueType == (int)AMPropertyTrack.ValueType.Vector2) {
-            s += vect2.ToString();
-            if(!brief && endFrame != -1) s += " -> " + end_vect2.ToString();
+            s.Append(vect2.ToString());
+            if(!brief && nextKey) { s.Append(" -> "); s.Append(nextKey.vect2.ToString()); }
         }
         else if(valueType == (int)AMPropertyTrack.ValueType.Vector3) {
-            s += vect3.ToString();
-            if(!brief && endFrame != -1) s += " -> " + end_vect3.ToString();
+            s.Append(vect3.ToString());
+            if(!brief && nextKey) { s.Append(" -> "); s.Append(nextKey.vect3.ToString()); }
         }
         else if(valueType == (int)AMPropertyTrack.ValueType.Color) {
             //return null; 
-            s += color.ToString();
-            if(!brief && endFrame != -1) s += " -> " + end_color.ToString();
+            s.Append(color.ToString());
+            if(!brief && nextKey) { s.Append(" -> "); s.Append(nextKey.color.ToString()); }
         }
         else if(valueType == (int)AMPropertyTrack.ValueType.Rect) {
             //return null; 
-            s += rect.ToString();
-            if(!brief && endFrame != -1) s += " -> " + end_rect.ToString();
+            s.Append(rect.ToString());
+            if(!brief && nextKey) { s.Append(" -> "); s.Append(nextKey.rect.ToString()); }
         }
         else if(valueType == (int)AMPropertyTrack.ValueType.Vector4) {
-            s += vect4.ToString();
-            if(!brief && endFrame != -1) s += " -> " + end_vect4.ToString();
+            s.Append(vect4.ToString());
+            if(!brief && nextKey) { s.Append(" -> "); s.Append(nextKey.vect4.ToString()); }
         }
         else if(valueType == (int)AMPropertyTrack.ValueType.Quaternion) {
-            s += quat.ToString();
-            if(!brief && endFrame != -1) s += " -> " + end_quat.ToString();
+            s.Append(quat.ToString());
+            if(!brief && nextKey) { s.Append(" -> "); s.Append(nextKey.quat.ToString()); }
         }
 		else if(valueType == (int)AMPropertyTrack.ValueType.Sprite) {
-			s += string.Format("\"{0}\"", valObj ? valObj.name : "none");
+			s.AppendFormat("\"{0}\"", valObj ? valObj.name : "none");
 		}
         else if(valueType == (int)AMPropertyTrack.ValueType.Enum) {
-            s += System.Enum.ToObject(type, (int)val).ToString();
+            s.Append(System.Enum.ToObject(type, (int)val).ToString());
         }
-        return s;
+        return s.ToString();
     }
     // use for floats
     private string formatNumeric(float input) {
@@ -396,23 +296,21 @@ public class AMPropertyKey : AMKey {
         return input.ToString("N2");
     }
 
-    public bool targetsAreEqual(int valueType) {
-		if(valueType == (int)AMPropertyTrack.ValueType.String || valueType == (int)AMPropertyTrack.ValueType.Bool || valueType == (int)AMPropertyTrack.ValueType.Sprite || valueType == (int)AMPropertyTrack.ValueType.Enum)
-			return false;
-        if(valueType == (int)AMPropertyTrack.ValueType.Integer || valueType == (int)AMPropertyTrack.ValueType.Long || valueType == (int)AMPropertyTrack.ValueType.Float || valueType == (int)AMPropertyTrack.ValueType.Double)
-            return val == end_val;
-        if(valueType == (int)AMPropertyTrack.ValueType.Vector2) return (vect2 == end_vect2);
-        if(valueType == (int)AMPropertyTrack.ValueType.Vector3) return (vect3 == end_vect3);
-        if(valueType == (int)AMPropertyTrack.ValueType.Color) return (color == end_color); //return start_color.ToString()+" -> "+end_color.ToString();
-        if(valueType == (int)AMPropertyTrack.ValueType.Rect) return (rect == end_rect); //return start_rect.ToString()+" -> "+end_rect.ToString();
-        if(valueType == (int)AMPropertyTrack.ValueType.Vector4) return (vect4 == end_vect4);
-        if(valueType == (int)AMPropertyTrack.ValueType.Quaternion) return (quat == end_quat);
-
-        Debug.LogError("Animator: Invalid ValueType " + valueType);
+    public bool targetsAreEqual(int valueType, AMPropertyKey nextKey) {
+        if(nextKey) {
+            if(valueType == (int)AMPropertyTrack.ValueType.Integer || valueType == (int)AMPropertyTrack.ValueType.Long || valueType == (int)AMPropertyTrack.ValueType.Float || valueType == (int)AMPropertyTrack.ValueType.Double)
+                return val == nextKey.val;
+            if(valueType == (int)AMPropertyTrack.ValueType.Vector2) return (vect2 == nextKey.vect2);
+            if(valueType == (int)AMPropertyTrack.ValueType.Vector3) return (vect3 == nextKey.vect3);
+            if(valueType == (int)AMPropertyTrack.ValueType.Color) return (color == nextKey.color); //return start_color.ToString()+" -> "+end_color.ToString();
+            if(valueType == (int)AMPropertyTrack.ValueType.Rect) return (rect == nextKey.rect); //return start_rect.ToString()+" -> "+end_rect.ToString();
+            if(valueType == (int)AMPropertyTrack.ValueType.Vector4) return (vect4 == nextKey.vect4);
+            if(valueType == (int)AMPropertyTrack.ValueType.Quaternion) return (quat == nextKey.quat);
+        }
         return false;
     }
 
-    public object getStartValue(int valueType) {
+    public object getValue(int valueType) {
 		if(valueType == (int)AMPropertyTrack.ValueType.Integer) return System.Convert.ToInt32(val);
 		if(valueType == (int)AMPropertyTrack.ValueType.Long) return System.Convert.ToInt64(val);
 		if(valueType == (int)AMPropertyTrack.ValueType.Float) return System.Convert.ToSingle(val);
@@ -426,23 +324,6 @@ public class AMPropertyKey : AMKey {
 		if(valueType == (int)AMPropertyTrack.ValueType.Bool) return val > 0.0;
 		if(valueType == (int)AMPropertyTrack.ValueType.String) return valString;
 		if(valueType == (int)AMPropertyTrack.ValueType.Sprite) return (valObj ? valObj : null);
-        if(valueType == (int)AMPropertyTrack.ValueType.Enum) return System.Convert.ToInt32(val);
-        return "Unknown";
-    }
-    public object getEndValue(int valueType) {
-		if(valueType == (int)AMPropertyTrack.ValueType.Integer) return System.Convert.ToInt32(end_val);
-		if(valueType == (int)AMPropertyTrack.ValueType.Long) return System.Convert.ToInt64(end_val);
-		if(valueType == (int)AMPropertyTrack.ValueType.Float) return System.Convert.ToSingle(end_val);
-        if(valueType == (int)AMPropertyTrack.ValueType.Double) return end_val;
-        if(valueType == (int)AMPropertyTrack.ValueType.Vector2) return end_vect2;
-        if(valueType == (int)AMPropertyTrack.ValueType.Vector3) return end_vect3;
-        if(valueType == (int)AMPropertyTrack.ValueType.Color) return end_color; //return start_color.ToString()+" -> "+end_color.ToString();
-        if(valueType == (int)AMPropertyTrack.ValueType.Rect) return end_rect; //return start_rect.ToString()+" -> "+end_rect.ToString();
-        if(valueType == (int)AMPropertyTrack.ValueType.Vector4) return end_vect4;
-        if(valueType == (int)AMPropertyTrack.ValueType.Quaternion) return end_quat;
-		if(valueType == (int)AMPropertyTrack.ValueType.Bool) return val > 0.0;
-		if(valueType == (int)AMPropertyTrack.ValueType.String) return valString;
-		if(valueType == (int)AMPropertyTrack.ValueType.Sprite) return valObj;
         if(valueType == (int)AMPropertyTrack.ValueType.Enum) return System.Convert.ToInt32(val);
         return "Unknown";
     }

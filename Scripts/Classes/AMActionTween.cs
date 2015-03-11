@@ -285,3 +285,103 @@ public class AMActionFieldSet : AMActionData {
         mField.SetValue(mObj, mVal);
     }
 }
+
+public abstract class AMActionMaterial : AMActionData {
+    protected Material mMat;
+    protected int mPropId;
+
+    public AMActionMaterial(AMKey key, int frameRate, Material mat, string prop)
+        : base(key, frameRate) {
+        mMat = mat;
+        mPropId = Shader.PropertyToID(prop);
+    }
+}
+
+public abstract class AMActionMaterialPropName : AMActionData {
+    protected Material mMat;
+    protected string mProp;
+
+    public AMActionMaterialPropName(AMKey key, int frameRate, Material mat, string prop)
+        : base(key, frameRate) {
+        mMat = mat;
+        mProp = prop;
+    }
+}
+
+public class AMActionMaterialFloatSet : AMActionMaterial {
+    private float mVal;
+
+    public AMActionMaterialFloatSet(AMKey key, int frameRate, Material mat, string prop, float val)
+        : base(key, frameRate, mat, prop) {
+        mVal = val;
+    }
+
+    public override void Apply(float t, bool backwards) {
+        mMat.SetFloat(mPropId, mVal);
+    }
+}
+
+public class AMActionMaterialVectorSet : AMActionMaterial {
+    private Vector4 mVal;
+
+    public AMActionMaterialVectorSet(AMKey key, int frameRate, Material mat, string prop, Vector4 val)
+        : base(key, frameRate, mat, prop) {
+        mVal = val;
+    }
+
+    public override void Apply(float t, bool backwards) {
+        mMat.SetVector(mPropId, mVal);
+    }
+}
+
+public class AMActionMaterialColorSet : AMActionMaterial {
+    private Color mVal;
+
+    public AMActionMaterialColorSet(AMKey key, int frameRate, Material mat, string prop, Color val)
+        : base(key, frameRate, mat, prop) {
+        mVal = val;
+    }
+
+    public override void Apply(float t, bool backwards) {
+        mMat.SetVector(mPropId, mVal);
+    }
+}
+
+public class AMActionMaterialTexSet : AMActionMaterial {
+    private Texture mTex;
+
+    public AMActionMaterialTexSet(AMKey key, int frameRate, Material mat, string prop, Texture tex)
+        : base(key, frameRate, mat, prop) {
+            mTex = tex;
+    }
+
+    public override void Apply(float t, bool backwards) {
+        mMat.SetTexture(mPropId, mTex);
+    }
+}
+
+public class AMActionMaterialTexOfsSet : AMActionMaterialPropName {
+    private Vector2 mOfs;
+
+    public AMActionMaterialTexOfsSet(AMKey key, int frameRate, Material mat, string prop, Vector2 ofs)
+        : base(key, frameRate, mat, prop) {
+        mOfs = ofs;
+    }
+
+    public override void Apply(float t, bool backwards) {
+        mMat.SetTextureOffset(mProp, mOfs);
+    }
+}
+
+public class AMActionMaterialTexScaleSet : AMActionMaterialPropName {
+    private Vector2 mScale;
+
+    public AMActionMaterialTexScaleSet(AMKey key, int frameRate, Material mat, string prop, Vector2 s)
+        : base(key, frameRate, mat, prop) {
+        mScale = s;
+    }
+
+    public override void Apply(float t, bool backwards) {
+        mMat.SetTextureScale(mProp, mScale);
+    }
+}

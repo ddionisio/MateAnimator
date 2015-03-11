@@ -55,7 +55,7 @@ public class AMEventKey : AMKey {
 			}
 		}
 
-		if(itarget.TargetIsMeta()) {
+		if(itarget.isMeta) {
 			component = null;
 		}
 		else if(!component && !string.IsNullOrEmpty(componentName) && targetObj) {
@@ -295,7 +295,7 @@ public class AMEventKey : AMKey {
 
 		//get component and fill the cached method info
 		Component comp;
-		if(seq.target.TargetIsMeta()) {
+		if(seq.target.isMeta) {
 			if(string.IsNullOrEmpty(componentName)) return;
 			comp = (target as GameObject).GetComponent(componentName);
 

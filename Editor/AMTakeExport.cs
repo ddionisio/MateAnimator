@@ -17,7 +17,7 @@ public class AMTakeExport : EditorWindow {
     public static AMTakeData take = null;
 
 
-    private AnimatorData aData;
+    private AnimatorDataEdit aData;
 
     List<GameObject> dependencies;
 
@@ -45,7 +45,7 @@ public class AMTakeExport : EditorWindow {
         window = null;
     }
     void OnHierarchyChange() {
-        if(!aData) loadAnimatorData();
+        if(aData == null) loadAnimatorData();
         waitTime = defaultWaitTime;
         didLoad = false;
         this.Repaint();
@@ -57,7 +57,7 @@ public class AMTakeExport : EditorWindow {
     void loadAnimatorData() {
         if(AMTimeline.window) {
             aData = AMTimeline.window.aData;
-            dependencies = aData.e_getDependencies(take);
+            dependencies = aData.GetDependencies(take);
         }
         else {
             this.Close();
@@ -131,8 +131,11 @@ public class AMTakeExport : EditorWindow {
         foreach(GameObject go in gameObjs) {
             if(!go) continue;
             AnimatorData dat = go.GetComponent<AnimatorData>();
-            if(dat) {
-                if(take != null) dat.e_deleteAllTakesExcept(take);
+            if(dat) { //...
+                if(take != null) {
+                    AnimatorDataEdit datEdit = new AnimatorDataEdit(dat);
+                    datEdit.DeleteAllTakesExcept(take);
+                }
                 continue;
             }
             int index = gameObjs.IndexOf(go);

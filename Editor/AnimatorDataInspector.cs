@@ -15,32 +15,37 @@ public class AnimatorDataInspector : Editor {
     private string[] mTakeLabels;
     private bool mMissingsFoldout = true;
 
+    private AnimatorDataEdit aData {
+        get {
+            return AMTimeline.AnimEdit(target as AnimatorData);
+        }
+    }
+
     void OnEnable() {
         GenerateTakeLabels();
 
         mMissingsFoldout = true;
     }
-    
-    void GenerateTakeLabels() {
-        AnimatorData dat = target as AnimatorData;
 
-        if(mTakeLabels == null || dat._takes.Count + 1 != mTakeLabels.Length) {
-            mTakeLabels = new string[dat._takes.Count + 1];
+    void GenerateTakeLabels() {
+        if(mTakeLabels == null || aData.takes.Count + 1 != mTakeLabels.Length) {
+            mTakeLabels = new string[aData.takes.Count + 1];
             mTakeLabels[0] = "None";
         }
 
         //match strings
-        for(int i = 0; i < dat._takes.Count; i++)
-            mTakeLabels[i+1] = dat._takes[i].name;
+        for(int i = 0; i < aData.takes.Count; i++)
+            mTakeLabels[i+1] = aData.takes[i].name;
     }
 
     public override void OnInspectorGUI() {
-        AnimatorData dat = target as AnimatorData;
+        AnimatorDataEdit dat = aData;
+        AnimatorData anim = target as AnimatorData;
 
         GUILayout.BeginVertical();
 
         //meta
-        AnimatorMeta curMeta = dat.e_meta;
+        AnimatorMeta curMeta = dat.meta;
         AnimatorMeta newMeta = EditorGUILayout.ObjectField(new GUIContent("Meta", "Use data from the reference AnimatorMeta. Note: All modifications to the animation will be saved to the Meta."), curMeta, typeof(AnimatorMeta), false) as AnimatorMeta;
 
         if(curMeta != newMeta) {
@@ -50,8 +55,8 @@ public class AnimatorDataInspector : Editor {
             }
 
             if(doIt) {
-                Undo.RegisterCompleteObjectUndo(dat, "Set Meta");
-                dat.e_setMeta(newMeta, false);
+                dat.RegisterUndo("Set Meta", true);
+                dat.MetaSet(newMeta, false);
             }
         }
 
@@ -62,7 +67,7 @@ public class AnimatorDataInspector : Editor {
 
         GUI.backgroundColor = Color.green;
 
-        GUI.enabled = PrefabUtility.GetPrefabType(dat.gameObject) != PrefabType.Prefab && dat.e_metaCanSavePrefabInstance;
+        GUI.enabled = PrefabUtility.GetPrefabType(dat.gameObject) != PrefabType.Prefab && dat.metaCanSavePrefabInstance;
         if(GUILayout.Button("Save", GUILayout.Width(100f))) metaComm = MetaCommand.Save;
 
         GUI.enabled = true;
@@ -76,12 +81,12 @@ public class AnimatorDataInspector : Editor {
 
         GUI.backgroundColor = Color.red;
 
-        GUI.enabled = PrefabUtility.GetPrefabType(dat.gameObject) != PrefabType.Prefab && dat.e_metaCanSavePrefabInstance;
+        GUI.enabled = PrefabUtility.GetPrefabType(dat.gameObject) != PrefabType.Prefab && dat.metaCanSavePrefabInstance;
         if(GUILayout.Button("Revert", GUILayout.Width(100f))) metaComm = MetaCommand.Revert;
 
         GUI.backgroundColor = Color.white;
 
-        GUI.enabled = PrefabUtility.GetPrefabType(dat.gameObject) != PrefabType.Prefab && dat.e_meta;
+        GUI.enabled = PrefabUtility.GetPrefabType(dat.gameObject) != PrefabType.Prefab && dat.meta;
         if(GUILayout.Button(new GUIContent("Break", "This will copy all data from AnimatorMeta to this AnimatorData, and then removes the reference to AnimatorMeta."), GUILayout.Width(100f))) metaComm = MetaCommand.Instantiate;
         GUI.enabled = true;
 
@@ -91,7 +96,7 @@ public class AnimatorDataInspector : Editor {
         AMEditorUtil.DrawSeparator();
         //
 
-        List<AMTakeData> takes = dat._takes;
+        List<AMTakeData> takes = dat.takes;
         string playTakeName = dat.defaultTakeName;
         int playTakeInd = 0;
         if(!string.IsNullOrEmpty(playTakeName)) {
@@ -106,31 +111,31 @@ public class AnimatorDataInspector : Editor {
         GenerateTakeLabels();
         int newPlayTakeInd = EditorGUILayout.IntPopup("Play On Start", playTakeInd, mTakeLabels, null);
         if(newPlayTakeInd != playTakeInd) {
-            Undo.RecordObject(dat, "Set Play On Start");
+            dat.RegisterUndo("Set Play On Start", false);
             dat.defaultTakeName = newPlayTakeInd <= 0 ? "" : takes[newPlayTakeInd - 1].name;
         }
 
         bool isglobal = GUILayout.Toggle(dat.isGlobal, "Global");
         if(dat.isGlobal != isglobal) {
-            Undo.RecordObject(dat, "Set Global");
+            dat.RegisterUndo("Set Global", false);
             dat.isGlobal = isglobal;
             if(isglobal) {
                 //uncheck isGlobal to any other animator data on scene
                 AnimatorData[] anims = FindObjectsOfType<AnimatorData>();
                 for(int i = 0;i < anims.Length;i++) {
-                    if(dat != anims[i] && anims[i].isGlobal) {
+                    if(!dat.IsDataMatch(anims[i]) && anims[i].isGlobal) {
                         anims[i].isGlobal = false;
                         EditorUtility.SetDirty(anims[i]);
                     }
                 }
             }
         }
-
-        dat.sequenceLoadAll = GUILayout.Toggle(dat.sequenceLoadAll, "Build All Sequence On Start");
-        dat.sequenceKillWhenDone = GUILayout.Toggle(dat.sequenceKillWhenDone, "Kill Sequence When Done");
-        dat.playOnEnable = GUILayout.Toggle(dat.playOnEnable, "Play On Enable");
-        dat.onDisableAction = (AnimatorData.DisableAction)EditorGUILayout.EnumPopup("On Disable", dat.onDisableAction);
-        dat.updateType = (Holoville.HOTween.UpdateType)EditorGUILayout.EnumPopup("Update", dat.updateType);
+                
+        anim.sequenceLoadAll = GUILayout.Toggle(anim.sequenceLoadAll, "Build All Sequence On Start");
+        anim.sequenceKillWhenDone = GUILayout.Toggle(anim.sequenceKillWhenDone, "Kill Sequence When Done");
+        anim.playOnEnable = GUILayout.Toggle(anim.playOnEnable, "Play On Enable");
+        anim.onDisableAction = (AnimatorData.DisableAction)EditorGUILayout.EnumPopup("On Disable", anim.onDisableAction);
+        anim.updateType = (Holoville.HOTween.UpdateType)EditorGUILayout.EnumPopup("Update", anim.updateType);
 
         if(PrefabUtility.GetPrefabType(dat.gameObject) != PrefabType.Prefab) {
             AMTimeline timeline = AMTimeline.window;
@@ -159,27 +164,25 @@ public class AnimatorDataInspector : Editor {
         }
 
         //display missings
-        string[] missings = dat.e_getMissingTargets();
+        string[] missings = dat.target.GetMissingTargets();
         if(missings != null && missings.Length > 0) {
             AMEditorUtil.DrawSeparator();
             mMissingsFoldout = EditorGUILayout.Foldout(mMissingsFoldout, string.Format("Missing Targets [{0}]", missings.Length));
             if(mMissingsFoldout) {
-                for(int i = 0;i < missings.Length;i++) {
+                for(int i = 0;i < missings.Length;i++)
                     GUILayout.Label(missings[i]);
-                }
             }
 
             //fix missing targets
-            if(GUILayout.Button("Generate Missing Targets")) {
-                dat.e_generateMissingTargets();
-            }
+            if(GUILayout.Button("Generate Missing Targets"))
+                dat.target.GenerateMissingTargets(missings);
         }
 
         GUILayout.EndVertical();
 
         switch(metaComm) {
             case MetaCommand.Save:
-                dat.e_metaSaveInstantiate();
+                dat.MetaSaveInstantiate();
                 GUI.changed = true;
                 break;
             case MetaCommand.SaveAs:
@@ -190,14 +193,14 @@ public class AnimatorDataInspector : Editor {
                     UnityEngine.Object pref = PrefabUtility.CreateEmptyPrefab(path);
                     GameObject metagopref = PrefabUtility.ReplacePrefab(metago, pref);
                     UnityEngine.Object.DestroyImmediate(metago);
-                    dat.e_setMeta(metagopref.GetComponent<AnimatorMeta>(), true);
+                    dat.MetaSet(metagopref.GetComponent<AnimatorMeta>(), true);
                 }
                 break;
             case MetaCommand.Revert:
                 if(EditorUtility.DisplayDialog("Revert Animator Meta", "Are you sure?", "Yes", "No")) {
-                    Undo.RegisterCompleteObjectUndo(dat, "Revert Animator Meta");
-                    GameObject prefabGO = PrefabUtility.GetPrefabParent(dat.e_meta.gameObject) as GameObject;
-                    dat.e_setMeta(prefabGO ? prefabGO.GetComponent<AnimatorMeta>() : null, false);
+                    dat.RegisterUndo("Revert Animator Meta", true);
+                    GameObject prefabGO = PrefabUtility.GetPrefabParent(dat.meta.gameObject) as GameObject;
+                    dat.MetaSet(prefabGO ? prefabGO.GetComponent<AnimatorMeta>() : null, false);
                     GUI.changed = true;
                 }
                 break;
@@ -207,9 +210,9 @@ public class AnimatorDataInspector : Editor {
                 if(missings != null && missings.Length > 0)
                     doIt = EditorUtility.DisplayDialog("Break Animator Meta", "There are missing targets, some keys will be removed. Do you want to proceed?", "Yes", "No");
                 if(doIt) {
-                    Undo.RecordObject(dat, "Break Animator Meta");
-                    dat.e_setMeta(null, true);
-                    AMTimeline.window.currentTakeInd = 0;
+                    dat.RegisterUndo("Break Animator Meta", false);
+                    dat.MetaSet(null, true);
+                    aData.currentTakeInd = 0;
                     GUI.changed = true;
                 }
                 break;
@@ -218,7 +221,7 @@ public class AnimatorDataInspector : Editor {
         if(GUI.changed) {
             if(AMTimeline.window)
                 AMTimeline.window.Repaint();
-            EditorUtility.SetDirty(dat);
+            aData.SetDirty();
         }
     }
 }

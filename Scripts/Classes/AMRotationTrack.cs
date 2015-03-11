@@ -45,12 +45,10 @@ public class AMRotationTrack : AMTrack {
                     foreach(AMRotationKey key in keys) {
                         if(key.isLocal && !value) {//to world
                             key.rotation = t.rotation * key.rotation;
-                            key.endRotation = t.rotation * key.endRotation;
                         }
                         else if(!key.isLocal && value) {//to local
                             Quaternion invQ = Quaternion.Inverse(t.rotation);
                             key.rotation = key.rotation * invQ;
-                            key.endRotation = key.endRotation * invQ;
                         }
 
                         key.isLocal = value;
@@ -130,9 +128,6 @@ public class AMRotationTrack : AMTrack {
 				key.endFrame = -1;
 			}
             key.isLocal = _isLocal;
-            // quaternions
-            if(key.endFrame != -1) key.endRotation = (keys[i + 1] as AMRotationKey).rotation;
-
         }
     }
     // preview a frame in the scene view
@@ -143,25 +138,28 @@ public class AMRotationTrack : AMTrack {
         if(keys == null || keys.Count <= 0) return;
         // if before or equal to first frame, or is the only frame
         if((frame <= (float)keys[0].frame) || ((keys[0] as AMRotationKey).endFrame == -1)) {
-			SetRotation(t, (keys[0] as AMRotationKey).getStartQuaternion());
+			SetRotation(t, (keys[0] as AMRotationKey).rotation);
             return;
         }
         // if beyond or equal to last frame
         if(frame >= (float)(keys[keys.Count - 2] as AMRotationKey).endFrame) {
-			SetRotation(t, (keys[keys.Count - 2] as AMRotationKey).getEndQuaternion());
+			SetRotation(t, (keys[keys.Count - 1] as AMRotationKey).rotation);
             return;
         }
         // if lies on rotation action
-        foreach(AMRotationKey key in keys) {
+        for(int i = 0; i < keys.Count; i++) {
+            AMRotationKey key = keys[i] as AMRotationKey;
+            AMRotationKey keyNext = i + 1 < keys.Count ? keys[i + 1] as AMRotationKey : null;
+
             if((frame < (float)key.frame) || (frame > (float)key.endFrame)) continue;
             // if on startFrame or is no ease
             if(frame == (float)key.frame || (!key.canTween && frame < (float)key.endFrame)) {
-				SetRotation(t, key.getStartQuaternion());
+				SetRotation(t, key.rotation);
                 return;
             }
             // if on endFrame
             if(frame == (float)key.endFrame) {
-				SetRotation(t, key.getEndQuaternion());
+                SetRotation(t, keyNext.rotation);
                 return;
             }
             // else find Quaternion using easing function
@@ -169,8 +167,8 @@ public class AMRotationTrack : AMTrack {
             float framePositionInAction = frame - (float)key.frame;
             if(framePositionInAction < 0f) framePositionInAction = 0f;
 
-            Quaternion qStart = key.getStartQuaternion();
-            Quaternion qEnd = key.getEndQuaternion();
+            Quaternion qStart = key.rotation;
+            Quaternion qEnd = keyNext.rotation;
 
             if(key.hasCustomEase()) {
                 SetRotation(t, Quaternion.Slerp(qStart, qEnd, AMUtil.EaseCustom(0.0f, 1.0f, framePositionInAction / key.getNumberOfFrames(frameRate), key.easeCurve)));
@@ -210,28 +208,31 @@ public class AMRotationTrack : AMTrack {
         // if before or equal to first frame, or is the only frame
         if((frame <= keys[0].frame) || ((keys[0] as AMRotationKey).endFrame == -1)) {
             //rotation = (cache[0] as AMRotationAction).getStartQuaternion();
-            return (keys[0] as AMRotationKey).getStartQuaternion();
+            return (keys[0] as AMRotationKey).rotation;
         }
         // if beyond or equal to last frame
         if(frame >= (keys[keys.Count - 2] as AMRotationKey).endFrame) {
             //rotation = (cache[cache.Count-2] as AMRotationAction).getEndQuaternion();
-            return (keys[keys.Count - 2] as AMRotationKey).getEndQuaternion();
+            return (keys[keys.Count - 1] as AMRotationKey).rotation;
         }
         // if lies on rotation action
-        foreach(AMRotationKey key in keys) {
+        for(int i = 0; i < keys.Count; i++) {
+            AMRotationKey key = keys[i] as AMRotationKey;
+            AMRotationKey keyNext = i + 1 < keys.Count ? keys[i + 1] as AMRotationKey : null;
+
             if((frame < key.frame) || (frame > key.endFrame)) continue;
             // if on startFrame or no ease
-			if(frame == key.frame || (!key.canTween && frame < key.endFrame)) {
-                return key.getStartQuaternion();
+            if(frame == key.frame || (!key.canTween && frame < key.endFrame)) {
+                return key.rotation;
             }
             // if on endFrame
             if(frame == key.endFrame) {
-                return key.getEndQuaternion();
+                return keyNext.rotation;
             }
             // else find Quaternion using easing function
 
-            Quaternion qStart = key.getStartQuaternion();
-            Quaternion qEnd = key.getEndQuaternion();
+            Quaternion qStart = key.rotation;
+            Quaternion qEnd = keyNext.rotation;
 
             int framePositionInAction = frame - key.frame;
             if(framePositionInAction < 0f) framePositionInAction = 0;

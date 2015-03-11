@@ -9,9 +9,9 @@ public class AMOptions : EditorWindow {
 
     public AMOptionsFile oData;
 
-    private AnimatorData __aData;
+    private AnimatorDataEdit __aData;
 
-    public AnimatorData aData {
+    public AnimatorDataEdit aData {
         get {
             if(AMTimeline.window != null && __aData != AMTimeline.window.aData) {
                 reloadAnimatorData();
@@ -58,11 +58,11 @@ public class AMOptions : EditorWindow {
         window = null;
     }
     void OnHierarchyChange() {
-        if(!aData) loadAnimatorData();
+        if(aData == null) loadAnimatorData();
     }
     void OnGUI() {
         AMTimeline.loadSkin(ref skin,ref cachedSkinName, position);
-        if(!aData) {
+        if(aData == null) {
             AMTimeline.MessageBox("Animator requires an AnimatorData component in your scene. Launch Animator to add the component.", AMTimeline.MessageBoxType.Warning);
             return;
         }
@@ -350,7 +350,7 @@ public class AMOptions : EditorWindow {
             GUILayout.BeginVertical();
             GUILayout.Space(1f);
             if(GUILayout.Button("Export:", GUILayout.Width(60f))) {
-                if(!exportAllTakes) AMTakeExport.take = aData.e_getTake(takeNames[exportTakeIndex]);
+                if(!exportAllTakes) AMTakeExport.take = aData.GetTake(takeNames[exportTakeIndex]);
                 else AMTakeExport.take = null;
                 //AMTakeExport.aData = aData;
                 //EditorWindow.GetWindow (typeof (AMTakeExport)).ShowUtility();
@@ -414,7 +414,7 @@ public class AMOptions : EditorWindow {
 
     List<string> getTakeNames() {
         List<string> takeNames = new List<string>();
-        foreach(AMTakeData take in aData._takes) {
+        foreach(AMTakeData take in aData.takes) {
             takeNames.Add(take.name);
         }
         return takeNames;
@@ -453,8 +453,8 @@ public class AMOptions : EditorWindow {
     void loadAnimatorData() {
         if(AMTimeline.window != null) {
             __aData = AMTimeline.window.aData;
-            if(__aData) {
-                exportTakeIndex = __aData.GetTakeIndex(AMTimeline.window.currentTake);
+            if(__aData != null) {
+                exportTakeIndex = __aData.currentTakeInd;
             }
         }
     }

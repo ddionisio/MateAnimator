@@ -13,7 +13,6 @@ public class AMRotationKey : AMKey {
 
     public int endFrame;
     public bool isLocal;
-    public Quaternion endRotation;
 
     public bool setRotation(Vector3 rotation) {
         if(this.rotation != Quaternion.Euler(rotation)) {
@@ -73,19 +72,14 @@ public class AMRotationKey : AMKey {
             seq.Insert(new AMActionTransLocalRot(this, frameRate, obj as Transform, rotation));
 		}
 		else if(endFrame == -1) return;
-        else if(hasCustomEase()) {
-            seq.Insert(this, HOTween.To(obj, getTime(frameRate), new TweenParms().Prop(isLocal ? "localRotation" : "rotation", new AMPlugQuaternionSlerp(endRotation)).Ease(easeCurve)));
-        }
         else {
-            seq.Insert(this, HOTween.To(obj, getTime(frameRate), new TweenParms().Prop(isLocal ? "localRotation" : "rotation", new AMPlugQuaternionSlerp(endRotation)).Ease((EaseType)easeType, amplitude, period)));
-        }
-    }
+            Quaternion endRotation = (track.keys[index + 1] as AMRotationKey).rotation;
 
-    public Quaternion getStartQuaternion() {
-        return rotation;
-    }
-    public Quaternion getEndQuaternion() {
-        return endRotation;
+            if(hasCustomEase())
+                seq.Insert(this, HOTween.To(obj, getTime(frameRate), new TweenParms().Prop(isLocal ? "localRotation" : "rotation", new AMPlugQuaternionSlerp(endRotation)).Ease(easeCurve)));
+            else
+                seq.Insert(this, HOTween.To(obj, getTime(frameRate), new TweenParms().Prop(isLocal ? "localRotation" : "rotation", new AMPlugQuaternionSlerp(endRotation)).Ease((EaseType)easeType, amplitude, period)));
+        }
     }
     #endregion
 

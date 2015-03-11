@@ -132,6 +132,7 @@ public class AMTakeData {
 
         trackValues.RemoveAt(index);
         if(deleteFromGroup) deleteTrackFromGroups(id);
+        sortTracks();
     }
 
     private void deleteTrack(AMTrack track, bool deleteFromGroup, ref List<MonoBehaviour> modifiedItems) {
@@ -146,6 +147,7 @@ public class AMTakeData {
         if(mCameraSwitcher == track) mCameraSwitcher = null;
         trackValues.RemoveAt(index);
         if(deleteFromGroup) deleteTrackFromGroups(id);
+        sortTracks();
     }
 
     // get track ids from range, exclusive
@@ -327,6 +329,7 @@ public class AMTakeData {
     private void addTrack(int groupId, AMTrack track) {
         trackValues.Add(track);
         addToGroup(track.id, groupId);
+        sortTracks();
     }
 
     // move element to group, just after the destination track
@@ -586,8 +589,6 @@ public class AMTakeData {
 
     // preview a frame
     public void previewFrame(AMITarget itarget, float _frame, bool orientationOnly = false, bool renderStill = true) {
-        sortTracks();
-
         // render camera switcher still texture if necessary
         if(renderStill) renderCameraSwitcherStill(itarget, _frame);
 
@@ -605,8 +606,6 @@ public class AMTakeData {
     }
 
     public void runFrame(AMITarget itarget, float _frame, float animScale, bool playAudio, bool noAudioLoop) {
-        sortTracks();
-
         renderCameraSwitcherStill(itarget, _frame);
 
         foreach(AMTrack track in trackValues) {
@@ -633,20 +632,21 @@ public class AMTakeData {
     /// <summary>
     /// Only preview tracks that have starting frame > _frame
     /// </summary>
-    public void runStartUp(AMITarget itarget, float _frame, float animScale) {
+    public void PlayStart(AMITarget itarget, float _frame, float animScale) {
         sortTracks();
 
         foreach(AMTrack track in trackValues) {
-            if(track.keys.Count > 0) {
-                if((float)track.keys[0].getStartFrame() > _frame)
-                    track.previewFrame(itarget, _frame, frameRate);
-                else if(_frame > 0) {
-                    //special case for audio when playing at a particular frame
-                    AMAudioTrack audioTrack = track as AMAudioTrack;
-                    if(audioTrack)
-                        audioTrack.sampleAudio(itarget, _frame, itarget.TargetAnimScale()*animScale, frameRate, false);
-                }
-            }
+            //call to start
+            track.PlayStart(itarget, _frame, frameRate, animScale);
+        }
+    }
+
+    /// <summary>
+    /// Call this when we are switching take
+    /// </summary>
+    public void PlaySwitch(AMITarget itarget) {
+        foreach(AMTrack track in trackValues) {
+            track.PlaySwitch(itarget);
         }
     }
 
@@ -931,12 +931,8 @@ public class AMTakeData {
     }
 
     public void drawGizmos(AMITarget itarget, float gizmo_size, bool inPlayMode) {
-        foreach(AMTrack track in trackValues) {
-            if(track is AMTranslationTrack)
-                track.drawGizmos(itarget, gizmo_size);
-            else if(track is AMOrientationTrack)
-                (track as AMOrientationTrack).drawGizmos(itarget, gizmo_size, inPlayMode, selectedFrame);
-        }
+        foreach(AMTrack track in trackValues)
+            track.drawGizmos(itarget, gizmo_size, inPlayMode, selectedFrame);
     }
 
     public void maintainCaches(AMITarget itarget) {

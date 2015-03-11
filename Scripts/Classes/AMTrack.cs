@@ -17,6 +17,8 @@ public abstract class AMTrack : MonoBehaviour {
 	[SerializeField]
 	protected string _targetPath; //for animations saved as meta
 
+    private bool mStarted;
+
     public virtual int version { get { return 1; } } //must be at least 1
 
     public virtual int order { get { return 0; } }
@@ -36,6 +38,8 @@ public abstract class AMTrack : MonoBehaviour {
     public void setName(int index) {
         name = "Track" + (index + 1);
     }
+
+    public bool started { get { return mStarted; } }
 
 	/// <summary>
 	/// Stores the obj to serialized field based on track type, obj is null if _targetPath is used
@@ -57,23 +61,19 @@ public abstract class AMTrack : MonoBehaviour {
 	public UnityEngine.Object GetTarget(AMITarget target) {
 		UnityEngine.Object ret = null;
 
-		if(target.TargetIsMeta()) {
-			Transform tgt = target.TargetGetCache(_targetPath);
-			if(tgt == null) {
-				tgt = AMUtil.GetTarget(target.TargetGetRoot(), _targetPath);
-			}
-
-			if(tgt) {
-				ret = GetSerializeObject(tgt.gameObject);
-				target.TargetSetCache(_targetPath, tgt);
-			}
-			else if(!string.IsNullOrEmpty(_targetPath)) {
-				target.TargetMissing(_targetPath, true);
-			}
+		if(target.isMeta) {
+			Transform tgt = target.GetCache(_targetPath);
+            if(tgt)
+                ret = GetSerializeObject(tgt.gameObject);
+            else {
+                tgt = AMUtil.GetTarget(target.root, _targetPath);
+                target.SetCache(_targetPath, tgt);
+                if(tgt)
+                    ret = GetSerializeObject(tgt.gameObject);
+            }
 		}
-		else {
+		else
 			ret = GetSerializeObject(null);
-		}
 
 		return ret;
 	}
@@ -100,17 +100,16 @@ public abstract class AMTrack : MonoBehaviour {
     }
 
 	public string GetTargetPath(AMITarget target) {
-		if(target.TargetIsMeta())
+		if(target.isMeta)
 			return _targetPath;
 		else
-			return AMUtil.GetPath(target.TargetGetRoot(), GetSerializeObject(null));
+			return AMUtil.GetPath(target.root, GetSerializeObject(null));
 	}
 
 	public void SetTarget(AMITarget target, Transform item) {
-		if(target.TargetIsMeta() && item) {
-			target.TargetMissing(_targetPath, false);
-			_targetPath = AMUtil.GetPath(target.TargetGetRoot(), item);
-			target.TargetSetCache(_targetPath, item);
+		if(target.isMeta && item) {
+			_targetPath = AMUtil.GetPath(target.root, item);
+			target.SetCache(_targetPath, item);
 			SetSerializeObject(GetSerializeObject(item.gameObject));
 		}
 		else {
@@ -127,12 +126,12 @@ public abstract class AMTrack : MonoBehaviour {
 		Object obj = null;
 
 		//fix the target info
-		if(itarget.TargetIsMeta()) {
+		if(itarget.isMeta) {
 			if(string.IsNullOrEmpty(_targetPath)) {
 				obj = GetSerializeObject(null);
 				if(obj) {
-					_targetPath = AMUtil.GetPath(itarget.TargetGetRoot(), obj);
-					itarget.TargetSetCache(_targetPath, AMUtil.GetTransform(obj));
+					_targetPath = AMUtil.GetPath(itarget.root, obj);
+					itarget.SetCache(_targetPath, AMUtil.GetTransform(obj));
 				}
 			}
 			SetSerializeObject(null);
@@ -141,9 +140,9 @@ public abstract class AMTrack : MonoBehaviour {
 			obj = GetSerializeObject(null);
 			if(obj == null) {
 				if(!string.IsNullOrEmpty(_targetPath)) {
-					Transform tgt = itarget.TargetGetCache(_targetPath);
+					Transform tgt = itarget.GetCache(_targetPath);
 					if(tgt == null)
-						tgt = AMUtil.GetTarget(itarget.TargetGetRoot(), _targetPath);
+						tgt = AMUtil.GetTarget(itarget.root, _targetPath);
 					if(tgt)
 						obj = GetSerializeObject(tgt.gameObject);
 					SetSerializeObject(obj);
@@ -171,7 +170,7 @@ public abstract class AMTrack : MonoBehaviour {
     }
 
     // draw track gizmos
-	public virtual void drawGizmos(AMITarget target, float gizmo_size) { }
+    public virtual void drawGizmos(AMITarget target, float gizmo_size, bool inPlayMode, int frame) { }
 
     // preview frame
     public virtual void previewFrame(AMITarget target, float frame, int frameRate, AMTrack extraTrack = null) { }
@@ -189,6 +188,22 @@ public abstract class AMTrack : MonoBehaviour {
     }
 
 	public virtual void buildSequenceStart(AMSequence sequence) {
+    }
+
+    public virtual void PlayStart(AMITarget itarget, float frame, int frameRate, float animScale) {
+        if(!mStarted) {
+            mStarted = true;
+
+            //preview from starting frame so that the first tween will grab the appropriate start value
+            previewFrame(itarget, 0, frameRate);
+        }
+    }
+
+    /// <summary>
+    /// Call when we are switching take
+    /// </summary>
+    public virtual void PlaySwitch(AMITarget itarget) {
+
     }
 
 	public virtual AnimatorTimeline.JSONInit getJSONInit(AMITarget target) {
@@ -363,6 +378,10 @@ public abstract class AMTrack : MonoBehaviour {
         }
         Debug.LogError("Animator: No key found for frame " + startFrame);
         return null;
+    }
+
+    public int getKeyIndex(AMKey key) {
+        return keys.IndexOf(key);
     }
 
     // get index of action for frame

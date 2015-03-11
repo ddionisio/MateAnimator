@@ -38,6 +38,13 @@ public class AMAudioTrack : AMTrack {
             audioSource.playOnAwake = false;
     }
 
+    public override void PlayStart(AMITarget itarget, float frame, int frameRate, float animScale) {
+        if(frame > 0) {
+            //special case for audio when playing at a particular frame
+            sampleAudio(itarget, frame, itarget.animScale*animScale, frameRate, false);    
+        }
+    }
+
     // add a new key
     public void addKey(AMITarget itarget, OnAddKey addCall, int _frame, AudioClip _clip, bool _loop) {
         foreach(AMAudioKey key in keys) {
@@ -68,7 +75,7 @@ public class AMAudioTrack : AMTrack {
             AMAudioKey key = keys[i] as AMAudioKey;
             if(!key.audioClip) break;
             if(key.frame <= frame) {
-                src.pitch = target.TargetAnimScale()*speed;
+                src.pitch = target.animScale*speed;
 
                 if(key.oneShot) { //don't allow one-shot when sampling between frames
                     if(playOneShots && key.frame == Mathf.FloorToInt(frame)) { src.PlayOneShot(key.audioClip); }
@@ -105,7 +112,7 @@ public class AMAudioTrack : AMTrack {
                 if(keys[i].frame == frame) {
                     AMAudioKey key = keys[i] as AMAudioKey;
 
-                    src.pitch = target.TargetAnimScale()*speed;
+                    src.pitch = target.animScale*speed;
 
                     if(key.oneShot) {
                         src.PlayOneShot(key.audioClip);

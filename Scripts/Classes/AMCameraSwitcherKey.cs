@@ -94,19 +94,20 @@ public class AMCameraSwitcherKey : AMKey {
     public int endFrame;
 
     public Camera getCamera(AMITarget itarget) {
-        if(itarget.TargetIsMeta()) {
+        if(itarget.isMeta) {
             if(!string.IsNullOrEmpty(_cameraPath)) {
-                Transform t = itarget.TargetGetCache(_cameraPath);
-                if(!t) {
-                    t = AMUtil.GetTarget(itarget.TargetGetRoot(), _cameraPath);
-                    if(t) itarget.TargetSetCache(_cameraPath, t);
-                    else itarget.TargetMissing(_cameraPath, true);
+                Transform t = itarget.GetCache(_cameraPath);
+                if(t)
+                    return t.camera;
+                else {
+                    t = AMUtil.GetTarget(itarget.root, _cameraPath);
+                    itarget.SetCache(_cameraPath, t);
+                    if(t)
+                        return t.camera;
                 }
-
-                return t.camera;
             }
-            else
-                return null;
+
+            return null;
         }
         else
             return _camera;
@@ -119,11 +120,10 @@ public class AMCameraSwitcherKey : AMKey {
     public bool setCamera(AMITarget itarget, Camera camera) {
         if(getCamera(itarget) != camera) {
             if(camera) {
-                if(itarget.TargetIsMeta()) {
+                if(itarget.isMeta) {
                     _camera = null;
-                    itarget.TargetMissing(_cameraPath, false);
-                    _cameraPath = AMUtil.GetPath(itarget.TargetGetRoot(), camera);
-                    itarget.TargetSetCache(_cameraPath, camera.transform);
+                    _cameraPath = AMUtil.GetPath(itarget.root, camera);
+                    itarget.SetCache(_cameraPath, camera.transform);
 
                 }
                 else {
@@ -132,7 +132,6 @@ public class AMCameraSwitcherKey : AMKey {
                 }
             }
             else {
-                itarget.TargetMissing(_cameraPath, false);
                 _camera = null;
                 _cameraPath = "";
             }
@@ -143,19 +142,20 @@ public class AMCameraSwitcherKey : AMKey {
     }
 
     public Camera getCameraEnd(AMITarget itarget) {
-        if(itarget.TargetIsMeta()) {
+        if(itarget.isMeta) {
             if(!string.IsNullOrEmpty(_cameraEndPath)) {
-                Transform t = itarget.TargetGetCache(_cameraEndPath);
-                if(!t) {
-                    t = AMUtil.GetTarget(itarget.TargetGetRoot(), _cameraEndPath);
-                    if(t) itarget.TargetSetCache(_cameraEndPath, t);
-                    else itarget.TargetMissing(_cameraEndPath, true);
+                Transform t = itarget.GetCache(_cameraEndPath);
+                if(t)
+                    return t.camera;
+                else {
+                    t = AMUtil.GetTarget(itarget.root, _cameraEndPath);
+                    itarget.SetCache(_cameraEndPath, t);
+                    if(t)
+                        return t.camera;
                 }
-
-                return t.camera;
             }
-            else
-                return null;
+
+            return null;
         }
         else
             return _cameraEnd;
@@ -167,18 +167,18 @@ public class AMCameraSwitcherKey : AMKey {
     }
 
     public override void maintainKey(AMITarget itarget, UnityEngine.Object targetObj) {
-        if(itarget.TargetIsMeta()) {
+        if(itarget.isMeta) {
             if(string.IsNullOrEmpty(_cameraPath)) {
                 if(_camera) {
-                    _cameraPath = AMUtil.GetPath(itarget.TargetGetRoot(), _camera);
-                    itarget.TargetSetCache(_cameraPath, _camera.transform);
+                    _cameraPath = AMUtil.GetPath(itarget.root, _camera);
+                    itarget.SetCache(_cameraPath, _camera.transform);
                 }
             }
 
             if(string.IsNullOrEmpty(_cameraEndPath)) {
                 if(_cameraEnd) {
-                    _cameraEndPath = AMUtil.GetPath(itarget.TargetGetRoot(), _cameraEnd);
-                    itarget.TargetSetCache(_cameraEndPath, _cameraEnd.transform);
+                    _cameraEndPath = AMUtil.GetPath(itarget.root, _cameraEnd);
+                    itarget.SetCache(_cameraEndPath, _cameraEnd.transform);
                 }
             }
 
@@ -188,18 +188,18 @@ public class AMCameraSwitcherKey : AMKey {
         else {
             if(!_camera) {
                 if(!string.IsNullOrEmpty(_cameraPath)) {
-                    Transform t = itarget.TargetGetCache(_cameraPath);
+                    Transform t = itarget.GetCache(_cameraPath);
                     if(!t)
-                        t = AMUtil.GetTarget(itarget.TargetGetRoot(), _cameraPath);
+                        t = AMUtil.GetTarget(itarget.root, _cameraPath);
                     _camera = t ? t.camera : null;
                 }
             }
 
             if(!_cameraEnd) {
                 if(!string.IsNullOrEmpty(_cameraEndPath)) {
-                    Transform t = itarget.TargetGetCache(_cameraEndPath);
+                    Transform t = itarget.GetCache(_cameraEndPath);
                     if(!t)
-                        t = AMUtil.GetTarget(itarget.TargetGetRoot(), _cameraEndPath);
+                        t = AMUtil.GetTarget(itarget.root, _cameraEndPath);
                     _cameraEnd = t ? t.camera : null;
                 }
             }

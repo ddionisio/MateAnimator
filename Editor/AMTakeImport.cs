@@ -117,8 +117,8 @@ public class AMTakeImport : EditorWindow {
 	
 	void saveChanges() {
 		if(!AMTimeline.window) return;
-        AnimatorData aData = AMTimeline.window.aData;
-		if(!aData) return;
+        AnimatorDataEdit aData = AMTimeline.window.aData;
+		if(aData == null) return;
 		
 		List<GameObject> keepReferences = new List<GameObject>();
 		List<GameObject> replaceReferences = new List<GameObject>();
@@ -142,7 +142,7 @@ public class AMTakeImport : EditorWindow {
 		}
 		//TODO: undo "Resolve Duplicates"
 		// update references
-		List<GameObject> lsFlagToKeep = aData.e_updateDependencies(keepReferences, replaceReferences);
+		List<GameObject> lsFlagToKeep = aData.UpdateDependencies(keepReferences, replaceReferences);
 		// reset event track method info
 		AMTimeline.resetIndexMethodInfo();
 		AMTimeline.shouldCheckDependencies = false;
@@ -176,26 +176,26 @@ public class AMTakeImport : EditorWindow {
 		List<GameObject> newGOs = updGOs.Except(origGOs).ToList();
 		
 		// merge AnimatorData
-		List<AnimatorData> origAnimatorData = new List<AnimatorData>();
-		List<AnimatorData> newAnimatorData = new List<AnimatorData>();
+        List<AnimatorDataEdit> origAnimatorData = new List<AnimatorDataEdit>();
+        List<AnimatorDataEdit> newAnimatorData = new List<AnimatorDataEdit>();
 		// get animator data
 		foreach(GameObject go in origGOs) {
 			AnimatorData _temp = getAnimatorData(go);
-			if(_temp != null) origAnimatorData.Add(_temp);
+			if(_temp != null) origAnimatorData.Add(new AnimatorDataEdit(_temp));
 		}
 		foreach(GameObject go in newGOs) {
 			AnimatorData __temp = getAnimatorData(go);
-			if(__temp != null) newAnimatorData.Add(__temp);
+			if(__temp != null) newAnimatorData.Add(new AnimatorDataEdit(__temp));
 		}
 		int numTakes = 0;
-		foreach (AnimatorData _a in newAnimatorData) {
-			numTakes += _a._takes.Count;	
+        foreach(AnimatorDataEdit _a in newAnimatorData) {
+			numTakes += _a.takes.Count;	
 		}
 		int numGOs = (newGOs.Count-newAnimatorData.Count);
 		Debug.Log ("Animator: Imported "+numTakes+" Take"+(numTakes > 1 ? "s" : "")+". Added "+numGOs+" GameObject"+(numGOs > 1 ? "s" : "")+".");
 		// merge new animator data together
 		for(int i=1;i<newAnimatorData.Count;i++) {
-			newAnimatorData[0].e_mergeWith(newAnimatorData[i]);
+			newAnimatorData[0].MergeWith(newAnimatorData[i]);
 			newGOs.Remove(newAnimatorData[i].gameObject);
 			DestroyImmediate(newAnimatorData[i].gameObject);
 			newAnimatorData.RemoveAt(i);
@@ -203,7 +203,7 @@ public class AMTakeImport : EditorWindow {
 		}
 		// merge old animator data together
 		for(int i=1;i<origAnimatorData.Count;i++) {
-			origAnimatorData[0].e_mergeWith(origAnimatorData[i]);
+			origAnimatorData[0].MergeWith(origAnimatorData[i]);
 			origGOs.Remove(origAnimatorData[i].gameObject);
 			DestroyImmediate(origAnimatorData[i].gameObject);
 			origAnimatorData.RemoveAt(i);
@@ -212,7 +212,7 @@ public class AMTakeImport : EditorWindow {
 		
 		// merge old with new
 		if(origAnimatorData.Count >= 1 && newAnimatorData.Count >= 1) {
-			origAnimatorData[0].e_mergeWith(newAnimatorData[0]);
+			origAnimatorData[0].MergeWith(newAnimatorData[0]);
 			newGOs.Remove(newAnimatorData[0].gameObject);
 			DestroyImmediate(newAnimatorData[0].gameObject);
 			newAnimatorData.RemoveAt(0);

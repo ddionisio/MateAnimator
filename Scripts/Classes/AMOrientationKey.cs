@@ -78,19 +78,14 @@ public class AMOrientationKey : AMKey {
     Transform target;
 	[SerializeField]
 	string targetPath;
-	[SerializeField]
-	Transform endTarget;
-	[SerializeField]
-	string endTargetPath;
 
     public int endFrame;
 
 	public void SetTarget(AMITarget itarget, Transform t) {
-		targetPath = AMUtil.GetPath(itarget.TargetGetRoot(), t);
-		if(itarget.TargetIsMeta()) {
-			itarget.TargetMissing(targetPath, false);
-			target = null;
-			itarget.TargetSetCache(targetPath, t);
+		if(itarget.isMeta) {
+            target = null;
+            targetPath = AMUtil.GetPath(itarget.root, t);
+			itarget.SetCache(targetPath, t);
 		}
 		else {
 			target = t;
@@ -99,16 +94,12 @@ public class AMOrientationKey : AMKey {
 	}
 	public Transform GetTarget(AMITarget itarget) {
 		Transform ret = null;
-		if(itarget.TargetIsMeta()) {
+		if(itarget.isMeta) {
 			if(!string.IsNullOrEmpty(targetPath)) {
-				ret = itarget.TargetGetCache(targetPath);
+				ret = itarget.GetCache(targetPath);
 				if(ret == null) {
-					ret = AMUtil.GetTarget(itarget.TargetGetRoot(), targetPath);
-					if(ret) {
-						itarget.TargetSetCache(targetPath, ret);
-					}
-					else
-						itarget.TargetMissing(targetPath, true);
+					ret = AMUtil.GetTarget(itarget.root, targetPath);
+                    itarget.SetCache(targetPath, ret);
 				}
 			}
 		}
@@ -117,68 +108,27 @@ public class AMOrientationKey : AMKey {
 		return ret;
 	}
 
-	public void SetTargetEnd(AMOrientationKey nextKey) {
-		endTarget = nextKey.target;
-		endTargetPath = nextKey.targetPath;
-	}
-	public Transform GetTargetEnd(AMITarget itarget) {
-		Transform ret = null;
-		if(itarget.TargetIsMeta()) {
-			if(!string.IsNullOrEmpty(endTargetPath)) {
-				ret = itarget.TargetGetCache(endTargetPath);
-				if(ret == null) {
-					ret = AMUtil.GetTarget(itarget.TargetGetRoot(), endTargetPath);
-					if(ret) {
-						itarget.TargetSetCache(endTargetPath, ret);
-					}
-					else
-						itarget.TargetMissing(endTargetPath, true);
-				}
-			}
-		}
-		else
-			ret = endTarget;
-		return ret;
-	}
-
 	public override void maintainKey(AMITarget itarget, UnityEngine.Object targetObj) {
-		if(itarget.TargetIsMeta()) {
+		if(itarget.isMeta) {
 			if(string.IsNullOrEmpty(targetPath)) {
 				if(target) {
-					targetPath = AMUtil.GetPath(itarget.TargetGetRoot(), target);
-					itarget.TargetSetCache(targetPath, target);
-				}
-			}
-
-			if(string.IsNullOrEmpty(endTargetPath)) {
-				if(endTarget) {
-					endTargetPath = AMUtil.GetPath(itarget.TargetGetRoot(), endTarget);
-					itarget.TargetSetCache(endTargetPath, endTarget);
+					targetPath = AMUtil.GetPath(itarget.root, target);
+					itarget.SetCache(targetPath, target);
 				}
 			}
 
 			target = null;
-			endTarget = null;
 		}
 		else {
 			if(!target) {
 				if(!string.IsNullOrEmpty(targetPath)) {
-					target = itarget.TargetGetCache(targetPath);
+					target = itarget.GetCache(targetPath);
 					if(!target)
-						target = AMUtil.GetTarget(itarget.TargetGetRoot(), targetPath);
-				}
-			}
-
-			if(!endTarget) {
-				if(!string.IsNullOrEmpty(endTargetPath)) {
-					endTarget = itarget.TargetGetCache(endTargetPath);
-					if(!endTarget)
-						endTarget = AMUtil.GetTarget(itarget.TargetGetRoot(), endTargetPath);
+						target = AMUtil.GetTarget(itarget.root, targetPath);
 				}
 			}
 
 			targetPath = "";
-			endTargetPath = "";
 		}
 	}
 
@@ -200,15 +150,7 @@ public class AMOrientationKey : AMKey {
         return endFrame - frame;
 	}
 	
-	public bool isLookFollow(AMITarget itarget) {
-		Transform tgt = GetTarget(itarget);
-		Transform tgte = GetTargetEnd(itarget);
-		return tgt == tgte;
-	}
-	
-	public Quaternion getQuaternionAtPercent(AMITarget itarget, Transform obj, float percentage) {
-		Transform tgt = GetTarget(itarget);
-		Transform tgte = GetTargetEnd(itarget);
+	public Quaternion getQuaternionAtPercent(Transform obj, Transform tgt, Transform tgte, float percentage) {
         if(tgt == tgte || !canTween) {
 			return Quaternion.LookRotation(tgt.position - obj.position);
 		}
@@ -237,7 +179,7 @@ public class AMOrientationKey : AMKey {
             seq.Insert(this, HOTween.To(obj, getTime(frameRate), new TweenParms().Prop("rotation", new AMPlugOrientation(GetTarget(seq.target), null))));
 		}
         if(endFrame == -1) return;
-        Transform tgt = GetTarget(seq.target), tgte = GetTargetEnd(seq.target);
+        Transform tgt = GetTarget(seq.target), tgte = (track.keys[index+1] as AMOrientationKey).GetTarget(seq.target);
 		if(tgt == tgte) {
 			seq.Insert(this, HOTween.To(obj, getTime(frameRate), new TweenParms().Prop("rotation", new AMPlugOrientation(tgt, null))));
         }

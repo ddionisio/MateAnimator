@@ -143,10 +143,10 @@ public class AMSequence {
             }
         }
                 
-        mTarget.TargetSequenceComplete(this);
+        mTarget.SequenceComplete(this);
     }
 
     void OnTrigger(TweenEvent dat) {
-        mTarget.TargetSequenceTrigger(this, (AMKey)dat.parms[0], (AMTriggerData)dat.parms[1]);
+        mTarget.SequenceTrigger(this, (AMKey)dat.parms[0], (AMTriggerData)dat.parms[1]);
     }
 }

@@ -282,14 +282,14 @@ public class AMTranslationTrack : AMTrack {
         return ret;
     }
     // draw gizmos
-    public override void drawGizmos(AMITarget target, float gizmo_size) {
+    public override void drawGizmos(AMITarget target, float gizmo_size, bool inPlayMode, int frame) {
 		Transform t = GetTarget(target) as Transform;
 
         foreach(AMTranslationKey key in keys) {
             if(key != null) {
                 if(!key.canTween) {
 					Gizmos.color = Color.green;
-					Gizmos.DrawSphere(key.position, gizmo_size);
+					Gizmos.DrawSphere(_isLocal && t.parent ? t.parent.localToWorldMatrix.MultiplyPoint3x4(key.position) : key.position, gizmo_size);
 				}
 				else if(key.path.Length > 1)
                     key.pathPreview.GizmoDraw(_isLocal ? t.parent : null, gizmo_size);

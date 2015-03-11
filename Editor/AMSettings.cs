@@ -9,9 +9,9 @@ public class AMSettings : EditorWindow {
 
     public AMOptionsFile oData;
 
-    private AnimatorData __aData;
+    private AnimatorDataEdit __aData;
 
-    public AnimatorData aData {
+    public AnimatorDataEdit aData {
         get {
             if(AMTimeline.window.aData != __aData) {
                 reloadAnimatorData();
@@ -43,8 +43,8 @@ public class AMSettings : EditorWindow {
     }
     void OnDisable() {
         window = null;
-        if((aData) && saveChanges) {
-			AMTakeData take = AMTimeline.window.currentTake;
+        if(aData != null && saveChanges) {
+            AMTakeData take = aData.currentTake;
             bool saveNumFrames = true;
 			if((numFrames < take.numFrames) && (take.hasKeyAfter(numFrames))) {
                 if(!EditorUtility.DisplayDialog("Data Will Be Lost", "You will lose some keys beyond frame " + numFrames + " if you continue.", "Continue Anway", "Cancel")) {
@@ -53,15 +53,15 @@ public class AMSettings : EditorWindow {
             }
 
 			string label = take.name+": Modify Settings";
-			AMTimeline.registerTakesUndo(aData, label, true);
-            take = AMTimeline.window.currentTake;
+			AMTimeline.RegisterTakesUndo(aData, label, true);
+            take = aData.currentTake;
             
             if(saveNumFrames) {
-				Undo.RegisterCompleteObjectUndo(AMTimeline.getKeysAndTracks(take), label);
+				Undo.RegisterCompleteObjectUndo(AnimatorDataEdit.GetKeysAndTracks(take), label);
 
                 // save numFrames
 				take.numFrames = numFrames;
-				AMKey[]dkeys = take.removeKeysAfter(aData, numFrames);
+				AMKey[]dkeys = take.removeKeysAfter(aData.target, numFrames);
 				foreach(AMKey dkey in dkeys)
 					Undo.DestroyObjectImmediate(dkey);
 
@@ -81,14 +81,14 @@ public class AMSettings : EditorWindow {
 			take.loopBackToFrame = Mathf.Clamp(loopBackFrame, -1, numFrames);
 
             // save data
-			AMTimeline.setDirtyTakes(aData);
+            aData.SetDirtyTakes();
 
             EditorWindow.GetWindow(typeof(AMTimeline)).Repaint();
         }
     }
     void OnGUI() {
         AMTimeline.loadSkin(ref skin, ref cachedSkinName, position);
-        if(!aData) {
+        if(aData == null) {
             AMTimeline.MessageBox("Animator requires an AnimatorData component in your scene. Launch Animator to add the component.", AMTimeline.MessageBoxType.Warning);
             return;
         }
@@ -141,7 +141,7 @@ public class AMSettings : EditorWindow {
         GUILayout.EndArea();
     }
     void OnHierarchyChange() {
-        if(!aData) loadAnimatorData();
+        if(aData == null) loadAnimatorData();
     }
     public void reloadAnimatorData() {
         __aData = null;
@@ -150,7 +150,7 @@ public class AMSettings : EditorWindow {
     void loadAnimatorData() {
         if(AMTimeline.window) {
             __aData = AMTimeline.window.aData;
-            AMTakeData take = AMTimeline.window.currentTake;
+            AMTakeData take = aData.currentTake;
             numFrames = take.numFrames;
             frameRate = take.frameRate;
             loopCount = take.numLoop;

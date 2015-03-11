@@ -90,7 +90,7 @@ public class AMTransitionPicker : EditorWindow {
     private const float height_toggle_button = 44f;
     private const float y_preview_texture = 48f;
     // other variables
-    public AnimatorData aData = null;
+    public AnimatorDataEdit aData = null;
     private AMOptionsFile oData = null;
     public bool isPlaying = true;
     public enum DragType {
@@ -177,7 +177,7 @@ public class AMTransitionPicker : EditorWindow {
 
     void OnGUI() {
         setWindowSize();
-        this.title = "Fade: "+(oData.time_numbering ? AMTimeline.frameToTime(key.frame, (float)AMTimeline.window.currentTake.frameRate)+" s" : key.frame.ToString());
+        this.title = "Fade: "+(oData.time_numbering ? AMTimeline.frameToTime(key.frame, (float)aData.currentTake.frameRate)+" s" : key.frame.ToString());
         // load skin
         AMTimeline.loadSkin(ref skin, ref cachedSkinName, position);
     	LoadTextures();
@@ -448,18 +448,18 @@ public class AMTransitionPicker : EditorWindow {
         GUILayout.BeginArea(new Rect(0f, position.height-29f, 322f, 29f));
         GUILayout.BeginHorizontal(stylePadding);
         if(GUILayout.Button("Apply")) {
-            AMTimeline.recordUndoTrackAndKeys(track, false, "Camera Transition Set");
+            AnimatorDataEdit.RecordUndoTrackAndKeys(track, false, "Camera Transition Set");
             key.cameraFadeType = selectedTransition;
             key.cameraFadeParameters = new List<float>(parameters);
             key.irisShape = irisShape;
             // update cache when modifying varaibles
-            track.updateCache(aData);
+            track.updateCache(aData.target);
             AMCodeView.refresh();
             // preview frame
-            AMTimeline.window.currentTake.previewFrame(aData, AMTimeline.window.currentTake.selectedFrame);
+            aData.currentTake.previewFrame(aData.target, aData.currentTake.selectedFrame);
             // save data
             EditorUtility.SetDirty(track);
-            AMTimeline.setDirtyKeys(track);
+            AnimatorDataEdit.SetDirtyKeys(track);
             if(AMTimeline.window) AMTimeline.window.Repaint();
             this.Close();
         }
@@ -472,7 +472,7 @@ public class AMTransitionPicker : EditorWindow {
     }
 
     void OnHierarchyChange() {
-        if(!aData) reloadAnimatorData();
+        if(aData == null) reloadAnimatorData();
     }
     #endregion
 
@@ -1005,16 +1005,19 @@ public class AMTransitionPicker : EditorWindow {
     public void reloadAnimatorData() {
         aData = null;
         loadAnimatorData();
-        AMTakeData take = AMTimeline.window.currentTake;
-        // update references for track and key
         bool shouldClose = true;
-        foreach(AMTrack _track in take.trackValues) {
-            if(track ==	_track) {
-                track = _track;
-                foreach(AMCameraSwitcherKey _key in track.keys) {
-                    if(key == _key) {
-                        key = _key;
-                        shouldClose = false;
+        if(aData != null) {
+            AMTakeData take = aData.currentTake;
+            // update references for track and key
+
+            foreach(AMTrack _track in take.trackValues) {
+                if(track ==	_track) {
+                    track = _track;
+                    foreach(AMCameraSwitcherKey _key in track.keys) {
+                        if(key == _key) {
+                            key = _key;
+                            shouldClose = false;
+                        }
                     }
                 }
             }
@@ -1025,7 +1028,8 @@ public class AMTransitionPicker : EditorWindow {
     void loadAnimatorData() {
         GameObject go = GameObject.Find("AnimatorData");
         if(go) {
-            aData = (AnimatorData)go.GetComponent("AnimatorData");
+            AnimatorData anim = go.GetComponent<AnimatorData>();
+            aData = AMTimeline.AnimEdit(anim);
         }
     }
 

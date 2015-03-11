@@ -203,7 +203,7 @@ public class AMPlugMateAnimator : ABSTweenPlugin {
 
         //only play audio when moving forward
         //remove any audio loops if we reached the end
-        take.runFrame(anim, frame, parent.TargetAnimScale(), frame > prevFrame, (tweenObj.isReversed && p_totElapsed <= 0.0f) || (p_totElapsed >= _duration));
+        take.runFrame(anim, frame, parent.animScale, frame > prevFrame, (tweenObj.isReversed && p_totElapsed <= 0.0f) || (p_totElapsed >= _duration));
         prevFrame = frame;
     }
 
@@ -272,6 +272,7 @@ public class AMPlugDouble : ABSTweenPlugin {
     protected override void SetChangeVal() {
         if(isRelative && !tweenObj.isFrom) {
             changeVal = typedEndVal;
+            endVal = typedStartVal + typedEndVal;
         }
         else {
             changeVal = typedEndVal - typedStartVal;
@@ -281,7 +282,12 @@ public class AMPlugDouble : ABSTweenPlugin {
     protected override void SetIncremental(int p_diffIncr) {
         typedStartVal += changeVal * p_diffIncr;
     }
-    protected override void SetIncrementalRestart() { }
+    protected override void SetIncrementalRestart() {
+        double prevStartVal = typedStartVal;
+        startVal = GetValue();
+        double diff = typedStartVal - prevStartVal;
+        typedEndVal = typedStartVal + diff;
+    }
 
     protected override void DoUpdate(float p_totElapsed) {
         float t = ease(p_totElapsed, 0.0f, 1.0f, _duration, tweenObj.easeOvershootOrAmplitude, tweenObj.easePeriod);
@@ -350,6 +356,7 @@ public class AMPlugLong : ABSTweenPlugin {
     protected override void SetChangeVal() {
         if(isRelative && !tweenObj.isFrom) {
             changeVal = typedEndVal;
+            endVal = typedStartVal + typedEndVal;
         }
         else {
             changeVal = typedEndVal - typedStartVal;
@@ -359,7 +366,12 @@ public class AMPlugLong : ABSTweenPlugin {
     protected override void SetIncremental(int p_diffIncr) {
         typedStartVal += changeVal * p_diffIncr;
     }
-    protected override void SetIncrementalRestart() { }
+    protected override void SetIncrementalRestart() {
+        double prevStartVal = typedStartVal;
+        startVal = GetValue();
+        double diff = typedStartVal - prevStartVal;
+        typedEndVal = typedStartVal + diff;
+    }
 
     protected override void DoUpdate(float p_totElapsed) {
         float t = ease(p_totElapsed, 0.0f, 1.0f, _duration, tweenObj.easeOvershootOrAmplitude, tweenObj.easePeriod);

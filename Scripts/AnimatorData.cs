@@ -8,7 +8,7 @@ using Holoville.HOTween;
 
 [ExecuteInEditMode]
 [AddComponentMenu("M8/Animator")]
-public class AnimatorData : MonoBehaviour, AMITarget {
+public class AnimatorData : MonoBehaviour, AMITarget, AMIMeta {
     public enum DisableAction {
         None,
         Pause,
@@ -125,14 +125,8 @@ public class AnimatorData : MonoBehaviour, AMITarget {
         }
     }
 
-    [System.NonSerialized]
-    public bool isInspectorOpen = false;
-    [HideInInspector]
-    public float zoom = 0.4f;
     [HideInInspector]
     public int codeLanguage = 0; 	// 0 = C#, 1 = Javascript
-    [HideInInspector]
-    public float width_track = 150f;
 
     [HideInInspector]
     [SerializeField]
@@ -177,7 +171,7 @@ public class AnimatorData : MonoBehaviour, AMITarget {
         }
     }
 
-    public List<AMTakeData> _takes {
+    List<AMTakeData> _takes {
         get { return meta ? meta.takes : takeData; }
     }
 
@@ -189,15 +183,6 @@ public class AnimatorData : MonoBehaviour, AMITarget {
         List<AMTakeData> _t = _takes;
         for(int i = 0; i < _t.Count; i++) {
             if(_t[i].name == takeName)
-                return i;
-        }
-        return -1;
-    }
-
-    public int GetTakeIndex(AMTakeData take) {
-        List<AMTakeData> _t = _takes;
-        for(int i = 0; i < _t.Count; i++) {
-            if(_t[i] == take)
                 return i;
         }
         return -1;
@@ -248,6 +233,9 @@ public class AnimatorData : MonoBehaviour, AMITarget {
 
         Pause();
 
+        if(mLastPlayingTakeIndex != -1)
+            mSequences[mLastPlayingTakeIndex].take.PlaySwitch(this); //notify take that we are switching
+
         AMSequence amSeq = mSequences[index];
 
         AMTakeData newPlayTake = amSeq.take;
@@ -263,7 +251,7 @@ public class AnimatorData : MonoBehaviour, AMITarget {
 
         mNowPlayingTakeIndex = index;
 
-        newPlayTake.runStartUp(this, newPlayTake.frameRate * time, 1.0f);
+        newPlayTake.PlayStart(this, newPlayTake.frameRate * time, 1.0f); //notify take that we are playing
 
         if(seq != null) {
             if(loop) {
@@ -416,9 +404,12 @@ public class AnimatorData : MonoBehaviour, AMITarget {
         if(!Application.isPlaying)
             return;
 
-        mSequences = new AMSequence[_takes.Count];
+        _dataHolder.SetActive(false);
+
+        List<AMTakeData> _t = _takes;
+        mSequences = new AMSequence[_t.Count];
         for(int i = 0; i < mSequences.Length; i++)
-            mSequences[i] = new AMSequence(this, i, _takes[i]);
+            mSequences[i] = new AMSequence(this, i, _t[i]);
     }
 
     void Start() {
@@ -440,88 +431,69 @@ public class AnimatorData : MonoBehaviour, AMITarget {
     }
 
     #region AMITarget interface
-    public Transform TargetGetRoot() {
-        return transform;
+    Transform AMITarget.root {
+        get { return transform; }
     }
 
-    public Transform TargetGetDataHolder() {
-        if(meta) {
-            return meta.transform;
-        }
-        else {
-            if(_dataHolder == null) {
-                foreach(Transform child in transform) {
-                    if(child.gameObject.name == "_animdata") {
-                        _dataHolder = child.gameObject;
-                        break;
+    Transform AMITarget.holder {
+        get {
+            if(meta) {
+                return meta.transform;
+            }
+            else {
+                if(_dataHolder == null) {
+                    foreach(Transform child in transform) {
+                        if(child.gameObject.name == "_animdata") {
+                            _dataHolder = child.gameObject;
+                            break;
+                        }
+                    }
+
+                    if(_dataHolder) {
+                        //refresh data?
+                    }
+                    else {
+#if MATE_DEBUG_ANIMATOR
+                        _dataHolder = new GameObject("_animdata", typeof(AnimatorDataHolder));
+#else
+                        _dataHolder = new GameObject("_animdata");
+#endif
+                        _dataHolder.transform.parent = transform;
                     }
                 }
 
-                if(_dataHolder) {
-                    //refresh data?
-                }
-                else {
-                    _dataHolder = new GameObject("_animdata", typeof(AnimatorDataHolder));
-                    _dataHolder.transform.parent = transform;
-                    //!DEBUG
-                    //_dataHolder.SetActive(false);
-                }
+                return _dataHolder.transform;
             }
-
-            return _dataHolder.transform;
         }
     }
 
-    public bool TargetIsMeta() {
-        return meta != null;
+    bool AMITarget.isMeta {
+        get { return meta != null; }
     }
 
-#if UNITY_EDITOR
-    private HashSet<string> mTargetMissing;
-    public void TargetMissing(string path, bool isMissing) {
-        if(mTargetMissing == null) mTargetMissing = new HashSet<string>();
-        if(isMissing) {
-            mTargetMissing.Add(path);
-
-            if(Application.isPlaying)
-                Debug.LogWarning(name+ " is missing Target: "+path);
-        }
-        else
-            mTargetMissing.Remove(path);
+    List<AMTakeData> AMITarget.takes {
+        get { return _takes; }
     }
-#else
-	public void TargetMissing(string path, bool isMissing) {
-		if(isMissing)
-			Debug.LogWarning(name+ " is missing Target: "+path);
-	}
-#endif
 
-    public Transform TargetGetCache(string path) {
+    Transform AMITarget.GetCache(string path) {
         Transform ret = null;
-        if(mCache != null) {
-            if(mCache.TryGetValue(path, out ret)) {
-#if UNITY_EDITOR
-                if(mTargetMissing != null)
-                    mTargetMissing.Remove(path);
-#endif
-            }
-        }
+        mCache.TryGetValue(path, out ret);
         return ret;
     }
 
-    public void TargetSetCache(string path, Transform obj) {
+    void AMITarget.SetCache(string path, Transform obj) {
         if(mCache == null) mCache = new Dictionary<string, Transform>();
         if(mCache.ContainsKey(path))
             mCache[path] = obj;
-        else
+        else {
             mCache.Add(path, obj);
-#if UNITY_EDITOR
-        if(mTargetMissing != null)
-            mTargetMissing.Remove(path);
-#endif
+
+            if(obj == null) //if object is null, report it as missing
+                Debug.LogWarning(name+ " is missing Target: "+path);
+        }
     }
 
-    public void TargetSequenceComplete(AMSequence seq) {
+    void AMITarget.SequenceComplete(AMSequence seq) {
         //end camera fade
         if(AMCameraFade.hasInstance()) {
             AMCameraFade cf = AMCameraFade.getCameraFade();
@@ -534,46 +506,28 @@ public class AnimatorData : MonoBehaviour, AMITarget {
         if(takeCompleteCallback != null)
             takeCompleteCallback(this, seq.take);
     }
-    public void TargetSequenceTrigger(AMSequence seq, AMKey key, AMTriggerData trigDat) {
+
+    void AMITarget.SequenceTrigger(AMSequence seq, AMKey key, AMTriggerData trigDat) {
         if(takeTriggerCallback != null)
             takeTriggerCallback(this, seq.take, key, trigDat);
     }
 
-    public float TargetAnimScale() {
-        return mAnimScale;
-    }
-
-    #endregion
-
-    #region Editor stuff
-#if UNITY_EDITOR
-    [System.NonSerialized]
-    public bool e_autoKey = false;
-    [System.NonSerialized]
-    public bool e_isAnimatorOpen = false;
-    [System.NonSerialized]
-    public int e_currentTake;
-
-    void OnDrawGizmos() {
-        if(!e_isAnimatorOpen || _takes == null || _takes.Count == 0) return;
-        if(e_currentTake < 0) {
-            e_currentTake = 0;
+    string[] AMITarget.GetMissingTargets() {
+        //check cache
+        if(mCache != null) {
+            List<string> missings = new List<string>();
+            foreach(var pair in mCache) {
+                if(pair.Value == null)
+                    missings.Add(pair.Key);
+            }
+            return missings.ToArray();
         }
-        else if(e_currentTake >= _takes.Count)
-            e_currentTake = _takes.Count - 1;
 
-        _takes[e_currentTake].drawGizmos(this, AnimatorTimeline.e_gizmoSize, Application.isPlaying);
+        return null;
     }
 
-    public string[] e_getMissingTargets() {
-        if(mTargetMissing != null)
-            return mTargetMissing.ToArray();
-        else
-            return new string[0];
-    }
-
-    public void e_maintainTargetCache(AMTrack track) {
-        if(TargetIsMeta() && mCache.ContainsKey(track.targetPath)) {
+    void AMITarget.MaintainTargetCache(AMTrack track) {
+        if((this as AMITarget).isMeta && mCache.ContainsKey(track.targetPath)) {
             UnityEngine.Object obj = track.GetTarget(this);
             if(obj) {
                 string objPath = AMUtil.GetPath(transform, obj);
@@ -584,7 +538,7 @@ public class AnimatorData : MonoBehaviour, AMITarget {
         }
     }
 
-    public void e_maintainTakes() {
+    void AMITarget.MaintainTakes() {
         foreach(AMTakeData take in _takes) {
             take.maintainTake(this);
         }
@@ -593,143 +547,13 @@ public class AnimatorData : MonoBehaviour, AMITarget {
             mCache.Clear();
     }
 
-    public AnimatorMeta e_meta {
-        get { return meta; }
-    }
-
-    public bool e_metaCanInstantiatePrefab {
-        get {
-            if(meta) {
-                if(UnityEditor.PrefabUtility.GetPrefabType(meta) == UnityEditor.PrefabType.Prefab) {
-                    GameObject go = UnityEditor.PrefabUtility.FindRootGameObjectWithSameParentPrefab(meta.gameObject);
-                    return go && go.GetComponent<AnimatorMeta>() != null;
-                }
-            }
-            return false;
-        }
-    }
-
-    public bool e_metaCanSavePrefabInstance {
-        get {
-            if(meta && UnityEditor.PrefabUtility.GetPrefabType(meta) == UnityEditor.PrefabType.PrefabInstance) {
-                GameObject go = UnityEditor.PrefabUtility.FindRootGameObjectWithSameParentPrefab(meta.gameObject);
-                return go && go.GetComponent<AnimatorMeta>() != null;
-            }
-            return false;
-        }
-    }
-
-    /// <summary>
-    /// For editing the animator meta
-    /// </summary>
-    public bool e_metaInstantiatePrefab(string undoLabel) {
-        if(e_metaCanInstantiatePrefab) {
-            //Debug.Log("instantiating");
-            GameObject go = UnityEditor.PrefabUtility.InstantiatePrefab(meta.gameObject) as GameObject;
-            UnityEditor.Undo.RegisterCreatedObjectUndo(go, undoLabel);
-            UnityEditor.Undo.SetTransformParent(go.transform, transform, undoLabel);
-            UnityEditor.Undo.RegisterCompleteObjectUndo(this, undoLabel);
-            meta = go.GetComponent<AnimatorMeta>();
-            return true;
-        }
-        return false;
-    }
-
-    public void e_metaSaveInstantiate() {
-        if(meta && UnityEditor.PrefabUtility.GetPrefabType(meta) == UnityEditor.PrefabType.PrefabInstance) {
-            GameObject instanceGO = meta.gameObject;
-            GameObject prefab = UnityEditor.PrefabUtility.GetPrefabParent(instanceGO) as GameObject;
-            if(prefab) {
-                UnityEditor.Undo.RegisterCompleteObjectUndo(this, "Save Prefab");
-
-                UnityEditor.PrefabUtility.ReplacePrefab(instanceGO, prefab);
-                meta = prefab.GetComponent<AnimatorMeta>();
-
-                UnityEditor.Undo.DestroyObjectImmediate(instanceGO);
-            }
-        }
-    }
-
-    /// <summary>
-    /// if copyTakes is true, overrides all takes in newMeta (if null, then to our dataholder) with current data
-    /// </summary>
-    public void e_setMeta(AnimatorMeta newMeta, bool copyTakes) {
-        if(meta != newMeta) {
-            AnimatorMeta prevMeta = meta;
-            List<AMTakeData> prevTakes = _takes;
-            string prevPlayOnStartName = defaultTakeName;
-
-            meta = newMeta;
-
-            if(meta) {
-                if(copyTakes) {
-                    meta.takes.Clear();
-
-                    foreach(AMTakeData take in prevTakes)
-                        e_duplicateTake(take, true, true);
-                }
-
-                //clear out non-meta stuff
-                if(_dataHolder) {
-                    UnityEditor.Undo.DestroyObjectImmediate(_dataHolder);
-                    _dataHolder = null;
-                }
-                takeData.Clear();
-            }
-            else {
-                //create data holder
-                _dataHolder = new GameObject("_animdata", typeof(AnimatorDataHolder));
-                _dataHolder.transform.parent = transform;
-                //!DEBUG
-                //_dataHolder.SetActive(false);
-                UnityEditor.Undo.RegisterCreatedObjectUndo(_dataHolder, "Set Meta");
-
-                if(copyTakes) { //duplicate meta to takeData
-                    foreach(AMTakeData take in prevTakes)
-                        e_duplicateTake(take, true, false);
-                }
-            }
-
-            if(_takes == null || _takes.Count == 0) { //add at least one take
-                e_addTake();
-            }
-
-            //get new play on start
-            playOnStartMeta = "";
-            playOnStartIndex = -1;
-
-            if(!string.IsNullOrEmpty(prevPlayOnStartName)) {
-                string newPlayOnStart = "";
-                foreach(AMTakeData take in _takes) {
-                    if(take.name == prevPlayOnStartName) {
-                        newPlayOnStart = take.name;
-                        break;
-                    }
-                }
-
-                defaultTakeName = newPlayOnStart;
-            }
-            //
-
-            //reset editor data
-            if(mTargetMissing != null)
-                mTargetMissing.Clear();
-
-            //destroy previous meta if it is not prefab
-            if(prevMeta && UnityEditor.PrefabUtility.GetPrefabType(prevMeta) != UnityEditor.PrefabType.Prefab) {
-                UnityEditor.Undo.DestroyObjectImmediate(prevMeta.gameObject);
-            }
-        }
-    }
-
     /// <summary>
     /// attempt to generate the missing targets
     /// </summary>
-    public void e_generateMissingTargets() {
-        if(mTargetMissing != null && mTargetMissing.Count > 0) {
-            foreach(string missingPath in mTargetMissing) {
-                AMUtil.CreateTarget(transform, missingPath);
-            }
+    void AMITarget.GenerateMissingTargets(string[] missingPaths) {
+        if(missingPaths != null && missingPaths.Length > 0) {
+            for(int i = 0; i < missingPaths.Length; i++)
+                AMUtil.CreateTarget(transform, missingPaths[i]);
 
             //fill necessary components per track and key
             foreach(AMTakeData take in _takes) {
@@ -756,224 +580,26 @@ public class AnimatorData : MonoBehaviour, AMITarget {
                 }
             }
 
-            mTargetMissing.Clear();
-
             if(mCache != null)
                 mCache.Clear();
         }
     }
+    #endregion
 
-    public AMTakeData e_getTake(string takeName) {
-        int ind = GetTakeIndex(takeName);
-        if(ind == -1) {
-            Debug.LogError("Animator: Take '" + takeName + "' not found.");
-            return null;
-        }
+    #region Meta interfaces
+    AnimatorMeta AMIMeta.meta {
+        get { return meta; }
+        set { 
+            meta = value; 
 
-        return _takes[ind];
-    }
-
-    public AMTakeData e_addTake() {
-        List<AMTakeData> _ts = _takes;
-        string name = "Take" + (_ts.Count + 1);
-        AMTakeData a = new AMTakeData();
-        // set defaults
-        a.name = name;
-        e_makeTakeNameUnique(a);
-
-        _ts.Add(a);
-
-        return a;
-    }
-
-    /// <summary>
-    /// This will only duplicate the tracks and groups, includeKeys=true to also duplicate keys
-    /// </summary>
-    /// <param name="take"></param>
-    public void e_duplicateTake(AMTakeData dupTake, bool includeKeys, bool addCompUndo) {
-        AMTakeData a = new AMTakeData();
-
-        a.name = dupTake.name;
-        e_makeTakeNameUnique(a);
-        a.numLoop = dupTake.numLoop;
-        a.loopMode = dupTake.loopMode;
-        a.frameRate = dupTake.frameRate;
-        a.numFrames = dupTake.numFrames;
-        a.startFrame = dupTake.startFrame;
-        a.playbackSpeedIndex = 2;
-        //a.lsTracks = new List<AMTrack>();
-        //a.dictTracks = new Dictionary<int,AMTrack>();
-
-        if(dupTake.rootGroup != null) {
-            a.rootGroup = dupTake.rootGroup.duplicate();
-        }
-        else {
-            a.initGroups();
-        }
-
-        a.group_count = dupTake.group_count;
-
-        if(dupTake.groupValues != null) {
-            a.groupValues = new List<AMGroup>();
-            foreach(AMGroup grp in dupTake.groupValues) {
-                a.groupValues.Add(grp.duplicate());
-            }
-        }
-
-        a.track_count = dupTake.track_count;
-
-        if(dupTake.trackValues != null) {
-            a.trackValues = new List<AMTrack>();
-            foreach(AMTrack track in dupTake.trackValues) {
-                AMTrack dupTrack = (addCompUndo ? UnityEditor.Undo.AddComponent(TargetGetDataHolder().gameObject, track.GetType()) : TargetGetDataHolder().gameObject.AddComponent(track.GetType())) as AMTrack;
-                dupTrack.enabled = false;
-                track.CopyTo(dupTrack);
-                a.trackValues.Add(dupTrack);
-
-                dupTrack.maintainTrack(this);
-
-                Object tgtObj = dupTrack.GetTarget(this);
-
-                //if there's no target, then we can't add the keys for events and properties
-                if(includeKeys && !(tgtObj == null && (dupTrack is AMPropertyTrack || dupTrack is AMEventTrack))) {
-                    foreach(AMKey key in track.keys) {
-                        AMKey dupKey = (addCompUndo ? UnityEditor.Undo.AddComponent(TargetGetDataHolder().gameObject, key.GetType()) : TargetGetDataHolder().gameObject.AddComponent(key.GetType())) as AMKey;
-                        if(dupKey) {
-                            key.CopyTo(dupKey);
-                            dupKey.enabled = false;
-                            dupKey.maintainKey(this, tgtObj);
-                            dupTrack.keys.Add(dupKey);
-                        }
-                    }
-
-                    dupTrack.updateCache(this);
-                }
-            }
-        }
-
-        List<AMTakeData> _ts = _takes;
-        _ts.Add(a);
-    }
-
-    public void e_deleteTake(int index) {
-        string prevDefaultTakeName = defaultTakeName;
-        //if(shouldCheckDependencies) shouldCheckDependencies = false;
-
-        //TODO: destroy tracks, keys
-        //_takes[index].destroy();
-        _takes.RemoveAt(index);
-        if((e_currentTake >= index) && (e_currentTake > 0)) e_currentTake--;
-
-        if(!string.IsNullOrEmpty(prevDefaultTakeName)) {
-            string newPlayOnStart = "";
-            foreach(AMTakeData take in _takes) {
-                if(take.name == prevDefaultTakeName) {
-                    newPlayOnStart = take.name;
-                    break;
-                }
-            }
-
-            defaultTakeName = newPlayOnStart;
+            if(meta)
+                takeData.Clear(); 
         }
     }
 
-    public void e_makeTakeNameUnique(AMTakeData take) {
-        bool loop = false;
-        int count = 0;
-        do {
-            if(loop) loop = false;
-            foreach(AMTakeData _take in _takes) {
-                if(_take != take && _take.name == take.name) {
-                    if(count > 0) take.name = take.name.Substring(0, take.name.Length - 3);
-                    count++;
-                    take.name += "(" + count + ")";
-                    loop = true;
-                    break;
-                }
-            }
-        } while(loop);
+    GameObject AMIMeta.dataHolder {
+        get { return _dataHolder; }
+        set { _dataHolder = value; }
     }
-
-    public string[] e_getTakeNames() {
-        List<AMTakeData> _ts = _takes;
-        string[] names = new string[_ts.Count + 2];
-        for(int i = 0; i < _ts.Count; i++) {
-            names[i] = _ts[i].name;
-        }
-        names[names.Length - 2] = "Create new...";
-        names[names.Length - 1] = "Duplicate current...";
-        return names;
-    }
-
-    public bool e_setCodeLanguage(int codeLanguage) {
-        if(this.codeLanguage != codeLanguage) {
-            this.codeLanguage = codeLanguage;
-            return true;
-        }
-        return false;
-    }
-    /*public bool setShowWarningForLostReferences(bool showWarningForLostReferences) {
-        if(this.showWarningForLostReferences != showWarningForLostReferences) {
-            this.showWarningForLostReferences = showWarningForLostReferences;
-            return true;
-        }
-        return false;
-    }*/
-
-    public void e_deleteAllTakesExcept(AMTakeData take) {
-        List<AMTakeData> _ts = _takes;
-        for(int index = 0; index < _ts.Count; index++) {
-            if(_ts[index] == take) continue;
-            e_deleteTake(index);
-            index--;
-        }
-    }
-
-    public void e_mergeWith(AnimatorData _aData) {
-        if(meta == null && _aData.meta == null) {
-            foreach(AMTakeData take in _aData._takes) {
-                _takes.Add(take);
-                e_makeTakeNameUnique(take);
-            }
-        }
-    }
-
-    public List<GameObject> e_getDependencies(AMTakeData _take = null) {
-        // if only one take
-        if(_take != null) return _take.getDependencies(this).ToList();
-
-        // if all takes
-        List<GameObject> ls = new List<GameObject>();
-        foreach(AMTakeData take in _takes) {
-            ls = ls.Union(take.getDependencies(this)).ToList();
-        }
-        return ls;
-    }
-
-    public List<GameObject> e_updateDependencies(List<GameObject> newReferences, List<GameObject> oldReferences) {
-        List<GameObject> lsFlagToKeep = new List<GameObject>();
-        foreach(AMTakeData take in _takes) {
-            lsFlagToKeep = lsFlagToKeep.Union(take.updateDependencies(this, newReferences, oldReferences)).ToList();
-        }
-        return lsFlagToKeep;
-    }
-
-    /// <summary>
-    /// Determine if given anim is referenced in any mate animator track
-    /// </summary>
-    public bool e_isReferencedInTrack(AnimatorData anim) {
-        foreach(AMTakeData take in _takes) {
-            foreach(AMTrack track in take.trackValues) {
-                AMAnimatorMateTrack mateAnimTrack = track as AMAnimatorMateTrack;
-                if(mateAnimTrack) {
-                    AnimatorData animTrack = mateAnimTrack.GetTarget(this) as AnimatorData;
-                    if(animTrack == anim)
-                        return true;
-                }
-            }
-        }
-        return false;
-    }
-#endif
     #endregion
 }

@@ -35,7 +35,7 @@ public class AMAnimatorMateTrack : AMTrack {
                     AMAnimatorMateKey key = keys[i] as AMAnimatorMateKey;
                     int takeInd = anim.GetTakeIndex(key.take);
                     if(takeInd != -1) {
-                        AMTakeData take = anim._takes[takeInd];
+                        AMTakeData take = itarget.takes[takeInd];
                         int takeFrame = Mathf.FloorToInt(((float)frame/frameRate)*(float)take.frameRate);
                         take.sampleAudioAtFrame(anim, takeFrame, speed);
                     }
@@ -43,7 +43,7 @@ public class AMAnimatorMateTrack : AMTrack {
                         //null take, stop audio from previous take
                         takeInd = anim.GetTakeIndex(((AMAnimatorMateKey)keys[i-1]).take);
                         if(takeInd != -1) {
-                            AMTakeData take = anim._takes[takeInd];
+                            AMTakeData take = itarget.takes[takeInd];
                             take.endAudioLoops(anim);
                         }
                     }
@@ -64,7 +64,7 @@ public class AMAnimatorMateTrack : AMTrack {
 
                     int takeInd = anim.GetTakeIndex(key.take);
                     if(takeInd != -1) {
-                        AMTakeData take = anim._takes[takeInd];
+                        AMTakeData take = itarget.takes[takeInd];
                         float takeFrame = (frame/frameRate)*(float)take.frameRate;
                         take.sampleAudio(anim, takeFrame, speed, playOneShots);
                     }
@@ -83,7 +83,7 @@ public class AMAnimatorMateTrack : AMTrack {
                     if(takeInd == -1)
                         return;
 
-                    AMTakeData take = anim._takes[takeInd];
+                    AMTakeData take = itarget.takes[takeInd];
                     take.endAudioLoops(anim);
                 }
             }
@@ -99,7 +99,7 @@ public class AMAnimatorMateTrack : AMTrack {
                     if(takeInd == -1)
                         return;
 
-                    AMTakeData take = anim._takes[takeInd];
+                    AMTakeData take = itarget.takes[takeInd];
                     take.stopAudio(anim);
                 }
             }
@@ -115,7 +115,7 @@ public class AMAnimatorMateTrack : AMTrack {
                     if(takeInd == -1)
                         return;
 
-                    AMTakeData take = anim._takes[takeInd];
+                    AMTakeData take = itarget.takes[takeInd];
                     take.pauseAudio(anim);
                 }
             }
@@ -131,7 +131,7 @@ public class AMAnimatorMateTrack : AMTrack {
                     if(takeInd == -1)
                         return;
 
-                    AMTakeData take = anim._takes[takeInd];
+                    AMTakeData take = itarget.takes[takeInd];
                     take.resumeAudio(anim);
                 }
             }
@@ -147,7 +147,7 @@ public class AMAnimatorMateTrack : AMTrack {
                     if(takeInd == -1)
                         return;
 
-                    AMTakeData take = anim._takes[takeInd];
+                    AMTakeData take = itarget.takes[takeInd];
                     take.setAudioSpeed(anim, speed);
                 }
             }
@@ -189,7 +189,7 @@ public class AMAnimatorMateTrack : AMTrack {
                 if(takeInd == -1)
                     return;
 
-                AMTakeData take = anim._takes[takeInd];
+                AMTakeData take = target.takes[takeInd];
                 take.runFrame(anim, 0f, animScale, playAudio, noAudioLoop);
             }
             return;
@@ -201,7 +201,7 @@ public class AMAnimatorMateTrack : AMTrack {
 
                 AMTakeData take = GrabTake(anim, amKey);
                 if(take != null) {
-                    float subFrame = GrabFrame(take, amKey, frame, frameRate, anim.TargetAnimScale());
+                    float subFrame = GrabFrame(take, amKey, frame, frameRate, anim.animScale);
                     take.runFrame(anim, subFrame, animScale, playAudio, noAudioLoop);
                 }
                 else if(i > 0) { //jump to last frame of previous key
@@ -209,7 +209,7 @@ public class AMAnimatorMateTrack : AMTrack {
                     amKey = keys[i-1] as AMAnimatorMateKey;
                     take = GrabTake(anim, amKey);
                     if(take != null) {
-                        float subFrame = GrabFrame(take, amKey, frame, frameRate, anim.TargetAnimScale());
+                        float subFrame = GrabFrame(take, amKey, frame, frameRate, anim.animScale);
                         take.runFrame(anim, subFrame, animScale, playAudio, noAudioLoop);
                     }
                 }
@@ -231,7 +231,7 @@ public class AMAnimatorMateTrack : AMTrack {
                 if(takeInd == -1)
                     return;
 
-                AMTakeData take = anim._takes[takeInd];
+                AMTakeData take = target.takes[takeInd];
                 take.previewFrame(anim, 0f);
             }
             return;
@@ -244,7 +244,7 @@ public class AMAnimatorMateTrack : AMTrack {
 
                 AMTakeData take = GrabTake(anim, amKey);
                 if(take != null) {
-                    float subFrame = GrabFrame(take, amKey, frame, frameRate, anim.TargetAnimScale());
+                    float subFrame = GrabFrame(take, amKey, frame, frameRate, anim.animScale);
                     take.previewFrame(anim, subFrame);
                 }
                 else if(i > 0) { //jump to last frame of previous key
@@ -253,7 +253,7 @@ public class AMAnimatorMateTrack : AMTrack {
                     amKey.updateDuration(this, target);
                     take = GrabTake(anim, amKey);
                     if(take != null) {
-                        float subFrame = GrabFrame(take, amKey, frame, frameRate, anim.TargetAnimScale());
+                        float subFrame = GrabFrame(take, amKey, frame, frameRate, anim.animScale);
                         take.previewFrame(anim, subFrame);
                     }
                 }
@@ -266,7 +266,7 @@ public class AMAnimatorMateTrack : AMTrack {
         if(!string.IsNullOrEmpty(amKey.take)) {
             int takeInd = anim.GetTakeIndex(amKey.take);
             if(takeInd != -1)
-                return anim._takes[takeInd];
+                return (anim as AMITarget).takes[takeInd];
         }
         return null;
     }

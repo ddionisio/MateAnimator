@@ -12,7 +12,7 @@ public class AMEasePicker : EditorWindow {
 	public static bool justSet = false;
 	public static AMKey key = null;
 	public static AMTrack track = null;
-	public AnimatorData aData = null;
+	public AnimatorDataEdit aData = null;
 	public static int selectedIndex;
 	public static int selectedSpeedIndex = 0;
 	public static int category = 0;
@@ -86,25 +86,27 @@ public class AMEasePicker : EditorWindow {
 	}
 	void OnHierarchyChange()
 	{
-		if(!aData) reloadAnimatorData();
+		if(aData == null) reloadAnimatorData();
 	}
 	public void reloadAnimatorData() {
 		aData = null;
 		loadAnimatorData();
-		AMTakeData take = AMTimeline.window.currentTake;
-		// update references for track and key
-		bool shouldClose = true;
-		foreach(AMTrack _track in take.trackValues) {
-			if(track ==	_track) {
-				track = _track;
-				foreach(AMKey _key in track.keys) {
-					if(key == _key) {
-						key = _key;
-						shouldClose = false;
-					}
-				}
-			}
-		}
+        bool shouldClose = true;
+        if(aData != null) {
+            AMTakeData take = aData.currentTake;
+            // update references for track and key
+            foreach(AMTrack _track in take.trackValues) {
+                if(track ==	_track) {
+                    track = _track;
+                    foreach(AMKey _key in track.keys) {
+                        if(key == _key) {
+                            key = _key;
+                            shouldClose = false;
+                        }
+                    }
+                }
+            }
+        }
 		if(shouldClose) this.Close();
 	}
 	void loadAnimatorData()
@@ -137,7 +139,7 @@ public class AMEasePicker : EditorWindow {
 
 	
 	void OnGUI() {
-		this.title = "Ease: "+(oData.time_numbering ? AMTimeline.frameToTime(key.frame,(float)AMTimeline.window.currentTake.frameRate)+" s" : key.frame.ToString());
+		this.title = "Ease: "+(oData.time_numbering ? AMTimeline.frameToTime(key.frame,(float)aData.currentTake.frameRate)+" s" : key.frame.ToString());
 		AMTimeline.loadSkin(ref skin, ref cachedSkinName, position);
 		bool updateEasingCurve = false;
 		
@@ -197,16 +199,16 @@ public class AMEasePicker : EditorWindow {
 						shouldUpdateCache = true;
 					}
 					if(shouldUpdateCache) {
-						AMTimeline.recordUndoTrackAndKeys(track, false, "Change Ease");
+						AnimatorDataEdit.RecordUndoTrackAndKeys(track, false, "Change Ease");
 						key.setEaseType(nease);
 						// update cache when modifying varaibles
-						track.updateCache(aData);
+						track.updateCache(aData.target);
 						AMCodeView.refresh();
 						// preview new position
-						AMTimeline.window.currentTake.previewFrame(aData, AMTimeline.window.currentTake.selectedFrame);
+                        aData.currentTake.previewFrame(aData.target, aData.currentTake.selectedFrame);
 						// save data
 						EditorUtility.SetDirty(track);
-						AMTimeline.setDirtyKeys(track);
+						AnimatorDataEdit.SetDirtyKeys(track);
 					}
 					this.Close();
 				}

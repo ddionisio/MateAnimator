@@ -34,7 +34,7 @@ public class AMAnimatorMateKey : AMKey {
 
         int takeInd = string.IsNullOrEmpty(take) ? -1 : anim.GetTakeIndex(take);
         if(takeInd != -1) {
-            AMTakeData _take = anim._takes[takeInd];
+            AMTakeData _take = target.takes[takeInd];
             float fLastFrame = _take.getLastFrame();
             duration = fLastFrame/_take.frameRate;
         }
@@ -53,7 +53,7 @@ public class AMAnimatorMateKey : AMKey {
 
         if(takeInd == -1) { Debug.LogError(string.Format("take {0} does not exist in {1}.", take, anim.name)); return; }
 
-        AMTakeData takeDat = anim._takes[takeInd];
+        AMTakeData takeDat = (target as AMITarget).takes[takeInd];
 
         int endFrame;
         if(index < track.keys.Count-1) {
@@ -70,7 +70,7 @@ public class AMAnimatorMateKey : AMKey {
 
         plug = new AMPlugMateAnimator(seq.target, anim, takeDat, loop);
 
-        seq.sequence.Insert(waitTime, HOTween.To(target, _duration, new TweenParms().Prop("width_track", plug)));
+        seq.sequence.Insert(waitTime, HOTween.To(target, _duration, new TweenParms().Prop("codeLanguage", plug)));
     }
     #endregion
 }
