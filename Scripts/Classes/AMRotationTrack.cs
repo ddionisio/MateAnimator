@@ -20,61 +20,20 @@ public class AMRotationTrack : AMTrack {
 
 	public new void SetTarget(AMITarget target, Transform item) {
 		base.SetTarget(target, item);
-        _isLocal = true;
-        if(item != null && keys.Count <= 0) cachedInitialRotation = _isLocal ? item.localRotation : item.rotation;
+        if(item != null && keys.Count <= 0) cachedInitialRotation = item.localRotation;
 	}
 
     public override int version { get { return 2; } }
-
-    [SerializeField]
-    private bool _isLocal = true;
-    public bool isLocal {
-        get { return _isLocal; }
-        set {
-            if(_isLocal != value) {
-                if(value) {
-                    if(_obj != null && keys.Count <= 0) cachedInitialRotation = _obj.rotation;
-                }
-                else {
-                    if(_obj != null && keys.Count <= 0) cachedInitialRotation = _obj.localRotation;
-                }
-
-                if(_obj != null && _obj.parent != null) {
-                    Transform t = _obj.parent;
-
-                    foreach(AMRotationKey key in keys) {
-                        if(key.isLocal && !value) {//to world
-                            key.rotation = t.rotation * key.rotation;
-                        }
-                        else if(!key.isLocal && value) {//to local
-                            Quaternion invQ = Quaternion.Inverse(t.rotation);
-                            key.rotation = key.rotation * invQ;
-                        }
-
-                        key.isLocal = value;
-
-                        if(_isLocal && !value) //to world
-                            key.rotation = key.rotation * t.rotation;
-                        else if(!_isLocal && value) //to local
-                            key.rotation = key.rotation * Quaternion.Inverse(t.rotation);
-                    }
-                }
-
-                _isLocal = value;
-            }
-        }
-    }
-
+    
 	void SetRotation(Transform t, Quaternion r) {
 		if(t) {
-			if(_isLocal) t.localRotation = r;
-			else t.rotation = r;
+			t.localRotation = r;
 		}
 	}
 
 	Quaternion GetRotation(Transform t) {
 		if(t) {
-			return _isLocal ? t.localRotation : t.rotation;
+			return t.localRotation;
 		}
 		return Quaternion.identity;
 	}
@@ -111,8 +70,6 @@ public class AMRotationTrack : AMTrack {
     public override void updateCache(AMITarget target) {
 		base.updateCache(target);
 
-		isLocal = true;
-
         for(int i = 0; i < keys.Count; i++) {
             AMRotationKey key = keys[i] as AMRotationKey;
 			            
@@ -127,7 +84,6 @@ public class AMRotationTrack : AMTrack {
 
 				key.endFrame = -1;
 			}
-            key.isLocal = _isLocal;
         }
     }
     // preview a frame in the scene view
@@ -284,7 +240,6 @@ public class AMRotationTrack : AMTrack {
     protected override void DoCopy(AMTrack track) {
         AMRotationTrack ntrack = track as AMRotationTrack;
         ntrack._obj = _obj;
-        ntrack._isLocal = _isLocal;
         ntrack.cachedInitialRotation = cachedInitialRotation;
     }
 }

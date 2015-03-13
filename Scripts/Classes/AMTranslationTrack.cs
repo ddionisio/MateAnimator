@@ -27,8 +27,7 @@ public class AMTranslationTrack : AMTrack {
 	
 	public new void SetTarget(AMITarget target, Transform item) {
 		base.SetTarget(target, item);
-        _isLocal = true;
-        if(item != null && keys.Count <= 0) cachedInitialPosition = _isLocal ? item.localPosition : item.position;
+        if(item != null && keys.Count <= 0) cachedInitialPosition = item.localPosition;
 	}
 
     public override int version { get { return 2; } }
@@ -37,57 +36,16 @@ public class AMTranslationTrack : AMTrack {
 
     public override int interpCount { get { return 3; } }
 
-    [SerializeField]
-    private bool _isLocal;
-    public bool isLocal {
-        get { return _isLocal; }
-        set {
-            if(_isLocal != value) {
-                if(value) {
-                    if(_obj != null && keys.Count <= 0) cachedInitialPosition = _obj.position;
-                }
-                else {
-                    if(_obj != null && keys.Count <= 0) cachedInitialPosition = _obj.localPosition;
-                }
-
-                if(_obj != null && _obj.parent != null) {
-                    Transform t = _obj.parent;
-
-                    foreach(AMTranslationKey key in keys) {
-                        if(key.path != null) {
-                            for(int i = 0;i < key.path.Length;i++) {
-                                if(key.isLocal && !value) //to world
-                                    key.path[i] = t.localToWorldMatrix.MultiplyPoint(key.path[i]);
-                                else if(!key.isLocal && value) //to local
-                                    key.path[i] = t.InverseTransformPoint(key.path[i]);
-                            }
-                        }
-
-                        key.isLocal = value;
-
-                        if(_isLocal && !value) //to world
-                            key.position = t.localToWorldMatrix.MultiplyPoint(key.position);
-                        else if(!_isLocal && value) //to local
-                            key.position = t.InverseTransformPoint(key.position);
-                    }
-                }
-
-                _isLocal = value;
-            }
-        }
-    }
-
 	void SetPosition(Transform t, Vector3 p) {
 		if(t) {
             if(pixelSnap) p.Set(Mathf.Round(p.x*pixelPerUnit)/pixelPerUnit, Mathf.Round(p.y*pixelPerUnit)/pixelPerUnit, Mathf.Round(p.z*pixelPerUnit)/pixelPerUnit);
-			if(_isLocal) t.localPosition = p;
-			else t.position = p;
+			t.localPosition = p;
 		}
 	}
 
 	Vector3 GetPosition(Transform t) {
 		if(t) {
-			return _isLocal ? t.localPosition : t.position;
+			return t.localPosition;
 		}
 		return Vector3.zero;
 	}
@@ -276,7 +234,7 @@ public class AMTranslationTrack : AMTrack {
 
         if(pixelSnap) ret.Set(Mathf.Round(ret.x*pixelPerUnit)/pixelPerUnit, Mathf.Round(ret.y*pixelPerUnit)/pixelPerUnit, Mathf.Round(ret.z*pixelPerUnit)/pixelPerUnit);
 
-        if(forceWorld && _isLocal && t != null && t.parent != null)
+        if(forceWorld && t != null && t.parent != null)
             ret = t.parent.localToWorldMatrix.MultiplyPoint(ret);
 
         return ret;
@@ -289,10 +247,10 @@ public class AMTranslationTrack : AMTrack {
             if(key != null) {
                 if(!key.canTween) {
 					Gizmos.color = Color.green;
-					Gizmos.DrawSphere(_isLocal && t.parent ? t.parent.localToWorldMatrix.MultiplyPoint3x4(key.position) : key.position, gizmo_size);
+					Gizmos.DrawSphere(t.parent ? t.parent.localToWorldMatrix.MultiplyPoint3x4(key.position) : key.position, gizmo_size);
 				}
 				else if(key.path.Length > 1)
-                    key.pathPreview.GizmoDraw(_isLocal ? t.parent : null, gizmo_size);
+                    key.pathPreview.GizmoDraw(t.parent, gizmo_size);
             }
         }
     }
@@ -307,11 +265,6 @@ public class AMTranslationTrack : AMTrack {
     public override void updateCache(AMITarget target) {
 		base.updateCache(target);
 
-        //Debug.Log("update");
-
-		//force local, using global is useless
-		isLocal = true;
-
         // get all paths and add them to the action list
         for(int i = 0; i < keys.Count; i++) {
             AMTranslationKey key = keys[i] as AMTranslationKey;
@@ -323,7 +276,6 @@ public class AMTranslationTrack : AMTrack {
 
             AMPath path = new AMPath(keys, i);
 
-            key.isLocal = _isLocal;
             key.startFrame = path.startFrame;
             key.endFrame = path.endFrame;
             key.pathPreview = null;
@@ -332,7 +284,6 @@ public class AMTranslationTrack : AMTrack {
 				if(path.endIndex == keys.Count - 1) {
 					AMTranslationKey lastKey = keys[path.endIndex] as AMTranslationKey;
                     lastKey.interp = (int)AMTranslationKey.Interpolation.None;
-					lastKey.isLocal = _isLocal;
 					lastKey.startFrame = path.endFrame;
 					lastKey.endFrame = path.endFrame;
 					lastKey.path = new Vector3[0];
@@ -350,7 +301,6 @@ public class AMTranslationTrack : AMTrack {
                     key.version = version;
                     key.interp = interp;
 					key.easeType = easeType;
-                    key.isLocal = _isLocal;
                     key.startFrame = key.frame;
                     key.endFrame = key.frame;
                     key.path = new Vector3[0];
@@ -407,7 +357,6 @@ public class AMTranslationTrack : AMTrack {
     protected override void DoCopy(AMTrack track) {
         AMTranslationTrack ntrack = track as AMTranslationTrack;
         ntrack._obj = _obj;
-        ntrack._isLocal = _isLocal;
         ntrack.cachedInitialPosition = cachedInitialPosition;
         ntrack.pixelSnap = pixelSnap;
         ntrack.pixelPerUnit = pixelPerUnit;

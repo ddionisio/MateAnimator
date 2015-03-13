@@ -30,10 +30,7 @@ public class AMPlugQuaternionSlerp : ABSTweenPlugin {
                 _startVal = typedStartVal;
             }
             else {
-                _startVal = value;
-                typedStartVal = (Quaternion)value;
-                //                    _startVal = value;
-                //                    typedStartVal = (value is Quaternion ? ((Quaternion)value).eulerAngles : (Vector3)value);
+                _startVal = typedStartVal = (Quaternion)value;
             }
         }
     }
@@ -47,11 +44,7 @@ public class AMPlugQuaternionSlerp : ABSTweenPlugin {
             return _endVal;
         }
         set {
-            _endVal = value;
-            typedEndVal = (Quaternion)value;
-
-            //                _endVal = value;
-            //                typedEndVal = (value is Quaternion ? ((Quaternion)value).eulerAngles : (Vector3)value);
+            _endVal = typedEndVal = (Quaternion)value;
         }
     }
 
@@ -221,7 +214,7 @@ public class AMPlugQuaternionSlerp : ABSTweenPlugin {
             changeVal = typedEndVal;
         }
         else {
-            changeVal = Quaternion.RotateTowards(typedStartVal, typedEndVal, 360.0f);
+            changeVal = typedEndVal * Quaternion.Inverse(typedStartVal);
         }
     }
 
@@ -235,7 +228,12 @@ public class AMPlugQuaternionSlerp : ABSTweenPlugin {
         for(int i = 0; i < p_diffIncr; i++)
             typedStartVal *= changeVal;
     }
-    protected override void SetIncrementalRestart() { }
+    protected override void SetIncrementalRestart() {
+        Quaternion prevStartVal = typedStartVal;
+        startVal = GetValue();
+        Quaternion diff = prevStartVal*Quaternion.Inverse(typedStartVal);
+        typedEndVal = typedStartVal*diff;
+    }
 
     /// <summary>
     /// Updates the tween.

@@ -13,7 +13,6 @@ public class AMTranslationKey : AMKey {
     
     public int startFrame;
     public int endFrame;
-    public bool isLocal;
     public Vector3[] path;
 
     public bool isConstSpeed = true;
@@ -144,7 +143,7 @@ public class AMTranslationKey : AMKey {
             if(getNumberOfFrames(seq.take.frameRate) <= 0) return;
 
             object tweenTarget = obj;
-            string tweenProp = isLocal ? "localPosition" : "position";
+            string tweenProp = "localPosition";
 
             Tweener ret = null;
 

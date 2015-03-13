@@ -167,12 +167,13 @@ public class AMTimeline : EditorWindow {
         Animation = 3,
         Audio = 4,
         Property = 5,
-        Event = 6,
-        GOSetActive = 7,
-        CameraSwitcher = 8,
-        Trigger = 9,
-        MateAnimator = 10,
-        Material = 11
+        Material = 6,
+        Event = 7,
+        GOSetActive = 8,
+        CameraSwitcher = 9,
+        Trigger = 10,
+        MateAnimator = 11,
+        
     }
 
     public static string[] TrackNames = new string[] {
@@ -182,12 +183,12 @@ public class AMTimeline : EditorWindow {
 		"Animation",
 		"Audio",
 		"Property",
+        "Material",
 		"Event",
         "GameObject Active",
         "Camera Switcher",
         "Trigger",
         "Mate Animator",
-        "Material"
 	};
     // skins
     public static string global_skin = "am_skin_dark";
@@ -3310,7 +3311,7 @@ public class AMTimeline : EditorWindow {
             Rect rectQuaternion = new Rect(0f, start_y, width_inspector - margin, 40f);
             // quaternion
             Vector3 rot = rKey.rotation.eulerAngles;
-            Vector3 nrot = EditorGUI.Vector3Field(rectQuaternion, "Euler", rot);
+            Vector3 nrot = EditorGUI.Vector3Field(rectQuaternion, "Rotation", rot);
             if(rot != nrot) {
                 AnimatorDataEdit.RecordUndoTrackAndKeys(sTrack, false, "Change Rotation");
                 rKey.rotation = Quaternion.Euler(nrot);
@@ -6130,12 +6131,12 @@ public class AMTimeline : EditorWindow {
         menu.AddItem(new GUIContent("Animation"), false, addTrackFromMenu, (int)Track.Animation);
         menu.AddItem(new GUIContent("Audio"), false, addTrackFromMenu, (int)Track.Audio);
         menu.AddItem(new GUIContent("Property"), false, addTrackFromMenu, (int)Track.Property);
+        menu.AddItem(new GUIContent("Material"), false, addTrackFromMenu, (int)Track.Material);
         menu.AddItem(new GUIContent("Event"), false, addTrackFromMenu, (int)Track.Event);
         menu.AddItem(new GUIContent("GO Active"), false, addTrackFromMenu, (int)Track.GOSetActive);
         menu.AddItem(new GUIContent("Camera Switcher"), false, addTrackFromMenu, (int)Track.CameraSwitcher);
         menu.AddItem(new GUIContent("Trigger"), false, addTrackFromMenu, (int)Track.Trigger);
         menu.AddItem(new GUIContent("Mate Animator"), false, addTrackFromMenu, (int)Track.MateAnimator);
-        menu.AddItem(new GUIContent("Material"), false, addTrackFromMenu, (int)Track.Material);
     }
     void buildAddTrackMenu_Drag() {
         bool hasTransform = true;
@@ -6183,6 +6184,9 @@ public class AMTimeline : EditorWindow {
         else menu_drag.AddDisabledItem(new GUIContent("Audio"));
         // Property
         menu_drag.AddItem(new GUIContent("Property"), false, addTrackFromMenu, (int)Track.Property);
+        // Material
+        if(hasRenderer) menu_drag.AddItem(new GUIContent("Material"), false, addTrackFromMenu, (int)Track.Material);
+        else menu_drag.AddDisabledItem(new GUIContent("Material"));
         // Event
         menu_drag.AddItem(new GUIContent("Event"), false, addTrackFromMenu, (int)Track.Event);
         // GO Active
@@ -6192,10 +6196,7 @@ public class AMTimeline : EditorWindow {
         else menu_drag.AddDisabledItem(new GUIContent("Camera Switcher"));
         // Mate Animator
         if(hasAnimatorData) menu_drag.AddItem(new GUIContent("Mate Animation"), false, addTrackFromMenu, (int)Track.MateAnimator);
-        else menu_drag.AddDisabledItem(new GUIContent("Mate Animation"));
-        // Material
-        if(hasRenderer) menu_drag.AddItem(new GUIContent("Material"), false, addTrackFromMenu, (int)Track.Material);
-        else menu_drag.AddDisabledItem(new GUIContent("Material"));
+        else menu_drag.AddDisabledItem(new GUIContent("Mate Animation"));        
 
         if(oData.quickAdd_Combos.Count > 0) {
             // multiple tracks
