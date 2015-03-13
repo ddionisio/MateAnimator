@@ -843,6 +843,11 @@ public class AMTakeData {
                     if(!didKey) didKey = true;
                 }
             }
+            else if(track is AMRotationEulerTrack) {
+                if((track as AMRotationEulerTrack).autoKey(itarget, addCall, obj, frame, frameRate)) {
+                    if(!didKey) didKey = true;
+                }
+            }
         }
         return didKey;
     }

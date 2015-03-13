@@ -13,34 +13,6 @@ public class AMRotationKey : AMKey {
 
     public int endFrame;
 
-    public bool setRotation(Vector3 rotation) {
-        if(this.rotation != Quaternion.Euler(rotation)) {
-            this.rotation = Quaternion.Euler(rotation);
-            return true;
-        }
-        return false;
-    }
-    public Vector3 getRotation() {
-        return rotation.eulerAngles;
-    }
-    public bool setRotationQuaternion(Vector4 rotation) {
-        Quaternion q = new Quaternion(rotation.x, rotation.y, rotation.z, rotation.w);
-        if(this.rotation != q) {
-            this.rotation = q;
-            return true;
-        }
-        return false;
-    }
-    public Vector4 getRotationQuaternion() {
-        return new Vector4(rotation.x, rotation.y, rotation.z, rotation.w);
-    }
-    /*public bool setType(int type) {
-        if(this.type != type) {
-            this.type = type;
-            return true;
-        }
-        return false;
-    }*/
     // copy properties from key
     public override void CopyTo(AMKey key) {
 		AMRotationKey a = key as AMRotationKey;

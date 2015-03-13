@@ -163,22 +163,24 @@ public class AMTimeline : EditorWindow {
     public enum Track {
         Translation = 0,
         Rotation = 1,
-        Orientation = 2,
-        Animation = 3,
-        Audio = 4,
-        Property = 5,
-        Material = 6,
-        Event = 7,
-        GOSetActive = 8,
-        CameraSwitcher = 9,
-        Trigger = 10,
-        MateAnimator = 11,
+        RotationEuler = 2,
+        Orientation = 3,
+        Animation = 4,
+        Audio = 5,
+        Property = 6,
+        Material = 7,
+        Event = 8,
+        GOSetActive = 9,
+        CameraSwitcher = 10,
+        Trigger = 11,
+        MateAnimator = 12,
         
     }
 
     public static string[] TrackNames = new string[] {
 		"Translation",
 		"Rotation",
+        "Rotation Euler",
 		"Orientation",
 		"Animation",
 		"Audio",
@@ -2909,7 +2911,7 @@ public class AMTimeline : EditorWindow {
                                     cached_action_startFrame = _track.keys[lastStartInd].getStartFrame();
                                     cached_action_endFrame = _track.keys[i].getStartFrame();
 
-                                    if(_track is AMRotationTrack)
+                                    if(_track is AMRotationTrack || _track is AMRotationEulerTrack)
                                         texBox = texBoxYellow;
                                     else if(_track is AMOrientationTrack)
                                         texBox = texBoxOrange;
@@ -3019,7 +3021,7 @@ public class AMTimeline : EditorWindow {
                 else if(_track is AMPropertyTrack || _track is AMMaterialTrack) texBox = texBoxLightBlue;
                 else if(_track is AMTranslationTrack) texBox = texBoxGreen;
                 else if(_track is AMAudioTrack) texBox = texBoxPink;
-                else if(_track is AMRotationTrack) texBox = texBoxYellow;
+                else if(_track is AMRotationTrack || _track is AMRotationEulerTrack) texBox = texBoxYellow;
                 else if(_track is AMOrientationTrack) texBox = texBoxOrange;
                 else if(_track is AMEventTrack) texBox = texBoxDarkBlue;
                 else if(_track is AMGOSetActiveTrack) texBox = texBoxDarkBlue;
@@ -3158,6 +3160,15 @@ public class AMTimeline : EditorWindow {
         }
         GUI.EndGroup();
     }
+    void _dirtyTrackUpdate(AMTakeData ctake, AMTrack sTrack) {
+        sTrack.updateCache(aData.target);
+        AMCodeView.refresh();
+        // preview new position
+        ctake.previewFrame(aData.target, ctake.selectedFrame);
+        // save data
+        EditorUtility.SetDirty(sTrack);
+        AnimatorDataEdit.SetDirtyKeys(sTrack);
+    }
     void showInspectorPropertiesFor(Rect rect, int _track, int _frame, Event e) {
         //if meta is prefab, then ask user to instantiate it for editing
         if(aData.meta && PrefabUtility.GetPrefabType(aData.meta) == PrefabType.Prefab) {
@@ -3254,14 +3265,8 @@ public class AMTimeline : EditorWindow {
                 if(tKey.position != nPos) {
                     AnimatorDataEdit.RecordUndoTrackAndKeys(sTrack, false, "Change Position");
                     tKey.position = nPos;
-                    // update cache when modifying varaibles
-                    sTrack.updateCache(aData.target);
-                    AMCodeView.refresh();
-                    // preview new position
-                    ctake.previewFrame(aData.target, ctake.selectedFrame);
-                    // save data
-                    EditorUtility.SetDirty(sTrack);
-                    AnimatorDataEdit.SetDirtyKeys(sTrack);
+
+                    _dirtyTrackUpdate(ctake, sTrack);
                 }
 
                 // if not only key, show ease
@@ -3315,19 +3320,35 @@ public class AMTimeline : EditorWindow {
             if(rot != nrot) {
                 AnimatorDataEdit.RecordUndoTrackAndKeys(sTrack, false, "Change Rotation");
                 rKey.rotation = Quaternion.Euler(nrot);
-                // update cache when modifying varaibles
-                sTrack.updateCache(aData.target);
-                AMCodeView.refresh();
-                // preview new position
-                ctake.previewFrame(aData.target, ctake.selectedFrame);
-                // save data
-                EditorUtility.SetDirty(sTrack);
-                AnimatorDataEdit.SetDirtyKeys(sTrack);
+
+                _dirtyTrackUpdate(ctake, sTrack);
             }
             // if not last key, show ease
             if(key.canTween && rKey != (sTrack as AMRotationTrack).keys[(sTrack as AMRotationTrack).keys.Count - 1]) {
                 Rect recEasePicker = new Rect(0f, rectQuaternion.y + rectQuaternion.height + height_inspector_space, width_inspector - margin, 0f);
                 if((sTrack as AMRotationTrack).getKeyIndexForFrame(_frame) > -1) {
+                    showEasePicker(sTrack, rKey, aData, recEasePicker.x, recEasePicker.y, recEasePicker.width);
+                }
+            }
+            return;
+        }
+        #endregion
+        #region rotation euler inspector
+        if(sTrack is AMRotationEulerTrack) {
+            AMRotationEulerKey rKey = (AMRotationEulerKey)key;
+            Rect rectQuaternion = new Rect(0f, start_y, width_inspector - margin, 40f);
+            // euler
+            Vector3 nrot = EditorGUI.Vector3Field(rectQuaternion, "Rotation", rKey.rotation);
+            if(rKey.rotation != nrot) {
+                AnimatorDataEdit.RecordUndoTrackAndKeys(sTrack, false, "Change Rotation");
+                rKey.rotation = nrot;
+
+                _dirtyTrackUpdate(ctake, sTrack);
+            }
+            // if not last key, show ease
+            if(key.canTween && rKey != (sTrack as AMRotationEulerTrack).keys[(sTrack as AMRotationEulerTrack).keys.Count - 1]) {
+                Rect recEasePicker = new Rect(0f, rectQuaternion.y + rectQuaternion.height + height_inspector_space, width_inspector - margin, 0f);
+                if((sTrack as AMRotationEulerTrack).getKeyIndexForFrame(_frame) > -1) {
                     showEasePicker(sTrack, rKey, aData, recEasePicker.x, recEasePicker.y, recEasePicker.width);
                 }
             }
@@ -3345,14 +3366,8 @@ public class AMTimeline : EditorWindow {
             if(oKey.GetTarget(aData.target) != ntgt) {
                 AnimatorDataEdit.RecordUndoTrackAndKeys(sTrack, false, "Change Target");
                 oKey.SetTarget(aData.target, ntgt);
-                // update cache when modifying varaibles
-                (sTrack as AMOrientationTrack).updateCache(aData.target);
-                AMCodeView.refresh();
-                // preview
-                ctake.previewFrame(aData.target, ctake.selectedFrame);
-                // save data
-                EditorUtility.SetDirty(sTrack);
-                AnimatorDataEdit.SetDirtyKeys(sTrack);
+
+                _dirtyTrackUpdate(ctake, sTrack);
             }
             Rect rectNewTarget = new Rect(width_inspector - width_button_delete - margin, rectLabelTarget.y, width_button_delete, width_button_delete);
             if(GUI.Button(rectNewTarget, "+")) {
@@ -3594,16 +3609,9 @@ public class AMTimeline : EditorWindow {
                     isUpdated = true;
                 }
             }
-            if(isUpdated) {
-                // update cache when modifying varaibles
-                sTrack.updateCache(aData.target);
-                AMCodeView.refresh();
-                // preview new value
-                ctake.previewFrame(aData.target, ctake.selectedFrame);
-                // save data
-                EditorUtility.SetDirty(sTrack);
-                AnimatorDataEdit.SetDirtyKeys(sTrack);
-            }
+            if(isUpdated)
+                _dirtyTrackUpdate(ctake, sTrack);
+
             // property ease, show if not last key (check for action; there is no rotation action for last key). do not show for morph channels, because it is shown before the parameters
             // don't show on non-tweenable
             if(pTrack.canTween && key.canTween && pKey != pTrack.keys[pTrack.keys.Count - 1]) {
@@ -3617,8 +3625,6 @@ public class AMTimeline : EditorWindow {
         if(sTrack is AMGOSetActiveTrack) {
             AMGOSetActiveTrack goActiveTrack = sTrack as AMGOSetActiveTrack;
             AMGOSetActiveKey pKey = (AMGOSetActiveKey)goActiveTrack.getKeyOnFrame(_frame);
-
-            bool doRefreshGizmo = false;
 
             bool newStartVal;
 
@@ -3641,28 +3647,15 @@ public class AMTimeline : EditorWindow {
                 Undo.RecordObject(goActiveTrack, "Set GameObject Start Active");
                 goActiveTrack.startActive = newStartVal;
                 EditorUtility.SetDirty(goActiveTrack);
-
-                doRefreshGizmo = true;
+                AMCodeView.refresh();
             }
 
             if(newVal != pKey.setActive) {
                 Undo.RecordObject(pKey, "Set GameObject Active");
                 pKey.setActive = newVal;
 
-                // update cache when modifying varaibles
-                sTrack.updateCache(aData.target);
-                // preview new value
-                ctake.previewFrame(aData.target, ctake.selectedFrame);
-                // save data
-                EditorUtility.SetDirty(pKey);
-
-                doRefreshGizmo = true;
+                _dirtyTrackUpdate(ctake, sTrack);
             }
-
-            if(doRefreshGizmo) {
-                AMCodeView.refresh();
-            }
-
             return;
         }
         #endregion
@@ -3798,14 +3791,8 @@ public class AMTimeline : EditorWindow {
             if(cKey.type != newType) {
                 AnimatorDataEdit.RecordUndoTrackAndKeys(sTrack, false, "Set Camera Track Type");
                 cKey.type = newType;
-                // update cache when modifying varaibles
-                (sTrack as AMCameraSwitcherTrack).updateCache(aData.target);
-                AMCodeView.refresh();
-                // preview
-                aData.currentTake.previewFrame(aData.target, TakeEditCurrent().selectedFrame);
-                // save data
-                EditorUtility.SetDirty(sTrack);
-                AnimatorDataEdit.SetDirtyKeys(sTrack);
+
+                _dirtyTrackUpdate(ctake, sTrack);
             }
             // camera
             Rect rectLabelCameraColor = new Rect(0f, rectLabelType.y+rectLabelType.height+height_inspector_space, 56f, 22f);
@@ -3816,14 +3803,8 @@ public class AMTimeline : EditorWindow {
                 if(cKey.getCamera(aData.target) != newCam) {
                     AnimatorDataEdit.RecordUndoTrackAndKeys(sTrack, false, "Set Camera Track Camera");
                     cKey.setCamera(aData.target, newCam);
-                    // update cache when modifying varaibles
-                    (sTrack as AMCameraSwitcherTrack).updateCache(aData.target);
-                    AMCodeView.refresh();
-                    // preview
-                    aData.currentTake.previewFrame(aData.target, aData.currentTake.selectedFrame);
-                    // save data
-                    EditorUtility.SetDirty(sTrack);
-                    AnimatorDataEdit.SetDirtyKeys(sTrack);
+
+                    _dirtyTrackUpdate(ctake, sTrack);                    
                 }
             }
             else {
@@ -3831,14 +3812,8 @@ public class AMTimeline : EditorWindow {
                 if(cKey.color != newColor) {
                     AnimatorDataEdit.RecordUndoTrackAndKeys(sTrack, false, "Set Camera Track Color");
                     cKey.color = newColor;
-                    // update cache when modifying varaibles
-                    (sTrack as AMCameraSwitcherTrack).updateCache(aData.target);
-                    AMCodeView.refresh();
-                    // preview
-                    aData.currentTake.previewFrame(aData.target, aData.currentTake.selectedFrame);
-                    // save data
-                    EditorUtility.SetDirty(sTrack);
-                    AnimatorDataEdit.SetDirtyKeys(sTrack);
+
+                    _dirtyTrackUpdate(ctake, sTrack);
                 }
             }
             GUI.enabled = true;
@@ -3859,14 +3834,8 @@ public class AMTimeline : EditorWindow {
                     if(cKey.still != newStill) {
                         AnimatorDataEdit.RecordUndoTrackAndKeys(sTrack, false, "Set Camera Track Still");
                         cKey.still = newStill;
-                        // update cache when modifying varaibles
-                        sTrack.updateCache(aData.target);
-                        AMCodeView.refresh();
-                        // preview
-                        aData.currentTake.previewFrame(aData.target, aData.currentTake.selectedFrame);
-                        // save data
-                        EditorUtility.SetDirty(sTrack);
-                        AnimatorDataEdit.SetDirtyKeys(sTrack);
+
+                        _dirtyTrackUpdate(ctake, sTrack);
                     }
                 }
             }
@@ -3919,11 +3888,8 @@ public class AMTimeline : EditorWindow {
                 Undo.RecordObject(aKey, "Change Take");
                 aKey.take = ind > 0 ? takeNames[ind] : "";
                 aKey.updateDuration(sTrack, aData.target);
-                AMCodeView.refresh();
-                // preview new position
-                ctake.previewFrame(aData.target, ctake.selectedFrame);
-                // save data
-                EditorUtility.SetDirty(aKey);
+
+                _dirtyTrackUpdate(ctake, sTrack);
             }
             // loop mode
             GUI.enabled = ind > 0;
@@ -3934,11 +3900,8 @@ public class AMTimeline : EditorWindow {
             if(aKey.loop != nloopmode) {
                 Undo.RecordObject(aKey, "Change Loop");
                 aKey.loop = nloopmode;
-                AMCodeView.refresh();
-                // preview new position
-                ctake.previewFrame(aData.target, ctake.selectedFrame);
-                // save data
-                EditorUtility.SetDirty(aKey);
+
+                _dirtyTrackUpdate(ctake, sTrack);
             }
             GUI.enabled = true;
             return;
@@ -4030,16 +3993,9 @@ public class AMTimeline : EditorWindow {
                 }
             }
 
-            if(isUpdated) {
-                // update cache when modifying varaibles
-                sTrack.updateCache(aData.target);
-                AMCodeView.refresh();
-                // preview new value
-                ctake.previewFrame(aData.target, ctake.selectedFrame);
-                // save data
-                EditorUtility.SetDirty(sTrack);
-                AnimatorDataEdit.SetDirtyKeys(sTrack);
-            }
+            if(isUpdated)
+                _dirtyTrackUpdate(ctake, sTrack);
+
             // property ease, show if not last key (check for action; there is no rotation action for last key). do not show for morph channels, because it is shown before the parameters
             // don't show on non-tweenable
             if(sTrack.canTween && key.canTween && key != sTrack.keys[sTrack.keys.Count - 1]) {
@@ -4228,7 +4184,7 @@ public class AMTimeline : EditorWindow {
         EditorGUIUtility.LookLikeControls();
         // add objectfield for every track type
         // translation/rotation
-        if(amTrack is AMTranslationTrack || amTrack is AMRotationTrack) {
+        if(amTrack is AMTranslationTrack || amTrack is AMRotationTrack || amTrack is AMRotationEulerTrack) {
             Transform nt = (Transform)EditorGUI.ObjectField(rect, amTrack.GetTarget(aData.target), typeof(Transform), true/*,GUILayout.Width (width_track-padding_track*2)*/);
             if(!amTrack.isTargetEqual(aData.target, nt)) {
                 Undo.RecordObject(amTrack, "Set Transform");
@@ -4501,14 +4457,9 @@ public class AMTimeline : EditorWindow {
             if(key.easeType != nease) {
                 AnimatorDataEdit.RecordUndoTrackAndKeys(track, false, "Change Ease");
                 key.setEaseType(nease);
-                // update cache when modifying varaibles
-                track.updateCache(aData.target);
-                AMCodeView.refresh();
-                // preview new position
-                window.aData.currentTake.previewFrame(aData.target, window.aData.currentTake.selectedFrame);
-                // save data
-                EditorUtility.SetDirty(track);
-                AnimatorDataEdit.SetDirtyKeys(track);
+
+                window._dirtyTrackUpdate(window.aData.currentTake, track);
+
                 // refresh component
                 didUpdate = true;
                 // refresh values
@@ -5344,7 +5295,7 @@ public class AMTimeline : EditorWindow {
     }
     void timelineSelectObjectFor(AMTrack track) {
         // translation/rot/anim/property obj
-        if(track.GetType() == typeof(AMTranslationTrack) || track.GetType() == typeof(AMRotationTrack) 
+        if(track.GetType() == typeof(AMTranslationTrack) || track.GetType() == typeof(AMRotationTrack)  || track.GetType() == typeof(AMRotationEulerTrack)
             || track.GetType() == typeof(AMAnimationTrack) || track.GetType() == typeof(AMPropertyTrack)
             || track.GetType() == typeof(AMMaterialTrack))
             Selection.activeObject = track.GetTarget(aData.target);
@@ -5423,31 +5374,25 @@ public class AMTimeline : EditorWindow {
         }
 
         // get text for track type
-        #region translation
-        if(_key is AMTranslationKey) {
+        #region translation/rotation
+        if(_key is AMTranslationKey || _key is AMRotationKey || _key is AMRotationEulerKey) {
             if(!_key.canTween) { return ""; }
             return easeTypeNames[easeInd];
+        }
         #endregion
-            #region rotation
-        }
-        else if(_key is AMRotationKey) {
-            if(!_key.canTween) { return ""; }
-            return easeTypeNames[easeInd];
-            #endregion
-            #region animation
-        }
+        #region animation
         else if(_key is AMAnimationKey) {
             if(!(_key as AMAnimationKey).amClip) return "Not Set";
             return (_key as AMAnimationKey).amClip.name + "\n" + ((WrapMode)(_key as AMAnimationKey).wrapMode).ToString();
-            #endregion
-            #region audio
         }
+        #endregion
+        #region audio
         else if(_key is AMAudioKey) {
             if(!(_key as AMAudioKey).audioClip) return "Not Set";
             return (_key as AMAudioKey).audioClip.name;
-            #endregion
-            #region property
         }
+        #endregion
+        #region property
         else if(_key is AMPropertyKey) {
             int keyInd = _track.getKeyIndex(_key);
             AMPropertyTrack propTrack = _track as AMPropertyTrack;
@@ -5462,9 +5407,9 @@ public class AMTimeline : EditorWindow {
             string detail = propkey.getValueString(propTrack.GetCachedInfoType(aData.target), propTrack.valueType, nextKey, brief);	// extra details such as integer values ex. 1 -> 12
             if(detail != null) info += detail;
             return info;
-            #endregion
-            #region event
         }
+        #endregion
+        #region event
         else if(_key is AMEventKey) {
             if(string.IsNullOrEmpty((_key as AMEventKey).methodName)) {
                 return "Not Set";
@@ -5483,9 +5428,9 @@ public class AMTimeline : EditorWindow {
                 return txtInfoEvent;
             }
             return (_key as AMEventKey).methodName;
-            #endregion
-            #region orientation
         }
+        #endregion
+        #region orientation
         else if(_key is AMOrientationKey) {
             if(!_key.canTween) { return ""; }
 
@@ -5505,9 +5450,9 @@ public class AMTimeline : EditorWindow {
 				" -> " + (targetNext ? targetNext.name : "No Target");
             txtInfoOrientation += "\n" + easeTypeNames[easeInd];
             return txtInfoOrientation;
-            #endregion
-            #region camera switcher
         }
+        #endregion
+        #region camera switcher
         else if(_key is AMCameraSwitcherKey) {
             if(!(_key as AMCameraSwitcherKey).hasStartTarget(aData.target)) return "None";
             string txtInfoCameraSwitcher = null;
@@ -5520,26 +5465,26 @@ public class AMTimeline : EditorWindow {
             txtInfoCameraSwitcher += "\n"+AMTransitionPicker.TransitionNamesDict[((_key as AMCameraSwitcherKey).cameraFadeType > AMTransitionPicker.TransitionNamesDict.Length ? 0 : (_key as AMCameraSwitcherKey).cameraFadeType)];
             if((_key as AMCameraSwitcherKey).cameraFadeType != (int)AMCameraSwitcherKey.Fade.None) txtInfoCameraSwitcher += ": "+easeTypeNames[(_key as AMCameraSwitcherKey).easeType];
             return txtInfoCameraSwitcher;
-            #endregion
-            #region goactive
         }
+        #endregion
+        #region goactive
         else if(_key is AMGOSetActiveKey) {
             return "";
-            #endregion
-            #region trigger
         }
+        #endregion
+        #region trigger
         else if(_key is AMTriggerKey) {
             AMTriggerKey tkey = _key as AMTriggerKey;
             return string.Format("\"{0}\", {1}, {2}", tkey.valueString, tkey.valueInt, tkey.valueFloat);
-            #endregion
-            #region mate animator
         }
+        #endregion
+        #region mate animator
         else if(_key is AMAnimatorMateKey) {
             AMAnimatorMateKey akey = _key as AMAnimatorMateKey;
             return string.IsNullOrEmpty(akey.take) ? "" : string.Format("\"{0}\" ({1})", akey.take, akey.loop);
-            #endregion
-            #region material
         }
+        #endregion
+        #region material
         else if(_key is AMMaterialKey) {
             int keyInd = _track.getKeyIndex(_key);
             AMMaterialTrack propTrack = _track as AMMaterialTrack;
@@ -5554,8 +5499,8 @@ public class AMTimeline : EditorWindow {
             string detail = propkey.getValueString(propTrack.propertyType, nextKey, brief);	// extra details such as integer values ex. 1 -> 12
             if(detail != null) info += detail;
             return info;
-            #endregion
         }
+        #endregion
 
         return "Unknown";
     }
@@ -5583,7 +5528,7 @@ public class AMTimeline : EditorWindow {
         else if(_track is AMPropertyTrack) return texIconProperty;
         else if(_track is AMTranslationTrack) return texIconTranslation;
         else if(_track is AMAudioTrack) return texIconAudio;
-        else if(_track is AMRotationTrack) return texIconRotation;
+        else if(_track is AMRotationTrack || _track is AMRotationEulerTrack) return texIconRotation;
         else if(_track is AMOrientationTrack) return texIconOrientation;
         else if(_track is AMGOSetActiveTrack) return texIconProperty;
         else if(_track is AMCameraSwitcherTrack) return texIconCameraSwitcher;
@@ -5643,14 +5588,8 @@ public class AMTimeline : EditorWindow {
         target.transform.localScale = Vector3.one;
         // set target
         oKey.SetTarget(aData.target, target.transform);
-        // update cache
-        sTrack.updateCache(aData.target);
-        AMCodeView.refresh();
-        // preview new frame
-        aData.currentTake.previewFrame(aData.target, aData.currentTake.selectedFrame);
-        // save data
-        EditorUtility.SetDirty(sTrack);
-        AnimatorDataEdit.SetDirtyKeys(sTrack);
+
+        _dirtyTrackUpdate(aData.currentTake, sTrack);
 
         // add to translation track
         if(withTranslationTrack) {
@@ -5694,6 +5633,9 @@ public class AMTimeline : EditorWindow {
                 break;
             case (int)Track.Rotation:
                 _addTrack<AMRotationTrack>(object_window, addCompUndo);
+                break;
+            case (int)Track.RotationEuler:
+                _addTrack<AMRotationEulerTrack>(object_window, addCompUndo);
                 break;
             case (int)Track.Orientation:
                 _addTrack<AMOrientationTrack>(object_window, addCompUndo);
@@ -5927,6 +5869,17 @@ public class AMTimeline : EditorWindow {
             // add key to rotation track
             (amTrack as AMRotationTrack).addKey(aData.target, addCall, _frame, t.localRotation);
         }
+        else if(amTrack is AMRotationEulerTrack) {
+            // rotation
+            Transform t = amTrack.GetTarget(aData.target) as Transform;
+            // if missing object, return
+            if(!t) {
+                showAlertMissingObjectType("Transform");
+                return;
+            }
+            // add key to rotation track
+            (amTrack as AMRotationEulerTrack).addKey(aData.target, addCall, _frame, t.localEulerAngles);
+        }
         else if(amTrack is AMOrientationTrack) {
             // orientation
 
@@ -6126,7 +6079,8 @@ public class AMTimeline : EditorWindow {
     }
     void buildAddTrackMenu() {
         menu.AddItem(new GUIContent("Translation"), false, addTrackFromMenu, (int)Track.Translation);
-        menu.AddItem(new GUIContent("Rotation"), false, addTrackFromMenu, (int)Track.Rotation);
+        menu.AddItem(new GUIContent("Rotation/Quaternion"), false, addTrackFromMenu, (int)Track.Rotation);
+        menu.AddItem(new GUIContent("Rotation/Euler"), false, addTrackFromMenu, (int)Track.RotationEuler);
         menu.AddItem(new GUIContent("Orientation"), false, addTrackFromMenu, (int)Track.Orientation);
         menu.AddItem(new GUIContent("Animation"), false, addTrackFromMenu, (int)Track.Animation);
         menu.AddItem(new GUIContent("Audio"), false, addTrackFromMenu, (int)Track.Audio);
@@ -6167,15 +6121,19 @@ public class AMTimeline : EditorWindow {
         // add track menu
         menu_drag = new GenericMenu();
 
-        // Translation
-        if(hasTransform) { menu_drag.AddItem(new GUIContent("Translation"), false, addTrackFromMenu, (int)Track.Translation); }
-        else { menu_drag.AddDisabledItem(new GUIContent("Translation")); }
-        // Rotation
-        if(hasTransform) { menu_drag.AddItem(new GUIContent("Rotation"), false, addTrackFromMenu, (int)Track.Rotation); }
-        else { menu_drag.AddDisabledItem(new GUIContent("Rotation")); }
-        // Orientation
-        if(hasTransform) menu_drag.AddItem(new GUIContent("Orientation"), false, addTrackFromMenu, (int)Track.Orientation);
-        else menu_drag.AddDisabledItem(new GUIContent("Orientation"));
+        // Translation/Rotation/Orientation
+        if(hasTransform) { 
+            menu_drag.AddItem(new GUIContent("Translation"), false, addTrackFromMenu, (int)Track.Translation);
+            menu_drag.AddItem(new GUIContent("Rotation/Quaternion"), false, addTrackFromMenu, (int)Track.Rotation);
+            menu_drag.AddItem(new GUIContent("Rotation/Euler"), false, addTrackFromMenu, (int)Track.RotationEuler);
+            menu_drag.AddItem(new GUIContent("Orientation"), false, addTrackFromMenu, (int)Track.Orientation);
+        }
+        else { 
+            menu_drag.AddDisabledItem(new GUIContent("Translation")); 
+            menu_drag.AddDisabledItem(new GUIContent("Rotation/Quaterion"));
+            menu_drag.AddDisabledItem(new GUIContent("Rotation/Euler")); 
+            menu_drag.AddDisabledItem(new GUIContent("Orientation"));
+        }
         // Animation
         if(hasAnimation) menu_drag.AddItem(new GUIContent("Animation"), false, addTrackFromMenu, (int)Track.Animation);
         else menu_drag.AddDisabledItem(new GUIContent("Animation"));
@@ -6217,7 +6175,7 @@ public class AMTimeline : EditorWindow {
     }
     bool canQuickAddCombo(List<int> combo, bool hasTransform, bool hasAnimation, bool hasAudioSource, bool hasCamera, bool hasAnimatorData, bool hasRenderer) {
         foreach(int _track in combo) {
-            if(!hasTransform && (_track == (int)Track.Translation || _track == (int)Track.Rotation || _track == (int)Track.Orientation))
+            if(!hasTransform && (_track == (int)Track.Translation || _track == (int)Track.Rotation || _track == (int)Track.RotationEuler || _track == (int)Track.Orientation))
                 return false;
             else if(!hasAnimation && _track == (int)Track.Animation)
                 return false;
@@ -6610,39 +6568,6 @@ public class AMTimeline : EditorWindow {
 
         return dkeys.ToArray();
     }
-    /*void checkForOutOfBoundsFramesOnTrack(int track_id) {
-        AMTrack _track = aData.currentTake.getTrack(track_id);
-        if(_track.keys.Count <= 0) return;
-        bool needsShift = false;
-        bool needsIncrease = false;
-        _track.sortKeys();
-        // if first key less than 1
-        if(_track.keys.Count >= 1 && _track.keys[0].frame < 1) {
-            needsShift = true;
-        }
-        if(needsShift) {
-            if(EditorUtility.DisplayDialog("Shift Frames?", "Keyframes have been moved out of bounds before the first frame. Some data will be lost if frames are not shifted.", "Shift", "No")) {
-                aData.currentTake.shiftOutOfBoundsKeysOnSelectedTrack();
-            }
-            else {
-                // delete all keys beyond last frame
-                aData.currentTake.deleteKeysBefore(1);
-            }
-        }
-        // if last key is beyond last frame
-        if(_track.keys.Count >= 1 && _track.keys[_track.keys.Count - 1].frame > aData.currentTake.numFrames) {
-            needsIncrease = true;
-        }
-        if(needsIncrease) {
-            if(EditorUtility.DisplayDialog("Increase Number of Frames?", "Keyframes have been pushed out of bounds beyond the last frame. Some data will be lost if the number of frames is not increased.", "Increase", "No")) {
-                aData.currentTake.numFrames = _track.keys[_track.keys.Count - 1].frame;
-            }
-            else {
-                // delete all keys beyond last frame
-                _track.deleteKeysAfter(aData.currentTake.numFrames);
-            }
-        }
-    }*/
     void resetPreview() {
         // reset all object transforms to frame 1
         aData.currentTake.previewFrame(aData.target, 1f);

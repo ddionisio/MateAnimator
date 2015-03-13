@@ -398,7 +398,8 @@ public class AMCodeView : EditorWindow {
         }
         else if(_track is AMRotationTrack) {
             // rotation, set initial rotation
-            Vector4 _rotation = (_track as AMRotationTrack).getInitialRotation();
+            Quaternion q = (_track as AMRotationTrack).getInitialRotation();
+            Vector4 _rotation = new Vector4(q.x, q.y, q.z, q.w);
             if(codeLanguage == 0) return varName + ".transform.rotation = new Quaternion(" + _rotation.x + "f, " + _rotation.y + "f, " + _rotation.z + "f, " + _rotation.w + "f); // Set Initial Rotation\n";
             else return varName + ".transform.rotation = Quaternion(" + _rotation.x + ", " + _rotation.y + ", " + _rotation.z + ", " + _rotation.w + "); // Set Initial Rotation\n";
         }

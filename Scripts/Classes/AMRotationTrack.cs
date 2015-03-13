@@ -25,23 +25,10 @@ public class AMRotationTrack : AMTrack {
 
     public override int version { get { return 2; } }
     
-	void SetRotation(Transform t, Quaternion r) {
-		if(t) {
-			t.localRotation = r;
-		}
-	}
-
-	Quaternion GetRotation(Transform t) {
-		if(t) {
-			return t.localRotation;
-		}
-		return Quaternion.identity;
-	}
-
-    public Quaternion cachedInitialRotation;
+    Quaternion cachedInitialRotation;
 
     public override string getTrackType() {
-        return "Local Rotation";
+        return "Rotation Quaternion";
     }
     // add a new key
     public void addKey(AMITarget target, OnAddKey addCall, int _frame, Quaternion _rotation) {
@@ -94,12 +81,12 @@ public class AMRotationTrack : AMTrack {
         if(keys == null || keys.Count <= 0) return;
         // if before or equal to first frame, or is the only frame
         if((frame <= (float)keys[0].frame) || ((keys[0] as AMRotationKey).endFrame == -1)) {
-			SetRotation(t, (keys[0] as AMRotationKey).rotation);
+			t.localRotation = (keys[0] as AMRotationKey).rotation;
             return;
         }
         // if beyond or equal to last frame
         if(frame >= (float)(keys[keys.Count - 2] as AMRotationKey).endFrame) {
-			SetRotation(t, (keys[keys.Count - 1] as AMRotationKey).rotation);
+            t.localRotation = (keys[keys.Count - 1] as AMRotationKey).rotation;
             return;
         }
         // if lies on rotation action
@@ -110,12 +97,12 @@ public class AMRotationTrack : AMTrack {
             if((frame < (float)key.frame) || (frame > (float)key.endFrame)) continue;
             // if on startFrame or is no ease
             if(frame == (float)key.frame || (!key.canTween && frame < (float)key.endFrame)) {
-				SetRotation(t, key.rotation);
+				t.localRotation =  key.rotation;
                 return;
             }
             // if on endFrame
             if(frame == (float)key.endFrame) {
-                SetRotation(t, keyNext.rotation);
+                t.localRotation = keyNext.rotation;
                 return;
             }
             // else find Quaternion using easing function
@@ -127,11 +114,11 @@ public class AMRotationTrack : AMTrack {
             Quaternion qEnd = keyNext.rotation;
 
             if(key.hasCustomEase()) {
-                SetRotation(t, Quaternion.Slerp(qStart, qEnd, AMUtil.EaseCustom(0.0f, 1.0f, framePositionInAction / key.getNumberOfFrames(frameRate), key.easeCurve)));
+                t.localRotation = Quaternion.Slerp(qStart, qEnd, AMUtil.EaseCustom(0.0f, 1.0f, framePositionInAction / key.getNumberOfFrames(frameRate), key.easeCurve));
             }
             else {
                 TweenDelegate.EaseFunc ease = AMUtil.GetEasingFunction((EaseType)key.easeType);
-                SetRotation(t, Quaternion.Slerp(qStart, qEnd, ease(framePositionInAction, 0.0f, 1.0f, key.getNumberOfFrames(frameRate), key.amplitude, key.period)));
+                t.localRotation = Quaternion.Slerp(qStart, qEnd, ease(framePositionInAction, 0.0f, 1.0f, key.getNumberOfFrames(frameRate), key.amplitude, key.period));
             }
 
             return;
@@ -141,7 +128,7 @@ public class AMRotationTrack : AMTrack {
     public bool autoKey(AMITarget itarget, OnAddKey addCall, Transform aObj, int frame, int frameRate) {
 		Transform t = GetTarget(itarget) as Transform;
         if(!t || t != aObj) { return false; }
-		Quaternion r = GetRotation(t);
+        Quaternion r = t.localRotation;
         if(keys.Count <= 0) {
             if(r != cachedInitialRotation) {
                 // if updated position, addkey
@@ -204,8 +191,8 @@ public class AMRotationTrack : AMTrack {
         Debug.LogError("Animator: Could not get rotation at frame '" + frame + "'");
         return Quaternion.identity;
     }
-    public Vector4 getInitialRotation() {
-        return (keys[0] as AMRotationKey).getRotationQuaternion();
+    public Quaternion getInitialRotation() {
+        return (keys[0] as AMRotationKey).rotation;
     }
 
 	public override AnimatorTimeline.JSONInit getJSONInit(AMITarget target) {
@@ -214,7 +201,8 @@ public class AMRotationTrack : AMTrack {
         init.type = "rotation";
         init.go = _obj.gameObject.name;
         AnimatorTimeline.JSONQuaternion q = new AnimatorTimeline.JSONQuaternion();
-        q.setValue(getInitialRotation());
+        Quaternion quat = getInitialRotation();
+        q.setValue(new Vector4(quat.x, quat.y, quat.z, quat.w));
         init.rotation = q;
         return init;
     }

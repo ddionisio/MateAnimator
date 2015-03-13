@@ -237,6 +237,21 @@ public class AMActionTransLocalRot : AMActionData {
     }
 }
 
+public class AMActionTransLocalRotEuler : AMActionData {
+    private Transform mTrans;
+    private Vector3 mRot;
+
+    public AMActionTransLocalRotEuler(AMKey key, int frameRate, Transform target, Vector3 rot)
+        : base(key, frameRate) {
+        mTrans = target;
+        mRot = rot;
+    }
+
+    public override void Apply(float t, bool backwards) {
+        mTrans.localEulerAngles = mRot;
+    }
+}
+
 public class AMActionSpriteSet : AMActionData {
     private SpriteRenderer mSpriteRender;
     private Sprite mSprite;
