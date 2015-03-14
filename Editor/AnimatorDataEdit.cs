@@ -216,25 +216,29 @@ public class AnimatorDataEdit {
             // save data
             SetDirty();
         }
+        else {
+            foreach(AMTakeData take in takes) {
+                foreach(AMTrack track in take.trackValues)
+                    track.updateCache(mDataTarget);
+            }
+        }
     }
 
     public void RefreshTakes() {
+        bool hasChanges = false;
         if(takes != null) {
             foreach(AMTakeData take in takes) {
                 if(take != null) {
-                    take.maintainCaches(mDataTarget);
-
-                    foreach(AMTrack track in take.trackValues) {
-                        if(track) {
-                            SetDirtyKeys(track);
-                            EditorUtility.SetDirty(track);
-                        }
+                    if(take.maintainCaches(mDataTarget)) {
+                        SetDirtyTracks(take);
+                        hasChanges = true;
                     }
                 }
             }
         }
 
-        SetDirty();
+        if(hasChanges)
+            SetDirty();
     }
     
     public AMTakeData AddNewTake() {

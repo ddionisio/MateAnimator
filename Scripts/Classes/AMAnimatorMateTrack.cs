@@ -240,7 +240,6 @@ public class AMAnimatorMateTrack : AMTrack {
         for(int i = keys.Count - 1; i >= 0; i--) {
             if(keys[i].frame <= frame) {
                 AMAnimatorMateKey amKey = keys[i] as AMAnimatorMateKey;
-                amKey.updateDuration(this, target);
 
                 AMTakeData take = GrabTake(anim, amKey);
                 if(take != null) {
@@ -250,7 +249,6 @@ public class AMAnimatorMateTrack : AMTrack {
                 else if(i > 0) { //jump to last frame of previous key
                     frame = amKey.frame;
                     amKey = keys[i-1] as AMAnimatorMateKey;
-                    amKey.updateDuration(this, target);
                     take = GrabTake(anim, amKey);
                     if(take != null) {
                         float subFrame = GrabFrame(take, amKey, frame, frameRate, anim.animScale);
@@ -259,6 +257,15 @@ public class AMAnimatorMateTrack : AMTrack {
                 }
                 break;
             }
+        }
+    }
+
+    public override void updateCache(AMITarget target) {
+        base.updateCache(target);
+        for(int i = 0; i < keys.Count; i++) {
+            AMAnimatorMateKey amKey = keys[i] as AMAnimatorMateKey;
+            amKey.version = version;
+            amKey.updateDuration(this, target);
         }
     }
 

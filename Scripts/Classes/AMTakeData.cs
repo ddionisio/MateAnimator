@@ -940,7 +940,8 @@ public class AMTakeData {
             track.drawGizmos(itarget, gizmo_size, inPlayMode, selectedFrame);
     }
 
-    public void maintainCaches(AMITarget itarget) {
+    public bool maintainCaches(AMITarget itarget) {
+        bool ret = false;
         // re-updates cache if there are null values
         if(trackValues != null) {
             foreach(AMTrack track in trackValues) {
@@ -960,10 +961,12 @@ public class AMTakeData {
                     }
                     if(shouldUpdateCache) {
                         track.updateCache(itarget);
+                        ret = true;
                     }
                 }
             }
         }
+        return ret;
     }
 
     public float getElementsHeight(int group_id, float height_track, float height_track_foldin, float height_group) {

@@ -539,11 +539,6 @@ public class AMTimeline : EditorWindow {
             tex_element_position = AMEditorResource.LoadEditorTexture("am_element_position");
             texFrKey = AMEditorResource.LoadEditorTexture(EditorGUIUtility.isProSkin ? "am_key" : "am_key_light");
             texFrSet = AMEditorResource.LoadEditorTexture(EditorGUIUtility.isProSkin ? "am_frame_set" : "am_frame_set_light");
-            //texFrU = AMEditorResource.LoadTexture("am_frame");
-            //texFrM = AMEditorResource.LoadTexture("am_frame-m");
-            //texFrUS = AMEditorResource.LoadTexture("am_frame-s"); 
-            //texFrMS = AMEditorResource.LoadTexture("am_frame-m-s"); 
-            //texFrUG = AMEditorResource.LoadTexture("am_frame-g"); 
             texKeyBirdsEye = AMEditorResource.LoadEditorTexture("am_key_birdseye");
             texIndLine = AMEditorResource.LoadEditorTexture("am_indicator_line");
             texIndHead = AMEditorResource.LoadEditorTexture("am_indicator_head");
@@ -2814,9 +2809,8 @@ public class AMTimeline : EditorWindow {
         #endregion
         if(!oData.disableTimelineActions && _track.foldout) {
             #region timeline actions
-            //AudioClip audioClip = null;
-            bool drawEachAction = false;
-            if(_track is AMAnimationTrack || _track is AMAnimatorMateTrack || _track is AMAudioTrack) drawEachAction = true;	// draw each action with seperate textures and buttons for these tracks
+            // draw each action with seperate textures and buttons for these tracks
+            bool drawEachAction = _track is AMAnimationTrack || _track is AMAnimatorMateTrack || _track is AMAudioTrack;
             int _startFrame = (int)curTake.startFrame;
             int _endFrame = (int)(_startFrame + numFrames - 1);
             int action_startFrame, action_endFrame, renderFrameStart, renderFrameEnd;
@@ -2952,7 +2946,10 @@ public class AMTimeline : EditorWindow {
                 if(_track.keys[i].version != _track.version) {
                     // if cache is null, recheck for component and update caches
                     //aData = (AnimatorData)GameObject.Find("AnimatorData").GetComponent("AnimatorData");
-                    curTake.maintainCaches(aData.target);
+                    if(curTake.maintainCaches(aData.target)) {
+                        EditorUtility.SetDirty(_track);
+                        AnimatorDataEdit.SetDirtyKeys(_track);
+                    }
                 }
                 if((_track is AMAudioTrack || _track is AMAnimationTrack || _track is AMAnimatorMateTrack) && _track.keys[i].getNumberOfFrames(curTake.frameRate) > -1 && (_track.keys[i].getStartFrame() + _track.keys[i].getNumberOfFrames(curTake.frameRate) <= curTake.numFrames)) {
                     //based on content length

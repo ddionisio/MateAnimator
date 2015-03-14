@@ -34,7 +34,7 @@ public class AMAnimatorMateKey : AMKey {
 
         int takeInd = string.IsNullOrEmpty(take) ? -1 : anim.GetTakeIndex(take);
         if(takeInd != -1) {
-            AMTakeData _take = target.takes[takeInd];
+            AMTakeData _take = (anim as AMITarget).takes[takeInd];
             float fLastFrame = _take.getLastFrame();
             duration = fLastFrame/_take.frameRate;
         }
