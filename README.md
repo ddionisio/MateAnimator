@@ -22,6 +22,7 @@ Import/Export, Code Generator are currently disabled.
 Updates
 =======
 ### Update 3 ###
+* Added Rotation Euler.  This will allow you to create spin animations.  Includes exclusive rotation for x, y, or z (be careful of Gimbal-lock!).
 * Added Material track.  Now you can animate any properties you specify in the shader used by the material.  This requires a GameObject with a Renderer component.  You can also use this to override the material.  For now there is no preview during editing.
 * A bunch of refactoring to remove editor specific code in AnimatorData.  You will no longer see any editor API when using AnimatorData.
 * Various tweaks to building sequences.
