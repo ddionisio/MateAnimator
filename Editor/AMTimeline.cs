@@ -2535,6 +2535,15 @@ public class AMTimeline : EditorWindow {
                     }
                     GUI.enabled = !isPlaying;
                 }
+                else if(_track is AMRotationEulerTrack) { //show axis selection
+                    AMRotationEulerTrack rTrack = _track as AMRotationEulerTrack;
+                    var nAxis = (AMRotationEulerTrack.Axis)EditorGUI.EnumPopup(new Rect(width_track - 48f - width_subtrack_space * group_level - 4f, height_track - 38f, 48f, 15f), rTrack.axis);
+                    if(rTrack.axis != nAxis) {
+                        Undo.RecordObject(_track, "Change Rotation Euler Axis");
+                        rTrack.axis = nAxis;
+                        EditorUtility.SetDirty(rTrack);
+                    }
+                }
                 // track object
                 float width_object_field = width_track - track_x;
                 showObjectFieldFor(_track, width_object_field, new Rect(padding_track, 39f, width_track - width_subtrack_space * group_level - padding_track * 2, 16f));

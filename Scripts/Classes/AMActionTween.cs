@@ -252,6 +252,47 @@ public class AMActionTransLocalRotEuler : AMActionData {
     }
 }
 
+public abstract class AMActionTransLocalRotEulerVal : AMActionData {
+    protected Transform mTrans;
+    protected float mVal;
+
+    public AMActionTransLocalRotEulerVal(AMKey key, int frameRate, Transform target, float val)
+        : base(key, frameRate) {
+        mTrans = target;
+        mVal = val;
+    }
+}
+
+public class AMActionTransLocalRotEulerX : AMActionTransLocalRotEulerVal {
+    public AMActionTransLocalRotEulerX(AMKey key, int frameRate, Transform target, float val) : base(key, frameRate, target, val) { }
+
+    public override void Apply(float t, bool backwards) {
+        Vector3 r = mTrans.localEulerAngles;
+        r.x = mVal;
+        mTrans.localEulerAngles = r;
+    }
+}
+
+public class AMActionTransLocalRotEulerY : AMActionTransLocalRotEulerVal {
+    public AMActionTransLocalRotEulerY(AMKey key, int frameRate, Transform target, float val) : base(key, frameRate, target, val) { }
+
+    public override void Apply(float t, bool backwards) {
+        Vector3 r = mTrans.localEulerAngles;
+        r.y = mVal;
+        mTrans.localEulerAngles = r;
+    }
+}
+
+public class AMActionTransLocalRotEulerZ : AMActionTransLocalRotEulerVal {
+    public AMActionTransLocalRotEulerZ(AMKey key, int frameRate, Transform target, float val) : base(key, frameRate, target, val) { }
+
+    public override void Apply(float t, bool backwards) {
+        Vector3 r = mTrans.localEulerAngles;
+        r.z = mVal;
+        mTrans.localEulerAngles = r;
+    }
+}
+
 public class AMActionSpriteSet : AMActionData {
     private SpriteRenderer mSpriteRender;
     private Sprite mSprite;

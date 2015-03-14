@@ -7,6 +7,15 @@ using Holoville.HOTween;
 
 [AddComponentMenu("")]
 public class AMRotationEulerTrack : AMTrack {
+    public enum Axis {
+        X = 1, //only do rotation on X
+        Y = 2, //only do rotation on Y
+        Z = 4, //only do rotation on Z
+        All = 7 //do all rotation
+    }
+
+    public Axis axis = Axis.All;
+
     [SerializeField]
     private Transform _obj;
 
@@ -28,7 +37,7 @@ public class AMRotationEulerTrack : AMTrack {
     Vector3 cachedInitialRotation;
 
     public override string getTrackType() {
-        return "Rotation Euler";
+        return "Rotation Axis";
     }
     // add a new key
     public void addKey(AMITarget target, OnAddKey addCall, int _frame, Vector3 _rotation) {
@@ -79,12 +88,12 @@ public class AMRotationEulerTrack : AMTrack {
         if(keys == null || keys.Count <= 0) return;
         // if before or equal to first frame, or is the only frame
         if((frame <= (float)keys[0].frame) || ((keys[0] as AMRotationEulerKey).endFrame == -1)) {
-            t.localEulerAngles = (keys[0] as AMRotationEulerKey).rotation;
+            ApplyRot(t, (keys[0] as AMRotationEulerKey).rotation);
             return;
         }
         // if beyond or equal to last frame
         if(frame >= (float)(keys[keys.Count - 2] as AMRotationEulerKey).endFrame) {
-            t.localEulerAngles = (keys[keys.Count - 1] as AMRotationEulerKey).rotation;
+            ApplyRot(t, (keys[keys.Count - 1] as AMRotationEulerKey).rotation);
             return;
         }
         // if lies on rotation action
@@ -95,12 +104,12 @@ public class AMRotationEulerTrack : AMTrack {
             if((frame < (float)key.frame) || (frame > (float)key.endFrame)) continue;
             // if on startFrame or is no ease
             if(frame == (float)key.frame || (!key.canTween && frame < (float)key.endFrame)) {
-                t.localEulerAngles = key.rotation;
+                ApplyRot(t, key.rotation);
                 return;
             }
             // if on endFrame
             if(frame == (float)key.endFrame) {
-                t.localEulerAngles = keyNext.rotation;
+                ApplyRot(t, keyNext.rotation);
                 return;
             }
             // else find Quaternion using easing function
@@ -112,11 +121,11 @@ public class AMRotationEulerTrack : AMTrack {
             Vector3 qEnd = keyNext.rotation;
 
             if(key.hasCustomEase()) {
-                t.localEulerAngles = Vector3.Lerp(qStart, qEnd, AMUtil.EaseCustom(0.0f, 1.0f, framePositionInAction / key.getNumberOfFrames(frameRate), key.easeCurve));
+                ApplyRot(t, Vector3.Lerp(qStart, qEnd, AMUtil.EaseCustom(0.0f, 1.0f, framePositionInAction / key.getNumberOfFrames(frameRate), key.easeCurve)));
             }
             else {
                 TweenDelegate.EaseFunc ease = AMUtil.GetEasingFunction((EaseType)key.easeType);
-                t.localEulerAngles = Vector3.Lerp(qStart, qEnd, ease(framePositionInAction, 0.0f, 1.0f, key.getNumberOfFrames(frameRate), key.amplitude, key.period));
+                ApplyRot(t, Vector3.Lerp(qStart, qEnd, ease(framePositionInAction, 0.0f, 1.0f, key.getNumberOfFrames(frameRate), key.amplitude, key.period)));
             }
 
             return;
@@ -144,6 +153,26 @@ public class AMRotationEulerTrack : AMTrack {
         }
 
         return false;
+    }
+    void ApplyRot(Transform t, Vector3 toRot) {
+        Vector3 rot = t.localEulerAngles;
+        switch(axis) {
+            case Axis.X:
+                rot.x = toRot.x;
+                t.localEulerAngles = rot;
+                break;
+            case Axis.Y:
+                rot.y = toRot.y;
+                t.localEulerAngles = rot;
+                break;
+            case Axis.Z:
+                rot.z = toRot.z;
+                t.localEulerAngles = rot;
+                break;
+            case Axis.All:
+                t.localEulerAngles = toRot;
+                break;
+        }
     }
     public Vector3 getRotationAtFrame(int frame, int frameRate) {
         // if before or equal to first frame, or is the only frame

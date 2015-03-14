@@ -194,8 +194,14 @@ public abstract class AMTrack : MonoBehaviour {
         if(!mStarted) {
             mStarted = true;
 
-            //preview from starting frame so that the first tween will grab the appropriate start value
-            previewFrame(itarget, 0, frameRate);
+            //preview from starting frame so that the first tweener will grab the appropriate start value
+            if(canTween && keys.Count > 1 && keys[0].canTween)
+                previewFrame(itarget, 0f, frameRate);
+        }
+        else {
+            //apply first frame if frame > first frame
+            if(canTween && keys.Count > 1 && keys[0].canTween && keys[0].frame > Mathf.RoundToInt(frame))
+                previewFrame(itarget, 0f, frameRate);
         }
     }
 
