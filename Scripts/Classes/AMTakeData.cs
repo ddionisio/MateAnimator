@@ -630,7 +630,7 @@ public class AMTakeData {
     }
 
     /// <summary>
-    /// Only preview tracks that have starting frame > _frame
+    /// Start up tracks, doing one-time initializations and specific setups
     /// </summary>
     public void PlayStart(AMITarget itarget, float _frame, float animScale) {
         sortTracks();

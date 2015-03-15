@@ -203,7 +203,6 @@ public class AMEasePicker : EditorWindow {
 						key.setEaseType(nease);
 						// update cache when modifying varaibles
 						track.updateCache(aData.target);
-						AMCodeView.refresh();
 						// preview new position
                         aData.currentTake.previewFrame(aData.target, aData.currentTake.selectedFrame);
 						// save data

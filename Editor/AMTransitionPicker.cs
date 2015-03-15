@@ -454,7 +454,6 @@ public class AMTransitionPicker : EditorWindow {
             key.irisShape = irisShape;
             // update cache when modifying varaibles
             track.updateCache(aData.target);
-            AMCodeView.refresh();
             // preview frame
             aData.currentTake.previewFrame(aData.target, aData.currentTake.selectedFrame);
             // save data

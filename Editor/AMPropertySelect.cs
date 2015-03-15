@@ -205,7 +205,6 @@ public class AMPropertySelect : EditorWindow {
                         Undo.DestroyObjectImmediate(key);
                 }
 				track.keys = new List<AMKey>();
-                AMCodeView.refresh();
             }
             // set fieldinfo or propertyinfo
             if(fieldInfo != null)

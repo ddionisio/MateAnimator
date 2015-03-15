@@ -1249,10 +1249,7 @@ public class AMTimeline : EditorWindow {
         #region refresh button
         bool doRefresh = false;
         Rect rectBtnCodeView = new Rect(rectBtnOptions.x + rectBtnOptions.width + margin, rectBtnOptions.y, 80f, rectBtnOptions.height);
-        if(GUI.Button(rectBtnCodeView, "Refresh", EditorStyles.toolbarButton)) {
-            //EditorWindow.GetWindow(typeof(AMCodeView));
-            doRefresh = true;
-        }
+        doRefresh = GUI.Button(rectBtnCodeView, "Refresh", EditorStyles.toolbarButton);
         if(rectBtnCodeView.Contains(e.mousePosition) && mouseOverElement == (int)ElementType.None) {
             mouseOverElement = (int)ElementType.Button;
         }
@@ -1283,8 +1280,6 @@ public class AMTimeline : EditorWindow {
                 // take changed
                 // destroy camera fade
                 if(AMCameraFade.hasInstance()) AMCameraFade.destroyImmediateInstance();
-                // reset code view dictionaries
-                AMCodeView.resetTrackDictionary();
                 // if not creating new take
                 if(aData.currentTakeInd < aData.takes.Count) {
                     // select current frame
@@ -1364,7 +1359,6 @@ public class AMTimeline : EditorWindow {
                     }
                 }
 
-                AMCodeView.resetTrackDictionary();
                 // save data
                 aData.SetDirtyTakes();
             }
@@ -1584,8 +1578,6 @@ public class AMTimeline : EditorWindow {
 
                         // save data
                         aData.SetDirtyTakes();
-
-                        AMCodeView.refresh();
                     }
                 }
                 else {
@@ -1622,7 +1614,6 @@ public class AMTimeline : EditorWindow {
                         }
 
                         aData.SetDirtyTakes();
-                        AMCodeView.refresh();
                     }
                 }
                 else { //no tracks inside group
@@ -2151,7 +2142,6 @@ public class AMTimeline : EditorWindow {
     void ReloadOtherWindows() {
         if(AMOptions.window) AMOptions.window.reloadAnimatorData();
         if(AMSettings.window) AMSettings.window.reloadAnimatorData();
-        if(AMCodeView.window) AMCodeView.window.reloadAnimatorData();
         if(AMEasePicker.window) AMEasePicker.window.reloadAnimatorData();
         if(AMPropertySelect.window) AMPropertySelect.window.reloadAnimatorData();
         if(AMTakeExport.window) AMTakeExport.window.reloadAnimatorData();
@@ -3167,7 +3157,6 @@ public class AMTimeline : EditorWindow {
     }
     void _dirtyTrackUpdate(AMTakeData ctake, AMTrack sTrack) {
         sTrack.updateCache(aData.target);
-        AMCodeView.refresh();
         // preview new position
         ctake.previewFrame(aData.target, ctake.selectedFrame);
         // save data
@@ -3246,7 +3235,6 @@ public class AMTimeline : EditorWindow {
                 key.interp = nInterp;
 
                 sTrack.updateCache(aData.target);
-                AMCodeView.refresh();
                 // select the current frame
                 timelineSelectFrame(_track, _frame);
                 // save data
@@ -3403,7 +3391,6 @@ public class AMTimeline : EditorWindow {
             if(aKey.amClip != nclip) {
                 Undo.RecordObject(aKey, "Change Animation Clip");
                 aKey.amClip = nclip;
-                AMCodeView.refresh();
                 // preview new position
                 ctake.previewFrame(aData.target, ctake.selectedFrame);
                 // save data
@@ -3417,7 +3404,6 @@ public class AMTimeline : EditorWindow {
             if(aKey.wrapMode != nwrapmode) {
                 Undo.RecordObject(aKey, "Wrap Mode");
                 aKey.wrapMode = nwrapmode;
-                AMCodeView.refresh();
                 // preview new position
                 ctake.previewFrame(aData.target, ctake.selectedFrame);
                 // save data
@@ -3431,7 +3417,6 @@ public class AMTimeline : EditorWindow {
             if(aKey.crossfade != ncrossfade) {
                 Undo.RecordObject(aKey, "Cross Fade");
                 aKey.crossfade = ncrossfade;
-                AMCodeView.refresh();
                 // preview new position
                 ctake.previewFrame(aData.target, ctake.selectedFrame);
                 // save data
@@ -3445,7 +3430,6 @@ public class AMTimeline : EditorWindow {
             if(aKey.crossfadeTime != ncrossfadet) {
                 Undo.RecordObject(aKey, "Cross Fade Time");
                 aKey.crossfadeTime = ncrossfadet;
-                AMCodeView.refresh();
                 // save data
                 EditorUtility.SetDirty(aKey);
             }
@@ -3466,7 +3450,6 @@ public class AMTimeline : EditorWindow {
             if(auKey.audioClip != nclip) {
                 Undo.RecordObject(auKey, "Set Audio Clip");
                 auKey.audioClip = nclip;
-                AMCodeView.refresh();
                 // save data
                 EditorUtility.SetDirty(auKey);
 
@@ -3479,7 +3462,6 @@ public class AMTimeline : EditorWindow {
             if(auKey.loop != nloop) {
                 Undo.RecordObject(auKey, "Set Audio Loop");
                 auKey.loop = nloop;
-                AMCodeView.refresh();
                 // save data
                 EditorUtility.SetDirty(auKey);
             }
@@ -3492,7 +3474,6 @@ public class AMTimeline : EditorWindow {
             if(auKey.oneShot != nOneShot) {
                 Undo.RecordObject(auKey, "Set Audio One Shot");
                 auKey.oneShot = nOneShot;
-                AMCodeView.refresh();
                 // save data
                 EditorUtility.SetDirty(auKey);
             }
@@ -3652,7 +3633,6 @@ public class AMTimeline : EditorWindow {
                 Undo.RecordObject(goActiveTrack, "Set GameObject Start Active");
                 goActiveTrack.startActive = newStartVal;
                 EditorUtility.SetDirty(goActiveTrack);
-                AMCodeView.refresh();
             }
 
             if(newVal != pKey.setActive) {
@@ -3713,7 +3693,6 @@ public class AMTimeline : EditorWindow {
                 // process change
                 // update cache when modifying varaibles
                 if(eKey.setMethodInfo(tgtGo, cachedMethodInfoComponents[indexMethodInfo], !aData.target.isMeta, cachedMethodInfo[indexMethodInfo], cachedParameterInfos, !paramMatched)) {
-                    AMCodeView.refresh();
                     // save data
                     EditorUtility.SetDirty(eKey);
                     // deselect fields
@@ -3723,7 +3702,6 @@ public class AMTimeline : EditorWindow {
             if(cachedParameterInfos.Length > 1) {
                 // if method has more than 1 parameter, set sendmessage to false, and disable toggle
                 if(eKey.setUseSendMessage(false)) {
-                    AMCodeView.refresh();
                     // save data
                     EditorUtility.SetDirty(eKey);
                 }
@@ -3736,7 +3714,6 @@ public class AMTimeline : EditorWindow {
             Rect rectToggleSendMessage = new Rect(rectLabelSendMessage.x + rectLabelSendMessage.width + margin, rectLabelSendMessage.y, 20f, 20f);
             if(eKey.setUseSendMessage(GUI.Toggle(rectToggleSendMessage, eKey.useSendMessage, ""))) {
                 sTrack.updateCache(aData.target);
-                AMCodeView.refresh();
                 // save data
                 EditorUtility.SetDirty(eKey);
             }
@@ -3761,8 +3738,6 @@ public class AMTimeline : EditorWindow {
                     // show field for each parameter
                     float height_field = 0f;
                     if(showFieldFor(rectField, i.ToString(), cachedParameterInfos[i].Name, eKey.parameters[i], cachedParameterInfos[i].ParameterType, 0, ref height_field)) {
-                        //sTrack.updateCache(aData.target);
-                        AMCodeView.refresh();
                         // save data
                         EditorUtility.SetDirty(eKey);
                     }
@@ -4205,7 +4180,6 @@ public class AMTimeline : EditorWindow {
                 AnimatorDataEdit.RecordUndoTrackAndKeys(otrack, false, "Set Transform");
                 otrack.SetTarget(aData.target, nt);
                 otrack.updateCache(aData.target);
-                AMCodeView.refresh();
                 EditorUtility.SetDirty(otrack);
                 AnimatorDataEdit.SetDirtyKeys(otrack);
             }
@@ -4277,8 +4251,6 @@ public class AMTimeline : EditorWindow {
                     amTrack.SetTarget(aData.target, ngo ? ngo.transform : null);
 
                     amTrack.updateCache(aData.target);
-                    AMCodeView.refresh();
-
                     EditorUtility.SetDirty(amTrack);
                 }
             }
@@ -4342,8 +4314,6 @@ public class AMTimeline : EditorWindow {
                 aData.currentTake.previewFrame(aData.target, aData.currentTake.selectedFrame);
                 // refresh values
                 AMTransitionPicker.refreshValues();
-                // refresh code view
-                AMCodeView.refresh();
             }
             Rect rectButton = new Rect(width-width_button_delete+1f, y, width_button_delete, width_button_delete);
             if(GUI.Button(rectButton, getSkinTextureStyleState("popup").background, GUI.skin.GetStyle("ButtonImage"))) {
@@ -4381,8 +4351,6 @@ public class AMTimeline : EditorWindow {
                 aData.currentTake.previewFrame(aData.target, aData.currentTake.selectedFrame);
                 // refresh values
                 AMTransitionPicker.refreshValues();
-                // refresh code view
-                AMCodeView.refresh();
             }
 
             GUILayout.EndVertical();
@@ -4409,7 +4377,6 @@ public class AMTimeline : EditorWindow {
                 key.setEaseType(nease);
                 // update cache when modifying varaibles
                 track.updateCache(aData.target);
-                AMCodeView.refresh();
                 // preview new position
                 window.aData.currentTake.previewFrame(aData.target, window.aData.currentTake.selectedFrame);
                 // save data
@@ -4655,9 +4622,8 @@ public class AMTimeline : EditorWindow {
 
                 // preview selected frame
                 take.previewFrame(aData.target, take.selectedFrame);
-                AMCodeView.refresh();
-                // if finished context selection
 
+                // if finished context selection
                 AnimatorDataEdit.SetDirtyTracks(take);
                 foreach(AMTrack track in take.trackValues)
                     AnimatorDataEdit.SetDirtyKeys(track);
@@ -4794,9 +4760,7 @@ public class AMTimeline : EditorWindow {
                                 }
                                 // update cache
                                 selTrack.updateCache(aData.target);
-                                AMCodeView.refresh();
                             }
-
                         }
                     }
                 }
@@ -5619,7 +5583,6 @@ public class AMTimeline : EditorWindow {
         setScrollViewValue(take.getElementY(TakeEdit(take).selectedTrack, height_track, height_track_foldin, height_group));
 
         aData.SetDirtyTakes();
-        AMCodeView.refresh();
     }
 
     T _addTrack<T>(GameObject object_window, bool addCompUndo) where T : AMTrack {
@@ -6008,7 +5971,6 @@ public class AMTimeline : EditorWindow {
             EditorUtility.SetDirty(selectedTrack);
             AnimatorDataEdit.SetDirtyKeys(selectedTrack);
         }
-        AMCodeView.refresh();
     }
     void deleteKeyFromSelectedFrame() {
         bool instantiated = MetaInstantiate("Clear Frame");
@@ -6032,8 +5994,6 @@ public class AMTimeline : EditorWindow {
 
         // select current frame
         timelineSelectFrame(TakeEditCurrent().selectedTrack, TakeEditCurrent().selectedFrame);
-
-        AMCodeView.refresh();
     }
     void deleteSelectedKeys(bool showWarning) {
         bool shouldClearFrames = true;
@@ -6069,8 +6029,6 @@ public class AMTimeline : EditorWindow {
 
         // select current frame
         timelineSelectFrame(TakeEditCurrent().selectedTrack, TakeEditCurrent().selectedFrame, false);
-
-        AMCodeView.refresh();
     }
 
     #endregion
@@ -6384,7 +6342,6 @@ public class AMTimeline : EditorWindow {
                 contextSelectionTracksBuffer[i].updateCache(aData.target);
             }
         }
-        AMCodeView.refresh();
         // clear buffer
         ClearKeysBuffer();
         contextSelectionTracksBuffer.Clear();
