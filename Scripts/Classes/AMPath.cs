@@ -7,7 +7,6 @@ using Holoville.HOTween.Core;
 public struct AMPath {
     public Vector3[] path;
     public int interp;			// interpolation
-    public int startFrame;		// starting frame
     public int endFrame;		// ending frame
     public int startIndex;		// starting key index
     public int endIndex;		// ending key index
@@ -17,7 +16,6 @@ public struct AMPath {
         List<Vector3> _path = new List<Vector3>();
         startIndex = _startIndex;
         endIndex = startIndex;
-        startFrame = keys[startIndex].frame;
         endFrame = keys[startIndex].frame;
 
         _path.Add((keys[startIndex] as AMTranslationKey).position);

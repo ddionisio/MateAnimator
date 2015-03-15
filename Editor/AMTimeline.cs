@@ -2906,8 +2906,7 @@ public class AMTimeline : EditorWindow {
                                     // translation track, from first action frame to end action frame
                                     cached_action_startFrame = _track.keys[lastStartInd].getStartFrame();
                                     cached_action_endFrame = !_track.keys[lastStartInd].canTween ? cached_action_startFrame : 
-										!_track.keys[i].canTween ? (_track.keys[i] as AMTranslationKey).startFrame : 
-											(_track.keys[i] as AMTranslationKey).endFrame;
+										!_track.keys[i].canTween ? _track.keys[i].frame : (_track.keys[i] as AMTranslationKey).endFrame;
                                     texBox = texBoxGreen;
                                 }
                                 else {

@@ -107,7 +107,7 @@ public class AMTranslationTrack : AMTrack {
         if(!t) return;
         if(keys == null || keys.Count <= 0) return;
         // if before first frame
-        if(frame <= (float)(keys[0] as AMTranslationKey).startFrame) {
+        if(frame <= (float)keys[0].frame) {
             AMTranslationKey key = keys[0] as AMTranslationKey;
             SetPosition(t, !key.canTween || key.path.Length == 0 ? key.position : key.path[0]);
             return;
@@ -121,7 +121,7 @@ public class AMTranslationTrack : AMTrack {
 
         // if lies on curve
         foreach(AMTranslationKey key in keys) {
-            if(((int)frame < key.startFrame) || ((int)frame > key.endFrame)) continue;
+            if(((int)frame < key.frame) || ((int)frame > key.endFrame)) continue;
             if(!key.canTween && (int)frame < key.endFrame) {
 				SetPosition(t, key.position);
 				return;
@@ -134,7 +134,7 @@ public class AMTranslationTrack : AMTrack {
                 return;
             }
             float _value;
-            float framePositionInPath = frame - (float)key.startFrame;
+            float framePositionInPath = frame - (float)key.frame;
             if(framePositionInPath < 0f) framePositionInPath = 0f;
 
             if(key.hasCustomEase()) {
@@ -183,7 +183,7 @@ public class AMTranslationTrack : AMTrack {
 
         if(keys.Count <= 0) ret = GetPosition(t);
         // if before first frame
-        else if(frame <= (keys[0] as AMTranslationKey).startFrame) {
+        else if(frame <= keys[0].frame) {
             AMTranslationKey key = keys[0] as AMTranslationKey;
             ret = !key.canTween || key.path.Length == 0 ? key.position : key.path[0];
         }
@@ -196,7 +196,7 @@ public class AMTranslationTrack : AMTrack {
             bool retFound = false;
             // if lies on curve
             foreach(AMTranslationKey key in keys) {
-                if(frame < key.startFrame || frame > key.endFrame) continue;
+                if(frame < key.frame || frame > key.endFrame) continue;
                 if(!key.canTween && frame < key.endFrame) {
 					ret = key.position;
 					retFound = true;
@@ -211,7 +211,7 @@ public class AMTranslationTrack : AMTrack {
                     break;
                 }
 
-                int framePositionInPath = frame - key.startFrame;
+                int framePositionInPath = frame - key.frame;
                 if(framePositionInPath < 0) framePositionInPath = 0;
 
                 // ease
@@ -276,7 +276,6 @@ public class AMTranslationTrack : AMTrack {
 
             AMPath path = new AMPath(keys, i);
 
-            key.startFrame = path.startFrame;
             key.endFrame = path.endFrame;
             key.pathPreview = null;
 
@@ -284,8 +283,7 @@ public class AMTranslationTrack : AMTrack {
 				if(path.endIndex == keys.Count - 1) {
 					AMTranslationKey lastKey = keys[path.endIndex] as AMTranslationKey;
                     lastKey.interp = (int)AMTranslationKey.Interpolation.None;
-					lastKey.startFrame = path.endFrame;
-					lastKey.endFrame = path.endFrame;
+                    lastKey.endFrame = lastKey.frame;
 					lastKey.path = new Vector3[0];
 				}
 			}
@@ -301,7 +299,6 @@ public class AMTranslationTrack : AMTrack {
                     key.version = version;
                     key.interp = interp;
 					key.easeType = easeType;
-                    key.startFrame = key.frame;
                     key.endFrame = key.frame;
                     key.path = new Vector3[0];
                 }
@@ -313,8 +310,8 @@ public class AMTranslationTrack : AMTrack {
     // get the starting translation key for the action where the frame lies
     public AMTranslationKey getKeyStartFor(int frame) {
         foreach(AMTranslationKey key in keys) {
-            if((frame < key.startFrame) || (frame >= key.endFrame)) continue;
-            return (AMTranslationKey)getKeyOnFrame(key.startFrame);
+            if((frame < key.frame) || (frame >= key.endFrame)) continue;
+            return (AMTranslationKey)getKeyOnFrame(key.frame);
         }
         Debug.LogError("Animator: Action for frame " + frame + " does not exist in cache.");
         return null;

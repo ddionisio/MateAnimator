@@ -11,7 +11,6 @@ public class AMTranslationKey : AMKey {
 
     public Vector3 position;
     
-    public int startFrame;
     public int endFrame;
     public Vector3[] path;
 
@@ -97,16 +96,12 @@ public class AMTranslationKey : AMKey {
         }
     }
 
-    public override int getStartFrame() {
-        return startFrame;
-    }
-
     public override int getNumberOfFrames(int frameRate) {
-        if(!canTween && (endFrame == -1 || endFrame == startFrame))
+        if(!canTween && (endFrame == -1 || endFrame == frame))
             return 1;
         else if(endFrame == -1)
             return -1;
-        return  endFrame - startFrame;
+        return endFrame - frame;
     }
     public override void build(AMSequence seq, AMTrack track, int index, UnityEngine.Object obj) {
         int frameRate = seq.take.frameRate;
