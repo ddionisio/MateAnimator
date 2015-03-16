@@ -173,7 +173,7 @@ public abstract class AMTrack : MonoBehaviour {
     public virtual void drawGizmos(AMITarget target, float gizmo_size, bool inPlayMode, int frame) { }
 
     // preview frame
-    public virtual void previewFrame(AMITarget target, float frame, int frameRate, AMTrack extraTrack = null) { }
+    public virtual void previewFrame(AMITarget target, float frame, int frameRate, bool play, float playSpeed) { }
 
     // update cache
     public virtual void updateCache(AMITarget target) {
@@ -190,25 +190,59 @@ public abstract class AMTrack : MonoBehaviour {
 	public virtual void buildSequenceStart(AMSequence sequence) {
     }
 
+    /// <summary>
+    /// Called when about to play during runtime, also use for initializing things (mostly for tweeners)
+    /// </summary>
     public virtual void PlayStart(AMITarget itarget, float frame, int frameRate, float animScale) {
         if(!mStarted) {
             mStarted = true;
 
             //preview from starting frame so that the first tweener will grab the appropriate start value
             if(canTween && keys.Count > 1 && keys[0].canTween)
-                previewFrame(itarget, 0f, frameRate);
+                previewFrame(itarget, 0f, frameRate, false, 1.0f);
         }
         else {
             //apply first frame if frame > first frame
             if(canTween && keys.Count > 1 && keys[0].canTween && keys[0].frame > Mathf.RoundToInt(frame))
-                previewFrame(itarget, 0f, frameRate);
+                previewFrame(itarget, 0f, frameRate, false, 1.0f);
         }
     }
 
     /// <summary>
-    /// Call when we are switching take
+    /// Called when we are switching take
     /// </summary>
     public virtual void PlaySwitch(AMITarget itarget) {
+    }
+
+    /// <summary>
+    /// Called when sequence, or preview during edit, has completed
+    /// </summary>
+    public virtual void PlayComplete(AMITarget itarget) {
+    }
+
+    /// <summary>
+    /// Called when stopping during runtime or preview in AMTimeline
+    /// </summary>
+    public virtual void Stop(AMITarget itarget) {
+    }
+
+    /// <summary>
+    /// Called when pausing during runtime
+    /// </summary>
+    public virtual void Pause(AMITarget itarget) {
+    }
+
+    /// <summary>
+    /// Called when resuming during runtime
+    /// </summary>
+    public virtual void Resume(AMITarget itarget) {
+
+    }
+
+    /// <summary>
+    /// Called when setting animation play scale during runtime
+    /// </summary>
+    public virtual void SetAnimScale(AMITarget itarget, float scale) {
 
     }
 

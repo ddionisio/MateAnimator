@@ -102,7 +102,7 @@ public class AMTranslationTrack : AMTrack {
     }
 
     // preview a frame in the scene view
-    public override void previewFrame(AMITarget itarget, float frame, int frameRate, AMTrack extraTrack = null) {
+    public override void previewFrame(AMITarget itarget, float frame, int frameRate, bool play, float playSpeed) {
 		Transform t = GetTarget(itarget) as Transform;
         if(!t) return;
         if(keys == null || keys.Count <= 0) return;

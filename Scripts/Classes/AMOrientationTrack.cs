@@ -69,7 +69,7 @@ public class AMOrientationTrack : AMTrack {
 		return (keys[0] as AMOrientationKey).GetTarget(itarget);
     }
 
-    public override void previewFrame(AMITarget itarget, float frame, int frameRate, AMTrack extraTrack = null) {
+    public override void previewFrame(AMITarget itarget, float frame, int frameRate, bool play, float playSpeed) {
 		Transform t = GetTarget(itarget) as Transform;
 
         if(keys == null || keys.Count <= 0) {

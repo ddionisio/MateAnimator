@@ -40,7 +40,7 @@ public class AMGOSetActiveTrack : AMTrack {
         }
     }
     // preview a frame in the scene view
-    public override void previewFrame(AMITarget target, float frame, int frameRate, AMTrack extraTrack = null) {
+    public override void previewFrame(AMITarget target, float frame, int frameRate, bool play, float playSpeed) {
 		GameObject go = GetTarget(target) as GameObject;
 
         if(keys == null || keys.Count <= 0) {

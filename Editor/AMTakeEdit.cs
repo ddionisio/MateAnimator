@@ -8,6 +8,8 @@ public class AMTakeEdit {
     public int selectedFrame = 1;			// currently selected frame (frame to preview, not necessarily in context selection)
     public int selectedGroup = 0;
 
+    public int playbackSpeedIndex = 2;		// default playback speed x1
+
     public List<int> contextSelection = new List<int>();	// list of all frames included in the context selection
     public List<int> ghostSelection = new List<int>();		// list of all frames included in the ghost selection
     public List<int> contextSelectionTracks = new List<int>();
@@ -20,6 +22,7 @@ public class AMTakeEdit {
         selectedTrack = -1;
         selectedFrame = 1;
         selectedGroup = 0;
+        playbackSpeedIndex = 2;
     }
 
     // select a track by index

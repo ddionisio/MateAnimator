@@ -17,8 +17,7 @@ public class AMTakeData {
     public int numFrames = 1440;			// number of frames
     public float startFrame = 1f;				// first frame to render
     public float endFrame = 100f;
-    public int playbackSpeedIndex = 2;		// default playback speed x1
-
+    
     public int numLoop = 1; //number of times this plays before it is done
     public LoopType loopMode = LoopType.Restart;
     public int loopBackToFrame = -1; //set this to loop back at given frame when sequence is complete, make sure numLoop = 1 and loopMode is Restart
@@ -68,7 +67,6 @@ public class AMTakeData {
         numFrames = 1440;
         startFrame = 1f;
         endFrame = 100f;
-        playbackSpeedIndex = 2;
 
         numLoop = 1;
         loopMode = LoopType.Restart;
@@ -588,44 +586,19 @@ public class AMTakeData {
     }
 
     // preview a frame
-    public void previewFrame(AMITarget itarget, float _frame, bool orientationOnly = false, bool renderStill = true) {
+    public void previewFrame(AMITarget itarget, float _frame, bool orientationOnly = false, bool renderStill = true, bool play = false, float playSpeed = 1.0f) {
         // render camera switcher still texture if necessary
         if(renderStill) renderCameraSwitcherStill(itarget, _frame);
 
         if(orientationOnly) {
             foreach(AMTrack track in trackValues) {
                 if(track is AMOrientationTrack || track is AMRotationTrack)
-                    track.previewFrame(itarget, _frame, frameRate);
+                    track.previewFrame(itarget, _frame, frameRate, play, playSpeed);
             }
         }
         else {
-            foreach(AMTrack track in trackValues) {
-                track.previewFrame(itarget, _frame, frameRate);
-            }
-        }
-    }
-
-    public void runFrame(AMITarget itarget, float _frame, float animScale, bool playAudio, bool noAudioLoop) {
-        renderCameraSwitcherStill(itarget, _frame);
-
-        foreach(AMTrack track in trackValues) {
-            AMAudioTrack audioTrack = track as AMAudioTrack;
-            if(audioTrack) {
-                if(playAudio) {
-                    AudioSource src = audioTrack.sampleAudio(itarget, _frame, animScale, frameRate, false);
-                    if(src && noAudioLoop)
-                        src.loop = false;
-                }
-                continue;
-            }
-
-            AMAnimatorMateTrack mateAnimTrack = track as AMAnimatorMateTrack;
-            if(mateAnimTrack) {
-                mateAnimTrack.runFrame(itarget, _frame, frameRate, animScale, playAudio, noAudioLoop);
-                continue;
-            }
-
-            track.previewFrame(itarget, _frame, frameRate);
+            foreach(AMTrack track in trackValues)
+                track.previewFrame(itarget, _frame, frameRate, play, playSpeed);
         }
     }
 
@@ -635,19 +608,41 @@ public class AMTakeData {
     public void PlayStart(AMITarget itarget, float _frame, float animScale) {
         sortTracks();
 
-        foreach(AMTrack track in trackValues) {
-            //call to start
+        foreach(AMTrack track in trackValues) //call to start
             track.PlayStart(itarget, _frame, frameRate, animScale);
-        }
     }
 
     /// <summary>
     /// Call this when we are switching take
     /// </summary>
     public void PlaySwitch(AMITarget itarget) {
-        foreach(AMTrack track in trackValues) {
+        foreach(AMTrack track in trackValues)
             track.PlaySwitch(itarget);
-        }
+    }
+
+    public void PlayComplete(AMITarget itarget) {
+        foreach(AMTrack track in trackValues)
+            track.PlayComplete(itarget);
+    }
+
+    public void Stop(AMITarget itarget) {
+        foreach(AMTrack track in trackValues)
+            track.Stop(itarget);
+    }
+
+    public void Pause(AMITarget itarget) {
+        foreach(AMTrack track in trackValues)
+            track.Pause(itarget);
+    }
+
+    public void Resume(AMITarget itarget) {
+        foreach(AMTrack track in trackValues)
+            track.Resume(itarget);
+    }
+        
+    public void SetAnimScale(AMITarget itarget, float scale) {
+        foreach(AMTrack track in trackValues)
+            track.SetAnimScale(itarget, scale);
     }
 
     private void renderCameraSwitcherStill(AMITarget itarget, float _frame) {
@@ -728,25 +723,6 @@ public class AMTakeData {
             cf.useRenderTexture = false;
         }
 
-    }
-
-    public void sampleAudioAtFrame(AMITarget itarget, int frame, float speed) {
-        foreach(AMTrack track in trackValues) {
-            AMAudioTrack audioTrack = track as AMAudioTrack;
-            if(audioTrack) { audioTrack.sampleAudioAtFrame(itarget, frame, speed, frameRate); continue; }
-
-            AMAnimatorMateTrack mateAnimTrack = track as AMAnimatorMateTrack;
-            if(mateAnimTrack) { mateAnimTrack.sampleAudioAtFrame(itarget, frame, speed, frameRate); continue; }
-        }
-    }
-
-    public AMTranslationTrack getTranslationTrackForTransform(AMITarget itarget, Transform obj) {
-        if(!obj) return null;
-        foreach(AMTrack track in trackValues) {
-            if((track is AMTranslationTrack) && track.isTargetEqual(itarget, obj))
-                return track as AMTranslationTrack;
-        }
-        return null;
     }
 
     public AMKey[] removeKeysAfter(AMITarget itarget, int frame) {
@@ -863,76 +839,6 @@ public class AMTakeData {
     public void maintainTake(AMITarget itarget) {
         foreach(AMTrack track in trackValues)
             track.maintainTrack(itarget);
-    }
-
-    public void sampleAudio(AMITarget itarget, float frame, float speed, bool playOneShots) {
-        foreach(AMTrack track in trackValues) {
-            AMAudioTrack audioTrack = track as AMAudioTrack;
-            if(audioTrack) { audioTrack.sampleAudio(itarget, frame, speed, frameRate, playOneShots); continue; }
-
-            AMAnimatorMateTrack mateAnimTrack = track as AMAnimatorMateTrack;
-            if(mateAnimTrack) { mateAnimTrack.sampleAudio(itarget, frame, speed, frameRate, playOneShots); continue; }
-        }
-    }
-
-    public void endAudioLoops(AMITarget itarget) {
-        foreach(AMTrack track in trackValues) {
-            AMAudioTrack audioTrack = track as AMAudioTrack;
-            if(audioTrack) { audioTrack.endAudioLoop(itarget); continue; }
-
-            AMAnimatorMateTrack mateAnimTrack = track as AMAnimatorMateTrack;
-            if(mateAnimTrack) { mateAnimTrack.endAudioLoops(itarget); continue; }
-        }
-    }
-
-    public void stopAudio(AMITarget itarget) {
-        foreach(AMTrack track in trackValues) {
-            AMAudioTrack audioTrack = track as AMAudioTrack;
-            if(audioTrack) { audioTrack.stopAudio(itarget); continue; }
-
-            AMAnimatorMateTrack mateAnimTrack = track as AMAnimatorMateTrack;
-            if(mateAnimTrack) { mateAnimTrack.stopAudio(itarget); continue; }
-        }
-    }
-
-    public void pauseAudio(AMITarget itarget) {
-        foreach(AMTrack track in trackValues) {
-            AMAudioTrack audioTrack = track as AMAudioTrack;
-            if(audioTrack) { audioTrack.pauseAudio(itarget); continue; }
-
-            AMAnimatorMateTrack mateAnimTrack = track as AMAnimatorMateTrack;
-            if(mateAnimTrack) { mateAnimTrack.pauseAudio(itarget); continue; }
-        }
-    }
-
-    public void resumeAudio(AMITarget itarget) {
-        foreach(AMTrack track in trackValues) {
-            AMAudioTrack audioTrack = track as AMAudioTrack;
-            if(audioTrack) { audioTrack.resumeAudio(itarget); continue; }
-
-            AMAnimatorMateTrack mateAnimTrack = track as AMAnimatorMateTrack;
-            if(mateAnimTrack) { mateAnimTrack.resumeAudio(itarget); continue; }
-        }
-    }
-
-    public void setAudioSpeed(AMITarget itarget, float speed) {
-        foreach(AMTrack track in trackValues) {
-            AMAudioTrack audioTrack = track as AMAudioTrack;
-            if(audioTrack) { audioTrack.setAudioSpeed(itarget, speed); continue; }
-
-            AMAnimatorMateTrack mateAnimTrack = track as AMAnimatorMateTrack;
-            if(mateAnimTrack) { mateAnimTrack.setAudioSpeed(itarget, speed); continue; }
-        }
-    }
-
-    public void resetScene(AMITarget itarget) {
-        // reset scene, equivalent to previewFrame(1f) without previewing animation
-        foreach(AMTrack track in trackValues) {
-            if(track is AMAnimationTrack) continue;
-            if(track is AMOrientationTrack)
-                track.previewFrame(itarget, 1f, frameRate, getTranslationTrackForTransform(itarget, (track as AMOrientationTrack).getTargetForFrame(itarget, 1f)));
-            else track.previewFrame(itarget, 1f, frameRate);
-        }
     }
 
     public void drawGizmos(AMITarget itarget, float gizmo_size, bool inPlayMode) {

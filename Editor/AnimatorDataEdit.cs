@@ -298,7 +298,6 @@ public class AnimatorDataEdit {
         a.frameRate = dupTake.frameRate;
         a.numFrames = dupTake.numFrames;
         a.startFrame = dupTake.startFrame;
-        a.playbackSpeedIndex = 2;
         //a.lsTracks = new List<AMTrack>();
         //a.dictTracks = new Dictionary<int,AMTrack>();
 
@@ -564,22 +563,5 @@ public class AnimatorDataEdit {
             lsFlagToKeep = lsFlagToKeep.Union(take.updateDependencies(mDataTarget, newReferences, oldReferences)).ToList();
         }
         return lsFlagToKeep;
-    }
-
-    /// <summary>
-    /// Determine if given anim is referenced in any mate animator track
-    /// </summary>
-    public bool IsReferencedInTrack(AnimatorDataEdit anim) {
-        foreach(AMTakeData take in takes) {
-            foreach(AMTrack track in take.trackValues) {
-                AMAnimatorMateTrack mateAnimTrack = track as AMAnimatorMateTrack;
-                if(mateAnimTrack) {
-                    AnimatorData animTrack = mateAnimTrack.GetTarget(mDataTarget) as AnimatorData;
-                    if(animTrack == anim.mData)
-                        return true;
-                }
-            }
-        }
-        return false;
     }
 }

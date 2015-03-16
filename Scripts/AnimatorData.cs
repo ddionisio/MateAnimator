@@ -165,7 +165,7 @@ public class AnimatorData : MonoBehaviour, AMITarget, AMIMeta {
                     if(amSeq.sequence != null)
                         amSeq.sequence.timeScale = mAnimScale;
                     if(amSeq.take != null)
-                        amSeq.take.setAudioSpeed(this, mAnimScale);
+                        amSeq.take.SetAnimScale(this, mAnimScale);
                 }
             }
         }
@@ -283,7 +283,7 @@ public class AnimatorData : MonoBehaviour, AMITarget, AMIMeta {
     public void Pause() {
         AMTakeData take = mCurrentPlayingTake;
         if(take == null) return;
-        take.pauseAudio(this);
+        take.Pause(this);
 
         Sequence seq = currentPlayingSequence;
         if(seq != null)
@@ -293,7 +293,7 @@ public class AnimatorData : MonoBehaviour, AMITarget, AMIMeta {
     public void Resume() {
         AMTakeData take = mCurrentPlayingTake;
         if(take == null) return;
-        take.resumeAudio(this);
+        take.Resume(this);
 
         Sequence seq = currentPlayingSequence;
         if(seq != null)
@@ -303,7 +303,7 @@ public class AnimatorData : MonoBehaviour, AMITarget, AMIMeta {
     public void Stop() {
         AMTakeData take = mCurrentPlayingTake;
         if(take == null) return;
-        take.stopAudio(this);
+        take.Stop(this);
 
         //end camera fade
         if(AMCameraFade.hasInstance()) {

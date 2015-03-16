@@ -173,8 +173,6 @@ public class AMTimeline : EditorWindow {
         GOSetActive = 9,
         CameraSwitcher = 10,
         Trigger = 11,
-        MateAnimator = 12,
-        
     }
 
     public static string[] TrackNames = new string[] {
@@ -190,7 +188,6 @@ public class AMTimeline : EditorWindow {
         "GameObject Active",
         "Camera Switcher",
         "Trigger",
-        "Mate Animator",
 	};
     // skins
     public static string global_skin = "am_skin_dark";
@@ -483,7 +480,7 @@ public class AMTimeline : EditorWindow {
         if(aData != null) {
             if(aData.currentTake != null) {
                 // stop audio if it's playing
-                aData.currentTake.stopAudio(aData.target);
+                aData.currentTake.Stop(aData.target);
 
                 // preview first frame
                 aData.currentTake.previewFrame(aData.target, 1f);
@@ -660,46 +657,44 @@ public class AMTimeline : EditorWindow {
             }
             lastTooltip = tooltip;
         }
-        /*if(repaintBuffer>0) {
-            repaintBuffer--;
-            this.Repaint();	
-        }*/
 
+        if(aData == null) return;
+        AMTakeData currentTake = aData.currentTake;
 
         // if preview is playing
         if(isPlaying || dragType == (int)DragType.TimeScrub || dragType == (int)DragType.FrameScrub) {
+            int playbackSpeedIndex = TakeEdit(currentTake).playbackSpeedIndex;
             float timeRunning = Time.realtimeSinceStartup - playerStartTime;
             // determine current frame
-            float curFrame = aData.currentTake.selectedFrame;
+            float curFrame = currentTake.selectedFrame;
             // if scrubbing
             if(dragType == (int)DragType.TimeScrub || dragType == (int)DragType.FrameScrub) {
                 if(scrubSpeed < 0) scrubSpeed *= 5;
                 curFrame += Mathf.CeilToInt(scrubSpeed);
-                curFrame = Mathf.Clamp(curFrame, 1, aData.currentTake.numFrames);
+                curFrame = Mathf.Clamp(curFrame, 1, currentTake.numFrames);
             }
             else {
                 // determine speed
-                AMTakeData take = aData.currentTake;
-                float speed = (float)take.frameRate * playbackSpeedValue[take.playbackSpeedIndex];
+                float speed = (float)currentTake.frameRate * playbackSpeedValue[playbackSpeedIndex];
                 curFrame = playerStartFrame + (playerBackward ? -timeRunning * speed : timeRunning * speed);
                 int curFrameI = Mathf.FloorToInt(curFrame);
-                int lastFrame = take.getLastFrame();
+                int lastFrame = currentTake.getLastFrame();
                 //reached end?
                 if((playerBackward && curFrameI < 0) || curFrameI >= lastFrame) {
                     bool restart = true;
                     // loop
-                    if(take.numLoop > 0) {
+                    if(currentTake.numLoop > 0) {
                         playerCurLoop++;
-                        restart = playerCurLoop < take.numLoop;
+                        restart = playerCurLoop < currentTake.numLoop;
                     }
 
                     int startFrame = 1;
                     if(restart) {
-                        if((take.loopMode == Holoville.HOTween.LoopType.Yoyo || take.loopMode == Holoville.HOTween.LoopType.YoyoInverse))
+                        if((currentTake.loopMode == Holoville.HOTween.LoopType.Yoyo || currentTake.loopMode == Holoville.HOTween.LoopType.YoyoInverse))
                             playerBackward = !playerBackward;
 
-                        if(!playerBackward && take.loopBackToFrame > 0)
-                            startFrame = take.loopBackToFrame;
+                        if(!playerBackward && currentTake.loopBackToFrame > 0)
+                            startFrame = currentTake.loopBackToFrame;
                         else
                             startFrame = 1;
                     }
@@ -730,47 +725,40 @@ public class AMTimeline : EditorWindow {
                         curFrame = playerStartedFrame;
                     }
 
-                    // stop audio
-                    take.stopAudio(aData.target);
+                    currentTake.PlayComplete(aData.target);
                 }
             }
             // select the appropriate frame
-            if(Mathf.FloorToInt(curFrame) != aData.currentTake.selectedFrame) {
-                TakeEditCurrent().selectFrame(aData.currentTake, TakeEditCurrent().selectedTrack, Mathf.FloorToInt(curFrame), numFramesToRender, false, false);
-                if(dragType != (int)DragType.TimeScrub && dragType != (int)DragType.FrameScrub) {
-                    if(isPlaying) {
-                        // sample audio
-                        aData.currentTake.sampleAudioAtFrame(aData.target, Mathf.FloorToInt(curFrame), playbackSpeedValue[aData.currentTake.playbackSpeedIndex]);
-                    }
-                }
+            bool play = isPlaying && !playerBackward && dragType != (int)DragType.TimeScrub && dragType != (int)DragType.FrameScrub; //only allow play when playing forward
+            if(Mathf.FloorToInt(curFrame) != currentTake.selectedFrame) {
+                TakeEditCurrent().selectFrame(currentTake, TakeEditCurrent().selectedTrack, Mathf.FloorToInt(curFrame), numFramesToRender, false, false);
                 this.Repaint();
             }
-            aData.currentTake.previewFrame(aData.target, curFrame);
+            currentTake.previewFrame(aData.target, curFrame, false, true, play, playbackSpeedValue[playbackSpeedIndex]);
         }
         else {
             // autokey
             if(!isDragging && aData != null && aData.autoKey) {
-                AMTakeData take;
                 AMTrack.OnAddKey addCall;
                 MonoBehaviour[] dats;
                 if(MetaInstantiate("Auto Key")) {
-                    take = aData.currentTake;
+                    currentTake = aData.currentTake;
                     addCall = OnAddKeyComp;
                     dats = null;
                 }
                 else {
                     //NOTE: may need to selectively gather which ones to record if there are too many tracks, for now this is guaranteed
-                    take = aData.currentTake;
-                    dats = AnimatorDataEdit.GetKeysAndTracks(take);
+                    currentTake = aData.currentTake;
+                    dats = AnimatorDataEdit.GetKeysAndTracks(currentTake);
                     Undo.RecordObjects(dats, "Auto Key");
                     addCall = OnAddKeyUndoComp;
                 }
 
-                bool autoKeyMade = aData.currentTake.autoKey(aData.target, addCall, Selection.activeTransform, aData.currentTake.selectedFrame);
+                bool autoKeyMade = currentTake.autoKey(aData.target, addCall, Selection.activeTransform, currentTake.selectedFrame);
 
                 if(autoKeyMade) {
                     // preview frame, update orientation only
-                    aData.currentTake.previewFrame(aData.target, aData.currentTake.selectedFrame, true, false);
+                    currentTake.previewFrame(aData.target, currentTake.selectedFrame, true, false);
 
                     if(dats != null) {
                         foreach(MonoBehaviour dat in dats)
@@ -1675,7 +1663,7 @@ public class AMTimeline : EditorWindow {
         #endregion
         #region playback speed popup
         Rect rectPopupPlaybackSpeed = new Rect(rectSkipForward.x + rectSkipForward.width + margin, height_indicator_footer / 2f - 15f / 2f, width_playback_speed, rectBtnTogglePlay.height);
-        aData.takes[aData.currentTakeInd].playbackSpeedIndex = EditorGUI.Popup(rectPopupPlaybackSpeed, aData.takes[aData.currentTakeInd].playbackSpeedIndex, playbackSpeed);
+        TakeEditCurrent().playbackSpeedIndex = EditorGUI.Popup(rectPopupPlaybackSpeed, TakeEditCurrent().playbackSpeedIndex, playbackSpeed);
         #endregion
         #region scrub controls
         GUIStyle styleScrubControl = new GUIStyle(GUI.skin.label);
@@ -2800,7 +2788,7 @@ public class AMTimeline : EditorWindow {
         if(!oData.disableTimelineActions && _track.foldout) {
             #region timeline actions
             // draw each action with seperate textures and buttons for these tracks
-            bool drawEachAction = _track is AMAnimationTrack || _track is AMAnimatorMateTrack || _track is AMAudioTrack;
+            bool drawEachAction = _track is AMAnimationTrack || _track is AMAudioTrack;
             int _startFrame = (int)curTake.startFrame;
             int _endFrame = (int)(_startFrame + numFrames - 1);
             int action_startFrame, action_endFrame, renderFrameStart, renderFrameEnd;
@@ -2940,7 +2928,7 @@ public class AMTimeline : EditorWindow {
                         AnimatorDataEdit.SetDirtyKeys(_track);
                     }
                 }
-                if((_track is AMAudioTrack || _track is AMAnimationTrack || _track is AMAnimatorMateTrack) && _track.keys[i].getNumberOfFrames(curTake.frameRate) > -1 && (_track.keys[i].getStartFrame() + _track.keys[i].getNumberOfFrames(curTake.frameRate) <= curTake.numFrames)) {
+                if((_track is AMAudioTrack || _track is AMAnimationTrack) && _track.keys[i].getNumberOfFrames(curTake.frameRate) > -1 && (_track.keys[i].getStartFrame() + _track.keys[i].getNumberOfFrames(curTake.frameRate) <= curTake.numFrames)) {
                     //based on content length
                     action_startFrame = _track.keys[i].getStartFrame();
                     action_endFrame = _track.keys[i].getStartFrame() + _track.keys[i].getNumberOfFrames(curTake.frameRate) - 1;
@@ -2958,7 +2946,7 @@ public class AMTimeline : EditorWindow {
                     didClampBackwards = true;
                     clamped = -1;
                 }
-                else if(_track is AMAnimationTrack || _track is AMAudioTrack || _track is AMPropertyTrack || _track is AMMaterialTrack || _track is AMEventTrack || _track is AMGOSetActiveTrack || _track is AMCameraSwitcherTrack || _track is AMTriggerTrack || _track is AMAnimatorMateTrack) {
+                else if(_track is AMAnimationTrack || _track is AMAudioTrack || _track is AMPropertyTrack || _track is AMMaterialTrack || _track is AMEventTrack || _track is AMGOSetActiveTrack || _track is AMCameraSwitcherTrack || _track is AMTriggerTrack) {
                     // single frame tracks (clamp box to last frame) (if audio track not set, clamp)
                     action_startFrame = _track.keys[i].getStartFrame();
                     if(i < _track.keys.Count - 1) {
@@ -3012,7 +3000,7 @@ public class AMTimeline : EditorWindow {
                 rectBox = new Rect(rectLeft, rectTop, rectWidth, rectHeight);
                 #endregion
                 #region draw action
-                if(_track is AMAnimationTrack || _track is AMAnimatorMateTrack) texBox = texBoxRed;
+                if(_track is AMAnimationTrack) texBox = texBoxRed;
                 else if(_track is AMPropertyTrack || _track is AMMaterialTrack) texBox = texBoxLightBlue;
                 else if(_track is AMTranslationTrack) texBox = texBoxGreen;
                 else if(_track is AMAudioTrack) texBox = texBoxPink;
@@ -3066,7 +3054,7 @@ public class AMTimeline : EditorWindow {
                 styleTxtInfo.alignment = (hideTxtInfo ? TextAnchor.MiddleLeft : TextAnchor.MiddleCenter);
                 bool isLastAction;
                 if(_track is AMPropertyTrack || _track is AMMaterialTrack || _track is AMEventTrack || _track is AMGOSetActiveTrack || _track is AMCameraSwitcherTrack || _track is AMTriggerTrack) isLastAction = (i == _track.keys.Count - 1);
-                else if(_track is AMAudioTrack || _track is AMAnimationTrack || _track is AMAnimatorMateTrack) isLastAction = false;
+                else if(_track is AMAudioTrack || _track is AMAnimationTrack) isLastAction = false;
                 else isLastAction = (i == _track.keys.Count - 2);
                 if(rectBox.width > 5f) EditorGUI.DropShadowLabel(new Rect(rectBox.x, rectBox.y, rectBox.width - (!isLastAction ? current_width_frame : 0f), rectBox.height), txtInfo, styleTxtInfo);
                 // if clicked on info box, select the starting frame for action. show tooltip if text does not fit
@@ -3099,7 +3087,7 @@ public class AMTimeline : EditorWindow {
                                 if(_track.hasKeyOnFrame(last_action_startFrame)) startResizeActionFrame = last_action_startFrame;
                                 else startResizeActionFrame = -1;
                                 resizeActionFrame = action_startFrame;
-                                if(_track is AMAnimationTrack || _track is AMAnimatorMateTrack || _track is AMAudioTrack) {
+                                if(_track is AMAnimationTrack || _track is AMAudioTrack) {
                                     endResizeActionFrame = _track.getKeyFrameAfterFrame(action_startFrame, false);
                                 }
                                 else endResizeActionFrame = action_endFrame;
@@ -3852,41 +3840,6 @@ public class AMTimeline : EditorWindow {
             return;
         }
         #endregion
-        #region mate animator inspector
-        if(sTrack is AMAnimatorMateTrack) {
-            AnimatorData anim = sTrack.GetTarget(aData.target) as AnimatorData;
-            AMAnimatorMateKey aKey = (AMAnimatorMateKey)(sTrack as AMAnimatorMateTrack).getKeyOnFrame(_frame);
-            // take
-            Rect rectLabelAnimClip = new Rect(0f, start_y, 100f, 22f);
-            GUI.Label(rectLabelAnimClip, "Take Name");
-            Rect rectObjectField = new Rect(rectLabelAnimClip.x + rectLabelAnimClip.width + 2f, rectLabelAnimClip.y + 3f, width_inspector - rectLabelAnimClip.width - margin, 16f);
-            string[] takeNames = AnimEdit(anim).GetTakeNames(true);
-            int curEditInd = string.IsNullOrEmpty(aKey.take) ? -1 : System.Array.IndexOf(takeNames, aKey.take);
-            if(curEditInd == -1) curEditInd = 0;
-            int ind = EditorGUI.Popup(rectObjectField, curEditInd, takeNames);
-            if(curEditInd != ind) {
-                Undo.RecordObject(aKey, "Change Take");
-                aKey.take = ind > 0 ? takeNames[ind] : "";
-                aKey.updateDuration(sTrack, aData.target);
-
-                _dirtyTrackUpdate(ctake, sTrack);
-            }
-            // loop mode
-            GUI.enabled = ind > 0;
-            Rect rectLabelWrapMode = new Rect(0f, rectLabelAnimClip.y + rectLabelAnimClip.height + height_inspector_space, 85f, 22f);
-            GUI.Label(rectLabelWrapMode, "Loop");
-            Rect rectPopupWrapMode = new Rect(rectLabelWrapMode.x + rectLabelWrapMode.width, rectLabelWrapMode.y + 3f, 120f, 22f);
-            AMPlugMateAnimator.LoopType nloopmode = (AMPlugMateAnimator.LoopType)EditorGUI.EnumPopup(rectPopupWrapMode, aKey.loop);
-            if(aKey.loop != nloopmode) {
-                Undo.RecordObject(aKey, "Change Loop");
-                aKey.loop = nloopmode;
-
-                _dirtyTrackUpdate(ctake, sTrack);
-            }
-            GUI.enabled = true;
-            return;
-        }
-        #endregion
         #region material inspector
         if(sTrack is AMMaterialTrack) {
             AMMaterialTrack aTrack = sTrack as AMMaterialTrack;
@@ -4251,19 +4204,6 @@ public class AMTimeline : EditorWindow {
                     amTrack.SetTarget(aData.target, ngo ? ngo.transform : null);
 
                     amTrack.updateCache(aData.target);
-                    EditorUtility.SetDirty(amTrack);
-                }
-            }
-        }
-        //Mate Animator
-        else if(amTrack is AMAnimatorMateTrack) {
-            AnimatorData anim = (AnimatorData)EditorGUI.ObjectField(rect, amTrack.GetTarget(aData.target), typeof(AnimatorData), true);
-            if(!amTrack.isTargetEqual(aData.target, anim)) {
-                if(anim && AnimEdit(anim).IsReferencedInTrack(aData))
-                    Debug.LogError("Animator: "+anim+" reference "+aData.name+" cannot add track.");
-                else {
-                    Undo.RecordObject(amTrack, "Set AnimatorData");
-                    amTrack.SetTarget(aData.target, anim ? anim.transform : null);
                     EditorUtility.SetDirty(amTrack);
                 }
             }
@@ -5300,7 +5240,7 @@ public class AMTimeline : EditorWindow {
             isPlaying = false;
             // select where stopped
             timelineSelectFrame(TakeEditCurrent().selectedTrack, aData.currentTake.selectedFrame);
-            aData.currentTake.stopAudio(aData.target);
+            aData.currentTake.Stop(aData.target);
             return;
         }
         // set preview player variables
@@ -5310,8 +5250,6 @@ public class AMTimeline : EditorWindow {
         isPlaying = true;
         playerCurLoop = 0;
         playerBackward = false;
-        // sample audio from current frame
-        aData.currentTake.sampleAudio(aData.target, (float)aData.currentTake.selectedFrame, playbackSpeedValue[aData.currentTake.playbackSpeedIndex], true);
     }
 
     #endregion
@@ -5447,12 +5385,6 @@ public class AMTimeline : EditorWindow {
             return string.Format("\"{0}\", {1}, {2}", tkey.valueString, tkey.valueInt, tkey.valueFloat);
         }
         #endregion
-        #region mate animator
-        else if(_key is AMAnimatorMateKey) {
-            AMAnimatorMateKey akey = _key as AMAnimatorMateKey;
-            return string.IsNullOrEmpty(akey.take) ? "" : string.Format("\"{0}\" ({1})", akey.take, akey.loop);
-        }
-        #endregion
         #region material
         else if(_key is AMMaterialKey) {
             int keyInd = _track.getKeyIndex(_key);
@@ -5502,7 +5434,6 @@ public class AMTimeline : EditorWindow {
         else if(_track is AMGOSetActiveTrack) return texIconProperty;
         else if(_track is AMCameraSwitcherTrack) return texIconCameraSwitcher;
         else if(_track is AMTriggerTrack) return texIconEvent;
-        else if(_track is AMAnimatorMateTrack) return texIconAnimation;
         else if(_track is AMMaterialTrack) return texIconMaterial;
 
         Debug.LogWarning("Animator: Icon texture not found for track " + _track.getTrackType());
@@ -5637,15 +5568,6 @@ public class AMTimeline : EditorWindow {
                 break;
             case (int)Track.Trigger:
                 _addTrack<AMTriggerTrack>(object_window, addCompUndo);
-                break;
-            case (int)Track.MateAnimator:
-                //make sure we are not referenced within this animator to avoid circular reference
-                AnimatorDataEdit dat = AnimEdit(object_window ? object_window.GetComponent<AnimatorData>() : null);
-                if(dat == null || !dat.IsReferencedInTrack(aData)) {
-                    _addTrack<AMAnimatorMateTrack>(object_window, addCompUndo);
-                }
-                else
-                    Debug.LogError("Mate Animator: "+dat+" references "+aData.name+" cannot add track.");
                 break;
             case (int)Track.Material:
                 _addTrack<AMMaterialTrack>(object_window, addCompUndo);
@@ -5940,17 +5862,6 @@ public class AMTimeline : EditorWindow {
         else if(amTrack is AMTriggerTrack) {
             (amTrack as AMTriggerTrack).addKey(aData.target, addCall, _frame);
         }
-        else if(amTrack is AMAnimatorMateTrack) {
-            // animation
-            AnimatorData anim = amTrack.GetTarget(aData.target) as AnimatorData;
-            // if missing object, return
-            if(!anim) {
-                showAlertMissingObjectType("AnimatorData");
-                return;
-            }
-            // add key to animation track
-            (amTrack as AMAnimatorMateTrack).addKey(aData.target, addCall, _frame);
-        }
         else if(amTrack is AMMaterialTrack) {
             Renderer render = amTrack.GetTarget(aData.target) as Renderer;
             if(!render) {
@@ -6053,7 +5964,6 @@ public class AMTimeline : EditorWindow {
         menu.AddItem(new GUIContent("GO Active"), false, addTrackFromMenu, (int)Track.GOSetActive);
         menu.AddItem(new GUIContent("Camera Switcher"), false, addTrackFromMenu, (int)Track.CameraSwitcher);
         menu.AddItem(new GUIContent("Trigger"), false, addTrackFromMenu, (int)Track.Trigger);
-        menu.AddItem(new GUIContent("Mate Animator"), false, addTrackFromMenu, (int)Track.MateAnimator);
     }
     void buildAddTrackMenu_Drag() {
         bool hasTransform = true;
@@ -6115,10 +6025,7 @@ public class AMTimeline : EditorWindow {
         // Camera Switcher
         if(hasCamera && !aData.currentTake.cameraSwitcher) menu_drag.AddItem(new GUIContent("Camera Switcher"), false, addTrackFromMenu, (int)Track.CameraSwitcher);
         else menu_drag.AddDisabledItem(new GUIContent("Camera Switcher"));
-        // Mate Animator
-        if(hasAnimatorData) menu_drag.AddItem(new GUIContent("Mate Animation"), false, addTrackFromMenu, (int)Track.MateAnimator);
-        else menu_drag.AddDisabledItem(new GUIContent("Mate Animation"));        
-
+        
         if(oData.quickAdd_Combos.Count > 0) {
             // multiple tracks
             menu_drag.AddSeparator("");
@@ -6145,8 +6052,6 @@ public class AMTimeline : EditorWindow {
             else if(!hasAudioSource && _track == (int)Track.Audio)
                 return false;
             else if(!hasCamera && _track == (int)Track.CameraSwitcher)
-                return false;
-            else if(!hasAnimatorData && _track == (int)Track.MateAnimator)
                 return false;
             else if(!hasRenderer && _track == (int)Track.Material)
                 return false;

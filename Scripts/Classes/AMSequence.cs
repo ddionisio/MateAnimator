@@ -131,19 +131,19 @@ public class AMSequence {
     }
 
     void OnSequenceComplete() {
-        mTake.stopAudio(mTarget);
+        mTake.PlayComplete(mTarget);
+
+        mTarget.SequenceComplete(this);
 
         if(!mSequence.autoKillOnComplete) {
             if(mTake.loopBackToFrame >= 0) {
                 if(mSequence.isReversed)
                     mSequence.Reverse();
-                mSequence.GoTo(((float)mTake.loopBackToFrame) / ((float)mTake.frameRate));
-                mSequence.Play();
+
+                (mTarget as AnimatorData).PlayAtFrame(mTake.name, mTake.loopBackToFrame);
                 return;
             }
         }
-                
-        mTarget.SequenceComplete(this);
     }
 
     void OnTrigger(TweenEvent dat) {

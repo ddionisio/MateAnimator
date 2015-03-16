@@ -48,7 +48,7 @@ public class AMAnimationTrack : AMTrack {
 		updateCache(itarget);
     }
     // preview a frame in the scene view
-    public override void previewFrame(AMITarget target, float frame, int frameRate, AMTrack extraTrack = null) {
+    public override void previewFrame(AMITarget target, float frame, int frameRate, bool play, float playSpeed) {
 		GameObject go = GetTarget(target) as GameObject;
 		if(!go || keys.Count == 0) return;
 

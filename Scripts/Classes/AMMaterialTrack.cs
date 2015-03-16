@@ -215,7 +215,7 @@ public class AMMaterialTrack : AMTrack {
         }
     }
 
-    public override void previewFrame(AMITarget target, float frame, int frameRate, AMTrack extraTrack = null) {
+    public override void previewFrame(AMITarget target, float frame, int frameRate, bool play, float playSpeed) {
         if(keys == null || keys.Count <= 0) {
             return;
         }
