@@ -463,8 +463,12 @@ public class AMTimeline : EditorWindow {
         // playmode callback
         EditorApplication.playmodeStateChanged += OnPlayMode;
 
-        // check for pro license
+        // check for pro license (no need for Unity 5)
+#if UNITY_5_0
+        AMTakeData.isProLicense = true;
+#else
         AMTakeData.isProLicense = PlayerSettings.advancedLicense;
+#endif
 
         //autoRepaintOnSceneChange = true;
 
@@ -1183,9 +1187,15 @@ public class AMTimeline : EditorWindow {
             cursorHand = false;
             cursorZoom = false;
         }
+#if UNITY_5_0
         if(Cursor.visible != showCursor) {
             Cursor.visible = showCursor;
         }
+#else
+        if(Screen.showCursor != showCursor) {
+            Screen.showCursor = showCursor;
+        }
+#endif
         if(isRenamingTake || isRenamingTrack != -1 || isRenamingGroup < 0) EditorGUIUtility.AddCursorRect(rectWindow, MouseCursor.Text);
         else if(dragType == (int)DragType.TimeScrub || dragType == (int)DragType.FrameScrub || dragType == (int)DragType.MoveSelection) EditorGUIUtility.AddCursorRect(rectWindow, MouseCursor.SlideArrow);
         else if(dragType == (int)DragType.ResizeTrack || dragType == (int)DragType.ResizeAction || dragType == (int)DragType.ResizeHScrollbarLeft || dragType == (int)DragType.ResizeHScrollbarRight) EditorGUIUtility.AddCursorRect(rectWindow, MouseCursor.ResizeHorizontal);
