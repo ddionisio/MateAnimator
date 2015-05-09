@@ -338,11 +338,12 @@ public class AMCameraSwitcherTrack : AMTrack {
         List<GameObject> lsFlagToKeep = new List<GameObject>();
         for(int i=0; i<oldReferences.Count; i++) {
             foreach(AMCameraSwitcherKey key in keys) {
-                if(key.type == 0 && key.camera && oldReferences[i] == key.camera.gameObject) {
+                Camera keyCamera = key.GetComponent<Camera>();
+                if(key.type == 0 && keyCamera && oldReferences[i] == keyCamera.gameObject) {
                     Camera _camera = (Camera)newReferences[i].GetComponent(typeof(Camera));
                     // missing camera
                     if(!_camera) {
-                        Debug.LogWarning("Animator: Camera Switcher component 'Camera' not found on new reference for GameObject '"+key.camera.gameObject.name+"'. Duplicate not replaced.");
+                        Debug.LogWarning("Animator: Camera Switcher component 'Camera' not found on new reference for GameObject '"+keyCamera.name+"'. Duplicate not replaced.");
                         lsFlagToKeep.Add(oldReferences[i]);
                         continue;
                     }

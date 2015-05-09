@@ -49,8 +49,8 @@ public class AMKey : MonoBehaviour {
         Debug.LogError("Animator: No override for CopyTo()");
     }
 
-	public virtual string GetRequiredComponent() {
-		return "";
+	public virtual System.Type GetRequiredComponent() {
+		return null;
 	}
 
     /// <summary>

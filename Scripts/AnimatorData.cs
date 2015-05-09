@@ -560,20 +560,20 @@ public class AnimatorData : MonoBehaviour, AMITarget, AMIMeta {
                 foreach(AMTrack track in take.trackValues) {
                     Transform t = AMUtil.GetTarget(transform, track.targetPath);
 
-                    string compName = track.GetRequiredComponent();
-                    if(!string.IsNullOrEmpty(compName)) {
-                        Component comp = t.gameObject.GetComponent(compName);
+                    System.Type compType = track.GetRequiredComponent();
+                    if(compType != null) {
+                        Component comp = t.gameObject.GetComponent(compType);
                         if(comp == null) {
-                            t.gameObject.AddComponent(compName);
+                            t.gameObject.AddComponent(compType);
                         }
                     }
 
                     foreach(AMKey key in track.keys) {
-                        compName = key.GetRequiredComponent();
-                        if(!string.IsNullOrEmpty(compName)) {
-                            Component comp = t.gameObject.GetComponent(compName);
+                        compType = key.GetRequiredComponent();
+                        if(compType != null) {
+                            Component comp = t.gameObject.GetComponent(compType);
                             if(comp == null) {
-                                t.gameObject.AddComponent(compName);
+                                t.gameObject.AddComponent(compType);
                             }
                         }
                     }

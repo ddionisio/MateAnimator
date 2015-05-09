@@ -98,12 +98,12 @@ public class AMCameraSwitcherKey : AMKey {
             if(!string.IsNullOrEmpty(_cameraPath)) {
                 Transform t = itarget.GetCache(_cameraPath);
                 if(t)
-                    return t.camera;
+                    return t.GetComponent<Camera>();
                 else {
                     t = AMUtil.GetTarget(itarget.root, _cameraPath);
                     itarget.SetCache(_cameraPath, t);
                     if(t)
-                        return t.camera;
+                        return t.GetComponent<Camera>();
                 }
             }
 
@@ -146,12 +146,12 @@ public class AMCameraSwitcherKey : AMKey {
             if(!string.IsNullOrEmpty(_cameraEndPath)) {
                 Transform t = itarget.GetCache(_cameraEndPath);
                 if(t)
-                    return t.camera;
+                    return t.GetComponent<Camera>();
                 else {
                     t = AMUtil.GetTarget(itarget.root, _cameraEndPath);
                     itarget.SetCache(_cameraEndPath, t);
                     if(t)
-                        return t.camera;
+                        return t.GetComponent<Camera>();
                 }
             }
 
@@ -191,7 +191,7 @@ public class AMCameraSwitcherKey : AMKey {
                     Transform t = itarget.GetCache(_cameraPath);
                     if(!t)
                         t = AMUtil.GetTarget(itarget.root, _cameraPath);
-                    _camera = t ? t.camera : null;
+                    _camera = t ? t.GetComponent<Camera>() : null;
                 }
             }
 
@@ -200,7 +200,7 @@ public class AMCameraSwitcherKey : AMKey {
                     Transform t = itarget.GetCache(_cameraEndPath);
                     if(!t)
                         t = AMUtil.GetTarget(itarget.root, _cameraEndPath);
-                    _cameraEnd = t ? t.camera : null;
+                    _cameraEnd = t ? t.GetComponent<Camera>() : null;
                 }
             }
 

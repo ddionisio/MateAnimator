@@ -22,8 +22,8 @@ public class AMAnimationTrack : AMTrack {
 		return targetGO ? targetGO : obj;
 	}
 
-	public override string GetRequiredComponent() {
-		return "Animation";
+	public override System.Type GetRequiredComponent() {
+		return typeof(Animation);
 	}
 
     // add a new key
@@ -52,10 +52,12 @@ public class AMAnimationTrack : AMTrack {
 		GameObject go = GetTarget(target) as GameObject;
 		if(!go || keys.Count == 0) return;
 
+        Animation anim = go.GetComponent<Animation>();
+
         if(frame < keys[0].frame) {
             AMAnimationKey amKey = keys[0] as AMAnimationKey;
             if(amKey.amClip)
-                AMUtil.SampleAnimation(go.animation, amKey.amClip.name, amKey.wrapMode, amKey.crossfade ? 0.0f : 1.0f, 0.0f);
+                AMUtil.SampleAnimation(anim, amKey.amClip.name, amKey.wrapMode, amKey.crossfade ? 0.0f : 1.0f, 0.0f);
             return;
         }
 
@@ -70,14 +72,14 @@ public class AMAnimationTrack : AMTrack {
                             AMAnimationKey amPrevKey = keys[i - 1] as AMAnimationKey;
                             if(amPrevKey.amClip) {
                                 float prevT = (frame - (float)amPrevKey.frame) / (float)frameRate;
-                                AMUtil.SampleAnimationCrossFade(go.animation, amKey.crossfadeTime, amPrevKey.amClip.name, amPrevKey.wrapMode, prevT, amKey.amClip.name, amKey.wrapMode, t);
+                                AMUtil.SampleAnimationCrossFade(anim, amKey.crossfadeTime, amPrevKey.amClip.name, amPrevKey.wrapMode, prevT, amKey.amClip.name, amKey.wrapMode, t);
                             }
                         }
                         else
-                            AMUtil.SampleAnimationFadeIn(go.animation, amKey.amClip.name, amKey.wrapMode, amKey.crossfadeTime, t);
+                            AMUtil.SampleAnimationFadeIn(anim, amKey.amClip.name, amKey.wrapMode, amKey.crossfadeTime, t);
                     }
                     else
-                        AMUtil.SampleAnimation(go.animation, amKey.amClip.name, amKey.wrapMode, 1.0f, t);
+                        AMUtil.SampleAnimation(anim, amKey.amClip.name, amKey.wrapMode, 1.0f, t);
                 }
                 break;
             }

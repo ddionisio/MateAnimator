@@ -1183,8 +1183,8 @@ public class AMTimeline : EditorWindow {
             cursorHand = false;
             cursorZoom = false;
         }
-        if(Screen.showCursor != showCursor) {
-            Screen.showCursor = showCursor;
+        if(Cursor.visible != showCursor) {
+            Cursor.visible = showCursor;
         }
         if(isRenamingTake || isRenamingTrack != -1 || isRenamingGroup < 0) EditorGUIUtility.AddCursorRect(rectWindow, MouseCursor.Text);
         else if(dragType == (int)DragType.TimeScrub || dragType == (int)DragType.FrameScrub || dragType == (int)DragType.MoveSelection) EditorGUIUtility.AddCursorRect(rectWindow, MouseCursor.SlideArrow);
@@ -4140,7 +4140,7 @@ public class AMTimeline : EditorWindow {
         // animation/go active
         else if(amTrack is AMAnimationTrack || amTrack is AMGOSetActiveTrack) {
             GameObject nobj = (GameObject)EditorGUI.ObjectField(rect, amTrack.GetTarget(aData.target), typeof(GameObject), true);
-            if(nobj && amTrack is AMAnimationTrack && nobj.animation == null) {
+            if(nobj && amTrack is AMAnimationTrack && nobj.GetComponent<Animation>() == null) {
                 EditorUtility.DisplayDialog("No Animation Component", "You must add an Animation component to the GameObject before you can use it in an Animation Track.", "Okay");
             }
             else if(!amTrack.isTargetEqual(aData.target, nobj)) {
@@ -5797,7 +5797,7 @@ public class AMTimeline : EditorWindow {
                 return;
             }
             // add key to animation track
-            (amTrack as AMAnimationTrack).addKey(aData.target, addCall, _frame, go.animation.clip, WrapMode.Once);
+            (amTrack as AMAnimationTrack).addKey(aData.target, addCall, _frame, go.GetComponent<Animation>().clip, WrapMode.Once);
         }
         else if(amTrack is AMAudioTrack) {
             // audio

@@ -100,8 +100,8 @@ public class AMMaterialTrack : AMTrack {
         return _matInd != -1 && !string.IsNullOrEmpty(_property) && _propertyType != ValueType.None ? _property : "Not Set";
     }
 
-    public override string GetRequiredComponent() {
-        return "Renderer";
+    public override System.Type GetRequiredComponent() {
+        return typeof(Renderer);
     }
 
     public AMMaterialKey addKey(AMITarget target, OnAddKey addCall, int _frame) {

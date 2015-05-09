@@ -78,8 +78,8 @@ public abstract class AMTrack : MonoBehaviour {
 		return ret;
 	}
 
-	public virtual string GetRequiredComponent() {
-		return "";
+	public virtual System.Type GetRequiredComponent() {
+		return null;
 	}
 
     /// <summary>
@@ -88,11 +88,13 @@ public abstract class AMTrack : MonoBehaviour {
     public bool VerifyComponents(GameObject go) {
         if(!go) return false;
 
-        if(go.GetComponent(GetRequiredComponent()) == null)
+        System.Type compType = GetRequiredComponent();
+        if(compType != null && go.GetComponent(compType) == null)
             return false;
 
         foreach(AMKey key in keys) {
-            if(go.GetComponent(key.GetRequiredComponent()) == null)
+            compType = key.GetRequiredComponent();
+            if(compType != null && go.GetComponent(compType) == null)
                 return false;
         }
 

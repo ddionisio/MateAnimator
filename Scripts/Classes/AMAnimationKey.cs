@@ -58,7 +58,7 @@ public class AMAnimationKey : AMKey {
     public override void build(AMSequence seq, AMTrack track, int index, UnityEngine.Object target) {
         int frameRate = seq.take.frameRate;
         float waitTime = getWaitTime(frameRate, 0.0f);
-        Animation anim = (target as GameObject).animation;
+        Animation anim = (target as GameObject).GetComponent<Animation>();
 
         float duration = wrapMode == WrapMode.Once ? amClip.length : ((seq.take.getLastFrame()-frame)+1)/(float)frameRate;
 

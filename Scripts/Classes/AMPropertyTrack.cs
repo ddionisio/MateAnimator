@@ -22,19 +22,19 @@ public class AMPropertyTrack : AMTrack {
         Vector4 = 10,
         Quaternion = 11,
 
-		Bool = 12,
-		Sprite = 13,
+        Bool = 12,
+        Sprite = 13,
         Enum = 14,
     }
     public int valueType;
 
-	[SerializeField]
+    [SerializeField]
     GameObject obj;
-	[SerializeField]
+    [SerializeField]
     Component component;
-	[SerializeField]
-	string componentName;
-	[SerializeField]
+    [SerializeField]
+    string componentName;
+    [SerializeField]
     string fieldName;
     [SerializeField]
     string propertyName;
@@ -45,36 +45,36 @@ public class AMPropertyTrack : AMTrack {
     private PropertyInfo cachedPropertyInfo;
     private bool isCached;
 
-	protected override void SetSerializeObject(UnityEngine.Object obj) {
-		this.obj = obj as GameObject;
+    protected override void SetSerializeObject(UnityEngine.Object obj) {
+        this.obj = obj as GameObject;
 
         cachedFieldInfo = null;
         cachedPropertyInfo = null;
         isCached = false;
-	}
-	
-	protected override UnityEngine.Object GetSerializeObject(GameObject targetGO) {
-		return targetGO ? targetGO : obj;
-	}
+    }
 
-	Component GetTargetComp(AMITarget target) {
-		Component comp;
-		if(target.isMeta) {
-			component = null;
-			GameObject go = GetTarget(target) as GameObject;
-			comp = go ? go.GetComponent(componentName) : null;
-		}
-		else {
-			comp = component;
-		}
-		return comp;
-	}
+    protected override UnityEngine.Object GetSerializeObject(GameObject targetGO) {
+        return targetGO ? targetGO : obj;
+    }
+
+    Component GetTargetComp(AMITarget target) {
+        Component comp;
+        if(target.isMeta) {
+            component = null;
+            GameObject go = GetTarget(target) as GameObject;
+            comp = go ? go.GetComponent(componentName) : null;
+        }
+        else {
+            comp = component;
+        }
+        return comp;
+    }
 
     public Component GetTargetComp(GameObject targetGO) {
         return component ? component : targetGO.GetComponent(componentName);
     }
 
-	public void RefreshData(Component comp) {
+    public void RefreshData(Component comp) {
         Type t = comp.GetType();
         if(!string.IsNullOrEmpty(propertyName)) {
             cachedPropertyInfo = t.GetProperty(propertyName);
@@ -85,7 +85,7 @@ public class AMPropertyTrack : AMTrack {
             cachedFieldInfo = t.GetField(fieldName);
         }
         isCached = true;
-	}
+    }
     public Type GetCachedInfoType(AMITarget target) {
         if(!isCached)
             RefreshData(GetTargetComp(target));
@@ -131,22 +131,22 @@ public class AMPropertyTrack : AMTrack {
                 cachedPropertyInfo.SetValue(comp, val, null);
         }
     }
-	/// <summary>
-	/// Call this to reset info, make sure this track is empty, so clear the keys first!
-	/// </summary>
-	public void clearInfo() {
-		fieldName = "";
+    /// <summary>
+    /// Call this to reset info, make sure this track is empty, so clear the keys first!
+    /// </summary>
+    public void clearInfo() {
+        fieldName = "";
         propertyName = "";
         cachedFieldInfo = null;
         cachedPropertyInfo = null;
         isCached = false;
-	}
-	public override bool canTween {
-		get {
+    }
+    public override bool canTween {
+        get {
             ValueType vt = (ValueType)valueType;
             return !(vt == ValueType.Bool || vt == ValueType.String || vt == ValueType.Sprite || vt == ValueType.Enum);
-		}
-	}
+        }
+    }
     public string getMemberName() {
         if(!string.IsNullOrEmpty(fieldName)) return fieldName;
         else if(!string.IsNullOrEmpty(propertyName)) return propertyName;
@@ -157,9 +157,27 @@ public class AMPropertyTrack : AMTrack {
         else if(!string.IsNullOrEmpty(propertyName)) return propertyName;
         return "Not Set";
     }
-	public override string GetRequiredComponent() {
-		return componentName;
-	}
+    public override System.Type GetRequiredComponent() {
+        if(string.IsNullOrEmpty(componentName)) return null;
+
+        System.Type type = System.Type.GetType(componentName);
+        if(type == null) {
+            int endInd = componentName.IndexOf('.');
+            if(endInd != -1) {
+                // Get the name of the assembly (Assumption is that we are using
+                // fully-qualified type names)
+                var assemblyName = componentName.Substring(0, endInd);
+
+                // Attempt to load the indicated Assembly
+                var assembly = System.Reflection.Assembly.Load(assemblyName);
+                if(assembly != null)
+                    // Ask that assembly to return the proper Type
+                    type = assembly.GetType(componentName);
+            }
+        }
+
+        return type;
+    }
     public string getMemberInfoTypeName() {
         if(!string.IsNullOrEmpty(propertyName))
             return "PropertyInfo";
@@ -173,8 +191,8 @@ public class AMPropertyTrack : AMTrack {
 
     // add key
     public AMPropertyKey addKey(AMITarget target, OnAddKey addCall, int _frame) {
-		Component comp = GetTargetComp(target);
-		RefreshData(comp);
+        Component comp = GetTargetComp(target);
+        RefreshData(comp);
 
         AMPropertyKey k = null;
 
@@ -223,27 +241,27 @@ public class AMPropertyTrack : AMTrack {
         updateCache(target);
         return k;
     }
-    
-	public bool setComponent(AMITarget target, Component component) {
-		if(target.isMeta) {
-			string cname = component.GetType().Name;
-			this.component = null;
-			if(componentName != cname) {
-				componentName = cname;
-				return true;
-			}
-		}
-		else {
-			if(this.component != component) {
-				this.component = component;
-				componentName = component.GetType().Name;
-				return true;
-			}
-		}
+
+    public bool setComponent(AMITarget target, Component component) {
+        if(target.isMeta) {
+            string cname = component.GetType().Name;
+            this.component = null;
+            if(componentName != cname) {
+                componentName = cname;
+                return true;
+            }
+        }
+        else {
+            if(this.component != component) {
+                this.component = component;
+                componentName = component.GetType().Name;
+                return true;
+            }
+        }
         return false;
     }
     public bool setPropertyInfo(PropertyInfo propertyInfo) {
-		string n = propertyInfo.Name;
+        string n = propertyInfo.Name;
         if(propertyName != n) {
             // set the property value type
             propertyName = n;
@@ -257,7 +275,7 @@ public class AMPropertyTrack : AMTrack {
         return false;
     }
     public bool setFieldInfo(FieldInfo fieldInfo) {
-		string n = fieldInfo.Name;
+        string n = fieldInfo.Name;
         if(fieldName != n) {
             fieldName = n;
             cachedFieldInfo = fieldInfo;
@@ -269,32 +287,32 @@ public class AMPropertyTrack : AMTrack {
         }
         return false;
     }
-	public override void maintainTrack(AMITarget itarget) {
-		base.maintainTrack(itarget);
+    public override void maintainTrack(AMITarget itarget) {
+        base.maintainTrack(itarget);
 
-		if(string.IsNullOrEmpty(componentName)) {
-			if(component)
-				componentName = component.GetType().Name;
-		}
+        if(string.IsNullOrEmpty(componentName)) {
+            if(component)
+                componentName = component.GetType().Name;
+        }
 
-		if(itarget.isMeta) {
-			component = null;
-		}
-		else if(!component && !string.IsNullOrEmpty(componentName)) {
-			GameObject go = GetTarget(itarget) as GameObject;
-			if(go)
-				component = go.GetComponent(componentName);
-		}
-	}
+        if(itarget.isMeta) {
+            component = null;
+        }
+        else if(!component && !string.IsNullOrEmpty(componentName)) {
+            GameObject go = GetTarget(itarget) as GameObject;
+            if(go)
+                component = go.GetComponent(componentName);
+        }
+    }
     // update cache (optimized)
     public override void updateCache(AMITarget target) {
         base.updateCache(target);
 
-		Component comp = GetTargetComp(target);
+        Component comp = GetTargetComp(target);
         if(comp == null)
             return;
 
-		RefreshData(comp);
+        RefreshData(comp);
 
         for(int i = 0; i < keys.Count; i++) {
             AMPropertyKey key = keys[i] as AMPropertyKey;
@@ -311,8 +329,8 @@ public class AMPropertyTrack : AMTrack {
                 if(!canTween || (i > 0 && !keys[i-1].canTween))
                     key.interp = (int)AMKey.Interpolation.None;
 
-				key.endFrame = -1;
-			}
+                key.endFrame = -1;
+            }
 
             Type _type = GetCachedInfoType();
             if(_type == null) {
@@ -321,7 +339,7 @@ public class AMPropertyTrack : AMTrack {
             }
         }
     }
-        
+
     public static bool isNumeric(Type t) {
         if(t == typeof(int) || t == typeof(long) || t == typeof(float) || t == typeof(double))
             return true;
@@ -329,7 +347,7 @@ public class AMPropertyTrack : AMTrack {
     }
 
     public static bool isValidType(Type t) {
-		if(isNumeric(t) || t == typeof(bool) || t == typeof(string) || t == typeof(Vector2) || t == typeof(Vector3) || t == typeof(Color) || t == typeof(Rect) || t == typeof(Vector4) || t == typeof(Quaternion) || t == typeof(Sprite) || t.IsEnum)
+        if(isNumeric(t) || t == typeof(bool) || t == typeof(string) || t == typeof(Vector2) || t == typeof(Vector3) || t == typeof(Color) || t == typeof(Rect) || t == typeof(Vector4) || t == typeof(Quaternion) || t == typeof(Sprite) || t.IsEnum)
             return true;
         return false;
     }
@@ -437,7 +455,7 @@ public class AMPropertyTrack : AMTrack {
             if(framePositionInAction < 0f) framePositionInAction = 0f;
 
             float t;
-            
+
             if(key.hasCustomEase()) {
                 t = AMUtil.EaseCustom(0.0f, 1.0f, framePositionInAction / key.getNumberOfFrames(frameRate), key.easeCurve);
             }
@@ -498,13 +516,13 @@ public class AMPropertyTrack : AMTrack {
         }
     }
     public void refreshTransform(GameObject targetGO) {
-		if(Application.isPlaying || !targetGO) return;
-		Vector3 p = targetGO.transform.position;
-		targetGO.transform.position = p;
+        if(Application.isPlaying || !targetGO) return;
+        Vector3 p = targetGO.transform.position;
+        targetGO.transform.position = p;
     }
 
     public string getComponentName() {
-		return componentName;
+        return componentName;
     }
     public string getValueInitialization(int codeLanguage, string varName) {
         string s = "";
@@ -519,46 +537,46 @@ public class AMPropertyTrack : AMTrack {
         return false;
     }
     public bool hasSamePropertyAs(AMITarget target, AMPropertyTrack _track) {
-		if(_track.GetTarget(target) == GetTarget(target) && _track.GetTargetComp(target) == GetTargetComp(target) && _track.getTrackType() == getTrackType())
+        if(_track.GetTarget(target) == GetTarget(target) && _track.GetTargetComp(target) == GetTargetComp(target) && _track.getTrackType() == getTrackType())
             return true;
         return false;
     }
 
-	public override AnimatorTimeline.JSONInit getJSONInit(AMITarget target) {
+    public override AnimatorTimeline.JSONInit getJSONInit(AMITarget target) {
         Debug.LogError("need implement");
         return null;
     }
 
     public override List<GameObject> getDependencies(AMITarget target) {
-		GameObject go = GetTarget(target) as GameObject;
+        GameObject go = GetTarget(target) as GameObject;
         List<GameObject> ls = new List<GameObject>();
-		if(go) ls.Add(go);
+        if(go) ls.Add(go);
         return ls;
     }
 
-	public override List<GameObject> updateDependencies(AMITarget target, List<GameObject> newReferences, List<GameObject> oldReferences) {
-		GameObject go = GetTarget(target) as GameObject;
+    public override List<GameObject> updateDependencies(AMITarget target, List<GameObject> newReferences, List<GameObject> oldReferences) {
+        GameObject go = GetTarget(target) as GameObject;
         List<GameObject> lsFlagToKeep = new List<GameObject>();
-		if(!go) return lsFlagToKeep;
+        if(!go) return lsFlagToKeep;
         for(int i = 0; i < oldReferences.Count; i++) {
-			if(oldReferences[i] == go) {
+            if(oldReferences[i] == go) {
                 Component _component = newReferences[i].GetComponent(componentName);
 
                 // missing component
                 if(!_component) {
-					Debug.LogWarning("Animator: Property Track component '" + componentName + "' not found on new reference for GameObject '" + go.name + "'. Duplicate not replaced.");
+                    Debug.LogWarning("Animator: Property Track component '" + componentName + "' not found on new reference for GameObject '" + go.name + "'. Duplicate not replaced.");
                     lsFlagToKeep.Add(oldReferences[i]);
                     return lsFlagToKeep;
                 }
                 // missing property
                 if(_component.GetType().GetProperty(fieldName) == null) {
-					Debug.LogWarning("Animator: Property Track property '" + fieldName + "' not found on new reference for GameObject '" + go.name + "'. Duplicate not replaced.");
+                    Debug.LogWarning("Animator: Property Track property '" + fieldName + "' not found on new reference for GameObject '" + go.name + "'. Duplicate not replaced.");
                     lsFlagToKeep.Add(oldReferences[i]);
                     return lsFlagToKeep;
                 }
 
-				SetTarget(target, newReferences[i].transform);
-				setComponent(target, _component);
+                SetTarget(target, newReferences[i].transform);
+                setComponent(target, _component);
                 break;
             }
         }
@@ -570,7 +588,7 @@ public class AMPropertyTrack : AMTrack {
         ntrack.valueType = valueType;
         ntrack.obj = obj;
         ntrack.component = component;
-		ntrack.componentName = componentName;
+        ntrack.componentName = componentName;
         ntrack.fieldName = fieldName;
         ntrack.propertyName = propertyName;
     }

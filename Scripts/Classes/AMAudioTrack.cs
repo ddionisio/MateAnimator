@@ -21,15 +21,15 @@ public class AMAudioTrack : AMTrack {
     }
 
     protected override UnityEngine.Object GetSerializeObject(GameObject targetGO) {
-        return targetGO ? targetGO.audio : audioSource;
+        return targetGO ? targetGO.GetComponent<AudioSource>() : audioSource;
     }
 
     public override string getTrackType() {
         return "Audio";
     }
 
-    public override string GetRequiredComponent() {
-        return "AudioSource";
+    public override System.Type GetRequiredComponent() {
+        return typeof(AudioSource);
     }
 
     public override void updateCache(AMITarget target) {

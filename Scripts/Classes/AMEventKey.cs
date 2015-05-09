@@ -44,8 +44,26 @@ public class AMEventKey : AMKey {
         return true;
     }
 
-	public override string GetRequiredComponent() {
-		return componentName;
+    public override System.Type GetRequiredComponent() {
+        if(string.IsNullOrEmpty(componentName)) return null;
+
+        System.Type type = System.Type.GetType(componentName);
+        if(type == null) {
+            int endInd = componentName.IndexOf('.');
+            if(endInd != -1) {
+                // Get the name of the assembly (Assumption is that we are using
+                // fully-qualified type names)
+                var assemblyName = componentName.Substring(0, endInd);
+
+                // Attempt to load the indicated Assembly
+                var assembly = System.Reflection.Assembly.Load(assemblyName);
+                if(assembly != null)
+                    // Ask that assembly to return the proper Type
+                    type = assembly.GetType(componentName);
+            }
+        }
+
+        return type;
 	}
 
 	public override void maintainKey(AMITarget itarget, UnityEngine.Object targetObj) {

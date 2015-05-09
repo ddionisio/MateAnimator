@@ -21,6 +21,8 @@ Import/Export, Code Generator are currently disabled.
 
 Updates
 =======
+### Update 4 ###
+* Unity 5 compatibility.
 ### Update 3 ###
 * Added Rotation Euler.  This will allow you to create spin animations.  Includes exclusive rotation for x, y, or z (be careful of Gimbal-lock!).
 * Added Material track.  Now you can animate any properties you specify in the shader used by the material.  This requires a GameObject with a Renderer component.  You can also use this to override the material.  For now there is no preview during editing.
@@ -53,7 +55,6 @@ TODO
 * Some glitches with mouse events.
 * Refactor the entire UI code...(might as well create a new project)
 * Camera transition fixes (too glitchy, maybe do something like UE4's director)
-* Upgrade to Unity 5
 
 DEBUG
 =====
