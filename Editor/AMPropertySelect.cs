@@ -35,7 +35,11 @@ public class AMPropertySelect : EditorWindow {
 
     void OnEnable() {
         window = this;
+#if UNITY_5
         titleContent = new GUIContent("Property");
+#else
+        title = "Property";
+#endif
         this.minSize = new Vector2(273f, 102f);
         loadAnimatorData();
         scrollView = new Vector2(0f, 0f);

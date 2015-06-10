@@ -37,7 +37,11 @@ public class AMTakeExport : EditorWindow {
 
     void OnEnable() {
         window = this;
+#if UNITY_5
         titleContent = new GUIContent("Export Take" + (take == null ? "s" : ""));
+#else
+        title = "Export Take" + (take == null ? "s" : "");
+#endif
         minSize = new Vector2(190f, 120f);
     }
 

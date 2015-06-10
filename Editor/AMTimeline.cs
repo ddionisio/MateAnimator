@@ -437,8 +437,11 @@ public class AMTimeline : EditorWindow {
         EditDataCleanUp();
 
         LoadEditorTextures();
-
+#if UNITY_5
         titleContent = new GUIContent("Cutscene Editor");
+#else
+        title = "Cutscene Editor";
+#endif
         minSize = new Vector2(width_track + width_playback_controls + width_inspector_open + 70f, 190f);
         wantsMouseMove = true;
         window = this;

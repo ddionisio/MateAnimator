@@ -33,7 +33,11 @@ public class AMSettings : EditorWindow {
 
     void OnEnable() {
         window = this;
+#if UNITY_5
         titleContent = new GUIContent("Settings");
+#else
+        title = "Settings";
+#endif
         minSize = new Vector2(280f, 190f);
         //maxSize = this.minSize;
 

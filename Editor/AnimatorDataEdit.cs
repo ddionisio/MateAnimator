@@ -44,7 +44,11 @@ public class AnimatorDataEdit {
         return behaviours.ToArray();
     }
 
+#if UNITY_5
     [DrawGizmo(GizmoType.Active | GizmoType.NotInSelectionHierarchy | GizmoType.InSelectionHierarchy)]
+#else
+    [DrawGizmo(GizmoType.Active | GizmoType.NotSelected | GizmoType.SelectedOrChild)]
+#endif
     static void DrawGizmos(AnimatorData aData, GizmoType gizmoType) {
         //check if it's the one opened
         if(AMTimeline.window != null && AMTimeline.window.aData != null && AMTimeline.window.aData.IsDataMatch(aData)) {
