@@ -45,9 +45,9 @@ public class AMOptions : EditorWindow {
 
     void OnEnable() {
         window = this;
-        this.title = "Options";
-        this.minSize = new Vector2(545f, 365f);
-        this.maxSize = new Vector2(1000f, this.minSize.y);
+        titleContent = new GUIContent("Options");
+        minSize = new Vector2(545f, 365f);
+        maxSize = new Vector2(1000f, this.minSize.y);
 
         loadAnimatorData();
         oData = AMOptionsFile.loadFile();

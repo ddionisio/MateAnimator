@@ -93,9 +93,7 @@ public class AMCameraSwitcherTrack : AMTrack {
     }
 
     public override void previewFrame(AMITarget itarget, float frame, int frameRate, bool play, float playSpeed) {
-        bool isPreview = !Application.isPlaying;
-
-        AMCameraFade.getCameraFade(isPreview);
+        AMCameraFade.getCameraFade();
 
         for(int i = 0; i < keys.Count; i++) {
             AMCameraSwitcherKey key = keys[i] as AMCameraSwitcherKey;
@@ -108,7 +106,7 @@ public class AMCameraSwitcherTrack : AMTrack {
                 if(key.type == 0)
                     AMUtil.SetTopCamera(key.getCamera(itarget), GetCachedCameras(itarget));
                 else
-                    showColor(key.color, isPreview);
+                    showColor(key.color);
                 return;
             }
             //between first and last frame
@@ -120,11 +118,11 @@ public class AMCameraSwitcherTrack : AMTrack {
                     if(key.type == 0)
                         AMUtil.SetTopCamera(key.getCamera(itarget), GetCachedCameras(itarget));
                     else
-                        showColor(key.color, isPreview);
+                        showColor(key.color);
                 }
                 else {
                     AMCameraFade.clearRenderTexture();
-                    previewCameraFade(itarget, frame, key, isPreview);
+                    previewCameraFade(itarget, frame, key);
                 }
                 return;
             }
@@ -144,7 +142,7 @@ public class AMCameraSwitcherTrack : AMTrack {
         return lsCameras.ToArray();
     }
         
-    private void previewCameraFade(AMITarget itarget, float frame, AMCameraSwitcherKey action, bool isPreview) {
+    private void previewCameraFade(AMITarget itarget, float frame, AMCameraSwitcherKey action) {
         // if transition is None, show end camera / color
         if(action.cameraFadeType == (int)AMCameraSwitcherKey.Fade.None) {
             // reset camera fade if visible
@@ -155,19 +153,18 @@ public class AMCameraSwitcherTrack : AMTrack {
                 AMCameraFade.reset();
             }
             else {
-                showColor(action.colorEnd, isPreview);
+                showColor(action.colorEnd);
             }
             return;
         }
         // Get camerafade
-        AMCameraFade cf = AMCameraFade.getCameraFade(isPreview);
-        if(Application.isPlaying) cf.keepAlivePreview = true;
+        AMCameraFade cf = AMCameraFade.getCameraFade();
         cf.isReset = false;
         bool isReversed = action.isReversed();
         int firstTargetType = (isReversed ? action.typeEnd : action.type);
         int secondTargetType = (isReversed ? action.type : action.typeEnd);
         // Set render texture or colors if render texture is used
-        setRenderTexture(itarget, cf, frame, firstTargetType, secondTargetType, isReversed, action, isPreview);
+        setRenderTexture(itarget, cf, frame, firstTargetType, secondTargetType, isReversed, action);
         setColors(cf, firstTargetType, secondTargetType, isReversed, action);
 
         if(cf.irisShape != action.irisShape) cf.irisShape = action.irisShape;
@@ -219,7 +216,7 @@ public class AMCameraSwitcherTrack : AMTrack {
     }
     // set render texture or colors if render texture is used (stills handled in AMTake)
     private void setRenderTexture(AMITarget itarget,  AMCameraFade cf, float frame, int firstTargetType, int secondTargetType, bool isReversed, 
-        AMCameraSwitcherKey action, bool isPreview) {
+        AMCameraSwitcherKey action) {
 
 
         Camera firstCamera = (isReversed ? action.getCameraEnd(itarget) : action.getCamera(itarget));
@@ -247,8 +244,8 @@ public class AMCameraSwitcherTrack : AMTrack {
                     cf.useRenderTexture = false;
                     // show place-holder if non-pro
                     cf.colorTex = Color.white;
-                    cf.tex2d = AMCameraFade.placeholderTexture;
                     cf.hasColorTex = false;
+                    cf.clearScreenTex();
                     cf.placeholder = true;
                 }
             }
@@ -296,8 +293,8 @@ public class AMCameraSwitcherTrack : AMTrack {
         return new cfTuple(0, 0, 0, null, null, false);
     }
 
-    private void showColor(Color color, bool isPreview) {
-        AMCameraFade cf = AMCameraFade.getCameraFade(isPreview);
+    private void showColor(Color color) {
+        AMCameraFade cf = AMCameraFade.getCameraFade();
         bool shouldRepaint = false;
         if(!cf.hasColorTex || cf.colorTex != color) {
             cf.colorTex = color;

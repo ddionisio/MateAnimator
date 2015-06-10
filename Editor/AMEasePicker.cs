@@ -139,7 +139,7 @@ public class AMEasePicker : EditorWindow {
 
 	
 	void OnGUI() {
-		this.title = "Ease: "+(oData.time_numbering ? AMTimeline.frameToTime(key.frame,(float)aData.currentTake.frameRate)+" s" : key.frame.ToString());
+        titleContent = new GUIContent("Ease: "+(oData.time_numbering ? AMTimeline.frameToTime(key.frame, (float)aData.currentTake.frameRate)+" s" : key.frame.ToString()));
 		AMTimeline.loadSkin(ref skin, ref cachedSkinName, position);
 		bool updateEasingCurve = false;
 		

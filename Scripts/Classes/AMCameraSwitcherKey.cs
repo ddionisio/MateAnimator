@@ -334,8 +334,7 @@ public class AMCameraSwitcherKey : AMKey {
             else {
                 AMUtil.SetTopCamera(firstCamera, allCams);
                 firstCamera.Render();
-                cf.clearTexture2D();
-                cf.tex2d = GetScreenTexture();
+                cf.refreshScreenTex();
                 cf.useRenderTexture = false;
                 cf.hasColorTex = false;
             }
@@ -369,13 +368,6 @@ public class AMCameraSwitcherKey : AMKey {
         cf.percent = 0f;
     }
 
-    Texture2D GetScreenTexture() {
-        Texture2D tex2d = new Texture2D(Screen.width, Screen.height, TextureFormat.RGB24, false);
-        tex2d.ReadPixels(new Rect(0, 0, Screen.width, Screen.height), 0, 0, false);
-        tex2d.Apply();
-        return tex2d;
-    }
-
     void CameraEnd(bool isReversed, Camera cam, Camera camEnd, Camera[] allCams) {
         if(isReversed) {
             //set camEnd to top
@@ -403,7 +395,7 @@ public class AMCameraSwitcherKey : AMKey {
 
         if(AMCameraFade.hasInstance()) {
             AMCameraFade cf = AMCameraFade.getCameraFade();
-            cf.clearTexture2D();
+            cf.clearScreenTex();
             cf.clearTexture();
             if(cf.keepAlives > 0) cf.keepAlives--;
         }

@@ -177,7 +177,7 @@ public class AMTransitionPicker : EditorWindow {
 
     void OnGUI() {
         setWindowSize();
-        this.title = "Fade: "+(oData.time_numbering ? AMTimeline.frameToTime(key.frame, (float)aData.currentTake.frameRate)+" s" : key.frame.ToString());
+        titleContent = new GUIContent("Fade: "+(oData.time_numbering ? AMTimeline.frameToTime(key.frame, (float)aData.currentTake.frameRate)+" s" : key.frame.ToString()));
         // load skin
         AMTimeline.loadSkin(ref skin, ref cachedSkinName, position);
     	LoadTextures();

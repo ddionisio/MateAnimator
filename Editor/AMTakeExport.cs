@@ -37,8 +37,8 @@ public class AMTakeExport : EditorWindow {
 
     void OnEnable() {
         window = this;
-        this.title = "Export Take" + (take == null ? "s" : "");
-        this.minSize = new Vector2(190f, 120f);
+        titleContent = new GUIContent("Export Take" + (take == null ? "s" : ""));
+        minSize = new Vector2(190f, 120f);
     }
 
     void OnDisable() {

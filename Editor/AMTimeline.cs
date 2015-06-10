@@ -438,9 +438,9 @@ public class AMTimeline : EditorWindow {
 
         LoadEditorTextures();
 
-        this.title = "Cutscene Editor";
-        this.minSize = new Vector2(width_track + width_playback_controls + width_inspector_open + 70f, 190f);
-        this.wantsMouseMove = true;
+        titleContent = new GUIContent("Cutscene Editor");
+        minSize = new Vector2(width_track + width_playback_controls + width_inspector_open + 70f, 190f);
+        wantsMouseMove = true;
         window = this;
         // find component
         if(aData == null && !EditorApplication.isPlayingOrWillChangePlaymode) {
@@ -464,7 +464,7 @@ public class AMTimeline : EditorWindow {
         EditorApplication.playmodeStateChanged += OnPlayMode;
 
         // check for pro license (no need for Unity 5)
-#if UNITY_5_0
+#if UNITY_5
         AMTakeData.isProLicense = true;
 #else
         AMTakeData.isProLicense = PlayerSettings.advancedLicense;
@@ -1187,7 +1187,7 @@ public class AMTimeline : EditorWindow {
             cursorHand = false;
             cursorZoom = false;
         }
-#if UNITY_5_0
+#if UNITY_5
         if(Cursor.visible != showCursor) {
             Cursor.visible = showCursor;
         }

@@ -1,8 +1,19 @@
 fileFormatVersion: 2
 guid: 3c56ad34b3662b1499b57c506ff0460b
+timeCreated: 1433900398
+licenseType: Free
 MonoImporter:
   serializedVersion: 2
-  defaultReferences: []
+  defaultReferences:
+  - blankTexture: {fileID: 2800000, guid: 1d19fc2e0a91a974d9864a686f2e0066, type: 3}
+  - placeholderTexture: {fileID: 2800000, guid: cf3ece6dcb19a0d4b9dd8327cd5ae370,
+      type: 3}
+  - matIris: {fileID: 2100000, guid: 6fe9d99e96822604c8948eefaa307e2b, type: 2}
+  - renderTextureCamera: {instanceID: 0}
+  - irisShape: {instanceID: 0}
+  - background: {instanceID: 0}
   executionOrder: 300
   icon: {instanceID: 0}
   userData: 
+  assetBundleName: 
+  assetBundleVariant: 

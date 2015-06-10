@@ -40,7 +40,7 @@ public class AMMaterialEditor : EditorWindow {
     }
 
     void OnEnable() {
-        this.title = "Material";
+        titleContent = new GUIContent("Material");
         //this.minSize = new Vector2(273f, 102f);
         loadAnimatorData();
         //scrollView = new Vector2(0f, 0f);

@@ -651,17 +651,17 @@ public class AMTakeData {
         AMCameraSwitcherTrack.cfTuple tuple = cameraSwitcher.getCameraFadeTupleForFrame(itarget, (int)_frame);
         if(tuple.frame != 0) {
 
-            AMCameraFade cf = AMCameraFade.getCameraFade(true);
+            AMCameraFade cf = AMCameraFade.getCameraFade();
             cf.isReset = false;
             // create render texture still
             //bool isPro = PlayerSettings.advancedLicense;
             bool isPro = isProLicense;
-            if(!cf.tex2d || cf.shouldUpdateStill || (isPro && cf.cachedStillFrame != tuple.frame)) {
+            if(!cf.screenTex || cf.shouldUpdateStill || (isPro && cf.cachedStillFrame != tuple.frame)) {
                 if(isPro) {
                     int firstTargetType = (tuple.isReversed ? tuple.type2 : tuple.type1);
                     int secondTargetType = (tuple.isReversed ? tuple.type1 : tuple.type2);
                     if(firstTargetType == 0) {
-                        if(cf.tex2d) Object.DestroyImmediate(cf.tex2d);
+                        if(cf.screenTex) Object.DestroyImmediate(cf.screenTex);
                         previewFrame(itarget, tuple.frame, false, false);
                         // set top camera
                         //bool isReversed = tuple.isReversed;
@@ -686,26 +686,12 @@ public class AMTakeData {
                         else {
                             cf.shouldUpdateStill = false;
                         }
-                        // render texture
-                        RenderTexture renderTexture = RenderTexture.GetTemporary(cf.width, cf.height, 24);
-                        //RenderTexture renderTexture = new RenderTexture(cf.width,cf.height,24);
-                        firstCamera.targetTexture = renderTexture;
-                        firstCamera.Render();
-                        // readpixels from render texture
-                        Texture2D tex2d = new Texture2D(renderTexture.width, renderTexture.height, TextureFormat.RGB24, false);
-                        RenderTexture.active = renderTexture;
-                        tex2d.ReadPixels(new Rect(0f, 0f, renderTexture.width, renderTexture.height), 0, 0);
-                        tex2d.Apply();
-                        // set texture
-                        cf.tex2d = tex2d;
-                        cf.cachedStillFrame = tuple.frame;
-                        // cleanup
-                        RenderTexture.active = null;
-                        RenderTexture.ReleaseTemporary(renderTexture);
-                        firstCamera.targetTexture = null;
-                        if(cf.placeholder) cf.placeholder = false;
-                        if(secondTargetType == 0) {
 
+                        cf.refreshScreenTex(firstCamera);
+                        cf.cachedStillFrame = tuple.frame;
+                        cf.placeholder = false;
+
+                        if(secondTargetType == 0) {
                             Camera secondCamera = (tuple.isReversed ? tuple.camera1 : tuple.camera2);
                             AMUtil.SetTopCamera(secondCamera, cameraSwitcher.getAllCameras(itarget));
                         }
@@ -713,10 +699,8 @@ public class AMTakeData {
 
                 }
                 else {
-                    // show placeholder if non-pro
-                    cf.tex2d = (Texture2D)Resources.Load("am_indie_placeholder");
-
-                    if(!cf.placeholder) cf.placeholder = true;
+                    cf.clearScreenTex();
+                    cf.placeholder = true;
                 }
 
             }

@@ -16,95 +16,97 @@ public class AMCameraFade : MonoBehaviour {
     // Put transition in setParametersFor and setDefaultParametersFor in AMTransitionPicker
 
     #region Declarations
-    // static
-    private static AMCameraFade _cf = null;
-    private static Texture2D _blankTexture;
-    public static Texture2D blankTexture {
+    private Texture2D _blankTexture;
+    public Texture2D blankTexture {
         get {
-            if(!_blankTexture) {
-                _blankTexture = getBlankTexture();
-            }
+            if(_blankTexture == null)
+                _blankTexture = Resources.Load<Texture2D>("am_blank");
             return _blankTexture;
         }
     }
-    private static Texture2D _placeholderTexture;
-    public static Texture2D placeholderTexture {
+    private Texture2D _placeholderTexture;
+    public Texture2D placeholderTexture {
         get {
-            if(!_placeholderTexture)
-                _placeholderTexture = getPlaceholderTexture();
+            if(_placeholderTexture == null)
+                _placeholderTexture = Resources.Load<Texture2D>("am_placeholder");
             return _placeholderTexture;
         }
     }
-    // materials
-    private static Material _matIris = null;
-    public static Material matIris {
+    private Material _matIris;
+    public Material matIris {
         get {
-            if(_matIris == null) _matIris = getMaterialIris();
+            if(_matIris == null)
+                _matIris = Resources.Load<Material>("am_irisShape");
             return _matIris;
         }
     }
+
+    // static
+    private static AMCameraFade _cf = null;
+
     //private static Material matIris = null;
     // show
+    [System.NonSerialized]
     public bool updateTexture = false;
-
-    // hide in inspector
-    [HideInInspector]
-    public int keepAlives = 0;
-    [HideInInspector]
-    public bool keepAliveColor = false;
-    [HideInInspector]
-    public bool keepAlivePreview = false;
-    [HideInInspector]
-    public bool keepAliveAwake = true;
-    [HideInInspector]
-    public int mode = 0;
-    [HideInInspector]
+    [System.NonSerialized]
+    public int keepAlives;
+    [System.NonSerialized]
+    public bool keepAliveColor;
+    [System.NonSerialized]
+    public int mode;
+    [System.NonSerialized]
     public float percent;
-    /*[HideInInspector]*/
+    [System.NonSerialized]
     public float value;
-    [HideInInspector]
-    public bool useRenderTexture = false;
-    [HideInInspector]
-    public Texture2D tex2d;
-    [HideInInspector]
-    public RenderTexture _tex;
-    [HideInInspector]
+    [System.NonSerialized]
+    public bool useRenderTexture;
+    private Texture2D _screenTex;
+    public Texture2D screenTex {
+        get {
+            if(placeholder)
+                return placeholderTexture;
+            else {
+                return _screenTex;
+            }   
+        }
+    }
+    private RenderTexture _tex;
     private RenderTexture tex {
         get {
             return getRenderTexture();
         }
     }
-    [HideInInspector]
+    [System.NonSerialized]
     public float[] r;
-    [HideInInspector]
+    [System.NonSerialized]
     public Camera renderTextureCamera;
-    [HideInInspector]
+    [System.NonSerialized]
     public bool hasColorTex = false;
-    [HideInInspector]
+    [System.NonSerialized]
     public bool hasColorBG = false;
-    [HideInInspector]
+    [System.NonSerialized]
     public Color colorTex;
-    [HideInInspector]
+    [System.NonSerialized]
     public Color colorBG;
-    [HideInInspector]
+    [System.NonSerialized]
     public int width = 0;
-    [HideInInspector]
+    [System.NonSerialized]
     public int height = 0;
-    [HideInInspector]
+    [System.NonSerialized]
     public bool placeholder = false;
-    [HideInInspector]
+    [System.NonSerialized]
     public Texture2D irisShape;
-    [HideInInspector]
+    [System.NonSerialized]
     public Texture background;
-    [HideInInspector]
+    [System.NonSerialized]
     public int cachedStillFrame = 0;
-    [HideInInspector]
+    [System.NonSerialized]
     public bool isReset = false;
-    [HideInInspector]
+    [System.NonSerialized]
     public bool shouldUpdateStill = false;
-    [HideInInspector]
+    [System.NonSerialized]
     public bool shouldUpdateRenderTexture = false;
-    [HideInInspector]
+    [System.NonSerialized]
     public bool preview = false;
 
     private AMCameraSwitcherKey.PlayParam mPlayParam; //used for when playing a camera switcher
@@ -126,33 +128,28 @@ public class AMCameraFade : MonoBehaviour {
 
     #region Main
     void OnDestroy() {
-        if(_cf == this) {
-            if(_tex) {
-                if(renderTextureCamera && renderTextureCamera.targetTexture == _tex) {
-                    renderTextureCamera.targetTexture = null;
-                }
-                DestroyImmediate(_tex);
+        if(_tex) {
+            if(renderTextureCamera && renderTextureCamera.targetTexture == _tex) {
+                renderTextureCamera.targetTexture = null;
             }
+            DestroyImmediate(_tex);
+        }
 
-            clearTexture2D();
+        if(_blankTexture)
+            DestroyImmediate(_blankTexture);
 
+        if(_placeholderTexture)
+            DestroyImmediate(_placeholderTexture);
+
+        clearScreenTex();
+
+        if(_cf == this)
             _cf = null;
-        }
-    }
-
-    void Awake() {
-        if(Application.isPlaying && preview) destroy();
-        else {
-            /*this.camera.clearFlags = CameraClearFlags.Nothing;
-            this.camera.cullingMask = 0;
-            this.camera.depth = -1;*/
-            keepAliveAwake = true;
-        }
     }
 
     void OnGUI() {
 
-        if(isReset || (!hasColorTex && ((!useRenderTexture && !tex2d) || (useRenderTexture && !renderTextureCamera)))) return;
+        if(isReset || (!hasColorTex && ((!useRenderTexture && !screenTex) || (useRenderTexture && !renderTextureCamera)))) return;
         GUI.depth = -9999999;
 
         // background color texture
@@ -164,7 +161,7 @@ public class AMCameraFade : MonoBehaviour {
         if(hasColorTex) GUI.color = new Color(colorTex.r, colorTex.g, colorTex.b, 1f);
         else GUI.color = Color.white;
         // process camerafade
-        processCameraFade(new Rect(0f, 0f, Screen.width, Screen.height), (hasColorTex ? blankTexture : (useRenderTexture ? (Texture)tex : (Texture)tex2d)), mode, value, percent, r, irisShape, Event.current);
+        processCameraFade(new Rect(0f, 0f, Screen.width, Screen.height), (hasColorTex ? blankTexture : (useRenderTexture ? (Texture)tex : (Texture)screenTex)), mode, value, percent, r, irisShape, Event.current);
         // editor
         if(!Application.isPlaying) {
             // update textures if aspect has changed
@@ -188,11 +185,14 @@ public class AMCameraFade : MonoBehaviour {
     }
 
     void Update() {
+#if UNITY_EDITOR
         if(!Application.isPlaying) {
             if(updateTexture) doForceUpdate(true);
             return;
         }
-        if(preview || (!keepAliveAwake && !keepAliveColor && keepAlives <= 0 && !keepAlivePreview)) destroy();
+#endif
+
+        if(!keepAliveColor && keepAlives <= 0) DestroyImmediate(gameObject);
     }
 
     void doForceUpdate(bool showMsg = false) {
@@ -202,39 +202,6 @@ public class AMCameraFade : MonoBehaviour {
         if(showMsg) Debug.Log("Animator: Updated AMCameraFade"+(preview ? "Preview" : "")+" Texture");
     }
 
-    public void destroyImmediate() {
-        //AMTween.Stop(this.gameObject);
-        if(_tex) {
-            if(renderTextureCamera && renderTextureCamera.targetTexture == _tex) {
-                renderTextureCamera.targetTexture = null;
-            }
-            DestroyImmediate(_tex);
-        }
-        /*if(_matIris) {
-            DestroyImmediate(_matIris.shader);
-            DestroyImmediate(_matIris);
-        }*/
-        _cf = null;
-        DestroyImmediate(this.gameObject);
-
-    }
-
-    public void destroy() {
-        //AMTween.Stop(this.gameObject);
-        if(_tex) {
-            if(renderTextureCamera && renderTextureCamera.targetTexture == _tex) {
-                renderTextureCamera.targetTexture = null;
-            }
-            Destroy(_tex);
-        }
-        /*if(_matIris) {
-            Destroy(_matIris.shader);
-            Destroy(_matIris);
-        }*/
-        _cf = null;
-        Destroy(this.gameObject);
-
-    }
     #endregion
 
     #region Common
@@ -302,7 +269,8 @@ public class AMCameraFade : MonoBehaviour {
     }
     // process camera fade
     public static void processCameraFade(Rect rect, Texture tex, int mode, float value, float percent, float[] r, Texture2D _irisShape, Event editorEvent) {
-        if(_irisShape != null && matIris.GetTexture("_Mask") != _irisShape) matIris.SetTexture("_Mask", _irisShape);
+        var camFade = getCameraFade();
+        if(_irisShape != null && camFade.matIris.GetTexture("_Mask") != _irisShape) camFade.matIris.SetTexture("_Mask", _irisShape);
         switch(mode) {
             #region doors
             case (int)AMCameraSwitcherKey.Fade.Doors:
@@ -410,6 +378,37 @@ public class AMCameraFade : MonoBehaviour {
                 break;
             #endregion
         }
+    }
+
+    public void refreshScreenTex() {
+        clearScreenTex();
+
+        _screenTex = new Texture2D(Screen.width, Screen.height, TextureFormat.RGB24, false);
+        _screenTex.ReadPixels(new Rect(0, 0, Screen.width, Screen.height), 0, 0, false);
+        _screenTex.Apply();
+    }
+
+    public void refreshScreenTex(Camera cam) {
+        RenderTexture renderTexture = RenderTexture.GetTemporary(width, height, 24);
+        //RenderTexture renderTexture = new RenderTexture(cf.width,cf.height,24);
+        cam.targetTexture = renderTexture;
+        cam.Render();
+        // readpixels from render texture
+        if(_screenTex) {
+            _screenTex.Resize(width, height);    
+        }
+        else {
+            _screenTex = new Texture2D(renderTexture.width, renderTexture.height, TextureFormat.RGB24, false);
+        }
+        RenderTexture.active = renderTexture;
+        _screenTex.ReadPixels(new Rect(0f, 0f, renderTexture.width, renderTexture.height), 0, 0);
+        _screenTex.Apply();
+        // set texture
+        
+        // cleanup
+        RenderTexture.active = null;
+        RenderTexture.ReleaseTemporary(renderTexture);
+        cam.targetTexture = null;
     }
 
     // setup transition materials and matrices
@@ -569,13 +568,14 @@ public class AMCameraFade : MonoBehaviour {
 
     public static void processIrisShape(Rect rect, Texture tex, bool shrink, float value, float percent, float focalX, float focalY, Texture shape, float maxScale, float pivotX, float pivotY, int rotateAmount, bool easeRotation, Event editorEvent) {
         if(editorEvent.type.Equals(EventType.Repaint)) {
+            var camFade = getCameraFade();
             //matIris.SetTexture("_Mask",shape);
             focalY = 1f - focalY;
             float scale = (shrink ? value : 1f - value) * maxScale;
             if(scale <= 0.01f) scale = 0f;
             // set cutoff
-            if(scale <= 0.04) matIris.SetFloat("_Cutoff", 0.8f);
-            else matIris.SetFloat("_Cutoff", 0.1f);
+            if(scale <= 0.04) camFade.matIris.SetFloat("_Cutoff", 0.8f);
+            else camFade.matIris.SetFloat("_Cutoff", 0.1f);
             float aspect = rect.width / rect.height;
             Vector2 pos = new Vector2(0f, 0f);
             pos.x = focalX - (scale / 2f) / aspect;
@@ -595,9 +595,9 @@ public class AMCameraFade : MonoBehaviour {
             Matrix4x4 r = Matrix4x4.TRS(Vector3.zero, _rotation, Vector3.one);
             Matrix4x4 tInv = Matrix4x4.TRS(pivot, Quaternion.identity, Vector3.one);
             Matrix4x4 f = Matrix4x4.TRS(_position, Quaternion.identity, _scale);
-            matIris.SetMatrix("_Matrix", tInv*r*t*f);
-            matIris.color = GUI.color;
-            Graphics.DrawTexture(new Rect(rect.x, rect.y, rect.width, rect.height), tex, matIris);
+            camFade.matIris.SetMatrix("_Matrix", tInv*r*t*f);
+            camFade.matIris.color = GUI.color;
+            Graphics.DrawTexture(new Rect(rect.x, rect.y, rect.width, rect.height), tex, camFade.matIris);
         }
 
     }
@@ -609,6 +609,7 @@ public class AMCameraFade : MonoBehaviour {
 
     public static void processShapeWipe(Rect rect, Texture tex, float value, Texture shape, int angle, float scale, float padding, float offsetStart, float offsetEnd, Event editorEvent) {
         if(editorEvent.type.Equals(EventType.Repaint)) {
+            var camFade = getCameraFade();
             //matIris.SetTexture("_Mask",shape);
             //if(value <= 0.1) matIris.SetFloat("_Cutoff",0.1f);
             int a = angle+90;
@@ -630,9 +631,9 @@ public class AMCameraFade : MonoBehaviour {
             Matrix4x4 r = Matrix4x4.TRS(Vector3.zero, _rotation, Vector3.one);
             Matrix4x4 tInv = Matrix4x4.TRS(pivot, Quaternion.identity, Vector3.one);
             Matrix4x4 f = Matrix4x4.TRS(_position, Quaternion.identity, _scale);
-            matIris.SetMatrix("_Matrix", tInv*r*t*f);
-            if(matIris.color != GUI.color) matIris.color = GUI.color;
-            Graphics.DrawTexture(new Rect(rect.x, rect.y, rect.width, rect.height), tex, matIris);
+            camFade.matIris.SetMatrix("_Matrix", tInv*r*t*f);
+            if(camFade.matIris.color != GUI.color) camFade.matIris.color = GUI.color;
+            Graphics.DrawTexture(new Rect(rect.x, rect.y, rect.width, rect.height), tex, camFade.matIris);
         }
     }
 
@@ -643,9 +644,10 @@ public class AMCameraFade : MonoBehaviour {
             return;
         }
         if(editorEvent.type.Equals(EventType.Repaint)) {
+            var camFade = getCameraFade();
             if(!clockwise) startingAngle = (startingAngle + 180) % 360;
             // set cutoff
-            matIris.SetFloat("_Cutoff", 0f);
+            camFade.matIris.SetFloat("_Cutoff", 0f);
             float scale = 1f;
             //float padding = 0f;
             float a = (startingAngle+90)+360*(1f-value)*(clockwise ? 1f : -1f);
@@ -659,8 +661,8 @@ public class AMCameraFade : MonoBehaviour {
             Matrix4x4 r = Matrix4x4.TRS(Vector3.zero, _rotation, Vector3.one);
             Matrix4x4 tInv = Matrix4x4.TRS(pivot, Quaternion.identity, Vector3.one);
             Matrix4x4 f = Matrix4x4.TRS(_position, Quaternion.identity, _scale);
-            matIris.SetMatrix("_Matrix", tInv*r*t*f);
-            if(matIris.color != GUI.color) matIris.color = GUI.color;
+            camFade.matIris.SetMatrix("_Matrix", tInv*r*t*f);
+            if(camFade.matIris.color != GUI.color) camFade.matIris.color = GUI.color;
             Rect rectSource = new Rect(0f, 0f, 1f, 1f);
             Rect rectSourceHalf = new Rect(0f, 0f, 1f, 1f);
             Rect rectPositionHalf = new Rect(rect);
@@ -685,7 +687,7 @@ public class AMCameraFade : MonoBehaviour {
                 rectPositionHalf.y = rect.y + rect.height*focalY;
                 rectPositionHalf.height = rect.height*(1f-focalY);
             }
-            Graphics.DrawTexture((!showHalf ? rectPositionHalf : rect), tex, (!showHalf ? rectSourceHalf : rectSource), 0, 0, 0, 0, matIris);
+            Graphics.DrawTexture((!showHalf ? rectPositionHalf : rect), tex, (!showHalf ? rectSourceHalf : rectSource), 0, 0, 0, 0, camFade.matIris);
             if(showHalf) {
                 GUI.DrawTextureWithTexCoords(rectPositionHalf, tex, rectSourceHalf);
             }
@@ -699,8 +701,9 @@ public class AMCameraFade : MonoBehaviour {
             return;
         }
         if(editorEvent.type.Equals(EventType.Repaint)) {
+            var camFade = getCameraFade();
             // set cutoff
-            matIris.SetFloat("_Cutoff", 0f);
+            camFade.matIris.SetFloat("_Cutoff", 0f);
             float scale = 1f;
             float a = (startingAngle+90)+360*(.5f-value/2f)/*(clockwise ? 1f : -1f)*/;
             float aspect = rect.width / rect.height;
@@ -713,8 +716,8 @@ public class AMCameraFade : MonoBehaviour {
             Matrix4x4 r = Matrix4x4.TRS(Vector3.zero, _rotation, Vector3.one);
             Matrix4x4 tInv = Matrix4x4.TRS(pivot, Quaternion.identity, Vector3.one);
             Matrix4x4 f = Matrix4x4.TRS(_position, Quaternion.identity, _scale);
-            matIris.SetMatrix("_Matrix", tInv*r*t*f);
-            if(matIris.color != GUI.color) matIris.color = GUI.color;
+            camFade.matIris.SetMatrix("_Matrix", tInv*r*t*f);
+            if(camFade.matIris.color != GUI.color) camFade.matIris.color = GUI.color;
             Rect rectSourceHalf1 = new Rect(0f, 0f, 1f, 1f);
             Rect rectPositionHalf1 = new Rect(rect);
             Rect rectSourceHalf2 = new Rect(0f, 0f, 1f, 1f);
@@ -752,116 +755,34 @@ public class AMCameraFade : MonoBehaviour {
                 rectPositionHalf2.height = rect.height * focalY;
             }
 
-            Graphics.DrawTexture(rectPositionHalf2, tex, rectSourceHalf2, 0, 0, 0, 0, matIris);
+            Graphics.DrawTexture(rectPositionHalf2, tex, rectSourceHalf2, 0, 0, 0, 0, camFade.matIris);
 
             startingAngle = (startingAngle + 180) % 360;
             a = (startingAngle+90)+360*(.5f-value/2f)*-1f;
             _rotation = Quaternion.Euler(0, 0, a-90);
             r = Matrix4x4.TRS(Vector3.zero, _rotation, Vector3.one);
-            matIris.SetMatrix("_Matrix", tInv*r*t*f);
+            camFade.matIris.SetMatrix("_Matrix", tInv*r*t*f);
 
-            Graphics.DrawTexture(rectPositionHalf1, tex, rectSourceHalf1, 0, 0, 0, 0, matIris);
+            Graphics.DrawTexture(rectPositionHalf1, tex, rectSourceHalf1, 0, 0, 0, 0, camFade.matIris);
         }
     }
-    #endregion
-
-    #region Materials
-    private static Texture2D getBlankTexture() {
-        Texture2D _temp;
-        _temp = (Texture2D)Resources.Load("am_blank_texture");
-        if(!_temp) {
-            _temp = new Texture2D(1, 1);
-            _temp.SetPixel(0, 0, Color.white);
-            _temp.Apply();
-        }
-        return _temp;
-    }
-    private static Texture2D getPlaceholderTexture() {
-        Texture2D _temp;
-        _temp = (Texture2D)Resources.Load("am_indie_placeholder");
-        if(!_temp) {
-            _temp = new Texture2D(256, 256);
-            for(int r = 0; r < 256; r++) {
-                bool isBlack = (r/16) % 2 == 0;
-                for(int c = 0; c < 256; c++) {
-                    _temp.SetPixel(c, r, isBlack && ((c/16) % 2) == 0 ? Color.black : Color.white);
-                }
-            }
-            _temp.Apply();
-        }
-        return _temp;
-    }
-    private static Material getMaterialIris() {
-        Material _mat = (Material)Resources.Load("AMIrisShapeMaterial");
-        if(!_mat) {
-            _mat = new Material
-            (
-                "Shader \"Animator/AMIrisShape\" {" +
-				"Properties {" +
-				"	_MainTex (\"Base (RGB)\", 2D) = \"white\" {}" +
-				"	_Mask (\"Culling Mask\", 2D) = \"white\" {}" +
-				"	_Cutoff (\"Alpha cutoff\", Range (0,1)) = 0.1 " +
-				" 	_Color (\"Main Color\", Color) = (1,1,1,1) }" +
-				"SubShader {" +
-				"	Tags {\"Queue\"=\"Background\"}" +
-				"	Lighting Off" +
-				"	ZWrite Off" +
-				"	Blend SrcAlpha OneMinusSrcAlpha" +
-				"	AlphaTest GEqual [_Cutoff]" +
-				"	Pass {" +
-				"		SetTexture [_Mask] { matrix [_Matrix] combine texture }" +
-				"		SetTexture [_MainTex] { ConstantColor [_Color] matrix[_TexMatrix] combine texture * constant, previous }" +
-				"	}" +
-				"}}"
-            );
-        }
-        return _mat;
-    }
-
-    private static Material getMaterialRadial() {
-        Material _mat = (Material)Resources.Load("AMRadialWipeMaterial");
-        // ## TO DO ##
-        /*if(!_mat) {
-            _mat = new Material
-            (
-                "Shader \"Animator/AMIrisShape\" {" +
-                "Properties {" +
-                "	_MainTex (\"Base (RGB)\", 2D) = \"white\" {}" +
-                "	_Mask (\"Culling Mask\", 2D) = \"white\" {}" +
-                "	_Cutoff (\"Alpha cutoff\", Range (0,1)) = 0.1 " +
-                " 	_Color (\"Main Color\", Color) = (1,1,1,1) }" +
-                "SubShader {" +
-                "	Tags {\"Queue\"=\"Background\"}" +
-                "	Lighting Off" +
-                "	ZWrite Off" +
-                "	Blend SrcAlpha OneMinusSrcAlpha" +
-                "	AlphaTest GEqual [_Cutoff]" +
-                "	Pass {" +
-                "		SetTexture [_Mask] { matrix [_Matrix] combine texture }" +
-                "		SetTexture [_MainTex] { ConstantColor [_Color] matrix[_TexMatrix] combine texture * constant, previous }" +
-                "	}" +
-                "}}"
-            );
-        }*/
-        return _mat;
-    }
-
     #endregion
 
     #region Other Functions
 
-    public static AMCameraFade getCameraFade(bool preview=false) {
+    public static AMCameraFade getCameraFade() {
+        bool preview = !Application.isPlaying;
         if(_cf) {
             _cf.preview = preview;
             return _cf;
         }
         AMCameraFade cf = null;
-        GameObject go = GameObject.Find("AMCamera" + (preview ? "FadePreview" : "Fade"));
+        GameObject go = GameObject.Find("AMCameraFade");
         if(go) {
             cf = (AMCameraFade)go.GetComponent(typeof(AMCameraFade));
         }
         if(!cf) {
-            go = new GameObject("AMCamera"+(preview ? "FadePreview" : "Fade"), typeof(AMCameraFade));
+            go = new GameObject("AMCameraFade", typeof(AMCameraFade));
             if(preview)
                 go.hideFlags = HideFlags.DontSave;
             cf = (AMCameraFade)go.GetComponent(typeof(AMCameraFade));
@@ -901,20 +822,25 @@ public class AMCameraFade : MonoBehaviour {
         }
     }
 
+    public void incrementKeepAlives(bool inclusive) {
+        if(!inclusive || (inclusive && keepAlives == 0))
+            keepAlives++;
+    }
+
     public static void clearRenderTexture() {
         if(_cf != null) {
             _cf.clearTexture();
         }
     }
 
-    public static void destroyAndReload(bool isPreview) {
-        if(_cf != null) _cf.destroyImmediate();
-        _cf = null;
-        getCameraFade(isPreview);
+    public static void destroyAndReload() {
+        if(_cf != null) DestroyImmediate(_cf.gameObject);
+
+        getCameraFade();
     }
 
     public static void destroyImmediateInstance() {
-        if(_cf != null) _cf.destroyImmediate();
+        if(_cf != null) DestroyImmediate(_cf.gameObject);
     }
 
     public static bool hasInstance() {
@@ -982,15 +908,6 @@ public class AMCameraFade : MonoBehaviour {
         this.OnGUI();
     }
 
-    /// <summary>
-    /// If inclusive, only increment if keepAlives == 0
-    /// </summary>
-    public void incrementKeepAlives(bool inclusive) {
-        if(!inclusive || (inclusive && keepAlives == 0))
-            keepAlives++;
-
-        keepAliveAwake = false;
-    }
     public void clearTexture() {
         if(renderTextureCamera) {
             renderTextureCamera.targetTexture = null;
@@ -1002,10 +919,10 @@ public class AMCameraFade : MonoBehaviour {
         //}
     }
 
-    public void clearTexture2D() {
-        if(tex2d) {
-            DestroyImmediate(tex2d);
-            tex2d = null;
+    public void clearScreenTex() {
+        if(_screenTex) {
+            DestroyImmediate(_screenTex);
+            _screenTex = null;
         }
     }
 

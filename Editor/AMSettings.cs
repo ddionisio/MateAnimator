@@ -33,9 +33,9 @@ public class AMSettings : EditorWindow {
 
     void OnEnable() {
         window = this;
-        this.title = "Settings";
-        this.minSize = new Vector2(280f, 190f);
-        //this.maxSize = this.minSize;
+        titleContent = new GUIContent("Settings");
+        minSize = new Vector2(280f, 190f);
+        //maxSize = this.minSize;
 
         oData = AMOptionsFile.loadFile();
         loadAnimatorData();

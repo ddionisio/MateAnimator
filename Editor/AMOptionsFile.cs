@@ -130,7 +130,7 @@ public class AMOptionsFile : ScriptableObject {
     public const string filePath = "Assets/-am_options.asset";
 	
 	public static AMOptionsFile loadFile() {
-        AMOptionsFile load_file = (AMOptionsFile)Resources.LoadAssetAtPath(filePath, typeof(AMOptionsFile));
+        AMOptionsFile load_file = (AMOptionsFile)AssetDatabase.LoadAssetAtPath(filePath, typeof(AMOptionsFile));
 		if(load_file) {
             AnimatorTimeline.e_gizmoSize = load_file.gizmo_size;
 			load_file.unflatten_quickAdd_Combos(true);
