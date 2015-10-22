@@ -6,3 +6,7 @@
 *.csproj
 *.unityproj
 *.sln
+HOTween/
+HOTween.meta
+-am_options.asset.meta
+-am_options.asset
