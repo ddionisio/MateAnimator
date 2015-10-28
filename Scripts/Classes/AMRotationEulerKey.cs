@@ -2,8 +2,8 @@
 using System.Collections;
 using System.Collections.Generic;
 
-using Holoville.HOTween;
-using Holoville.HOTween.Plugins;
+using DG.Tweening;
+using DG.Tweening.Plugins;
 
 namespace MateAnimator{
 	[AddComponentMenu("")]
@@ -60,97 +60,29 @@ namespace MateAnimator{
 	        else {
 	            Vector3 endRotation = (track.keys[index + 1] as AMRotationEulerKey).rotation;
 
-	            TweenParms tParms = new TweenParms();
+                Tweener tween;
 
 	            switch((track as AMRotationEulerTrack).axis) {
 	                case AMRotationEulerTrack.Axis.X:
-	                    tParms = tParms.Prop("rotation", new AMPlugToTransformLocalEulerX(target, endRotation.x));
+                        tween = DOTween.To(new FloatPlugin(), () => target.localEulerAngles.x, (x) => { var a=target.localEulerAngles; a.x=x; target.localEulerAngles=a; }, endRotation.x, getTime(frameRate));
 	                    break;
 	                case AMRotationEulerTrack.Axis.Y:
-	                    tParms = tParms.Prop("rotation", new AMPlugToTransformLocalEulerY(target, endRotation.y));
+                        tween = DOTween.To(new FloatPlugin(), () => target.localEulerAngles.y, (y) => { var a=target.localEulerAngles; a.y=y; target.localEulerAngles=a; }, endRotation.y, getTime(frameRate));
 	                    break;
 	                case AMRotationEulerTrack.Axis.Z:
-	                    tParms = tParms.Prop("rotation", new AMPlugToTransformLocalEulerZ(target, endRotation.z));
+                        tween = DOTween.To(new FloatPlugin(), () => target.localEulerAngles.z, (z) => { var a=target.localEulerAngles; a.z=z; target.localEulerAngles=a; }, endRotation.z, getTime(frameRate));
 	                    break;
 	                default:
-	                    tParms = tParms.Prop("rotation", new AMPlugToTransformLocalEuler(target, endRotation));
+                        tween = DOTween.To(new Vector3Plugin(), () => target.localEulerAngles, (x) => target.localEulerAngles=x, endRotation, getTime(frameRate));
 	                    break;
 	            }
 
-	            if(hasCustomEase())
-	                tParms = tParms.Ease(easeCurve);
-	            else
-	                tParms = tParms.Ease((EaseType)easeType, amplitude, period);
+                if(hasCustomEase())
+                    tween.SetEase(easeCurve);
+                else
+                    tween.SetEase((Ease)easeType, amplitude, period);
 
-	            seq.Insert(this, HOTween.To(this, getTime(frameRate), tParms));
-	        }
-	    }
-
-	    //special plugin to grab actual rotation value from key and directly set them from given Transform
-	    private class AMPlugToTransformLocalEuler : Holoville.HOTween.Plugins.Core.PlugVector3 {
-	        private Transform mTrans;
-
-	        public AMPlugToTransformLocalEuler(Transform t, Vector3 endRot)
-	            : base(endRot) {
-	            mTrans = t;
-	        }
-
-	        protected override void SetValue(Vector3 p_value) {
-	            mTrans.localEulerAngles = p_value;
-	        }
-	    }
-
-	    private class AMPlugToTransformLocalEulerX : PlugVector3X {
-	        private Transform mTrans;
-
-	        public AMPlugToTransformLocalEulerX(Transform t, float end)
-	            : base(end) {
-	            mTrans = t;
-	        }
-
-	        protected override object GetValue() {
-	            Vector3 r = mTrans.localEulerAngles;
-	            return new Vector3(((Vector3)base.GetValue()).x, r.y, r.z);
-	        }
-
-	        protected override void SetValue(Vector3 p_value) {
-	            mTrans.localEulerAngles = p_value;
-	        }
-	    }
-
-	    private class AMPlugToTransformLocalEulerY : PlugVector3Y {
-	        private Transform mTrans;
-
-	        public AMPlugToTransformLocalEulerY(Transform t, float end)
-	            : base(end) {
-	            mTrans = t;
-	        }
-
-	        protected override object GetValue() {
-	            Vector3 r = mTrans.localEulerAngles;
-	            return new Vector3(r.x, ((Vector3)base.GetValue()).y, r.z);
-	        }
-
-	        protected override void SetValue(Vector3 p_value) {
-	            mTrans.localEulerAngles = p_value;
-	        }
-	    }
-
-	    private class AMPlugToTransformLocalEulerZ : PlugVector3X {
-	        private Transform mTrans;
-
-	        public AMPlugToTransformLocalEulerZ(Transform t, float end)
-	            : base(end) {
-	            mTrans = t;
-	        }
-
-	        protected override object GetValue() {
-	            Vector3 r = mTrans.localEulerAngles;
-	            return new Vector3(r.x, r.y, ((Vector3)base.GetValue()).z);
-	        }
-
-	        protected override void SetValue(Vector3 p_value) {
-	            mTrans.localEulerAngles = p_value;
+	            seq.Insert(this, tween);
 	        }
 	    }
 	    #endregion

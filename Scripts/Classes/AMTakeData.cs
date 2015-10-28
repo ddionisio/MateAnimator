@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 
-using Holoville.HOTween;
+using DG.Tweening;
 
 namespace MateAnimator{
 	[System.Serializable]

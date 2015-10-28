@@ -2,8 +2,7 @@ using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 
-using Holoville.HOTween;
-using Holoville.HOTween.Plugins;
+using DG.Tweening;
 
 namespace MateAnimator{
 	[AddComponentMenu("")]
@@ -45,12 +44,17 @@ namespace MateAnimator{
 			}
 			else if(endFrame == -1) return;
 	        else {
+                Transform trans = obj as Transform;
 	            Quaternion endRotation = (track.keys[index + 1] as AMRotationKey).rotation;
 
-	            if(hasCustomEase())
-	                seq.Insert(this, HOTween.To(obj, getTime(frameRate), new TweenParms().Prop("localRotation", new AMPlugQuaternionSlerp(endRotation)).Ease(easeCurve)));
-	            else
-	                seq.Insert(this, HOTween.To(obj, getTime(frameRate), new TweenParms().Prop("localRotation", new AMPlugQuaternionSlerp(endRotation)).Ease((EaseType)easeType, amplitude, period)));
+                var tween = DOTween.To(new AMPlugQuaternion(), () => trans.localRotation, (x) => trans.localRotation=x, endRotation, getTime(frameRate));
+
+                if(hasCustomEase())
+                    tween.SetEase(easeCurve);
+                else
+                    tween.SetEase((Ease)easeType, amplitude, period);
+
+                seq.Insert(this, tween);
 	        }
 	    }
 	    #endregion

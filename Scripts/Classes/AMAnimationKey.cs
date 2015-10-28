@@ -1,8 +1,8 @@
 using UnityEngine;
 using System.Collections;
 
-using Holoville.HOTween;
-using Holoville.HOTween.Core;
+using DG.Tweening;
+using DG.Tweening.Plugins.Core;
 
 namespace MateAnimator{
 	[AddComponentMenu("")]
@@ -31,31 +31,6 @@ namespace MateAnimator{
 	    }
 
 	    #region action
-	    void OnMethodCallbackParams(TweenEvent dat) {
-	        //TODO: figure out a way to play the animation backwards...
-	        if(!dat.tween.isLoopingBack) {
-	            Animation anim = dat.parms[0] as Animation;
-	            if(anim != null && amClip != null) {
-	                float elapsed = dat.tween.elapsed;
-	                float frameRate = (float)dat.parms[1];
-	                float curFrame = frameRate * elapsed;
-	                float numFrames = getNumberOfFrames(Mathf.RoundToInt(frameRate));
-
-	                if(numFrames > 0.0f && curFrame > frame + numFrames) return;
-
-	                if(wrapMode != WrapMode.Default)
-	                    anim.wrapMode = wrapMode;
-
-	                if(crossfade) {
-	                    anim.CrossFade(amClip.name, crossfadeTime);
-	                }
-	                else {
-	                    anim.Play(amClip.name);
-	                }
-	            }
-	        }
-	    }
-
 	    public override void build(AMSequence seq, AMTrack track, int index, UnityEngine.Object target) {
 	        int frameRate = seq.take.frameRate;
 	        float waitTime = getWaitTime(frameRate, 0.0f);
@@ -63,24 +38,49 @@ namespace MateAnimator{
 
 	        float duration = wrapMode == WrapMode.Once ? amClip.length : ((seq.take.getLastFrame()-frame)+1)/(float)frameRate;
 
-	        Holoville.HOTween.Plugins.Core.ABSTweenPlugin plug;
-
 	        if(crossfade) {
 	            if(index > 0) {
 	                AMAnimationKey prevKey = track.keys[index - 1] as AMAnimationKey;
-	                plug = new AMPlugAnimationCrossFade(anim, crossfadeTime, prevKey.amClip.name, prevKey.wrapMode, prevKey.getWaitTime(frameRate, 0.0f), amClip.name, wrapMode, waitTime);
+
+                    var tween = DOTween.To(new AMPlugAnimationCrossFade(), () => 0, (x) => { }, 0, duration);
+                    tween.plugOptions = new AMPlugAnimationCrossFadeOptions() {
+                        anim=anim,
+                        crossFadeTime=crossfadeTime,
+                        prevAnimState=anim[prevKey.amClip.name],
+                        prevWrap=prevKey.wrapMode,
+                        prevStartTime=prevKey.getWaitTime(frameRate, 0.0f),
+                        animState=anim[amClip.name],
+                        wrap=wrapMode,
+                        startTime=waitTime
+                    };
+
+                    seq.Insert(this, tween);
 	            }
-	            else
-	                plug = new AMPlugAnimation(anim, amClip.name, wrapMode, true, crossfadeTime);
+                else {
+                    var tween = DOTween.To(new AMPlugAnimation(), () => 0, (x) => { }, 0, duration);
+                    tween.plugOptions = new AMPlugAnimationOptions() {
+                        anim=anim,
+                        animState=anim[amClip.name],
+                        wrap=wrapMode,
+                        fadeIn=true,
+                        fadeInTime=crossfadeTime
+                    };
+
+                    seq.Insert(this, tween);
+                }
 	        }
-	        else
-	            plug = new AMPlugAnimation(anim, amClip.name, wrapMode, false, 0.0f);
+            else {
+                var tween = DOTween.To(new AMPlugAnimation(), () => 0, (x) => { }, 0, duration);
+                tween.plugOptions = new AMPlugAnimationOptions() {
+                    anim=anim,
+                    animState=anim[amClip.name],
+                    wrap=wrapMode,
+                    fadeIn=false,
+                    fadeInTime=0f
+                };
 
-	        seq.sequence.Insert(waitTime, HOTween.To(target, duration, new TweenParms().Prop("animation", plug)));
-
-
-	        //seq.Insert(new AMActionAnimation(this, seq.take.frameRate, (target as GameObject).animation));
-	        //seq.sequence.InsertCallback(getWaitTime(seq.take.frameRate, 0.0f), OnMethodCallbackParams, (target as GameObject).animation, (float)seq.take.frameRate);
+                seq.Insert(this, tween);
+            }
 	    }
 	    #endregion
 	}

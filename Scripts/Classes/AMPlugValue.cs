@@ -1,309 +1,116 @@
 using System;
 using UnityEngine;
 
-using Holoville.HOTween;
-using Holoville.HOTween.Plugins.Core;
+using DG.Tweening;
+using DG.Tweening.Core;
+using DG.Tweening.Core.Easing;
+using DG.Tweening.Core.Enums;
+using DG.Tweening.Plugins.Core;
+using DG.Tweening.Plugins.Options;
 
 namespace MateAnimator{
-	/// <summary>
-	/// TODO: figure out using Play elegantly
-	/// </summary>
-	public class AMPlugAnimation : ABSTweenPlugin {
-	    Animation anim;
-	    AnimationState animState;
-	    WrapMode wrap;
-	    bool fadeIn;
-	    float fadeInTime;
-
-	    protected override object startVal { get { return _startVal; } set { _startVal = value; } }
-
-	    protected override object endVal { get { return _endVal; } set { _endVal = value; } }
-
-	    public AMPlugAnimation(Animation aAnim, string clipName, WrapMode aWrap, bool aFadeIn, float aFadeInTime)
-	        : base(null, false) {
-	        ignoreAccessor = true;
-	        anim = aAnim;
-	        animState = anim[clipName];
-	        wrap = aWrap;
-	        fadeIn = aFadeIn;
-	        fadeInTime = aFadeInTime;
-	    }
-
-	    protected override float GetSpeedBasedDuration(float p_speed) {
-	        return p_speed;
-	    }
-
-	    protected override void SetChangeVal() {
-	    }
-
-	    protected override void SetIncremental(int p_diffIncr) { }
-	    protected override void SetIncrementalRestart() { }
-
-	    protected override void DoUpdate(float p_totElapsed) {
-	        animState.enabled = true;
-	        animState.wrapMode = wrap;
-	        animState.time = p_totElapsed;
-
-	        if(fadeIn && p_totElapsed < fadeInTime)
-	            animState.weight = p_totElapsed/fadeInTime;
-	        else
-	            animState.weight = 1.0f;
-
-	        anim.Sample();
-	        animState.enabled = false;
-	    }
-
-	    protected override void SetValue(object p_value) { }
-	    protected override object GetValue() { return null; }
-	}
+    public struct AMPlugAnimationOptions {
+        public Animation anim;
+        public AnimationState animState;
+        public WrapMode wrap;
+        public bool fadeIn;
+        public float fadeInTime;
+    }
 
 	/// <summary>
 	/// TODO: figure out using Play elegantly
 	/// </summary>
-	public class AMPlugAnimationCrossFade : ABSTweenPlugin {
-	    Animation anim;
+    public class AMPlugAnimation : ABSTweenPlugin<int, int, AMPlugAnimationOptions> {
 
-	    AnimationState animState;
-	    WrapMode wrap;
-	    float startTime;
+        public override int ConvertToStartValue(TweenerCore<int, int, AMPlugAnimationOptions> t, int value) {
+            return value;
+        }
 
-	    AnimationState prevAnimState;
-	    WrapMode prevWrap;
-	    float prevStartTime;
+        public override void EvaluateAndApply(AMPlugAnimationOptions options, Tween t, bool isRelative, DOGetter<int> getter, DOSetter<int> setter, float elapsed, int startValue, int changeValue, float duration, bool usingInversePosition, UpdateNotice updateNotice) {
+            options.animState.enabled = true;
+            options.animState.wrapMode = options.wrap;
+            options.animState.time = elapsed;
 
-	    float crossFadeTime;
+            if(options.fadeIn && elapsed < options.fadeInTime)
+                options.animState.weight = elapsed/options.fadeInTime;
+            else
+                options.animState.weight = 1.0f;
 
-	    protected override object startVal { get { return _startVal; } set { _startVal = value; } }
+            options.anim.Sample();
+            options.animState.enabled = false;
+        }
 
-	    protected override object endVal { get { return _endVal; } set { _endVal = value; } }
+        public override float GetSpeedBasedDuration(AMPlugAnimationOptions options, float unitsXSecond, int changeValue) {
+            return ((float)changeValue)/unitsXSecond;
+        }
 
-	    public AMPlugAnimationCrossFade(Animation aAnim, float aCrossFadeTime, string prevClip, WrapMode aPrevWrap, float aPrevStartTime, string clip, WrapMode aWrap, float aStartTime)
-	        : base(null, false) {
-	        ignoreAccessor = true;
-
-	        anim = aAnim;
-
-	        prevAnimState = anim[prevClip];
-	        prevWrap = aPrevWrap;
-	        prevStartTime = aPrevStartTime;
-
-	        animState = anim[clip];
-	        wrap = aWrap;
-	        startTime = aStartTime;
-
-	        crossFadeTime = aCrossFadeTime;
-	    }
-
-	    protected override float GetSpeedBasedDuration(float p_speed) {
-	        return p_speed;
-	    }
-
-	    protected override void SetChangeVal() {
-	    }
-
-	    protected override void SetIncremental(int p_diffIncr) { }
-	    protected override void SetIncrementalRestart() { }
-
-	    protected override void DoUpdate(float p_totElapsed) {
-	        if(p_totElapsed < crossFadeTime) {
-	            float weight = p_totElapsed / crossFadeTime;
-
-	            prevAnimState.enabled = true;
-	            prevAnimState.wrapMode = prevWrap;
-	            prevAnimState.weight = 1.0f - weight;
-	            prevAnimState.time = (startTime + p_totElapsed) - prevStartTime;
-
-	            animState.enabled = true;
-	            animState.wrapMode = wrap;
-	            animState.weight = weight;
-	            animState.time = p_totElapsed;
-
-	            anim.Sample();
-
-	            prevAnimState.enabled = false;
-	            animState.enabled = false;
-	        }
-	        else {
-	            animState.enabled = true;
-	            animState.wrapMode = wrap;
-	            animState.weight = 1.0f;
-	            animState.time = p_totElapsed;
-
-	            anim.Sample();
-
-	            animState.enabled = false;
-	        }
-	    }
-
-	    protected override void SetValue(object p_value) { }
-	    protected override object GetValue() { return null; }
+        public override void Reset(TweenerCore<int, int, AMPlugAnimationOptions> t) { }
+        public override void SetChangeValue(TweenerCore<int, int, AMPlugAnimationOptions> t) { }
+        public override void SetFrom(TweenerCore<int, int, AMPlugAnimationOptions> t, bool isRelative) { }
+        public override void SetRelativeEndValue(TweenerCore<int, int, AMPlugAnimationOptions> t) { }
 	}
 
-	public class AMPlugDouble : ABSTweenPlugin {
-	    internal static Type[] validPropTypes = { typeof(double) };
-	    internal static Type[] validValueTypes = { typeof(double) };
+    public struct AMPlugAnimationCrossFadeOptions {
+        public Animation anim;
 
-	    double typedStartVal;
-	    double typedEndVal;
-	    double changeVal;
+        public AnimationState animState;
+        public WrapMode wrap;
+        public float startTime;
+                
+        public AnimationState prevAnimState;
+        public WrapMode prevWrap;
+        public float prevStartTime;
 
-	    protected override object startVal {
-	        get {
-	            return _startVal;
-	        }
-	        set {
-	            if(tweenObj.isFrom && isRelative) {
-	                _startVal = typedStartVal = typedEndVal + Convert.ToDouble(value);
-	            }
-	            else {
-	                _startVal = typedStartVal = Convert.ToDouble(value);
-	            }
-	        }
-	    }
+        public float crossFadeTime;
+    }
 
-	    protected override object endVal {
-	        get {
-	            return _endVal;
-	        }
-	        set {
-	            _endVal = typedEndVal = Convert.ToDouble(value);
-	        }
-	    }
+	/// <summary>
+	/// TODO: figure out using Play elegantly
+	/// </summary>
+    public class AMPlugAnimationCrossFade : ABSTweenPlugin<int, int, AMPlugAnimationCrossFadeOptions> {
 
-	    public AMPlugDouble(double p_endVal)
-	        : base(p_endVal, false) {
-	    }
+        public override int ConvertToStartValue(TweenerCore<int, int, AMPlugAnimationCrossFadeOptions> t, int value) {
+            return value;
+        }
 
-	    public AMPlugDouble(double p_endVal, EaseType p_easeType)
-	        : base(p_endVal, p_easeType, false) {
-	    }
+        public override void EvaluateAndApply(AMPlugAnimationCrossFadeOptions options, Tween t, bool isRelative, DOGetter<int> getter, DOSetter<int> setter, float elapsed, int startValue, int changeValue, float duration, bool usingInversePosition, UpdateNotice updateNotice) {
+            if(elapsed < options.crossFadeTime) {
+                float weight = elapsed / options.crossFadeTime;
 
-	    public AMPlugDouble(double p_endVal, bool p_isRelative)
-	        : base(p_endVal, p_isRelative) {
-	    }
+                options.prevAnimState.enabled = true;
+                options.prevAnimState.wrapMode = options.prevWrap;
+                options.prevAnimState.weight = 1.0f - weight;
+                options.prevAnimState.time = (options.startTime + elapsed) - options.prevStartTime;
 
-	    public AMPlugDouble(double p_endVal, EaseType p_easeType, bool p_isRelative)
-	        : base(p_endVal, p_easeType, p_isRelative) {
-	    }
+                options.animState.enabled = true;
+                options.animState.wrapMode = options.wrap;
+                options.animState.weight = weight;
+                options.animState.time = elapsed;
 
-	    public AMPlugDouble(double p_endVal, AnimationCurve p_easeAnimCurve, bool p_isRelative)
-	        : base(p_endVal, p_easeAnimCurve, p_isRelative) { }
+                options.anim.Sample();
 
-	    protected override float GetSpeedBasedDuration(float p_speed) {
-	        float speedDur = Convert.ToSingle(changeVal / (double)p_speed);
-	        if(speedDur < 0) {
-	            speedDur = -speedDur;
-	        }
-	        return speedDur;
-	    }
+                options.prevAnimState.enabled = false;
+                options.animState.enabled = false;
+            }
+            else {
+                options.animState.enabled = true;
+                options.animState.wrapMode = options.wrap;
+                options.animState.weight = 1.0f;
+                options.animState.time = elapsed;
 
-	    protected override void SetChangeVal() {
-	        if(isRelative && !tweenObj.isFrom) {
-	            changeVal = typedEndVal;
-	            endVal = typedStartVal + typedEndVal;
-	        }
-	        else {
-	            changeVal = typedEndVal - typedStartVal;
-	        }
-	    }
+                options.anim.Sample();
 
-	    protected override void SetIncremental(int p_diffIncr) {
-	        typedStartVal += changeVal * p_diffIncr;
-	    }
-	    protected override void SetIncrementalRestart() {
-	        double prevStartVal = typedStartVal;
-	        startVal = GetValue();
-	        double diff = typedStartVal - prevStartVal;
-	        typedEndVal = typedStartVal + diff;
-	    }
+                options.animState.enabled = false;
+            }
+        }
 
-	    protected override void DoUpdate(float p_totElapsed) {
-	        float t = ease(p_totElapsed, 0.0f, 1.0f, _duration, tweenObj.easeOvershootOrAmplitude, tweenObj.easePeriod);
-	        SetValue(typedStartVal + ((double)t) * (typedEndVal - typedStartVal));
-	    }
-	}
+        public override float GetSpeedBasedDuration(AMPlugAnimationCrossFadeOptions options, float unitsXSecond, int changeValue) {
+            return ((float)changeValue)/unitsXSecond;
+        }
 
-	public class AMPlugLong : ABSTweenPlugin {
-	    internal static Type[] validPropTypes = { typeof(long) };
-	    internal static Type[] validValueTypes = { typeof(long) };
-
-	    double typedStartVal;
-	    double typedEndVal;
-	    double changeVal;
-
-	    protected override object startVal {
-	        get {
-	            return _startVal;
-	        }
-	        set {
-	            if(tweenObj.isFrom && isRelative) {
-	                _startVal = typedStartVal = typedEndVal + Convert.ToDouble(value);
-	            }
-	            else {
-	                _startVal = typedStartVal = Convert.ToDouble(value);
-	            }
-	        }
-	    }
-
-	    protected override object endVal {
-	        get {
-	            return _endVal;
-	        }
-	        set {
-	            _endVal = typedEndVal = Convert.ToDouble(value);
-	        }
-	    }
-
-	    public AMPlugLong(long p_endVal)
-	        : base(p_endVal, false) {
-	    }
-
-	    public AMPlugLong(long p_endVal, EaseType p_easeType)
-	        : base(p_endVal, p_easeType, false) {
-	    }
-
-	    public AMPlugLong(long p_endVal, bool p_isRelative)
-	        : base(p_endVal, p_isRelative) {
-	    }
-
-	    public AMPlugLong(long p_endVal, EaseType p_easeType, bool p_isRelative)
-	        : base(p_endVal, p_easeType, p_isRelative) {
-	    }
-
-	    public AMPlugLong(long p_endVal, AnimationCurve p_easeAnimCurve, bool p_isRelative)
-	        : base(p_endVal, p_easeAnimCurve, p_isRelative) { }
-
-	    protected override float GetSpeedBasedDuration(float p_speed) {
-	        float speedDur = Convert.ToSingle(changeVal / (double)p_speed);
-	        if(speedDur < 0) {
-	            speedDur = -speedDur;
-	        }
-	        return speedDur;
-	    }
-
-	    protected override void SetChangeVal() {
-	        if(isRelative && !tweenObj.isFrom) {
-	            changeVal = typedEndVal;
-	            endVal = typedStartVal + typedEndVal;
-	        }
-	        else {
-	            changeVal = typedEndVal - typedStartVal;
-	        }
-	    }
-
-	    protected override void SetIncremental(int p_diffIncr) {
-	        typedStartVal += changeVal * p_diffIncr;
-	    }
-	    protected override void SetIncrementalRestart() {
-	        double prevStartVal = typedStartVal;
-	        startVal = GetValue();
-	        double diff = typedStartVal - prevStartVal;
-	        typedEndVal = typedStartVal + diff;
-	    }
-
-	    protected override void DoUpdate(float p_totElapsed) {
-	        float t = ease(p_totElapsed, 0.0f, 1.0f, _duration, tweenObj.easeOvershootOrAmplitude, tweenObj.easePeriod);
-	        SetValue(Convert.ToInt64(typedStartVal + ((double)t) * (typedEndVal - typedStartVal)));
-	    }
+        public override void Reset(TweenerCore<int, int, AMPlugAnimationCrossFadeOptions> t) { }
+        public override void SetChangeValue(TweenerCore<int, int, AMPlugAnimationCrossFadeOptions> t) { }
+        public override void SetFrom(TweenerCore<int, int, AMPlugAnimationCrossFadeOptions> t, bool isRelative) { }
+        public override void SetRelativeEndValue(TweenerCore<int, int, AMPlugAnimationCrossFadeOptions> t) { }
 	}
 }

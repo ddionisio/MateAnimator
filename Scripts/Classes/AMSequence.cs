@@ -2,15 +2,20 @@
 using System.Collections;
 using System.Collections.Generic;
 
-using Holoville.HOTween;
-using Holoville.HOTween.Core;
+using DG.Tweening;
 
 namespace MateAnimator{
 	public class AMSequence {
+        public struct TriggerParam {
+            public AMKey key;
+            public AMTriggerData data;
+        }
+
 	    private int mId;
 	    private AMITarget mTarget;
 	    private AMTakeData mTake;
 	    private Sequence mSequence;
+        private bool mIsAutoKill;
 
 	    private AMActionTween mActionTween;
 	    private List<AMActionData> mInsertActionTrack;
@@ -19,8 +24,8 @@ namespace MateAnimator{
 	    public AMITarget target { get { return mTarget; } }
 	    public AMTakeData take { get { return mTake; } }
 	    public Sequence sequence { get { return mSequence; } }
-
-	    public TweenDelegate.TweenCallbackWParms triggerCallback { get { return OnTrigger; } }
+        
+	    public TweenCallback<TriggerParam> triggerCallback { get { return OnTrigger; } }
 
 	    public AMSequence(AMITarget itarget, int id, AMTakeData take) {
 	        mTarget = itarget;
@@ -32,6 +37,7 @@ namespace MateAnimator{
 	    }
 
 	    public void Insert(AMKey key, Tweener tween) {
+
 	        mSequence.Insert(key.getWaitTime(mTake.frameRate, 0.0f), tween);
 	    }
 
@@ -47,19 +53,19 @@ namespace MateAnimator{
 
 	    public void Build(string goName, bool autoKill, UpdateType updateType) {
 	        if(mSequence != null) {
-	            HOTween.Kill(mSequence);
+                mSequence.Kill();
 	            mInsertActionTrack = null;
 	            mActionTween = null;
 	        }
 
-	        mSequence = new Sequence(
-	            new SequenceParms()
-	            .Id(string.Format("{0}:{1}", goName, mTake.name))
-	            .UpdateType(updateType)
-	            .AutoKill(autoKill)
-	            .Loops(mTake.numLoop, mTake.loopMode)
-	            .OnComplete(OnSequenceComplete));
-
+            //create sequence
+            mSequence = DOTween.Sequence();
+            mSequence.SetId(string.Format("{0}:{1}", goName, mTake.name));
+            mSequence.SetUpdate(updateType);
+            mSequence.SetAutoKill(mIsAutoKill = autoKill);
+            mSequence.SetLoops(mTake.numLoop, mTake.loopMode);
+            mSequence.OnComplete(OnSequenceComplete);
+            
 	        mTake.maintainCaches(mTarget);
 
 	        float minWaitTime = float.MaxValue;
@@ -97,8 +103,7 @@ namespace MateAnimator{
 	        mInsertActionTrack = null;
 	        if(trackValueSets != null && trackValueSets.Count > 0) {
 	            mActionTween = new AMActionTween(trackValueSets);
-	            mSequence.Insert(mActionTween.startTime, HOTween.To(this, mActionTween.duration, new TweenParms().Prop("id", mActionTween)));
-	            
+                mSequence.Insert(mActionTween.startTime, DOTween.To(mActionTween, () => 0, x => { }, 0, mActionTween.duration));
 	        }
 
 	        //prepend delay at the beginning
@@ -109,7 +114,7 @@ namespace MateAnimator{
 	    public void Reset(bool ignoreSequence) {
 	        if(!ignoreSequence && mSequence != null) {
 	            mSequence.Pause();
-	            mSequence.GoTo(0);
+                mSequence.Goto(0);
 	        }
 
 	        if(mActionTween != null)
@@ -121,7 +126,7 @@ namespace MateAnimator{
 	    /// </summary>
 	    public void Destroy() {
 	        if(mSequence != null) {
-	            HOTween.Kill(mSequence);
+                mSequence.Kill();
 	            mSequence = null;
 	        }
 
@@ -136,10 +141,10 @@ namespace MateAnimator{
 
 	        mTarget.SequenceComplete(this);
 
-	        if(!mSequence.autoKillOnComplete) {
+            if(!mIsAutoKill) {
 	            if(mTake.loopBackToFrame >= 0) {
-	                if(mSequence.isReversed)
-	                    mSequence.Reverse();
+                    if(mSequence.IsBackwards())
+                        mSequence.Flip();
 
 	                (mTarget as AnimatorData).PlayAtFrame(mTake.name, mTake.loopBackToFrame);
 	                return;
@@ -147,8 +152,8 @@ namespace MateAnimator{
 	        }
 	    }
 
-	    void OnTrigger(TweenEvent dat) {
-	        mTarget.SequenceTrigger(this, (AMKey)dat.parms[0], (AMTriggerData)dat.parms[1]);
+	    void OnTrigger(TriggerParam dat) {
+	        mTarget.SequenceTrigger(this, dat.key, dat.data);
 	    }
 	}
 }

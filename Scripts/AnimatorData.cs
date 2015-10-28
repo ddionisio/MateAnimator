@@ -4,7 +4,8 @@ using System.Collections.Generic;
 using System.Reflection;
 using System.Linq;
 
-using Holoville.HOTween;
+using DG.Tweening;
+
 namespace MateAnimator{
 	[ExecuteInEditMode]
 	[AddComponentMenu("M8/Animator")]
@@ -39,7 +40,7 @@ namespace MateAnimator{
 
 	    public DisableAction onDisableAction = DisableAction.Pause;
 
-	    public UpdateType updateType = UpdateType.Update;
+	    public UpdateType updateType = UpdateType.Normal;
 	    // hide
 
 	    public event OnTake takeCompleteCallback;
@@ -79,14 +80,14 @@ namespace MateAnimator{
 	    public bool isPlaying {
 	        get {
 	            Sequence seq = currentPlayingSequence;
-	            return seq != null && !(seq.isPaused || seq.isComplete);
+	            return seq != null && seq.IsPlaying();
 	        }
 	    }
 
 	    public bool isPaused {
 	        get {
 	            Sequence seq = currentPlayingSequence;
-	            return seq != null && seq.isPaused;
+	            return seq == null || !seq.IsPlaying();
 	        }
 	    }
 
@@ -95,26 +96,26 @@ namespace MateAnimator{
 	            Sequence seq = currentPlayingSequence;
 	            if(seq != null) {
 	                if(value) {
-	                    if(!seq.isReversed)
-	                        seq.Reverse();
+                        if(!seq.IsBackwards())
+                            seq.Flip();
 	                }
 	                else {
-	                    if(seq.isReversed)
-	                        seq.Reverse();
+                        if(seq.IsBackwards())
+                            seq.Flip();
 	                }
 	            }
 	        }
 
 	        get {
 	            Sequence seq = currentPlayingSequence;
-	            return seq != null && seq.isReversed;
+	            return seq != null && seq.IsBackwards();
 	        }
 	    }
 
 	    public float runningTime {
 	        get {
 	            Sequence seq = currentPlayingSequence;
-	            return seq != null ? seq.elapsed : 0.0f;
+	            return seq != null ? seq.Elapsed() : 0.0f;
 	        }
 	    }
 	    public float totalTime {
@@ -262,7 +263,7 @@ namespace MateAnimator{
 	            }
 
 	            seq.timeScale = mAnimScale;
-	            seq.GoToAndPlay(time);
+                seq.Goto(time, true);
 	        }
 	    }
 
@@ -322,7 +323,7 @@ namespace MateAnimator{
 	        Sequence seq = currentPlayingSequence;
 	        if(take != null && seq != null) {
 	            float t = frame / take.frameRate;
-	            seq.GoTo(t);
+	            seq.Goto(t);
 	        }
 	        else {
 	            Debug.LogWarning("No take playing...");
@@ -331,8 +332,8 @@ namespace MateAnimator{
 
 	    public void Reverse() {
 	        Sequence seq = currentPlayingSequence;
-	        if(seq != null)
-	            seq.Reverse();
+            if(seq != null)
+                seq.Flip();
 	    }
 
 	    // preview a single frame (used for scrubbing)

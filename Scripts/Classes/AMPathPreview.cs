@@ -24,8 +24,8 @@
 using UnityEngine;
 using System;
 using System.Collections.Generic;
-using Holoville.HOTween;
-using Holoville.HOTween.Core;
+
+using DG.Tweening;
 
 namespace MateAnimator{
 	public class AMPathPreview {
@@ -181,9 +181,9 @@ namespace MateAnimator{
 	        Matrix4x4 mtx = transform ? transform.localToWorldMatrix : Matrix4x4.identity;
 
 	        Vector3 currPt;
-	        if(changed || pathType == PathType.Curved && drawPs == null) {
+	        if(changed || pathType == PathType.CatmullRom && drawPs == null) {
 	            changed = false;
-	            if(pathType == PathType.Curved) {
+                if(pathType == PathType.CatmullRom) {
 	                // Store draw points.
 	                int subdivisions = path.Length * 10;
 	                drawPs = new Vector3[subdivisions + 1];

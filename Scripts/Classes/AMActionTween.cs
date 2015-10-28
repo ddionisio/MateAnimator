@@ -3,12 +3,15 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
 
-using Holoville.HOTween;
-using Holoville.HOTween.Core;
-using Holoville.HOTween.Plugins.Core;
+using DG.Tweening;
+using DG.Tweening.Core;
+using DG.Tweening.Core.Enums;
+using DG.Tweening.Plugins;
+using DG.Tweening.Plugins.Core;
+using DG.Tweening.Plugins.Options;
 
 namespace MateAnimator{
-	public class AMActionTween : ABSTweenPlugin {
+    public class AMActionTween : ABSTweenPlugin<int, int, NoOptions> {
 	    private const int trackValIndInit = -2;
 	    private const int trackValIndStart = -1;
 
@@ -19,94 +22,102 @@ namespace MateAnimator{
 	    private float mLastTime;
 	    private bool mIsLoopBack;
 
-	    protected override object startVal { get { return _startVal; } set { _startVal = value; } }
+        public AMActionTween(List<List<AMActionData>> trackValueSets) {
+            if(trackValueSets != null) {
+                mStartTime = float.MaxValue;
+                float maxEnd = 0.0f;
 
-	    protected override object endVal { get { return _endVal; } set { _endVal = value; } }
+                mValueTracks = new AMActionData[trackValueSets.Count][];
+                for(int i = 0; i < mValueTracks.Length; i++) {
+                    mValueTracks[i] = trackValueSets[i].ToArray();
 
-	    public float startTime { get { return mStartTime; } }
+                    if(mValueTracks[i][0].startTime < mStartTime)
+                        mStartTime = mValueTracks[i][0].startTime;
+                    if(mValueTracks[i][mValueTracks[i].Length-1].endTime > maxEnd)
+                        maxEnd = mValueTracks[i][mValueTracks[i].Length-1].endTime;
+                }
 
-	    public float duration { get { return mDuration; } }
+                mDuration = maxEnd - mStartTime;
 
-	    public AMActionTween(List<List<AMActionData>> trackValueSets)
-	        : base(null, false) {
-	        ignoreAccessor = true;
+                mValueTrackCurIndices = new int[mValueTracks.Length];
+                for(int i = 0; i < mValueTrackCurIndices.Length; i++)
+                    mValueTrackCurIndices[i] = trackValIndInit;
+            }
+        }
 
-	        if(trackValueSets != null) {
-	            mStartTime = float.MaxValue;
-	            float maxEnd = 0.0f;
+        public float startTime { get { return mStartTime; } }
 
-	            mValueTracks = new AMActionData[trackValueSets.Count][];
-	            for(int i = 0; i < mValueTracks.Length; i++) {
-	                mValueTracks[i] = trackValueSets[i].ToArray();
+        public float duration { get { return mDuration; } }
 
-	                if(mValueTracks[i][0].startTime < mStartTime)
-	                    mStartTime = mValueTracks[i][0].startTime;
-	                if(mValueTracks[i][mValueTracks[i].Length-1].endTime > maxEnd)
-	                    maxEnd = mValueTracks[i][mValueTracks[i].Length-1].endTime;
-	            }
+        public void Reset() {
+            if(mValueTrackCurIndices != null) {
+                for(int i = 0; i < mValueTrackCurIndices.Length; i++) {
+                    mValueTrackCurIndices[i] = trackValIndStart;
+                }
+            }
 
-	            mDuration = maxEnd - mStartTime;
+            mLastTime = 0.0f;
+            mIsLoopBack = false;
+        }
 
-	            mValueTrackCurIndices = new int[mValueTracks.Length];
-	            for(int i = 0; i < mValueTrackCurIndices.Length; i++)
-	                mValueTrackCurIndices[i] = trackValIndInit;
-	        }
-	    }
+        public override int ConvertToStartValue(TweenerCore<int, int, NoOptions> t, int value) {
+            return value;
+        }
 
-	    public void Reset() {
-	        if(mValueTrackCurIndices != null) {
-	            for(int i = 0; i < mValueTrackCurIndices.Length; i++) {
-	                mValueTrackCurIndices[i] = trackValIndStart;
-	            }
-	        }
+        public override void EvaluateAndApply(NoOptions options, Tween tween, bool isRelative, DOGetter<int> getter, DOSetter<int> setter, float elapsed, int startValue, int changeValue, float duration, bool usingInversePosition, UpdateNotice updateNotice) {
+            bool backward = mLastTime > elapsed;
+            bool changed = mIsLoopBack != backward;
 
-	        mLastTime = 0.0f;
-	        mIsLoopBack = false;
-	    }
+            mLastTime = elapsed;
+            mIsLoopBack = backward;
 
-	    protected override float GetSpeedBasedDuration(float p_speed) {
-	        return p_speed;
-	    }
+            float t = mStartTime + elapsed;
 
-	    protected override void SetChangeVal() { }
+            for(int i = 0, max = mValueTracks.Length; i < max; i++) {
+                int curInd = mValueTrackCurIndices[i];
 
-	    protected override void SetIncremental(int p_diffIncr) { }
-	    protected override void SetIncrementalRestart() { }
+                //determine if we need to move
+                if(curInd == trackValIndInit) //wait one frame
+                    mValueTrackCurIndices[i] = trackValIndStart;
+                else if(curInd == trackValIndStart) {
+                    //get the starting act, make sure t is within act's timeframe
+                    int newInd = GetValueIndex(mValueTracks[i], t);
+                    AMActionData act = mValueTracks[i][newInd];
+                    if(t >= act.startTime) {
+                        mValueTrackCurIndices[i] = newInd;
+                        act.Apply(t - act.startTime, tween.IsBackwards()); //usingInversePosition?
+                    }
+                }
+                else {
+                    int newInd = GetNextValueTrackIndex(mValueTracks[i], curInd, t);
+                    if(newInd != curInd || changed) {
+                        mValueTrackCurIndices[i] = newInd;
+                        AMActionData act = mValueTracks[i][newInd];
+                        act.Apply(t - act.startTime, mIsLoopBack);
+                    }
+                }
+            }
+        }
 
-	    protected override void DoUpdate(float p_totElapsed) {
-	        bool backward = mLastTime > p_totElapsed;
-	        bool changed = mIsLoopBack != backward;
+        public override float GetSpeedBasedDuration(NoOptions options, float unitsXSecond, int changeValue) {
+            return ((float)changeValue)/unitsXSecond;
+        }
 
-	        mLastTime = p_totElapsed;
-	        mIsLoopBack = backward;
-	        
-	        float t = mStartTime + p_totElapsed;
-	                
-	        for(int i = 0, max = mValueTracks.Length; i < max; i++) {
-	            int curInd = mValueTrackCurIndices[i];
+        public override void Reset(TweenerCore<int, int, NoOptions> t) {
+            Reset();
+        }
 
-	            //determine if we need to move
-	            if(curInd == trackValIndInit) //wait one frame
-	                mValueTrackCurIndices[i] = trackValIndStart;
-	            else if(curInd == trackValIndStart) {
-	                //get the starting act, make sure t is within act's timeframe
-	                int newInd = GetValueIndex(mValueTracks[i], t);
-	                AMActionData act = mValueTracks[i][newInd];
-	                if(t >= act.startTime) {	
-	                	mValueTrackCurIndices[i] = newInd;
-	                    act.Apply(t - act.startTime, tweenObj.isLoopingBack);
-	                }
-	            }
-	            else {
-	                int newInd = GetNextValueTrackIndex(mValueTracks[i], curInd, t);
-	                if(newInd != curInd || changed) {
-	                    mValueTrackCurIndices[i] = newInd;
-	                    AMActionData act = mValueTracks[i][newInd];
-	                    act.Apply(t - act.startTime, mIsLoopBack);
-	                }
-	            }
-	        }
-	    }
+        public override void SetChangeValue(TweenerCore<int, int, NoOptions> t) {
+
+        }
+
+        public override void SetFrom(TweenerCore<int, int, NoOptions> t, bool isRelative) {
+
+        }
+
+        public override void SetRelativeEndValue(TweenerCore<int, int, NoOptions> t) {
+
+        }
 
 	    /// <summary>
 	    /// Returns index based on given time (clamped)
@@ -162,9 +173,6 @@ namespace MateAnimator{
 
 	        return retInd;
 	    }
-
-	    protected override void SetValue(object p_value) { }
-	    protected override object GetValue() { return null; }
 	}
 
 	public abstract class AMActionData {
