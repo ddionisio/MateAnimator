@@ -3,8 +3,8 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
 
-using Holoville.HOTween;
-using Holoville.HOTween.Plugins;
+using DG.Tweening;
+using DG.Tweening.Plugins;
 
 namespace MateAnimator{
 	[AddComponentMenu("")]
@@ -130,54 +130,69 @@ namespace MateAnimator{
 
 	                    if(targetsAreEqual(valueType, endKey)) return;
 
-	                    if(hasCustomEase()) {
-	                        switch((AMPropertyTrack.ValueType)valueType) {
-	                            case AMPropertyTrack.ValueType.Integer:
-	                                seq.Insert(this, HOTween.To(comp, getTime(frameRate), new TweenParms().Prop(varName, System.Convert.ToInt32(endKey.val)).Ease(easeCurve))); break;
-	                            case AMPropertyTrack.ValueType.Float:
-	                                seq.Insert(this, HOTween.To(comp, getTime(frameRate), new TweenParms().Prop(varName, System.Convert.ToSingle(endKey.val)).Ease(easeCurve))); break;
-	                            case AMPropertyTrack.ValueType.Double:
-	                                seq.Insert(this, HOTween.To(comp, getTime(frameRate), new TweenParms().Prop(varName, new AMPlugDouble(endKey.val)).Ease(easeCurve))); break;
-	                            case AMPropertyTrack.ValueType.Long:
-	                                seq.Insert(this, HOTween.To(comp, getTime(frameRate), new TweenParms().Prop(varName, new AMPlugLong(System.Convert.ToInt64(endKey.val))).Ease(easeCurve))); break;
-	                            case AMPropertyTrack.ValueType.Vector2:
-	                                seq.Insert(this, HOTween.To(comp, getTime(frameRate), new TweenParms().Prop(varName, endKey.vect2).Ease(easeCurve))); break;
-	                            case AMPropertyTrack.ValueType.Vector3:
-	                                seq.Insert(this, HOTween.To(comp, getTime(frameRate), new TweenParms().Prop(varName, endKey.vect3).Ease(easeCurve))); break;
-	                            case AMPropertyTrack.ValueType.Color:
-	                                seq.Insert(this, HOTween.To(comp, getTime(frameRate), new TweenParms().Prop(varName, endKey.color).Ease(easeCurve))); break;
-	                            case AMPropertyTrack.ValueType.Rect:
-	                                seq.Insert(this, HOTween.To(comp, getTime(frameRate), new TweenParms().Prop(varName, endKey.rect).Ease(easeCurve))); break;
-	                            case AMPropertyTrack.ValueType.Vector4:
-	                                seq.Insert(this, HOTween.To(comp, getTime(frameRate), new TweenParms().Prop(varName, endKey.vect4).Ease(easeCurve))); break;
-	                            case AMPropertyTrack.ValueType.Quaternion:
-	                                seq.Insert(this, HOTween.To(comp, getTime(frameRate), new TweenParms().Prop(varName, new AMPlugQuaternionSlerp(endKey.quat)).Ease(easeCurve))); break;
-	                        }
-	                    }
-	                    else {
-	                        switch((AMPropertyTrack.ValueType)valueType) {
-	                            case AMPropertyTrack.ValueType.Integer:
-	                                seq.Insert(this, HOTween.To(comp, getTime(frameRate), new TweenParms().Prop(varName, System.Convert.ToInt32(endKey.val)).Ease((EaseType)easeType, amplitude, period))); break;
-	                            case AMPropertyTrack.ValueType.Float:
-	                                seq.Insert(this, HOTween.To(comp, getTime(frameRate), new TweenParms().Prop(varName, System.Convert.ToSingle(endKey.val)).Ease((EaseType)easeType, amplitude, period))); break;
-	                            case AMPropertyTrack.ValueType.Double:
-	                                seq.Insert(this, HOTween.To(comp, getTime(frameRate), new TweenParms().Prop(varName, new AMPlugDouble(endKey.val)).Ease((EaseType)easeType, amplitude, period))); break;
-	                            case AMPropertyTrack.ValueType.Long:
-	                                seq.Insert(this, HOTween.To(comp, getTime(frameRate), new TweenParms().Prop(varName, new AMPlugLong(System.Convert.ToInt64(endKey.val))).Ease((EaseType)easeType, amplitude, period))); break;
-	                            case AMPropertyTrack.ValueType.Vector2:
-	                                seq.Insert(this, HOTween.To(comp, getTime(frameRate), new TweenParms().Prop(varName, endKey.vect2).Ease((EaseType)easeType, amplitude, period))); break;
-	                            case AMPropertyTrack.ValueType.Vector3:
-	                                seq.Insert(this, HOTween.To(comp, getTime(frameRate), new TweenParms().Prop(varName, endKey.vect3).Ease((EaseType)easeType, amplitude, period))); break;
-	                            case AMPropertyTrack.ValueType.Color:
-	                                seq.Insert(this, HOTween.To(comp, getTime(frameRate), new TweenParms().Prop(varName, endKey.color).Ease((EaseType)easeType, amplitude, period))); break;
-	                            case AMPropertyTrack.ValueType.Rect:
-	                                seq.Insert(this, HOTween.To(comp, getTime(frameRate), new TweenParms().Prop(varName, endKey.rect).Ease((EaseType)easeType, amplitude, period))); break;
-	                            case AMPropertyTrack.ValueType.Vector4:
-	                                seq.Insert(this, HOTween.To(comp, getTime(frameRate), new TweenParms().Prop(varName, endKey.vect4).Ease((EaseType)easeType, amplitude, period))); break;
-	                            case AMPropertyTrack.ValueType.Quaternion:
-	                                seq.Insert(this, HOTween.To(comp, getTime(frameRate), new TweenParms().Prop(varName, new AMPlugQuaternionSlerp(endKey.quat)).Ease((EaseType)easeType, amplitude, period))); break;
-	                        }
-	                    }
+                        Tweener tween = null;
+
+                        PropertyInfo propInfo = propTrack.GetCachedPropertyInfo();
+                        if(propInfo != null) {
+                            switch((AMPropertyTrack.ValueType)valueType) {
+                                case AMPropertyTrack.ValueType.Integer:
+                                    tween = DOTween.To(new IntPlugin(), () => System.Convert.ToInt32(propInfo.GetValue(comp, null)), (x) => propInfo.SetValue(comp, x, null), System.Convert.ToInt32(endKey.val), getTime(frameRate)); break;
+                                case AMPropertyTrack.ValueType.Float:
+                                    tween = DOTween.To(new FloatPlugin(), () => System.Convert.ToSingle(propInfo.GetValue(comp, null)), (x) => propInfo.SetValue(comp, x, null), System.Convert.ToSingle(endKey.val), getTime(frameRate)); break;
+                                case AMPropertyTrack.ValueType.Double:
+                                    tween = DOTween.To(new DoublePlugin(), () => System.Convert.ToDouble(propInfo.GetValue(comp, null)), (x) => propInfo.SetValue(comp, x, null), endKey.val, getTime(frameRate)); break;
+                                case AMPropertyTrack.ValueType.Long:
+                                    tween = DOTween.To(new LongPlugin(), () => System.Convert.ToInt64(propInfo.GetValue(comp, null)), (x) => propInfo.SetValue(comp, x, null), System.Convert.ToInt64(endKey.val), getTime(frameRate)); break;
+                                case AMPropertyTrack.ValueType.Vector2:
+                                    tween = DOTween.To(new Vector2Plugin(), () => (Vector2)propInfo.GetValue(comp, null), (x) => propInfo.SetValue(comp, x, null), endKey.vect2, getTime(frameRate)); break;
+                                case AMPropertyTrack.ValueType.Vector3:
+                                    tween = DOTween.To(new Vector3Plugin(), () => (Vector3)propInfo.GetValue(comp, null), (x) => propInfo.SetValue(comp, x, null), endKey.vect3, getTime(frameRate)); break;
+                                case AMPropertyTrack.ValueType.Color:
+                                    tween = DOTween.To(new ColorPlugin(), () => (Color)propInfo.GetValue(comp, null), (x) => propInfo.SetValue(comp, x, null), endKey.color, getTime(frameRate)); break;
+                                case AMPropertyTrack.ValueType.Rect:
+                                    tween = DOTween.To(new RectPlugin(), () => (Rect)propInfo.GetValue(comp, null), (x) => propInfo.SetValue(comp, x, null), endKey.rect, getTime(frameRate)); break;
+                                case AMPropertyTrack.ValueType.Vector4:
+                                    tween = DOTween.To(new Vector4Plugin(), () => (Vector4)propInfo.GetValue(comp, null), (x) => propInfo.SetValue(comp, x, null), endKey.vect4, getTime(frameRate)); break;
+                                case AMPropertyTrack.ValueType.Quaternion:
+                                    tween = DOTween.To(new AMPlugQuaternion(), () => (Quaternion)propInfo.GetValue(comp, null), (x) => propInfo.SetValue(comp, x, null), endKey.quat, getTime(frameRate)); break;
+                            }
+                        }
+                        else {
+                            FieldInfo fieldInfo = propTrack.GetCachedFieldInfo();
+                            if(fieldInfo != null) {
+                                switch((AMPropertyTrack.ValueType)valueType) {
+                                    case AMPropertyTrack.ValueType.Integer:
+                                        tween = DOTween.To(new IntPlugin(), () => System.Convert.ToInt32(fieldInfo.GetValue(comp)), (x) => fieldInfo.SetValue(comp, x), System.Convert.ToInt32(endKey.val), getTime(frameRate)); break;
+                                    case AMPropertyTrack.ValueType.Float:
+                                        tween = DOTween.To(new FloatPlugin(), () => System.Convert.ToSingle(fieldInfo.GetValue(comp)), (x) => fieldInfo.SetValue(comp, x), System.Convert.ToSingle(endKey.val), getTime(frameRate)); break;
+                                    case AMPropertyTrack.ValueType.Double:
+                                        tween = DOTween.To(new DoublePlugin(), () => System.Convert.ToDouble(fieldInfo.GetValue(comp)), (x) => fieldInfo.SetValue(comp, x), endKey.val, getTime(frameRate)); break;
+                                    case AMPropertyTrack.ValueType.Long:
+                                        tween = DOTween.To(new LongPlugin(), () => System.Convert.ToInt64(fieldInfo.GetValue(comp)), (x) => fieldInfo.SetValue(comp, x), System.Convert.ToInt64(endKey.val), getTime(frameRate)); break;
+                                    case AMPropertyTrack.ValueType.Vector2:
+                                        tween = DOTween.To(new Vector2Plugin(), () => (Vector2)fieldInfo.GetValue(comp), (x) => fieldInfo.SetValue(comp, x), endKey.vect2, getTime(frameRate)); break;
+                                    case AMPropertyTrack.ValueType.Vector3:
+                                        tween = DOTween.To(new Vector3Plugin(), () => (Vector3)fieldInfo.GetValue(comp), (x) => fieldInfo.SetValue(comp, x), endKey.vect3, getTime(frameRate)); break;
+                                    case AMPropertyTrack.ValueType.Color:
+                                        tween = DOTween.To(new ColorPlugin(), () => (Color)fieldInfo.GetValue(comp), (x) => fieldInfo.SetValue(comp, x), endKey.color, getTime(frameRate)); break;
+                                    case AMPropertyTrack.ValueType.Rect:
+                                        tween = DOTween.To(new RectPlugin(), () => (Rect)fieldInfo.GetValue(comp), (x) => fieldInfo.SetValue(comp, x), endKey.rect, getTime(frameRate)); break;
+                                    case AMPropertyTrack.ValueType.Vector4:
+                                        tween = DOTween.To(new Vector4Plugin(), () => (Vector4)fieldInfo.GetValue(comp), (x) => fieldInfo.SetValue(comp, x), endKey.vect4, getTime(frameRate)); break;
+                                    case AMPropertyTrack.ValueType.Quaternion:
+                                        tween = DOTween.To(new AMPlugQuaternion(), () => (Quaternion)fieldInfo.GetValue(comp), (x) => fieldInfo.SetValue(comp, x), endKey.quat, getTime(frameRate)); break;
+                                }
+                            }
+                        }
+
+                        if(tween != null) {
+                            if(hasCustomEase())
+                                tween.SetEase(easeCurve);
+                            else
+                                tween.SetEase((Ease)easeType, amplitude, period);
+
+                            seq.Insert(this, tween);
+                        }
 	                }
 	            }
 	            else {

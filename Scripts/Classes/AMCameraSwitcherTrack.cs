@@ -2,8 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 
-using Holoville.HOTween.Core;
-using Holoville.HOTween;
+using DG.Tweening;
 
 namespace MateAnimator{
 	public class AMCameraSwitcherTrack : AMTrack {
@@ -58,7 +57,7 @@ namespace MateAnimator{
 	        else {
 	            a.type = 0;
 	            a.still = !AMTakeData.isProLicense;
-	            a.easeType = (int)EaseType.EaseOutSine;
+	            a.easeType = (int)Ease.OutSine;
 	        }
 	        a.frame = _frame;
 	        if(camera != null) {
@@ -181,8 +180,8 @@ namespace MateAnimator{
 	            value = AMUtil.EaseCustom(1.0f, -1.0f, percentage, action.easeCurve);
 	        }
 	        else {
-	            TweenDelegate.EaseFunc ease = AMUtil.GetEasingFunction((EaseType)action.easeType);
-	            value = ease(percentage, 1.0f, -1.0f, 1.0f, action.amplitude, action.period);
+	            var ease = AMUtil.GetEasingFunction((Ease)action.easeType);
+                value = 1.0f - ease(percentage, 1.0f, action.amplitude, action.period);
 	        }
 
 	        cf.value = value;

@@ -3,8 +3,8 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
 
-using Holoville.HOTween;
-using Holoville.HOTween.Plugins;
+using DG.Tweening;
+using DG.Tweening.Plugins;
 
 namespace MateAnimator{
 	[AddComponentMenu("")]
@@ -93,12 +93,16 @@ namespace MateAnimator{
 
 	    public override void build(AMSequence seq, AMTrack track, int index, UnityEngine.Object target) {
 	        AMMaterialTrack matTrack = track as AMMaterialTrack;
+            AMMaterialTrack.ValueType propType = matTrack.propertyType;
 
 	        Material matInst = matTrack.materialInstance;
+
 	        string prop = matTrack.property;
-	        AMMaterialTrack.ValueType propType = matTrack.propertyType;
+            int propId = Shader.PropertyToID(prop);
 
 	        int frameRate = seq.take.frameRate;
+
+            Tweener tween = null;
 
 	        switch(propType) {
 	            case AMMaterialTrack.ValueType.Float:
@@ -109,10 +113,7 @@ namespace MateAnimator{
 	                    AMMaterialKey endKey = track.keys[index + 1] as AMMaterialKey;
 	                    if(targetsAreEqual(propType, endKey)) return;
 
-	                    if(hasCustomEase())
-	                        seq.Insert(this, HOTween.To(this, getTime(frameRate), new TweenParms().Prop(bsField, new AMPlugMaterialFloat(matInst, prop, endKey.val)).Ease(easeCurve)));
-	                    else
-	                        seq.Insert(this, HOTween.To(this, getTime(frameRate), new TweenParms().Prop(bsField, new AMPlugMaterialFloat(matInst, prop, endKey.val)).Ease((EaseType)easeType, amplitude, period)));
+                        tween = DOTween.To(new FloatPlugin(), ()=>matInst.GetFloat(propId), (x)=>matInst.SetFloat(propId, x), endKey.val, getTime(frameRate));
 	                }
 	                break;
 	            case AMMaterialTrack.ValueType.Vector:
@@ -122,10 +123,7 @@ namespace MateAnimator{
 	                    AMMaterialKey endKey = track.keys[index + 1] as AMMaterialKey;
 	                    if(targetsAreEqual(propType, endKey)) return;
 
-	                    if(hasCustomEase())
-	                        seq.Insert(this, HOTween.To(this, getTime(frameRate), new TweenParms().Prop(bsField, new AMPlugMaterialVector4(matInst, prop, endKey.vector)).Ease(easeCurve)));
-	                    else
-	                        seq.Insert(this, HOTween.To(this, getTime(frameRate), new TweenParms().Prop(bsField, new AMPlugMaterialVector4(matInst, prop, endKey.vector)).Ease((EaseType)easeType, amplitude, period)));
+                        tween = DOTween.To(new Vector4Plugin(), () => matInst.GetVector(propId), (x) => matInst.SetVector(propId, x), endKey.vector, getTime(frameRate));
 	                }
 	                break;
 	            case AMMaterialTrack.ValueType.Color:
@@ -135,10 +133,7 @@ namespace MateAnimator{
 	                    AMMaterialKey endKey = track.keys[index + 1] as AMMaterialKey;
 	                    if(targetsAreEqual(propType, endKey)) return;
 
-	                    if(hasCustomEase())
-	                        seq.Insert(this, HOTween.To(this, getTime(frameRate), new TweenParms().Prop(bsField, new AMPlugMaterialColor(matInst, prop, endKey.color)).Ease(easeCurve)));
-	                    else
-	                        seq.Insert(this, HOTween.To(this, getTime(frameRate), new TweenParms().Prop(bsField, new AMPlugMaterialColor(matInst, prop, endKey.color)).Ease((EaseType)easeType, amplitude, period)));
+                        tween = DOTween.To(new ColorPlugin(), () => matInst.GetColor(propId), (x) => matInst.SetColor(propId, x), endKey.color, getTime(frameRate));
 	                }
 	                break;
 	            case AMMaterialTrack.ValueType.TexOfs:
@@ -148,10 +143,7 @@ namespace MateAnimator{
 	                    AMMaterialKey endKey = track.keys[index + 1] as AMMaterialKey;
 	                    if(targetsAreEqual(propType, endKey)) return;
 
-	                    if(hasCustomEase())
-	                        seq.Insert(this, HOTween.To(this, getTime(frameRate), new TweenParms().Prop(bsField, new AMPlugMaterialTexOfs(matInst, prop, endKey.texOfs)).Ease(easeCurve)));
-	                    else
-	                        seq.Insert(this, HOTween.To(this, getTime(frameRate), new TweenParms().Prop(bsField, new AMPlugMaterialTexOfs(matInst, prop, endKey.texOfs)).Ease((EaseType)easeType, amplitude, period)));
+                        tween = DOTween.To(new Vector2Plugin(), () => matInst.GetTextureOffset(prop), (x) => matInst.SetTextureOffset(prop, x), endKey.texOfs, getTime(frameRate));
 	                }
 	                break;
 	            case AMMaterialTrack.ValueType.TexScale:
@@ -161,16 +153,22 @@ namespace MateAnimator{
 	                    AMMaterialKey endKey = track.keys[index + 1] as AMMaterialKey;
 	                    if(targetsAreEqual(propType, endKey)) return;
 
-	                    if(hasCustomEase())
-	                        seq.Insert(this, HOTween.To(this, getTime(frameRate), new TweenParms().Prop(bsField, new AMPlugMaterialTexScale(matInst, prop, endKey.texScale)).Ease(easeCurve)));
-	                    else
-	                        seq.Insert(this, HOTween.To(this, getTime(frameRate), new TweenParms().Prop(bsField, new AMPlugMaterialTexScale(matInst, prop, endKey.texScale)).Ease((EaseType)easeType, amplitude, period)));
+                        tween = DOTween.To(new Vector2Plugin(), () => matInst.GetTextureScale(prop), (x) => matInst.SetTextureScale(prop, x), endKey.texScale, getTime(frameRate));
 	                }
 	                break;
 	            case AMMaterialTrack.ValueType.TexEnv:
 	                seq.Insert(new AMActionMaterialTexSet(this, frameRate, matInst, prop, texture));
 	                break;
 	        }
+
+            if(tween != null) {
+                if(hasCustomEase())
+                    tween.SetEase(easeCurve);
+                else
+                    tween.SetEase((Ease)easeType, amplitude, period);
+
+                seq.Insert(this, tween);
+            }
 	    }
 
 	    public string getValueString(AMMaterialTrack.ValueType valueType, AMMaterialKey nextKey, bool brief) {

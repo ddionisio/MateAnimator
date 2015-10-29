@@ -3,8 +3,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
-using Holoville.HOTween;
-
 namespace MateAnimator{
 	[AddComponentMenu("")]
 	public class AMGOSetActiveTrack : AMTrack {

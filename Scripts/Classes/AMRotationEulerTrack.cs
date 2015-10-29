@@ -2,8 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 
-using Holoville.HOTween.Core;
-using Holoville.HOTween;
+using DG.Tweening;
 
 namespace MateAnimator{
 	[AddComponentMenu("")]
@@ -55,7 +54,7 @@ namespace MateAnimator{
 	        a.frame = _frame;
 	        a.rotation = _rotation;
 	        // set default ease type to linear
-	        a.easeType = (int)EaseType.Linear;
+	        a.easeType = (int)Ease.Linear;
 
 	        // add a new key
 	        keys.Add(a);
@@ -125,8 +124,8 @@ namespace MateAnimator{
 	                ApplyRot(t, Vector3.Lerp(qStart, qEnd, AMUtil.EaseCustom(0.0f, 1.0f, framePositionInAction / key.getNumberOfFrames(frameRate), key.easeCurve)));
 	            }
 	            else {
-	                TweenDelegate.EaseFunc ease = AMUtil.GetEasingFunction((EaseType)key.easeType);
-	                ApplyRot(t, Vector3.Lerp(qStart, qEnd, ease(framePositionInAction, 0.0f, 1.0f, key.getNumberOfFrames(frameRate), key.amplitude, key.period)));
+	                var ease = AMUtil.GetEasingFunction((Ease)key.easeType);
+	                ApplyRot(t, Vector3.Lerp(qStart, qEnd, ease(framePositionInAction, key.getNumberOfFrames(frameRate), key.amplitude, key.period)));
 	            }
 
 	            return;
@@ -212,8 +211,8 @@ namespace MateAnimator{
 	                return Vector3.Lerp(qStart, qEnd, AMUtil.EaseCustom(0.0f, 1.0f, (float)framePositionInAction / (float)key.getNumberOfFrames(frameRate), key.easeCurve));
 	            }
 	            else {
-	                TweenDelegate.EaseFunc ease = AMUtil.GetEasingFunction((EaseType)key.easeType);
-	                return Vector3.Lerp(qStart, qEnd, ease(framePositionInAction, 0.0f, 1.0f, key.getNumberOfFrames(frameRate), 0.0f, 0.0f));
+	                var ease = AMUtil.GetEasingFunction((Ease)key.easeType);
+	                return Vector3.Lerp(qStart, qEnd, ease(framePositionInAction, key.getNumberOfFrames(frameRate), 0.0f, 0.0f));
 	            }
 	        }
 	        Debug.LogError("Animator: Could not get rotation at frame '" + frame + "'");

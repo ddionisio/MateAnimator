@@ -1,8 +1,7 @@
 using UnityEngine;
 using System.Collections;
 
-using Holoville.HOTween;
-using Holoville.HOTween.Core;
+using DG.Tweening;
 
 namespace MateAnimator{
 	[AddComponentMenu("")]
@@ -28,7 +27,24 @@ namespace MateAnimator{
 	    public override void build(AMSequence seq, AMTrack track, int index, UnityEngine.Object target) {
 	        float sTime = getWaitTime(seq.take.frameRate, 0.0f);
 
-			seq.sequence.InsertCallback(sTime, OnMethodCallbackParams, target as AudioSource);
+            Sequence _seq = seq.sequence;
+            AudioSource _src = target as AudioSource;
+
+            _seq.InsertCallback(sTime, () => {
+                //don't play when going backwards
+                if(_seq.isBackwards) return;
+
+                _src.pitch = _seq.timeScale;
+
+                if(oneShot)
+                    _src.PlayOneShot(audioClip);
+                else {
+                    if((_src.isPlaying && _src.clip == audioClip)) return;
+                    _src.loop = loop;
+                    _src.clip = audioClip;
+                    _src.Play();
+                }
+            });
 	    }
 
 	    public ulong getTimeInSamples(int frequency, float time) {
@@ -38,28 +54,6 @@ namespace MateAnimator{
 	        if(!audioClip || loop) return -1;
 	        return Mathf.CeilToInt(audioClip.length * (float)frameRate);
 	    }
-
-		void OnMethodCallbackParams(TweenEvent dat) {
-			if (dat.tween.isLoopingBack) return;
-			AudioSource src = dat.parms[0] as AudioSource;
-			if (src == null) return;
-
-	        Sequence seq = dat.tween as Sequence;
-	        if(seq != null)
-	            src.pitch = seq.timeScale;
-	        else
-			    src.pitch = 1f;
-
-			if (oneShot) {
-				src.PlayOneShot(audioClip);
-			} else {
-				if ((src.isPlaying && src.clip == audioClip)) return;
-				src.loop = loop;
-				src.clip = audioClip;
-				src.Play();
-			}
-		}
-
 	    #endregion
 	}
 }

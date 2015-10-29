@@ -4,350 +4,341 @@ using System.Collections.Generic;
 using System.Reflection;
 using System.Linq;
 
-using Holoville.HOTween;
-using Holoville.HOTween.Core;
+using DG.Tweening;
 
-namespace MateAnimator{
-	[AddComponentMenu("")]
-	public class AMEventKey : AMKey {
+namespace MateAnimator {
+    [AddComponentMenu("")]
+    public class AMEventKey : AMKey {
 
-	    private struct ParamKeep {
-	        public System.Type type;
-	        public object val;
-	    }
+        private struct ParamKeep {
+            public System.Type type;
+            public object val;
+        }
 
-		[SerializeField]
-	    Component component = null;
-		[SerializeField]
-		string componentName = "";
+        [SerializeField]
+        Component component = null;
+        [SerializeField]
+        string componentName = "";
 
-	    public bool useSendMessage = true;
-	    public List<AMEventParameter> parameters = new List<AMEventParameter>();
-	    public string methodName;
-	    private MethodInfo cachedMethodInfo;
-	    
-		public string getComponentName() { return componentName; }
+        public bool useSendMessage = true;
+        public List<AMEventParameter> parameters = new List<AMEventParameter>();
+        public string methodName;
+        private MethodInfo cachedMethodInfo;
 
-	    public bool isMatch(ParameterInfo[] cachedParameterInfos) {
-	        if(cachedParameterInfos != null && parameters != null && cachedParameterInfos.Length == parameters.Count) {
-	            for(int i = 0; i < cachedParameterInfos.Length; i++) {
-	                if(parameters[i].valueType == (int)AMEventParameter.ValueType.Array) {
-	                    if(!parameters[i].checkArrayIntegrity() || cachedParameterInfos[i].ParameterType != parameters[i].getParamType())
-	                        return false;
-	                }
-	                else if(cachedParameterInfos[i].ParameterType != parameters[i].getParamType())
-	                    return false;
-	            }
-	        }
-	        else
-	            return false;
+        public string getComponentName() { return componentName; }
 
-	        return true;
-	    }
+        public bool isMatch(ParameterInfo[] cachedParameterInfos) {
+            if(cachedParameterInfos != null && parameters != null && cachedParameterInfos.Length == parameters.Count) {
+                for(int i = 0; i < cachedParameterInfos.Length; i++) {
+                    if(parameters[i].valueType == (int)AMEventParameter.ValueType.Array) {
+                        if(!parameters[i].checkArrayIntegrity() || cachedParameterInfos[i].ParameterType != parameters[i].getParamType())
+                            return false;
+                    }
+                    else if(cachedParameterInfos[i].ParameterType != parameters[i].getParamType())
+                        return false;
+                }
+            }
+            else
+                return false;
 
-	    public override System.Type GetRequiredComponent() {
-	        if(string.IsNullOrEmpty(componentName)) return null;
+            return true;
+        }
 
-	        System.Type type = System.Type.GetType(componentName);
-	        if(type == null) {
-	            int endInd = componentName.IndexOf('.');
-	            if(endInd != -1) {
-	                // Get the name of the assembly (Assumption is that we are using
-	                // fully-qualified type names)
-	                var assemblyName = componentName.Substring(0, endInd);
+        public override System.Type GetRequiredComponent() {
+            if(string.IsNullOrEmpty(componentName)) return null;
 
-	                // Attempt to load the indicated Assembly
-	                var assembly = System.Reflection.Assembly.Load(assemblyName);
-	                if(assembly != null)
-	                    // Ask that assembly to return the proper Type
-	                    type = assembly.GetType(componentName);
-	            }
-	        }
+            System.Type type = System.Type.GetType(componentName);
+            if(type == null) {
+                int endInd = componentName.IndexOf('.');
+                if(endInd != -1) {
+                    // Get the name of the assembly (Assumption is that we are using
+                    // fully-qualified type names)
+                    var assemblyName = componentName.Substring(0, endInd);
 
-	        return type;
-		}
+                    // Attempt to load the indicated Assembly
+                    var assembly = System.Reflection.Assembly.Load(assemblyName);
+                    if(assembly != null)
+                        // Ask that assembly to return the proper Type
+                        type = assembly.GetType(componentName);
+                }
+            }
 
-		public override void maintainKey(AMITarget itarget, UnityEngine.Object targetObj) {
-			if(string.IsNullOrEmpty(componentName)) {
-				if(component) {
-					componentName = component.GetType().Name;
-				}
-			}
+            return type;
+        }
 
-			if(itarget.isMeta) {
-				component = null;
-			}
-			else if(!component && !string.IsNullOrEmpty(componentName) && targetObj) {
-				component = ((GameObject)targetObj).GetComponent(componentName);
-			}
+        public override void maintainKey(AMITarget itarget, UnityEngine.Object targetObj) {
+            if(string.IsNullOrEmpty(componentName)) {
+                if(component) {
+                    componentName = component.GetType().Name;
+                }
+            }
 
-			cachedMethodInfo = null;
-		}
+            if(itarget.isMeta) {
+                component = null;
+            }
+            else if(!component && !string.IsNullOrEmpty(componentName) && targetObj) {
+                component = ((GameObject)targetObj).GetComponent(componentName);
+            }
 
-	    public override int getNumberOfFrames(int frameRate) {
-	        return 1;
-	    }
+            cachedMethodInfo = null;
+        }
 
-		//set target to a valid ref. for meta
-		public MethodInfo getMethodInfo(GameObject target) {
-			if(target) {
-				if(string.IsNullOrEmpty(componentName)) return null;
-				if(cachedMethodInfo != null) return cachedMethodInfo;
-				if(methodName == null) return null;
-				Component comp = target.GetComponent(componentName);
-				cachedMethodInfo = comp.GetType().GetMethod(methodName, GetParamTypes());
-				return cachedMethodInfo;
-			}
-			else {
-				if(component == null) return null;
-				if(cachedMethodInfo != null) return cachedMethodInfo;
-				if(methodName == null) return null;
-				cachedMethodInfo = component.GetType().GetMethod(methodName, GetParamTypes());
-				return cachedMethodInfo;
-			}
-		}
+        public override int getNumberOfFrames(int frameRate) {
+            return 1;
+        }
 
-		//set target to a valid ref. for meta
-		public bool setMethodInfo(GameObject target, Component component, bool setComponent, MethodInfo methodInfo, ParameterInfo[] cachedParameterInfos, bool restoreValues) {
-			MethodInfo _methodInfo = getMethodInfo(target);
+        //set target to a valid ref. for meta
+        public MethodInfo getMethodInfo(GameObject target) {
+            if(target) {
+                if(string.IsNullOrEmpty(componentName)) return null;
+                if(cachedMethodInfo != null) return cachedMethodInfo;
+                if(methodName == null) return null;
+                Component comp = target.GetComponent(componentName);
+                cachedMethodInfo = comp.GetType().GetMethod(methodName, GetParamTypes());
+                return cachedMethodInfo;
+            }
+            else {
+                if(component == null) return null;
+                if(cachedMethodInfo != null) return cachedMethodInfo;
+                if(methodName == null) return null;
+                cachedMethodInfo = component.GetType().GetMethod(methodName, GetParamTypes());
+                return cachedMethodInfo;
+            }
+        }
 
-	        // if different component or methodinfo
-	        string _componentName = component.GetType().Name;
-	        if((_methodInfo != methodInfo) || (this.componentName != _componentName) || !isMatch(cachedParameterInfos)) {
-	            this.component = setComponent ? component : null;
-	            this.componentName = _componentName;
-				methodName = methodInfo.Name;
-				cachedMethodInfo = methodInfo;
-	            //this.parameters = new object[numParameters];
+        //set target to a valid ref. for meta
+        public bool setMethodInfo(GameObject target, Component component, bool setComponent, MethodInfo methodInfo, ParameterInfo[] cachedParameterInfos, bool restoreValues) {
+            MethodInfo _methodInfo = getMethodInfo(target);
 
-	            Dictionary<string, ParamKeep> oldParams = null;
-	            if(restoreValues && parameters != null && parameters.Count > 0) {
-	                Debug.Log("Parameters have been changed, from code? Attempting to restore data.");
-	                oldParams = new Dictionary<string, ParamKeep>(parameters.Count);
-	                for(int i = 0; i < parameters.Count; i++) {
-	                    if(!string.IsNullOrEmpty(parameters[i].paramName) && (parameters[i].valueType != (int)AMEventParameter.ValueType.Array || parameters[i].checkArrayIntegrity())) {
-	                        try {
-	                            object valObj = parameters[i].toObject();
+            // if different component or methodinfo
+            string _componentName = component.GetType().Name;
+            if((_methodInfo != methodInfo) || (this.componentName != _componentName) || !isMatch(cachedParameterInfos)) {
+                this.component = setComponent ? component : null;
+                this.componentName = _componentName;
+                methodName = methodInfo.Name;
+                cachedMethodInfo = methodInfo;
+                //this.parameters = new object[numParameters];
 
-	                            oldParams.Add(parameters[i].paramName, new ParamKeep() { type = parameters[i].getParamType(), val = valObj });
-	                        }
-	                        catch {
-	                            continue;
-	                        }
-	                    }
-	                }
-	            }
-	            
-	            this.parameters = new List<AMEventParameter>();
+                Dictionary<string, ParamKeep> oldParams = null;
+                if(restoreValues && parameters != null && parameters.Count > 0) {
+                    Debug.Log("Parameters have been changed, from code? Attempting to restore data.");
+                    oldParams = new Dictionary<string, ParamKeep>(parameters.Count);
+                    for(int i = 0; i < parameters.Count; i++) {
+                        if(!string.IsNullOrEmpty(parameters[i].paramName) && (parameters[i].valueType != (int)AMEventParameter.ValueType.Array || parameters[i].checkArrayIntegrity())) {
+                            try {
+                                object valObj = parameters[i].toObject();
 
-	            // add parameters
-	            for(int i = 0; i < cachedParameterInfos.Length; i++) {
-	                AMEventParameter a = new AMEventParameter();
-	                a.paramName = cachedParameterInfos[i].Name;
-	                a.setValueType(cachedParameterInfos[i].ParameterType);
+                                oldParams.Add(parameters[i].paramName, new ParamKeep() { type = parameters[i].getParamType(), val = valObj });
+                            }
+                            catch {
+                                continue;
+                            }
+                        }
+                    }
+                }
 
-	                //see if we can restore value from previous
-	                if(oldParams != null && oldParams.ContainsKey(a.paramName)) {
-	                    ParamKeep keep = oldParams[a.paramName];
-	                    if(keep.type == cachedParameterInfos[i].ParameterType)
-	                        a.fromObject(keep.val);
-	                }
+                this.parameters = new List<AMEventParameter>();
 
-	                this.parameters.Add(a);
-	            }
+                // add parameters
+                for(int i = 0; i < cachedParameterInfos.Length; i++) {
+                    AMEventParameter a = new AMEventParameter();
+                    a.paramName = cachedParameterInfos[i].Name;
+                    a.setValueType(cachedParameterInfos[i].ParameterType);
 
-	            return true;
-	        }
-	        return false;
-	    }
+                    //see if we can restore value from previous
+                    if(oldParams != null && oldParams.ContainsKey(a.paramName)) {
+                        ParamKeep keep = oldParams[a.paramName];
+                        if(keep.type == cachedParameterInfos[i].ParameterType)
+                            a.fromObject(keep.val);
+                    }
 
-	    public bool setUseSendMessage(bool useSendMessage) {
-	        if(this.useSendMessage != useSendMessage) {
-	            this.useSendMessage = useSendMessage;
-	            return true;
-	        }
-	        return false;
-	    }
+                    this.parameters.Add(a);
+                }
 
-	    /*public bool setParameters(object[] parameters) {
-	        if(this.parameters != parameters) {
-	            this.parameters = parameters;
-	            return true;
-	        }
-	        return false;
-	    }*/
-	    
-	    // copy properties from key
-	    public override void CopyTo(AMKey key) {
+                return true;
+            }
+            return false;
+        }
 
-			AMEventKey a = key as AMEventKey;
-	        a.enabled = false;
-	        a.frame = frame;
-	        a.component = component;
-			a.componentName = componentName;
-	        a.useSendMessage = useSendMessage;
-	        // parameters
-	        a.methodName = methodName;
-	        a.cachedMethodInfo = cachedMethodInfo;
-	        foreach(AMEventParameter e in parameters) {
-	            a.parameters.Add(e.CreateClone());
-	        }
-	    }
+        public bool setUseSendMessage(bool useSendMessage) {
+            if(this.useSendMessage != useSendMessage) {
+                this.useSendMessage = useSendMessage;
+                return true;
+            }
+            return false;
+        }
 
-	    public List<GameObject> getDependencies() {
-	        List<GameObject> ls = new List<GameObject>();
-	        foreach(AMEventParameter param in parameters) {
-	            ls = ls.Union(param.getDependencies()).ToList();
-	        }
-	        return ls;
-	    }
+        /*public bool setParameters(object[] parameters) {
+            if(this.parameters != parameters) {
+                this.parameters = parameters;
+                return true;
+            }
+            return false;
+        }*/
 
-	    public bool updateDependencies(List<GameObject> newReferences, List<GameObject> oldReferences, bool didUpdateObj, GameObject obj) {
-	        if(didUpdateObj && component) {
-	            component = obj.GetComponent(componentName);
-	            if(!component) Debug.LogError("Animator: Component '" + componentName + "' not found on new reference for GameObject '" + obj.name + "'. Some event track data may be lost.");
-	            cachedMethodInfo = null;
-	        }
-	        bool didUpdateParameter = false;
-	        foreach(AMEventParameter param in parameters) {
-	            if(param.updateDependencies(newReferences, oldReferences) && !didUpdateParameter) didUpdateParameter = true;
-	        }
-	        return didUpdateParameter;
-	    }
+        // copy properties from key
+        public override void CopyTo(AMKey key) {
 
-	    #region action
-	    public void setObjectInArray(ref object obj, List<AMEventData> lsArray) {
-	        if(lsArray.Count <= 0) return;
-	        int valueType = lsArray[0].valueType;
-	        if(valueType == (int)AMEventParameter.ValueType.String) {
-	            string[] arrString = new string[lsArray.Count];
-	            for(int i = 0; i < lsArray.Count; i++) arrString[i] = (string)lsArray[i].toObject();
-	            obj = arrString;
-	            return;
-	        }
-	        if(valueType == (int)AMEventParameter.ValueType.Char) {
-	            char[] arrChar = new char[lsArray.Count];
-	            for(int i = 0; i < lsArray.Count; i++) arrChar[i] = (char)lsArray[i].toObject();
-	            obj = arrChar;
-	            return;
-	        }
-	        if(valueType == (int)AMEventParameter.ValueType.Integer || valueType == (int)AMEventParameter.ValueType.Long) {
-	            int[] arrInt = new int[lsArray.Count];
-	            for(int i = 0; i < lsArray.Count; i++) arrInt[i] = (int)lsArray[i].toObject();
-	            obj = arrInt;
-	            return;
-	        }
-	        if(valueType == (int)AMEventParameter.ValueType.Float || valueType == (int)AMEventParameter.ValueType.Double) {
-	            float[] arrFloat = new float[lsArray.Count];
-	            for(int i = 0; i < lsArray.Count; i++) arrFloat[i] = (float)lsArray[i].toObject();
-	            obj = arrFloat;
-	            return;
-	        }
-	        if(valueType == (int)AMEventParameter.ValueType.Vector2) {
-	            Vector2[] arrVect2 = new Vector2[lsArray.Count];
-	            for(int i = 0; i < lsArray.Count; i++) arrVect2[i] = new Vector2(lsArray[i].val_vect2.x, lsArray[i].val_vect2.y);
-	            obj = arrVect2;
-	            return;
-	        }
-	        if(valueType == (int)AMEventParameter.ValueType.Vector3) {
-	            Vector3[] arrVect3 = new Vector3[lsArray.Count];
-	            for(int i = 0; i < lsArray.Count; i++) arrVect3[i] = new Vector3(lsArray[i].val_vect3.x, lsArray[i].val_vect3.y, lsArray[i].val_vect3.z);
-	            obj = arrVect3;
-	            return;
-	        }
-	        if(valueType == (int)AMEventParameter.ValueType.Vector4) {
-	            Vector4[] arrVect4 = new Vector4[lsArray.Count];
-	            for(int i = 0; i < lsArray.Count; i++) arrVect4[i] = new Vector4(lsArray[i].val_vect4.x, lsArray[i].val_vect4.y, lsArray[i].val_vect4.z, lsArray[i].val_vect4.w);
-	            obj = arrVect4;
-	            return;
-	        }
-	        if(valueType == (int)AMEventParameter.ValueType.Color) {
-	            Color[] arrColor = new Color[lsArray.Count];
-	            for(int i = 0; i < lsArray.Count; i++) arrColor[i] = new Color(lsArray[i].val_color.r, lsArray[i].val_color.g, lsArray[i].val_color.b, lsArray[i].val_color.a);
-	            obj = arrColor;
-	            return;
-	        }
-	        if(valueType == (int)AMEventParameter.ValueType.Rect) {
-	            Rect[] arrRect = new Rect[lsArray.Count];
-	            for(int i = 0; i < lsArray.Count; i++) arrRect[i] = new Rect(lsArray[i].val_rect.x, lsArray[i].val_rect.y, lsArray[i].val_rect.width, lsArray[i].val_rect.height);
-	            obj = arrRect;
-	            return;
-	        }
-	        if(valueType == (int)AMEventParameter.ValueType.Object) {
-	            UnityEngine.Object[] arrObject = new UnityEngine.Object[lsArray.Count];
-	            for(int i = 0; i < lsArray.Count; i++) arrObject[i] = (UnityEngine.Object)lsArray[i].toObject();
-	            obj = arrObject;
-	            return;
-	        }
-	        if(valueType == (int)AMEventParameter.ValueType.Array) {
-	            //TODO: array of array not supported...
-	        }
-	        obj = null;
-	    }
+            AMEventKey a = key as AMEventKey;
+            a.enabled = false;
+            a.frame = frame;
+            a.component = component;
+            a.componentName = componentName;
+            a.useSendMessage = useSendMessage;
+            // parameters
+            a.methodName = methodName;
+            a.cachedMethodInfo = cachedMethodInfo;
+            foreach(AMEventParameter e in parameters) {
+                a.parameters.Add(e.CreateClone());
+            }
+        }
 
-	    object[] buildParams() {
-			if(parameters == null)
-				return new object[0];
+        public List<GameObject> getDependencies() {
+            List<GameObject> ls = new List<GameObject>();
+            foreach(AMEventParameter param in parameters) {
+                ls = ls.Union(param.getDependencies()).ToList();
+            }
+            return ls;
+        }
 
-	        object[] arrParams = new object[parameters.Count];
-	        for(int i = 0; i < parameters.Count; i++) {
-	            if(parameters[i].isArray()) {
-	                setObjectInArray(ref arrParams[i], parameters[i].lsArray);
-	            }
-	            else {
-	                arrParams[i] = parameters[i].toObject();
-	            }
-	        }
-	        return arrParams;
-	    }
+        public bool updateDependencies(List<GameObject> newReferences, List<GameObject> oldReferences, bool didUpdateObj, GameObject obj) {
+            if(didUpdateObj && component) {
+                component = obj.GetComponent(componentName);
+                if(!component) Debug.LogError("Animator: Component '" + componentName + "' not found on new reference for GameObject '" + obj.name + "'. Some event track data may be lost.");
+                cachedMethodInfo = null;
+            }
+            bool didUpdateParameter = false;
+            foreach(AMEventParameter param in parameters) {
+                if(param.updateDependencies(newReferences, oldReferences) && !didUpdateParameter) didUpdateParameter = true;
+            }
+            return didUpdateParameter;
+        }
 
-		System.Type[] GetParamTypes() {
-			List<System.Type> ret = new List<System.Type>(parameters.Count);
-			foreach(AMEventParameter param in parameters) {
-				ret.Add(param.getParamType());
-			}
-			return ret.ToArray();
-		}
+        #region action
+        public void setObjectInArray(ref object obj, List<AMEventData> lsArray) {
+            if(lsArray.Count <= 0) return;
+            int valueType = lsArray[0].valueType;
+            if(valueType == (int)AMEventParameter.ValueType.String) {
+                string[] arrString = new string[lsArray.Count];
+                for(int i = 0; i < lsArray.Count; i++) arrString[i] = (string)lsArray[i].toObject();
+                obj = arrString;
+                return;
+            }
+            if(valueType == (int)AMEventParameter.ValueType.Char) {
+                char[] arrChar = new char[lsArray.Count];
+                for(int i = 0; i < lsArray.Count; i++) arrChar[i] = (char)lsArray[i].toObject();
+                obj = arrChar;
+                return;
+            }
+            if(valueType == (int)AMEventParameter.ValueType.Integer || valueType == (int)AMEventParameter.ValueType.Long) {
+                int[] arrInt = new int[lsArray.Count];
+                for(int i = 0; i < lsArray.Count; i++) arrInt[i] = (int)lsArray[i].toObject();
+                obj = arrInt;
+                return;
+            }
+            if(valueType == (int)AMEventParameter.ValueType.Float || valueType == (int)AMEventParameter.ValueType.Double) {
+                float[] arrFloat = new float[lsArray.Count];
+                for(int i = 0; i < lsArray.Count; i++) arrFloat[i] = (float)lsArray[i].toObject();
+                obj = arrFloat;
+                return;
+            }
+            if(valueType == (int)AMEventParameter.ValueType.Vector2) {
+                Vector2[] arrVect2 = new Vector2[lsArray.Count];
+                for(int i = 0; i < lsArray.Count; i++) arrVect2[i] = new Vector2(lsArray[i].val_vect2.x, lsArray[i].val_vect2.y);
+                obj = arrVect2;
+                return;
+            }
+            if(valueType == (int)AMEventParameter.ValueType.Vector3) {
+                Vector3[] arrVect3 = new Vector3[lsArray.Count];
+                for(int i = 0; i < lsArray.Count; i++) arrVect3[i] = new Vector3(lsArray[i].val_vect3.x, lsArray[i].val_vect3.y, lsArray[i].val_vect3.z);
+                obj = arrVect3;
+                return;
+            }
+            if(valueType == (int)AMEventParameter.ValueType.Vector4) {
+                Vector4[] arrVect4 = new Vector4[lsArray.Count];
+                for(int i = 0; i < lsArray.Count; i++) arrVect4[i] = new Vector4(lsArray[i].val_vect4.x, lsArray[i].val_vect4.y, lsArray[i].val_vect4.z, lsArray[i].val_vect4.w);
+                obj = arrVect4;
+                return;
+            }
+            if(valueType == (int)AMEventParameter.ValueType.Color) {
+                Color[] arrColor = new Color[lsArray.Count];
+                for(int i = 0; i < lsArray.Count; i++) arrColor[i] = new Color(lsArray[i].val_color.r, lsArray[i].val_color.g, lsArray[i].val_color.b, lsArray[i].val_color.a);
+                obj = arrColor;
+                return;
+            }
+            if(valueType == (int)AMEventParameter.ValueType.Rect) {
+                Rect[] arrRect = new Rect[lsArray.Count];
+                for(int i = 0; i < lsArray.Count; i++) arrRect[i] = new Rect(lsArray[i].val_rect.x, lsArray[i].val_rect.y, lsArray[i].val_rect.width, lsArray[i].val_rect.height);
+                obj = arrRect;
+                return;
+            }
+            if(valueType == (int)AMEventParameter.ValueType.Object) {
+                UnityEngine.Object[] arrObject = new UnityEngine.Object[lsArray.Count];
+                for(int i = 0; i < lsArray.Count; i++) arrObject[i] = (UnityEngine.Object)lsArray[i].toObject();
+                obj = arrObject;
+                return;
+            }
+            if(valueType == (int)AMEventParameter.ValueType.Array) {
+                //TODO: array of array not supported...
+            }
+            obj = null;
+        }
 
-	    public override void build(AMSequence seq, AMTrack track, int index, UnityEngine.Object target) {
-			if(methodName == null) return;
+        object[] buildParams() {
+            if(parameters == null)
+                return new object[0];
 
-			//get component and fill the cached method info
-			Component comp;
-			if(seq.target.isMeta) {
-				if(string.IsNullOrEmpty(componentName)) return;
-				comp = (target as GameObject).GetComponent(componentName);
+            object[] arrParams = new object[parameters.Count];
+            for(int i = 0; i < parameters.Count; i++) {
+                if(parameters[i].isArray()) {
+                    setObjectInArray(ref arrParams[i], parameters[i].lsArray);
+                }
+                else {
+                    arrParams[i] = parameters[i].toObject();
+                }
+            }
+            return arrParams;
+        }
 
-			}
-			else {
-				if(component == null) return;
-				comp = component;
-			}
-			if(cachedMethodInfo == null)
-				cachedMethodInfo = comp.GetType().GetMethod(methodName, GetParamTypes());
+        System.Type[] GetParamTypes() {
+            List<System.Type> ret = new List<System.Type>(parameters.Count);
+            foreach(AMEventParameter param in parameters) {
+                ret.Add(param.getParamType());
+            }
+            return ret.ToArray();
+        }
 
-	        float waitTime = getWaitTime(seq.take.frameRate, 0.0f);
+        public override void build(AMSequence seq, AMTrack track, int index, UnityEngine.Object target) {
+            if(methodName == null) return;
 
-	        if(useSendMessage) {
-	            if(parameters == null || parameters.Count <= 0)
-	                seq.sequence.InsertCallback(waitTime, comp.gameObject, methodName, null, SendMessageOptions.DontRequireReceiver);
-	            else
-	                seq.sequence.InsertCallback(waitTime, comp.gameObject, methodName, parameters[0].toObject(), SendMessageOptions.DontRequireReceiver);
-	        }
-	        else {
-	            seq.sequence.InsertCallback(waitTime, OnMethodCallbackParams, comp, (object)buildParams());
-	        }
-	    }
+            //get component and fill the cached method info
+            Component comp;
+            if(seq.target.isMeta) {
+                if(string.IsNullOrEmpty(componentName)) return;
+                comp = (target as GameObject).GetComponent(componentName);
 
-	    void OnMethodCallbackParams(TweenEvent dat) {
-			Component comp = dat.parms[0] as Component;
-			object[] parms = dat.parms[1] as object[];
+            }
+            else {
+                if(component == null) return;
+                comp = component;
+            }
+            if(cachedMethodInfo == null)
+                cachedMethodInfo = comp.GetType().GetMethod(methodName, GetParamTypes());
 
-	        if(comp == null) return;
+            float waitTime = getWaitTime(seq.take.frameRate, 0.0f);
 
-			cachedMethodInfo.Invoke(comp, parms);
-	    }
+            if(useSendMessage) {
+                if(parameters == null || parameters.Count <= 0)
+                    seq.sequence.InsertCallback(waitTime, () => comp.SendMessage(methodName, null, SendMessageOptions.DontRequireReceiver));
+                else
+                    seq.sequence.InsertCallback(waitTime, () => comp.SendMessage(methodName, parameters[0].toObject(), SendMessageOptions.DontRequireReceiver));
+            }
+            else {
+                object[] parms = buildParams();
+                seq.sequence.InsertCallback(waitTime, () => cachedMethodInfo.Invoke(comp, parms));
+            }
+        }
 
-	    #endregion
-	}
+        #endregion
+    }
 }
