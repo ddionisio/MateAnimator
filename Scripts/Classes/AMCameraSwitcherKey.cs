@@ -36,7 +36,7 @@ namespace MateAnimator{
 
             mLastElapsed = elapsed;
 
-            cf.value = 1.0f - EaseManager.Evaluate(t.easeType, t.customEase, elapsed, duration, t.easeOvershootOrAmplitude, t.easePeriod);
+            cf.value = 1.0f - EaseManager.Evaluate(t, elapsed, duration, t.easeOvershootOrAmplitude, t.easePeriod);
             cf.percent = elapsed/duration;
         }
 

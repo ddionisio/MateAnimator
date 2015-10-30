@@ -840,9 +840,9 @@ namespace MateAnimator{
 	                if(track != null && track.keys != null) {
 	                    foreach(AMKey key in track.keys) {
 	                        //update key's interpolation
-	                        if(key.easeType == -1) {
+	                        if(key.easeType == (int)Ease.Unset) {
 	                            key.interp = (int)AMKey.Interpolation.None;
-	                            key.easeType = 0;
+                                key.easeType = (int)Ease.Linear;
 	                        }
 
 	                        if(key.version != track.version) {

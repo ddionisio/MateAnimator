@@ -6,11 +6,6 @@ using DG.Tweening;
 
 namespace MateAnimator{
 	public class AMSequence {
-        public struct TriggerParam {
-            public AMKey key;
-            public AMTriggerData data;
-        }
-
 	    private int mId;
 	    private AMITarget mTarget;
 	    private AMTakeData mTake;
@@ -25,8 +20,6 @@ namespace MateAnimator{
 	    public AMTakeData take { get { return mTake; } }
 	    public Sequence sequence { get { return mSequence; } }
         
-	    public TweenCallback<TriggerParam> triggerCallback { get { return OnTrigger; } }
-
 	    public AMSequence(AMITarget itarget, int id, AMTakeData take) {
 	        mTarget = itarget;
 	        mId = id;
@@ -65,6 +58,7 @@ namespace MateAnimator{
             mSequence.SetAutoKill(mIsAutoKill = autoKill);
             mSequence.SetLoops(mTake.numLoop, mTake.loopMode);
             mSequence.OnComplete(OnSequenceComplete);
+            mSequence.OnStepComplete(OnSequenceStepComplete);
             
 	        mTake.maintainCaches(mTarget);
 
@@ -103,7 +97,7 @@ namespace MateAnimator{
 	        mInsertActionTrack = null;
 	        if(trackValueSets != null && trackValueSets.Count > 0) {
 	            mActionTween = new AMActionTween(trackValueSets);
-                mSequence.Insert(mActionTween.startTime, DOTween.To(mActionTween, () => 0, x => { }, 0, mActionTween.duration));
+                mSequence.Insert(mActionTween.startTime, DOTween.To(mActionTween, () => mSequence.IsBackwards(), x => { }, false, mActionTween.duration));
 	        }
 
 	        //prepend delay at the beginning
@@ -136,6 +130,10 @@ namespace MateAnimator{
 	        mTake = null;
 	    }
 
+        public void Trigger(AMKey key, AMTriggerData data) {
+            mTarget.SequenceTrigger(this, key, data);
+        }
+
 	    void OnSequenceComplete() {
 	        mTake.PlayComplete(mTarget);
 
@@ -152,8 +150,9 @@ namespace MateAnimator{
 	        }
 	    }
 
-	    void OnTrigger(TriggerParam dat) {
-	        mTarget.SequenceTrigger(this, dat.key, dat.data);
-	    }
+        void OnSequenceStepComplete() {
+            if(mActionTween != null)
+                mActionTween.Reset();
+        }
 	}
 }

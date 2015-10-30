@@ -255,12 +255,12 @@ namespace MateAnimator{
 	        newPlayTake.PlayStart(this, newPlayTake.frameRate * time, 1.0f); //notify take that we are playing
 
 	        if(seq != null) {
-	            if(loop) {
+	            /*if(loop) {
 	                seq.loops = -1;
 	            }
 	            else {
 	                seq.loops = newPlayTake.numLoop;
-	            }
+	            }*/
 
 	            seq.timeScale = mAnimScale;
                 seq.Goto(time, true);

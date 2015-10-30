@@ -2,7 +2,7 @@ using UnityEngine;
 using UnityEditor;
 using System.Collections;
 
-using Holoville.HOTween;
+using DG.Tweening;
 
 namespace MateAnimator{
 	public class AMSettings : EditorWindow {

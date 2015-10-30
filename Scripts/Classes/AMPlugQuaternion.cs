@@ -71,7 +71,7 @@ namespace MateAnimator {
             //                startValue += changeValue * (t.loopType == LoopType.Incremental ? t.loops : 1)
             //                    * (t.sequenceParent.isComplete ? t.sequenceParent.completedLoops - 1 : t.sequenceParent.completedLoops);
             //            }
-            float easeVal = EaseManager.Evaluate(t.easeType, t.customEase, elapsed, duration, t.easeOvershootOrAmplitude, t.easePeriod);
+            float easeVal = EaseManager.Evaluate(t, elapsed, duration, t.easeOvershootOrAmplitude, t.easePeriod);
             startValue.x += changeValue.x * easeVal;
             startValue.y += changeValue.y * easeVal;
             startValue.z += changeValue.z * easeVal;

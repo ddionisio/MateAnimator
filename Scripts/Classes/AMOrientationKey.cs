@@ -32,10 +32,10 @@ namespace MateAnimator{
             else if(eTarget == null || sTarget == eTarget)
                 targetTrans.LookAt(sTarget);
             else {
-                float time = EaseManager.Evaluate(t.easeType, t.customEase, elapsed, duration, t.easeOvershootOrAmplitude, t.easePeriod);
+                float time = EaseManager.Evaluate(t, elapsed, duration, t.easeOvershootOrAmplitude, t.easePeriod);
 
-                Quaternion s = Quaternion.LookRotation(sTarget.position - t.position);
-                Quaternion e = Quaternion.LookRotation(eTarget.position - t.position);
+                Quaternion s = Quaternion.LookRotation(sTarget.position - targetTrans.position);
+                Quaternion e = Quaternion.LookRotation(eTarget.position - targetTrans.position);
 
                 setter(Quaternion.LerpUnclamped(s, e, time));
             }

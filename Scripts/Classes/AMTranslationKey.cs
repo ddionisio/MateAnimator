@@ -96,30 +96,10 @@ namespace MateAnimator{
             public PlugVector3PathSnap(float aUnitConv) { unitConv = aUnitConv; }
 
             public override void EvaluateAndApply(PathOptions options, Tween t, bool isRelative, DOGetter<Vector3> getter, DOSetter<Vector3> setter, float elapsed, Path startValue, Path changeValue, float duration, bool usingInversePosition, UpdateNotice updateNotice) {
-                if(t.loopType == LoopType.Incremental && !options.isClosedPath) {
-                    int increment = (t.isComplete ? t.completedLoops - 1 : t.completedLoops);
-                    if(increment > 0) changeValue = changeValue.CloneIncremental(increment);
-                }
-
-                float pathPerc = EaseManager.Evaluate(t.easeType, t.customEase, elapsed, duration, t.easeOvershootOrAmplitude, t.easePeriod);
-                float constantPathPerc = changeValue.ConvertToConstantPathPerc(pathPerc);
-                Vector3 newPos = changeValue.GetPoint(constantPathPerc);
-
-                newPos.Set(Mathf.Round(newPos.x*unitConv)/unitConv, Mathf.Round(newPos.y*unitConv)/unitConv, Mathf.Round(newPos.z*unitConv)/unitConv);
-
-                changeValue.targetPosition = newPos; // Used to draw editor gizmos
-                setter(newPos);
-
-                if(options.mode != PathMode.Ignore && options.orientType != OrientType.None) SetOrientation(options, t, changeValue, constantPathPerc, newPos, updateNotice);
-
-                // Determine if current waypoint changed and eventually dispatch callback
-                bool isForward = !usingInversePosition;
-                if(t.isBackwards) isForward = !isForward;
-                int newWaypointIndex = changeValue.GetWaypointIndexFromPerc(pathPerc, isForward);
-                if(newWaypointIndex != t.miscInt) {
-                    t.miscInt = newWaypointIndex;
-                    if(t.onWaypointChange != null) Tween.OnTweenCallback(t.onWaypointChange, newWaypointIndex);
-                }
+                base.EvaluateAndApply(options, t, isRelative, 
+                    ()=>getter(), 
+                    (x)=>setter(new Vector3(Mathf.Round(x.x*unitConv)/unitConv, Mathf.Round(x.y*unitConv)/unitConv, Mathf.Round(x.z*unitConv)/unitConv)), 
+                    elapsed, startValue, changeValue, duration, usingInversePosition, updateNotice);
             }
 	    }
 

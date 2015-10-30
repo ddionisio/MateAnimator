@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using System;
 using System.Linq;
 
-using Holoville.HOTween.Core.Easing;
+using DG.Tweening;
 
 namespace MateAnimator{
 	public class AMTimeline : EditorWindow {
@@ -77,37 +77,39 @@ namespace MateAnimator{
 	    private int playerCurLoop;                  // current number of loops made
 	    private bool playerBackward;                // playing backwards
 	    public static string[] easeTypeNames = {
-			"linear",
-	        "easeInSine",
-	        "easeOutSine",
-	        "easeInOutSine",
-	        "easeInQuad",
-	        "easeOutQuad",
-	        "easeInOutQuad",
-	        "easeInCubic",
-	        "easeOutCubic",
-	        "easeInOutCubic",
-	        "easeInQuart",
-	        "easeOutQuart",
-	        "easeInOutQuart",
-	        "easeInQuint",
-	        "easeOutQuint",
-	        "easeInOutQuint",
-	        "easeInExpo",
-	        "easeOutExpo",
-	        "easeInOutExpo",
-	        "easeInCirc",
-	        "easeOutCirc",
-	        "easeInOutCirc",
-	        "easeInElastic",
-	        "easeOutElastic",
-	        "easeInOutElastic",
-	        "easeInBack",
-	        "easeOutBack",
-	        "easeInOutBack",
-	        "easeInBounce",
-	        "easeOutBounce",
-	        "easeInOutBounce",
+            "None",
+			"Linear",
+	        "InSine",
+	        "OutSine",
+	        "InOutSine",
+	        "InQuad",
+	        "OutQuad",
+	        "InOutQuad",
+	        "InCubic",
+	        "OutCubic",
+	        "InOutCubic",
+	        "InQuart",
+	        "OutQuart",
+	        "InOutQuart",
+	        "InQuint",
+	        "OutQuint",
+	        "InOutQuint",
+	        "InExpo",
+	        "OutExpo",
+	        "InOutExpo",
+	        "InCirc",
+	        "OutCirc",
+	        "InOutCirc",
+	        "InElastic",
+	        "OutElastic",
+	        "InOutElastic",
+	        "InBack",
+	        "OutBack",
+	        "InOutBack",
+	        "InBounce",
+	        "OutBounce",
+	        "InOutBounce",
+            "Zero",
 			"Custom"
 		};
 	    private string[] wrapModeNames = {
@@ -698,7 +700,7 @@ namespace MateAnimator{
 
 	                    int startFrame = 1;
 	                    if(restart) {
-	                        if((currentTake.loopMode == Holoville.HOTween.LoopType.Yoyo || currentTake.loopMode == Holoville.HOTween.LoopType.YoyoInverse))
+	                        if(currentTake.loopMode == LoopType.Yoyo)
 	                            playerBackward = !playerBackward;
 
 	                        if(!playerBackward && currentTake.loopBackToFrame > 0)
@@ -4960,7 +4962,7 @@ namespace MateAnimator{
 	        else if(aData.zoom != cachedZoom && dragType != (int)DragType.ResizeHScrollbarLeft && dragType != (int)DragType.ResizeHScrollbarRight) {
 	            //numFramesToRender
 	            if(oData.scrubby_zoom_slider) numFramesToRender = Mathf.Lerp(0.0f, 1.0f, aData.zoom) * ((float)aData.currentTake.numFrames - min) + min;
-	            else numFramesToRender = Expo.EaseIn(aData.zoom, 0.0f, 1.0f, 1.0f, 0.0f, 0.0f) * ((float)aData.currentTake.numFrames - min) + min;
+	            else numFramesToRender = AMUtil.GetEasingFunction(Ease.InExpo)(aData.zoom, 1.0f, 0.0f, 0.0f) * ((float)aData.currentTake.numFrames - min) + min;
 	            // frame dimensions
 	            current_width_frame = Mathf.Clamp((position.width - width_track - 18f - (aData.isInspectorOpen ? width_inspector_open : width_inspector_closed)) / numFramesToRender, 0f, (oData.disableTimelineActions ? height_track / 2f : height_track - height_action_min));
 	            current_height_frame = Mathf.Clamp(current_width_frame * 2f, 20f, (oData.disableTimelineActions ? height_track : 40f));

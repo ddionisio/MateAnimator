@@ -2,8 +2,7 @@ using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 
-using Holoville.HOTween.Core;
-using Holoville.HOTween;
+using DG.Tweening;
 
 namespace MateAnimator{
 	[AddComponentMenu("")]
@@ -46,7 +45,7 @@ namespace MateAnimator{
 	        a.frame = _frame;
 	        a.rotation = _rotation;
 	        // set default ease type to linear
-	        a.easeType = (int)EaseType.Linear;
+	        a.easeType = (int)Ease.Linear;
 
 	        // add a new key
 	        keys.Add(a);
@@ -115,11 +114,11 @@ namespace MateAnimator{
 	            Quaternion qEnd = keyNext.rotation;
 
 	            if(key.hasCustomEase()) {
-	                t.localRotation = Quaternion.Slerp(qStart, qEnd, AMUtil.EaseCustom(0.0f, 1.0f, framePositionInAction / key.getNumberOfFrames(frameRate), key.easeCurve));
+                    t.localRotation = Quaternion.LerpUnclamped(qStart, qEnd, AMUtil.EaseCustom(0.0f, 1.0f, framePositionInAction / key.getNumberOfFrames(frameRate), key.easeCurve));
 	            }
 	            else {
-	                TweenDelegate.EaseFunc ease = AMUtil.GetEasingFunction((EaseType)key.easeType);
-	                t.localRotation = Quaternion.Slerp(qStart, qEnd, ease(framePositionInAction, 0.0f, 1.0f, key.getNumberOfFrames(frameRate), key.amplitude, key.period));
+	                var ease = AMUtil.GetEasingFunction((Ease)key.easeType);
+	                t.localRotation = Quaternion.LerpUnclamped(qStart, qEnd, ease(framePositionInAction, key.getNumberOfFrames(frameRate), key.amplitude, key.period));
 	            }
 
 	            return;
@@ -182,11 +181,11 @@ namespace MateAnimator{
 	            if(framePositionInAction < 0f) framePositionInAction = 0;
 
 	            if(key.hasCustomEase()) {
-	                return Quaternion.Slerp(qStart, qEnd, AMUtil.EaseCustom(0.0f, 1.0f, (float)framePositionInAction / (float)key.getNumberOfFrames(frameRate), key.easeCurve));
+                    return Quaternion.LerpUnclamped(qStart, qEnd, AMUtil.EaseCustom(0.0f, 1.0f, (float)framePositionInAction / (float)key.getNumberOfFrames(frameRate), key.easeCurve));
 	            }
 	            else {
-	                TweenDelegate.EaseFunc ease = AMUtil.GetEasingFunction((EaseType)key.easeType);
-	                return Quaternion.Slerp(qStart, qEnd, ease(framePositionInAction, 0.0f, 1.0f, key.getNumberOfFrames(frameRate), 0.0f, 0.0f));
+	                var ease = AMUtil.GetEasingFunction((Ease)key.easeType);
+                    return Quaternion.LerpUnclamped(qStart, qEnd, ease(framePositionInAction, key.getNumberOfFrames(frameRate), key.amplitude, key.period));
 	            }
 	        }
 	        Debug.LogError("Animator: Could not get rotation at frame '" + frame + "'");

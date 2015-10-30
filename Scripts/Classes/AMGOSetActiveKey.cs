@@ -4,9 +4,6 @@ using System.Collections.Generic;
 using System.Reflection;
 using System.Linq;
 
-using Holoville.HOTween;
-using Holoville.HOTween.Core;
-
 namespace MateAnimator{
 	[AddComponentMenu("")]
 	public class AMGOSetActiveKey : AMKey {

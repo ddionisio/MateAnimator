@@ -3,8 +3,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 
-using Holoville.HOTween.Core;
-using Holoville.HOTween;
+using DG.Tweening;
 
 //Note: no longer using global
 namespace MateAnimator{
@@ -141,8 +140,8 @@ namespace MateAnimator{
 	                _value = AMUtil.EaseCustom(0.0f, 1.0f, framePositionInPath / key.getNumberOfFrames(frameRate), key.easeCurve);
 	            }
 	            else {
-	                TweenDelegate.EaseFunc ease = AMUtil.GetEasingFunction((EaseType)key.easeType);
-	                _value = ease(framePositionInPath, 0.0f, 1.0f, key.getNumberOfFrames(frameRate), key.amplitude, key.period);
+	                var ease = AMUtil.GetEasingFunction((Ease)key.easeType);
+	                _value = ease(framePositionInPath, key.getNumberOfFrames(frameRate), key.amplitude, key.period);
 	                if(float.IsNaN(_value)) { //this really shouldn't happen...
 	                    return;
 	                }
@@ -221,8 +220,8 @@ namespace MateAnimator{
 	                    break;
 	                }
 	                else {
-	                    TweenDelegate.EaseFunc ease = AMUtil.GetEasingFunction((EaseType)key.easeType);
-	                    ret = key.GetPoint(Mathf.Clamp(ease(framePositionInPath, 0.0f, 1.0f, key.getNumberOfFrames(frameRate), key.amplitude, key.period), 0.0f, 1.0f));
+	                    var ease = AMUtil.GetEasingFunction((Ease)key.easeType);
+	                    ret = key.GetPoint(Mathf.Clamp01(ease(framePositionInPath, key.getNumberOfFrames(frameRate), key.amplitude, key.period)));
 	                    retFound = true;
 	                    break;
 	                }

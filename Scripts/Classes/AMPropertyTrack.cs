@@ -4,8 +4,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using System;
 
-using Holoville.HOTween.Core;
-using Holoville.HOTween;
+using DG.Tweening;
 
 namespace MateAnimator{
 	[AddComponentMenu("")]
@@ -461,8 +460,8 @@ namespace MateAnimator{
 	                t = AMUtil.EaseCustom(0.0f, 1.0f, framePositionInAction / key.getNumberOfFrames(frameRate), key.easeCurve);
 	            }
 	            else {
-	                TweenDelegate.EaseFunc ease = AMUtil.GetEasingFunction((EaseType)key.easeType);
-	                t = ease(framePositionInAction, 0.0f, 1.0f, key.getNumberOfFrames(frameRate), key.amplitude, key.period);
+	                var ease = AMUtil.GetEasingFunction((Ease)key.easeType);
+	                t = ease(framePositionInAction, key.getNumberOfFrames(frameRate), key.amplitude, key.period);
 	            }
 
 	            //qCurrent.x = ease(qStart.x,qEnd.x,percentage);

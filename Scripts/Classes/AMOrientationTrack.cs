@@ -2,6 +2,8 @@ using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 
+using DG.Tweening;
+
 namespace MateAnimator{
 	[AddComponentMenu("")]
 	public class AMOrientationTrack : AMTrack {
@@ -37,7 +39,7 @@ namespace MateAnimator{
 	        a.frame = _frame;
 			a.SetTarget(itarget, target);
 	        // set default ease type to linear
-	        a.easeType = (int)0;// AMTween.EaseType.linear;
+	        a.easeType = (int)Ease.Linear;// AMTween.EaseType.linear;
 	        // add a new key
 	        keys.Add(a);
 	        // update cache

@@ -3,8 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEditor;
 
-using Holoville.HOTween.Core;
-using Holoville.HOTween;
+using DG.Tweening;
 
 namespace MateAnimator{
 	public class AMTransitionPicker : EditorWindow {
@@ -1043,8 +1042,8 @@ namespace MateAnimator{
 	            _value = AMUtil.EaseCustom(1.0f, -1.0f, Mathf.Clamp(percent, 0f, 1f), key.getCustomEaseCurve());
 	        }
 	        else {
-	            TweenDelegate.EaseFunc ease = AMUtil.GetEasingFunction((EaseType)key.easeType);
-	            _value = ease(Mathf.Clamp(percent, 0f, 1f), 1.0f, -1.0f, 1.0f, key.amplitude, key.period);
+	            var ease = AMUtil.GetEasingFunction((Ease)key.easeType);
+	            _value = 1.0f - ease(Mathf.Clamp(percent, 0f, 1f), 1.0f, key.amplitude, key.period);
 	        }
 	    }
 

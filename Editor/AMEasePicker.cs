@@ -3,7 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEditor;
 
-using Holoville.HOTween;
+using DG.Tweening;
 
 namespace MateAnimator{
 	public class AMEasePicker : EditorWindow {
@@ -129,9 +129,8 @@ namespace MateAnimator{
 				if(isCustomEase) {
 	                x_pos = AMUtil.EaseCustom(x_pos_start, x_pos_end - x_pos_start, percent < 0f ? 0f : percent, curve);
 				} else {
-	                Holoville.HOTween.Core.TweenDelegate.EaseFunc ease;
-					ease = AMUtil.GetEasingFunction((EaseType)getSelectedEaseIndex(category,selectedIndex));
-	                x_pos = ease(percent < 0f ? 0f : percent, x_pos_start, x_pos_end - x_pos_start, 1.0f, 0.0f, 0.0f);
+					var ease = AMUtil.GetEasingFunction((Ease)getSelectedEaseIndex(category,selectedIndex));
+	                x_pos = x_pos_start + (x_pos_end - x_pos_start)*ease(percent < 0f ? 0f : percent, 1.0f, 0.0f, 0.0f);
 				}
 			}
 			this.Repaint();
@@ -168,8 +167,8 @@ namespace MateAnimator{
 					if(setCategory(GUILayout.SelectionGrid(category,categories,(position.width >= 715f ? 12 : 6),GUILayout.Width(position.width-16f)))) {
 						selectedIndex = getSelectedEaseIndex(prevCategory,selectedIndex);
 						selectedIndex = getCategoryIndexForEase(selectedIndex);
-						if(selectedIndex < 0) {
-							selectedIndex = 0;
+						if(selectedIndex < 1) {
+							selectedIndex = 1;
 							percent = waitPercent*-1f;
 							updatedSelectedIndex = true;
 						}
@@ -308,13 +307,13 @@ namespace MateAnimator{
 			}
 			else if(name == "Custom") {
 				if(curve.length <= 0) {
-					curve = getCurve(EaseType.Linear);
+					curve = getCurve(Ease.Linear);
 					this.Repaint();
 				}
 				return;
 			}
-			curve = getCurve((EaseType)getSelectedEaseIndex(category,selectedIndex));
-			selectedCurve = getCurve((EaseType)getSelectedEaseIndex(category,selectedIndex));
+			curve = getCurve((Ease)getSelectedEaseIndex(category,selectedIndex));
+			selectedCurve = getCurve((Ease)getSelectedEaseIndex(category,selectedIndex));
 			this.Repaint();
 		}
 		
@@ -327,70 +326,70 @@ namespace MateAnimator{
 			}
 			return false;
 		}
-		public AnimationCurve getCurve(EaseType easeType) {
+		public AnimationCurve getCurve(Ease easeType) {
 			AnimationCurve _curve = new AnimationCurve();
 			switch(easeType)
 			{
-				case EaseType.Linear:
+                case Ease.Linear:
 					_curve.AddKey(new Keyframe(0f,0f,1f,1f));
 					_curve.AddKey(new Keyframe(1f,1f,1f,1f));
 					break;
-				case EaseType.EaseInQuad:
+                case Ease.InQuad:
 					_curve.AddKey(new Keyframe(0f,0f,0f,0f));
 					_curve.AddKey(new Keyframe(1f,1f,2f,2f));
 					break;
-				case EaseType.EaseOutQuad:
+                case Ease.OutQuad:
 					_curve.AddKey(new Keyframe(0f,0f,2f,2f));
 					_curve.AddKey(new Keyframe(1f,1f,0f,0f));
 					break;
-				case EaseType.EaseInOutQuad:
+                case Ease.InOutQuad:
 					_curve.AddKey(new Keyframe(0f,0f,0f,0f));
 					_curve.AddKey(new Keyframe(0.5f,0.5f,2f,2f));
 					_curve.AddKey(new Keyframe(1f,1f,0f,0f));
 					break;
-				case EaseType.EaseInCubic:
+                case Ease.InCubic:
 					_curve.AddKey(new Keyframe(0f,0f,0f,0f));
 					_curve.AddKey(new Keyframe(1f,1f,3f,3f));
 					break;
-				case EaseType.EaseOutCubic:
+                case Ease.OutCubic:
 					_curve.AddKey(new Keyframe(0f,0f,3f,3f));
 					_curve.AddKey(new Keyframe(1f,1f,0f,0f));
 					break;
-				case EaseType.EaseInOutCubic:
+                case Ease.InOutCubic:
 					_curve.AddKey(new Keyframe(0f,0f,0f,0f));
 					_curve.AddKey(new Keyframe(0.5f,0.5f,3f,3f));
 					_curve.AddKey(new Keyframe(1f,1f,0f,0f));
 					break;
-				case EaseType.EaseInQuart:
+                case Ease.InQuart:
 					_curve.AddKey(new Keyframe(0f,0f,0f,0f));
 					_curve.AddKey(new Keyframe(0.5f,0.064f,0.5f,0.5f));
 					_curve.AddKey(new Keyframe(1f,1f,4f,4f));
 					break;
-				case EaseType.EaseOutQuart:
+                case Ease.OutQuart:
 					_curve.AddKey(new Keyframe(0f,0f,4f,4f));
 					_curve.AddKey(new Keyframe(0.5f,0.936f,0.5f,0.5f));
 					_curve.AddKey(new Keyframe(1f,1f,0f,0f));
 					break;
-				case EaseType.EaseInOutQuart:
+                case Ease.InOutQuart:
 					_curve.AddKey(new Keyframe(0f,0f,0f,0f));
 					_curve.AddKey(new Keyframe(0.25f,0.032f,0.5f,0.5f));
 					_curve.AddKey(new Keyframe(0.5f,0.5f,4f,4f));
 					_curve.AddKey(new Keyframe(0.75f,0.968f,0.5f,0.5f));
 					_curve.AddKey(new Keyframe(1f,1f,0f,0f));
 					break;
-				case EaseType.EaseInQuint:
+                case Ease.InQuint:
 					_curve.AddKey(new Keyframe(0f,0f,0f,0f));
 					_curve.AddKey(new Keyframe(0.2f,0f,0.033f,0.033f));
 					_curve.AddKey(new Keyframe(0.6f,0.077f,0.65f,0.65f));
 					_curve.AddKey(new Keyframe(1f,1f,5f,5f));
 					break;
-				case EaseType.EaseOutQuint:
+                case Ease.OutQuint:
 					_curve.AddKey(new Keyframe(0f,0f,5f,5f));
 					_curve.AddKey(new Keyframe(0.4f,0.92f,0.65f,0.65f));
 					_curve.AddKey(new Keyframe(0.8f,1f,0.033f,0.033f));
 					_curve.AddKey(new Keyframe(1f,1f,0f,0f));
 					break;
-				case EaseType.EaseInOutQuint:
+                case Ease.InOutQuint:
 					_curve.AddKey(new Keyframe(0f,0f,0f,0f));
 					_curve.AddKey(new Keyframe(0.1f,0f,0f,0f));
 					_curve.AddKey(new Keyframe(0.3f,0.04f,0.65f,0.65f));
@@ -399,36 +398,36 @@ namespace MateAnimator{
 					_curve.AddKey(new Keyframe(0.9f,1f,0f,0f));
 					_curve.AddKey(new Keyframe(1f,1f,0f,0f));
 					break;
-				case EaseType.EaseInSine:
+                case Ease.InSine:
 					_curve.AddKey(new Keyframe(0f,0f,0f,0f));
 					_curve.AddKey(new Keyframe(0.5f,0.292f,1.11f,1.11f));
 					_curve.AddKey(new Keyframe(1f,1f,1.56f,1.56f));
 					break;
-				case EaseType.EaseOutSine:
+                case Ease.OutSine:
 					_curve.AddKey(new Keyframe(0f,0f,1.56f,1.56f));
 					_curve.AddKey(new Keyframe(0.5f,0.708f,1.11f,1.11f));
 					_curve.AddKey(new Keyframe(1f,1f,0f,0f));
 					break;
-				case EaseType.EaseInOutSine:
+                case Ease.InOutSine:
 					_curve.AddKey(new Keyframe(0f,0f,0f,0f));
 					_curve.AddKey(new Keyframe(0.25f,0.145f,1.1f,1.1f));
 					_curve.AddKey(new Keyframe(0.5f,0.5f,1.6f,1.6f));
 					_curve.AddKey(new Keyframe(0.75f,0.853f,1.1f,1.1f));
 					_curve.AddKey(new Keyframe(1f,1f,0f,0f));
 					break;
-				case EaseType.EaseInExpo:
+                case Ease.InExpo:
 					_curve.AddKey(new Keyframe(0f,0f,0.031f,0.031f));
 					_curve.AddKey(new Keyframe(0.5f,0.031f,0.214f,0.214f));
 					_curve.AddKey(new Keyframe(0.8f,0.249f,1.682f,1.682f));
 					_curve.AddKey(new Keyframe(1f,1f,6.8f,6.8f));
 					break;
-				case EaseType.EaseOutExpo:
+                case Ease.OutExpo:
 					_curve.AddKey(new Keyframe(0f,0f,6.8f,6.8f));
 					_curve.AddKey(new Keyframe(0.2f,0.751f,1.682f,1.682f));
 					_curve.AddKey(new Keyframe(0.5f,0.969f,0.214f,0.214f));
 					_curve.AddKey(new Keyframe(1f,1f,0.031f,0.031f));
 					break;
-				case EaseType.EaseInOutExpo:
+                case Ease.InOutExpo:
 					_curve.AddKey(new Keyframe(0f,0f,0f,0f));
 					_curve.AddKey(new Keyframe(0.25f,0.015f,0.181f,0.181f));
 					_curve.AddKey(new Keyframe(0.4f,0.125f,1.58f,1.58f));
@@ -437,21 +436,21 @@ namespace MateAnimator{
 					_curve.AddKey(new Keyframe(0.75f,0.982f,0.21f,0.21f));
 					_curve.AddKey(new Keyframe(1f,1f,0f,0f));
 					break;
-				case EaseType.EaseInCirc:
+                case Ease.InCirc:
 					_curve.AddKey(new Keyframe(0f,0f,0.04f,0.04f));
 					_curve.AddKey(new Keyframe(0.6f,0.2f,0.76f,0.76f));
 					_curve.AddKey(new Keyframe(0.9f,0.562f,1.92f,1.92f));
 					_curve.AddKey(new Keyframe(0.975f,0.78f,4.2f,4.2f));
 					_curve.AddKey(new Keyframe(1f,1f,17.3f,17.3f));
 					break;
-				case EaseType.EaseOutCirc:
+                case Ease.OutCirc:
 					_curve.AddKey(new Keyframe(0f,0f,17.3f,17.3f));
 					_curve.AddKey(new Keyframe(0.025f,0.22f,4.2f,4.2f));
 					_curve.AddKey(new Keyframe(0.1f,0.438f,1.92f,1.92f));
 					_curve.AddKey(new Keyframe(0.4f,0.8f,0.76f,0.76f));
 					_curve.AddKey(new Keyframe(1f,1f,0.04f,0.04f));
 					break;
-				case EaseType.EaseInOutCirc:
+                case Ease.InOutCirc:
 					_curve.AddKey(new Keyframe(0f,0f,0f,0f));
 					_curve.AddKey(new Keyframe(0.3f,0.098f,0.75f,0.75f));
 					_curve.AddKey(new Keyframe(0.45f,0.281f,1.96f,1.96f));
@@ -462,21 +461,21 @@ namespace MateAnimator{
 					_curve.AddKey(new Keyframe(0.7f,0.899f,0.74f,0.74f));
 					_curve.AddKey(new Keyframe(1f,1f,0f,0f));
 					break;
-				case EaseType.EaseInBounce:
+                case Ease.InBounce:
 					_curve.AddKey(new Keyframe(0f,0f,0.715f,0.715f));
 					_curve.AddKey(new Keyframe(0.091f,0f,-0.677f,1.365f));
 					_curve.AddKey(new Keyframe(0.272f,0f,-1.453f,2.716f));
 					_curve.AddKey(new Keyframe(0.636f,0f,-2.775f,5.517f));
 					_curve.AddKey(new Keyframe(1f,1f,-0.0023f,-0.0023f));
 					break;
-				case EaseType.EaseOutBounce:
+                case Ease.OutBounce:
 					_curve.AddKey(new Keyframe(0f,0f,-0.042f,-0.042f));
 					_curve.AddKey(new Keyframe(0.364f,1f,5.414f,-2.758f));
 					_curve.AddKey(new Keyframe(0.727f,1f,2.773f,-1.295f));
 					_curve.AddKey(new Keyframe(0.909f,1f,1.435f,-0.675f));
 					_curve.AddKey(new Keyframe(1f,1f,0.735f,0.735f));
 					break;
-				case EaseType.EaseInOutBounce:
+                case Ease.InOutBounce:
 					_curve.AddKey(new Keyframe(0f,0f,0.682f,0.682f));
 					_curve.AddKey(new Keyframe(0.046f,0f,-0.732f,1.316f));
 					_curve.AddKey(new Keyframe(0.136f,0f,-1.568f,2.608f));
@@ -487,20 +486,20 @@ namespace MateAnimator{
 					_curve.AddKey(new Keyframe(0.955f,1f,1.488f,-0.634f));
 					_curve.AddKey(new Keyframe(1f,1f,0.804f,0.804f));
 					break;
-				case EaseType.EaseInBack:
+                case Ease.InBack:
 					_curve.AddKey(new Keyframe(0.00f,0.00f,0.00f,0.00f));
 					_curve.AddKey(new Keyframe(1.00f,1.00f,4.71f,4.71f));
 					break;
-				case EaseType.EaseOutBack:
+                case Ease.OutBack:
 					_curve.AddKey(new Keyframe(0.00f,0.00f,4.71f,4.71f));
 					_curve.AddKey(new Keyframe(1.00f,1.00f,0.00f,0.00f));
 					break;
-				case EaseType.EaseInOutBack:
+                case Ease.InOutBack:
 					_curve.AddKey(new Keyframe(0.00f,0.00f,0.00f,0.00f));
 					_curve.AddKey(new Keyframe(0.50f,0.50f,5.61f,5.61f));
 					_curve.AddKey(new Keyframe(1.00f,1.00f,0.00f,0.00f));
 					break;
-				case EaseType.EaseInElastic:
+                case Ease.InElastic:
 					_curve.AddKey(new Keyframe(0.00f,0.00f,0.00f,0.00f));
 					_curve.AddKey(new Keyframe(0.15f,0.00f,-0.04f,-0.04f));
 					_curve.AddKey(new Keyframe(0.30f,-0.005f,0.04f,0.04f));
@@ -512,7 +511,7 @@ namespace MateAnimator{
 					_curve.AddKey(new Keyframe(0.92f,-0.05f,11.32f,11.32f));
 					_curve.AddKey(new Keyframe(1.00f,1.00f,7.50f,7.50f));
 					break;
-				case EaseType.EaseOutElastic:
+                case Ease.OutElastic:
 					_curve.AddKey(new Keyframe(0.000f,0.00f,6.56f,6.56f));
 					_curve.AddKey(new Keyframe(0.079f,1.06f,11.22f,11.22f));
 					_curve.AddKey(new Keyframe(0.134f,1.38f,0.03f,0.03f));
@@ -524,7 +523,7 @@ namespace MateAnimator{
 					_curve.AddKey(new Keyframe(0.898f,1.00f,0.00f,0.00f));
 					_curve.AddKey(new Keyframe(1.000f,1.00f,0.00f,0.00f));
 					break;
-			case EaseType.EaseInOutElastic:
+                case Ease.InOutElastic:
 					_curve.AddKey(new Keyframe(0.000f,0.00f,0.00f,0.00f));
 					_curve.AddKey(new Keyframe(0.093f,0.00f,-0.05f,-0.05f));
 					_curve.AddKey(new Keyframe(0.149f,0.00f,0.06f,0.06f));
@@ -544,7 +543,9 @@ namespace MateAnimator{
 					_curve.AddKey(new Keyframe(0.848f,1.00f,0.04f,0.04f));
 					_curve.AddKey(new Keyframe(0.900f,1.00f,-0.01f,-0.01f));
 					_curve.AddKey(new Keyframe(1.000f,1.00f,0.00f,0.00f));
-				break;
+				    break;
+                case Ease.INTERNAL_Zero:
+                    break;
 			}
 			return _curve;
 		}

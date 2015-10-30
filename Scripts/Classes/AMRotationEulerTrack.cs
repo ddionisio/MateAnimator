@@ -212,7 +212,7 @@ namespace MateAnimator{
 	            }
 	            else {
 	                var ease = AMUtil.GetEasingFunction((Ease)key.easeType);
-	                return Vector3.Lerp(qStart, qEnd, ease(framePositionInAction, key.getNumberOfFrames(frameRate), 0.0f, 0.0f));
+                    return Vector3.Lerp(qStart, qEnd, ease(framePositionInAction, key.getNumberOfFrames(frameRate), key.amplitude, key.period));
 	            }
 	        }
 	        Debug.LogError("Animator: Could not get rotation at frame '" + frame + "'");
