@@ -9,15 +9,14 @@ using Holoville.HOTween.Plugins.Core;
 
 namespace MateAnimator{
 	public class AMActionTween : ABSTweenPlugin {
-	    private const int trackValIndInit = -2;
 	    private const int trackValIndStart = -1;
 
 	    private AMActionData[][] mValueTracks;
 	    private int[] mValueTrackCurIndices;
 	    private float mStartTime;
 	    private float mDuration;
-	    private float mLastTime;
 	    private bool mIsLoopBack;
+        private bool mIsStarted;
 
 	    protected override object startVal { get { return _startVal; } set { _startVal = value; } }
 
@@ -39,29 +38,27 @@ namespace MateAnimator{
 	            for(int i = 0; i < mValueTracks.Length; i++) {
 	                mValueTracks[i] = trackValueSets[i].ToArray();
 
-	                if(mValueTracks[i][0].startTime < mStartTime)
-	                    mStartTime = mValueTracks[i][0].startTime;
-	                if(mValueTracks[i][mValueTracks[i].Length-1].endTime > maxEnd)
-	                    maxEnd = mValueTracks[i][mValueTracks[i].Length-1].endTime;
+                    if(mValueTracks[i][0].startTime < mStartTime)
+                        mStartTime = mValueTracks[i][0].startTime;
+                    if(mValueTracks[i][mValueTracks[i].Length-1].endTime > maxEnd)
+                        maxEnd = mValueTracks[i][mValueTracks[i].Length-1].endTime;
 	            }
 
 	            mDuration = maxEnd - mStartTime;
 
 	            mValueTrackCurIndices = new int[mValueTracks.Length];
-	            for(int i = 0; i < mValueTrackCurIndices.Length; i++)
-	                mValueTrackCurIndices[i] = trackValIndInit;
+                Reset(false);
 	        }
 	    }
 
-	    public void Reset() {
+	    public void Reset(bool isBackwards) {
 	        if(mValueTrackCurIndices != null) {
-	            for(int i = 0; i < mValueTrackCurIndices.Length; i++) {
+	            for(int i = 0; i < mValueTrackCurIndices.Length; i++)
 	                mValueTrackCurIndices[i] = trackValIndStart;
-	            }
 	        }
 
-	        mLastTime = 0.0f;
-	        mIsLoopBack = false;
+            mIsLoopBack = isBackwards;
+            mIsStarted = false;
 	    }
 
 	    protected override float GetSpeedBasedDuration(float p_speed) {
@@ -74,32 +71,30 @@ namespace MateAnimator{
 	    protected override void SetIncrementalRestart() { }
 
 	    protected override void DoUpdate(float p_totElapsed) {
-	        bool backward = mLastTime > p_totElapsed;
-	        bool changed = mIsLoopBack != backward;
+            //wait one frame
+            if(!mIsStarted) {
+                mIsStarted = true;
+                return;
+            }
 
-	        mLastTime = p_totElapsed;
-	        mIsLoopBack = backward;
-	        
-	        float t = mStartTime + p_totElapsed;
-	                
+            float t = mStartTime + p_totElapsed;
+	        	        	                
 	        for(int i = 0, max = mValueTracks.Length; i < max; i++) {
 	            int curInd = mValueTrackCurIndices[i];
 
 	            //determine if we need to move
-	            if(curInd == trackValIndInit) //wait one frame
-	                mValueTrackCurIndices[i] = trackValIndStart;
-	            else if(curInd == trackValIndStart) {
+	           if(curInd == trackValIndStart) {
 	                //get the starting act, make sure t is within act's timeframe
 	                int newInd = GetValueIndex(mValueTracks[i], t);
 	                AMActionData act = mValueTracks[i][newInd];
 	                if(t >= act.startTime) {	
 	                	mValueTrackCurIndices[i] = newInd;
-	                    act.Apply(t - act.startTime, tweenObj.isLoopingBack);
+                        act.Apply(t - act.startTime, mIsLoopBack);
 	                }
 	            }
 	            else {
 	                int newInd = GetNextValueTrackIndex(mValueTracks[i], curInd, t);
-	                if(newInd != curInd || changed) {
+	                if(newInd != curInd) {
 	                    mValueTrackCurIndices[i] = newInd;
 	                    AMActionData act = mValueTracks[i][newInd];
 	                    act.Apply(t - act.startTime, mIsLoopBack);
@@ -442,4 +437,38 @@ namespace MateAnimator{
 	        mMat.SetTextureScale(mProp, mScale);
 	    }
 	}
+
+    public class AMActionSendMessage : AMActionData {
+        private Component mComp;
+        private string mMethodName;
+        private object mParm;
+
+        public AMActionSendMessage(AMKey key, int frameRate, Component target, string method, object parm)
+            : base(key, frameRate) {
+                mComp = target;
+                mMethodName = method;
+                mParm = parm;
+        }
+
+        public override void Apply(float t, bool backwards) {
+            mComp.SendMessage(mMethodName, mParm, SendMessageOptions.DontRequireReceiver);
+        }
+    }
+
+    public class AMActionMethodCall : AMActionData {
+        private object mObj;
+        private MethodInfo mMethodInfo;
+        private object[] mParms;
+
+        public AMActionMethodCall(AMKey key, int frameRate, object target, MethodInfo method, object[] parms)
+            : base(key, frameRate) {
+                mObj = target;
+                mMethodInfo = method;
+                mParms = parms;
+        }
+
+        public override void Apply(float t, bool backwards) {
+            mMethodInfo.Invoke(mObj, mParms);
+        }
+    }
 }

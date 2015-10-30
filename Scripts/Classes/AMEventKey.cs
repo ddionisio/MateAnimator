@@ -326,28 +326,11 @@ namespace MateAnimator{
 			if(cachedMethodInfo == null)
 				cachedMethodInfo = comp.GetType().GetMethod(methodName, GetParamTypes());
 
-	        float waitTime = getWaitTime(seq.take.frameRate, 0.0f);
-
-	        if(useSendMessage) {
-	            if(parameters == null || parameters.Count <= 0)
-	                seq.sequence.InsertCallback(waitTime, comp.gameObject, methodName, null, SendMessageOptions.DontRequireReceiver);
-	            else
-	                seq.sequence.InsertCallback(waitTime, comp.gameObject, methodName, parameters[0].toObject(), SendMessageOptions.DontRequireReceiver);
-	        }
-	        else {
-	            seq.sequence.InsertCallback(waitTime, OnMethodCallbackParams, comp, (object)buildParams());
-	        }
+	        if(useSendMessage)
+                seq.Insert(new AMActionSendMessage(this, seq.take.frameRate, comp, methodName, parameters == null || parameters.Count <= 0 ? null : parameters[0].toObject()));
+	        else
+                seq.Insert(new AMActionMethodCall(this, seq.take.frameRate, comp, cachedMethodInfo, buildParams()));
 	    }
-
-	    void OnMethodCallbackParams(TweenEvent dat) {
-			Component comp = dat.parms[0] as Component;
-			object[] parms = dat.parms[1] as object[];
-
-	        if(comp == null) return;
-
-			cachedMethodInfo.Invoke(comp, parms);
-	    }
-
 	    #endregion
 	}
 }

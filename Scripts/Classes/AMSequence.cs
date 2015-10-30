@@ -58,7 +58,8 @@ namespace MateAnimator{
 	            .UpdateType(updateType)
 	            .AutoKill(autoKill)
 	            .Loops(mTake.numLoop, mTake.loopMode)
-	            .OnComplete(OnSequenceComplete));
+	            .OnComplete(OnSequenceComplete)
+                .OnStepComplete(OnSequenceStepComplete));
 
 	        mTake.maintainCaches(mTarget);
 
@@ -113,7 +114,7 @@ namespace MateAnimator{
 	        }
 
 	        if(mActionTween != null)
-	            mActionTween.Reset();
+                mActionTween.Reset(false);
 	    }
 
 	    /// <summary>
@@ -146,6 +147,11 @@ namespace MateAnimator{
 	            }
 	        }
 	    }
+
+        void OnSequenceStepComplete() {
+            if(mActionTween != null)
+                mActionTween.Reset(mSequence.isLoopingBack);
+        }
 
 	    void OnTrigger(TweenEvent dat) {
 	        mTarget.SequenceTrigger(this, (AMKey)dat.parms[0], (AMTriggerData)dat.parms[1]);
