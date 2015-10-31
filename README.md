@@ -18,6 +18,11 @@ Import/Export, Code Generator are currently disabled.
 ###Dependencies###
 * HOTween v1.3.380
 
+Installation
+============
+* Make sure to get HOTween and install to your project: http://hotween.demigiant.com/download.html
+* Clone this project to your Assets folder (or Plugins if you are scripting in javascript).  If your project is already setup for Git, then clone this project as a submodule.
+* Open your project, you should be able to see "Cutscene Editor" in the Window menu, or M8/Animator in the 'Add Component' droplist.
 
 Updates
 =======
@@ -38,23 +43,19 @@ Updates
 * Sprite animation support.  You can also drag sprites to the Animator window to automatically add the track/keys.
 * Camera Transition added back.
 
-
-Installation
-============
-* Make sure to get HOTween and install to your project: http://hotween.demigiant.com/download.html
-* Clone this project to your Assets folder (or Plugins if you are scripting in javascript).  If your project is already setup for Git, then clone this project as a submodule.
-* Open your project, you should be able to see "Cutscene Editor" in the Window menu, or M8/Animator in the 'Add Component' droplist.
-
 TODO
 ====
+* DOTween Upgrade
+* Refactor how data is stored (Remove the use of MonoBehaviour, may now be possible with the new serialization API)
+* Debug controls on inspector while running the game in the Editor.
+* Camera transition refactor (too glitchy, maybe do something like UE4's director)
+* Scene preview for Material property track.
 * Import/Export - AnimatorMeta sort of does this already, but adding a JSON format wouldn't hurt.
 * Add a way to make this tool extensive - will help with implementing tk2d, etc.
 * Work with MechAnim. - allow change state, etc. and preview.
-* Work with Particles - allow play/pause/stop and preview.
-* Scene preview for Material property track.
+* Work with Particles - allow play/pause/stop and preview. (seems impossible without the proper API in ParticleSystem)
 * Some glitches with mouse events.
 * Refactor the entire UI code...(might as well create a new project)
-* Camera transition fixes (too glitchy, maybe do something like UE4's director)
 
 DEBUG
 =====
