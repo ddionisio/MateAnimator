@@ -28,14 +28,17 @@ Updates
 =======
 ### Update 4 ###
 * Unity 5 compatibility.
+
 ### Update 3 ###
 * Added Rotation Euler.  This will allow you to create spin animations.  Includes exclusive rotation for x, y, or z (be careful of Gimbal-lock!).
 * Added Material track.  Now you can animate any properties you specify in the shader used by the material.  This requires a GameObject with a Renderer component.  You can also use this to override the material.  For now there is no preview during editing.
 * A bunch of refactoring to remove editor specific code in AnimatorData.  You will no longer see any editor API when using AnimatorData.
 * Various tweaks to building sequences.
+
 ### Update 2 ###
 * Added Mate Animator track.  Now you can play animations in your animation, while you animate.  Useful for choreography and ensuring timing between multiple animations on the scene.  Note: Currently doesn't execute event and trigger tracks.
 * Fixes with null exceptions here and there.
+
 ### Update 1 ###
 * Undo/Redo reworked and changed to comply with Unity 4.3
 * Keyboard shortcuts: arrowkeys to select keys/tracks, copy/paste/duplicate for keys, delete to delete selected keys.
