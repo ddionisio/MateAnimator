@@ -76,42 +76,48 @@ namespace MateAnimator{
 	    private int playerStartedFrame;
 	    private int playerCurLoop;                  // current number of loops made
 	    private bool playerBackward;                // playing backwards
-	    public static string[] easeTypeNames = {
-            "None",
-			"Linear",
-	        "InSine",
-	        "OutSine",
-	        "InOutSine",
-	        "InQuad",
-	        "OutQuad",
-	        "InOutQuad",
-	        "InCubic",
-	        "OutCubic",
-	        "InOutCubic",
-	        "InQuart",
-	        "OutQuart",
-	        "InOutQuart",
-	        "InQuint",
-	        "OutQuint",
-	        "InOutQuint",
-	        "InExpo",
-	        "OutExpo",
-	        "InOutExpo",
-	        "InCirc",
-	        "OutCirc",
-	        "InOutCirc",
-	        "InElastic",
-	        "OutElastic",
-	        "InOutElastic",
-	        "InBack",
-	        "OutBack",
-	        "InOutBack",
-	        "InBounce",
-	        "OutBounce",
-	        "InOutBounce",
-            "Zero",
-			"Custom"
-		};
+
+        private static string[] mEaseTypeNames;
+        private static int[] mEaseIndices;
+	    public static string[] easeTypeNames {
+            get {
+                if(mEaseTypeNames == null)
+                    InitEaseTypeNames();
+                return mEaseTypeNames;
+            }
+        }
+
+        public static int GetEaseIndex(int easeTypeNameIndex) {
+            if(mEaseIndices == null)
+                InitEaseTypeNames();
+            return mEaseIndices[easeTypeNameIndex];
+        }
+
+        public static int GetEaseTypeNameIndex(int easeIndex) {
+            Ease ease = (Ease)easeIndex;
+            string easeName = ease == Ease.INTERNAL_Custom ? "Custom" : ease.ToString();
+            return System.Array.IndexOf(easeTypeNames, easeName);
+        }
+
+        private static void InitEaseTypeNames() {
+            List<string> _namesAdded = new List<string>();
+            List<int> _nameIndicesAdded = new List<int>();
+            string[] _names = System.Enum.GetNames(typeof(Ease));
+            for(int i = 0; i < _names.Length; i++) {
+                if(_names[i] == "Unset" || _names[i] == "INTERNAL_Zero")
+                    continue;
+                else if(_names[i] == "INTERNAL_Custom")
+                    _namesAdded.Add("Custom");
+                else
+                    _namesAdded.Add(_names[i]);
+
+                _nameIndicesAdded.Add(i);
+            }
+
+            mEaseTypeNames = _namesAdded.ToArray();
+            mEaseIndices = _nameIndicesAdded.ToArray();
+        }
+
 	    private string[] wrapModeNames = {
 			"Once",	
 			"Loop",
@@ -429,7 +435,7 @@ namespace MateAnimator{
 	            newTakeEdits.Add(pair.Key, pair.Value);
 	        mTakeEdits = newTakeEdits;
 	    }
-	    
+
 	    private GameObject mTempHolder;
 
 	    #endregion
@@ -4327,7 +4333,7 @@ namespace MateAnimator{
 	            GUI.Label(rectLabel, "Ease");
 	            Rect rectPopup = new Rect(rectLabel.x + rectLabel.width + 2f, y + 3f, width - rectLabel.width - width_button_delete - 3f, height);
 
-	            int nease = EditorGUI.Popup(rectPopup, key.easeType, easeTypeNames);
+                int nease = GetEaseIndex(EditorGUI.Popup(rectPopup, GetEaseTypeNameIndex(key.easeType), easeTypeNames));
 	            if(key.easeType != nease) {
 	                AnimatorDataEdit.RecordUndoTrackAndKeys(track, false, "Change Ease");
 	                key.setEaseType(nease);
@@ -4381,7 +4387,7 @@ namespace MateAnimator{
 	            GUILayout.EndVertical();
 	            GUILayout.BeginVertical();
 	            GUILayout.Space(3f);
-	            int nease = EditorGUILayout.Popup(key.easeType, easeTypeNames);
+                int nease = GetEaseIndex(EditorGUILayout.Popup(GetEaseTypeNameIndex(key.easeType), easeTypeNames));
 	            if(key.easeType != nease) {
 	                AnimatorDataEdit.RecordUndoTrackAndKeys(track, false, "Change Ease");
 	                key.setEaseType(nease);
@@ -5292,15 +5298,16 @@ namespace MateAnimator{
 	    // timeline action info
 	    string getInfoTextForAction(AMTrack _track, AMKey _key, bool brief, int clamped) {
 	        int easeInd = _key.easeType;
-	        if(easeInd < 0 || easeInd >= easeTypeNames.Length) {
-	            _key.easeType = 0; EditorUtility.SetDirty(_key);
+            int easeTypeNameInd = GetEaseTypeNameIndex(easeInd);
+	        if(easeInd < 0 || easeInd > (int)Ease.INTERNAL_Custom) {
+	            _key.easeType = (int)Ease.Linear; EditorUtility.SetDirty(_key);
 	        }
 
 	        // get text for track type
 	        #region translation/rotation
 	        if(_key is AMTranslationKey || _key is AMRotationKey || _key is AMRotationEulerKey) {
 	            if(!_key.canTween) { return ""; }
-	            return easeTypeNames[easeInd];
+                return easeTypeNames[easeTypeNameInd];
 	        }
 	        #endregion
 	        #region animation
@@ -5325,7 +5332,7 @@ namespace MateAnimator{
 	            string info = propTrack.getTrackType() + "\n";
 	            if(propkey.targetsAreEqual(propTrack.valueType, nextKey) || !_key.canTween || !propTrack.canTween) brief = true;
 	            if(!brief && propkey.endFrame != -1 && _key.canTween) {
-	                info += easeTypeNames[easeInd] + ": ";
+                    info += easeTypeNames[easeTypeNameInd] + ": ";
 	            }
 	            string detail = propkey.getValueString(propTrack.GetCachedInfoType(aData.target), propTrack.valueType, nextKey, brief);	// extra details such as integer values ex. 1 -> 12
 	            if(detail != null) info += detail;
@@ -5371,7 +5378,7 @@ namespace MateAnimator{
 	            }
 	            txtInfoOrientation = target.name +
 					" -> " + (targetNext ? targetNext.name : "No Target");
-	            txtInfoOrientation += "\n" + easeTypeNames[easeInd];
+                txtInfoOrientation += "\n" + easeTypeNames[easeTypeNameInd];
 	            return txtInfoOrientation;
 	        }
 	        #endregion
@@ -5386,7 +5393,7 @@ namespace MateAnimator{
 	            txtInfoCameraSwitcher = (_key as AMCameraSwitcherKey).getStartTargetName(aData.target) +
 				" -> " + (_key as AMCameraSwitcherKey).getEndTargetName(aData.target);
 	            txtInfoCameraSwitcher += "\n"+AMTransitionPicker.TransitionNamesDict[((_key as AMCameraSwitcherKey).cameraFadeType > AMTransitionPicker.TransitionNamesDict.Length ? 0 : (_key as AMCameraSwitcherKey).cameraFadeType)];
-	            if((_key as AMCameraSwitcherKey).cameraFadeType != (int)AMCameraSwitcherKey.Fade.None) txtInfoCameraSwitcher += ": "+easeTypeNames[(_key as AMCameraSwitcherKey).easeType];
+	            if((_key as AMCameraSwitcherKey).cameraFadeType != (int)AMCameraSwitcherKey.Fade.None) txtInfoCameraSwitcher += ": "+easeTypeNames[GetEaseTypeNameIndex((_key as AMCameraSwitcherKey).easeType)];
 	            return txtInfoCameraSwitcher;
 	        }
 	        #endregion
@@ -5411,7 +5418,7 @@ namespace MateAnimator{
 	            string info = propTrack.getTrackType() + "\n";
 	            if(propkey.targetsAreEqual(propTrack.propertyType, nextKey) || !_key.canTween || !propTrack.canTween) brief = true;
 	            if(!brief && propkey.endFrame != -1 && _key.canTween) {
-	                info += easeTypeNames[easeInd] + ": ";
+                    info += easeTypeNames[easeTypeNameInd] + ": ";
 	            }
 	            string detail = propkey.getValueString(propTrack.propertyType, nextKey, brief);	// extra details such as integer values ex. 1 -> 12
 	            if(detail != null) info += detail;

@@ -106,53 +106,94 @@ namespace MateAnimator{
 	        if(!t) return;
 	        if(keys == null || keys.Count <= 0) return;
 	        // if before first frame
-	        if(frame <= (float)keys[0].frame) {
-	            AMTranslationKey key = keys[0] as AMTranslationKey;
-	            SetPosition(t, !key.canTween || key.path.Length == 0 ? key.position : key.path[0]);
-	            return;
-	        }
-	        // if beyond last frame
-	        if(frame >= (float)(keys[keys.Count - 1] as AMTranslationKey).endFrame) {
-	            AMTranslationKey key = keys[keys.Count - 1] as AMTranslationKey;
-	            SetPosition(t, !key.canTween || key.path.Length == 0 ? key.position : key.path[key.path.Length - 1]);
-	            return;
-	        }
+            /*if(frame <= (float)keys[0].frame) {
+                AMTranslationKey key = keys[0] as AMTranslationKey;
+                SetPosition(t, !key.canTween || key.path.Length == 0 ? key.position : key.path[0]);
+                return;
+            }
+            // if beyond last frame
+            if(frame >= (float)(keys[keys.Count - 1] as AMTranslationKey).endFrame) {
+                AMTranslationKey key = keys[keys.Count - 1] as AMTranslationKey;
+                SetPosition(t, !key.canTween || key.path.Length == 0 ? key.position : key.path[key.path.Length - 1]);
+                return;
+            }
 
-	        // if lies on curve
-	        foreach(AMTranslationKey key in keys) {
-	            if(((int)frame < key.frame) || ((int)frame > key.endFrame)) continue;
-	            if(!key.canTween && (int)frame < key.endFrame) {
-					SetPosition(t, key.position);
-					return;
-				}
-				else if(key.path.Length == 0) {
-					continue;
-				}
-	            else if(key.path.Length == 1) {
-					SetPosition(t, key.path[0]);
-	                return;
-	            }
-	            float _value;
-	            float framePositionInPath = frame - (float)key.frame;
-	            if(framePositionInPath < 0f) framePositionInPath = 0f;
+            // if lies on curve
+            foreach(AMTranslationKey key in keys) {
+                if(((int)frame < key.frame) || ((int)frame > key.endFrame)) continue;
+                if(!key.canTween && (int)frame < key.endFrame) {
+                    SetPosition(t, key.position);
+                    return;
+                }
+                else if(key.path.Length == 0) {
+                    continue;
+                }
+                else if(key.path.Length == 1) {
+                    SetPosition(t, key.path[0]);
+                    return;
+                }
+                float _value;
+                float framePositionInPath = frame - (float)key.frame;
+                if(framePositionInPath < 0f) framePositionInPath = 0f;
 
-	            if(key.hasCustomEase()) {
-	                _value = AMUtil.EaseCustom(0.0f, 1.0f, framePositionInPath / key.getNumberOfFrames(frameRate), key.easeCurve);
-	            }
-	            else {
-	                var ease = AMUtil.GetEasingFunction((Ease)key.easeType);
-	                _value = ease(framePositionInPath, key.getNumberOfFrames(frameRate), key.amplitude, key.period);
-	                if(float.IsNaN(_value)) { //this really shouldn't happen...
-	                    return;
-	                }
-	            }
+                if(key.hasCustomEase()) {
+                    _value = AMUtil.EaseCustom(0.0f, 1.0f, framePositionInPath / key.getNumberOfFrames(frameRate), key.easeCurve);
+                }
+                else {
+                    var ease = AMUtil.GetEasingFunction((Ease)key.easeType);
+                    _value = ease(framePositionInPath, key.getNumberOfFrames(frameRate), key.amplitude, key.period);
+                    if(float.IsNaN(_value)) { //this really shouldn't happen...
+                        return;
+                    }
+                }
 
-	            SetPosition(t, key.GetPoint(Mathf.Clamp(_value, 0f, 1f)));
+                SetPosition(t, key.GetPoint(Mathf.Clamp(_value, 0f, 1f)));
 
-	            return;
-	        }
+                return;
+            }*/
+            int iFrame = Mathf.RoundToInt(frame);
 
-	    }
+            for(int i = keys.Count - 1; i >= 0; i--) {
+                AMTranslationKey key = keys[i] as AMTranslationKey;
+
+                if(iFrame < key.frame) continue;
+                if(!key.canTween) {
+                    SetPosition(t, key.position);
+                    return;
+                }
+                else if(key.path.Length == 0) {
+                    continue;
+                }
+                else if(key.path.Length == 1) {
+                    if(i == 0) {
+                        SetPosition(t, key.path[0]);
+                        return;
+                    }
+                    else
+                        continue;
+                }
+
+                float fNumFrames = (float)key.getNumberOfFrames(frameRate);
+
+                float _value;
+
+                float framePositionInPath = Mathf.Clamp(frame - (float)key.frame, 0f, fNumFrames);
+
+                if(key.hasCustomEase())
+                    _value = AMUtil.EaseCustom(0.0f, 1.0f, framePositionInPath / fNumFrames, key.easeCurve);
+                else {
+                    var ease = AMUtil.GetEasingFunction((Ease)key.easeType);
+                    _value = ease(framePositionInPath, fNumFrames, key.amplitude, key.period);
+                    if(float.IsNaN(_value)) //this really shouldn't happen...
+                        return;
+                }
+
+                SetPosition(t, key.GetPoint(Mathf.Clamp01(_value)));
+
+                return;
+            }
+
+        }
 
 	    // returns true if autoKey successful
 	    public bool autoKey(AMITarget itarget, OnAddKey addCall, Transform aobj, int frame, int frameRate) {
@@ -182,7 +223,7 @@ namespace MateAnimator{
 
 	        if(keys.Count <= 0) ret = GetPosition(t);
 	        // if before first frame
-	        else if(frame <= keys[0].frame) {
+	        /*else if(frame <= keys[0].frame) {
 	            AMTranslationKey key = keys[0] as AMTranslationKey;
 	            ret = !key.canTween || key.path.Length == 0 ? key.position : key.path[0];
 	        }
@@ -229,7 +270,52 @@ namespace MateAnimator{
 
 	            if(!retFound)
 	                Debug.LogError("Animator: Could not get " + t.name + " position at frame '" + frame + "'");
-	        }
+	        }*/
+
+            bool retFound = false;
+            // if lies on curve
+            for(int i = keys.Count - 1; i >= 0; i--) {
+                AMTranslationKey key = keys[i] as AMTranslationKey;
+
+                if(frame < key.frame) continue;
+                if(!key.canTween && frame < key.endFrame) {
+                    ret = key.position;
+                    retFound = true;
+                    break;
+                }
+                else if(key.path.Length == 0) {
+                    continue;
+                }
+                else if(key.path.Length == 1) {
+                    if(i == 0) {
+                        ret = key.path[0];
+                        retFound = true;
+                        break;
+                    }
+                    else
+                        continue;
+                }
+
+                int numFrames = key.getNumberOfFrames(frameRate);
+
+                int framePositionInPath = Mathf.Clamp(frame - key.frame, 0, numFrames);
+
+                // ease
+                if(key.hasCustomEase()) {
+                    ret = key.GetPoint(Mathf.Clamp(AMUtil.EaseCustom(0.0f, 1.0f, (float)framePositionInPath / (float)numFrames, key.easeCurve), 0.0f, 1.0f));
+                    retFound = true;
+                    break;
+                }
+                else {
+                    var ease = AMUtil.GetEasingFunction((Ease)key.easeType);
+                    ret = key.GetPoint(Mathf.Clamp01(ease(framePositionInPath, key.getNumberOfFrames(frameRate), key.amplitude, key.period)));
+                    retFound = true;
+                    break;
+                }
+            }
+
+            if(!retFound)
+                Debug.LogError("Animator: Could not get " + t.name + " position at frame '" + frame + "'");
 
 	        if(pixelSnap) ret.Set(Mathf.Round(ret.x*pixelPerUnit)/pixelPerUnit, Mathf.Round(ret.y*pixelPerUnit)/pixelPerUnit, Mathf.Round(ret.z*pixelPerUnit)/pixelPerUnit);
 

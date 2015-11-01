@@ -45,7 +45,7 @@ namespace MateAnimator{
 			key = _key;
 			track = _track;
 			//aData = _aData;
-			selectedIndex = key.easeType;
+			selectedIndex = AMTimeline.GetEaseTypeNameIndex(key.easeType);
 		}
 		
 		public static float waitPercent = 0.3f;
@@ -66,7 +66,7 @@ namespace MateAnimator{
 			oData = AMOptionsFile.loadFile();
 			setupFilteredCategories();
 
-			selectedIndex = getCategoryIndexForEase(key.easeType);
+            selectedIndex = getCategoryIndexForEase(AMTimeline.GetEaseTypeNameIndex(key.easeType));
 
 			if(getSelectedEaseName(category,selectedIndex) == "Custom") {
 				isCustomEase = true;
@@ -122,14 +122,11 @@ namespace MateAnimator{
 			float x_pos_start = 50f;
 			float x_pos_end = position.width-50f-80f-200f;
 
-			if(getSelectedEaseIndex(category,selectedIndex) == AMTimeline.easeTypeNames.Length - 1) {
-				x_pos = x_pos_start;
-			}
-			else if(percent <= 1f) {
+			if(percent <= 1f) {
 				if(isCustomEase) {
 	                x_pos = AMUtil.EaseCustom(x_pos_start, x_pos_end - x_pos_start, percent < 0f ? 0f : percent, curve);
 				} else {
-					var ease = AMUtil.GetEasingFunction((Ease)getSelectedEaseIndex(category,selectedIndex));
+					var ease = AMUtil.GetEasingFunction((Ease)AMTimeline.GetEaseIndex(getSelectedEaseIndex(category,selectedIndex)));
 	                x_pos = x_pos_start + (x_pos_end - x_pos_start)*ease(percent < 0f ? 0f : percent, 1.0f, 0.0f, 0.0f);
 				}
 			}
@@ -193,7 +190,7 @@ namespace MateAnimator{
 				GUILayout.Space(5f);
 				GUILayout.BeginHorizontal();
 					if(GUILayout.Button("Apply")) {
-						int nease = getSelectedEaseIndex(category,selectedIndex);
+						int nease = AMTimeline.GetEaseIndex(getSelectedEaseIndex(category,selectedIndex));
 						bool shouldUpdateCache = false;
 						if(isCustomEase) {
 							key.setCustomEase(curve);
@@ -235,16 +232,16 @@ namespace MateAnimator{
 			GUI.color = Color.white;
 			
 			// curve field
-			if(updateEasingCurve) setEasingCurve();
-			else if(!isCustomEase && didChangeCurve()) {
-				isCustomEase = true;
-				selectedIndex = getCategoryIndexForEaseName("Custom");
-				if(selectedIndex < 0) {
-					category = 0;
-					selectedIndex = getCategoryIndexForEaseName("Custom");
-				}
-			}
-			curve = EditorGUI.CurveField(new Rect(500f, 5f, 208f, 100f),curve,Color.blue,new Rect(0f,-0.5f,1f,2.0f));
+            if(updateEasingCurve) setEasingCurve();
+            else if(!isCustomEase && didChangeCurve()) {
+                isCustomEase = true;
+                selectedIndex = getCategoryIndexForEaseName("Custom");
+                if(selectedIndex < 0) {
+                    category = 0;
+                    selectedIndex = getCategoryIndexForEaseName("Custom");
+                }
+            }
+			curve = EditorGUI.CurveField(new Rect(500f, 5f, 208f, 100f),curve);
 		}
 		
 		private void setupFilteredCategories() {
@@ -254,7 +251,7 @@ namespace MateAnimator{
 			foreach(string category in categories) {
 				List<string> temp = new List<string>();
 				foreach(string ease in AMTimeline.easeTypeNames) {
-					if(category == "All") {
+                    if(category == "All") {
 						temp.Add(ease);
 					} else if(category == "Other") {
 						if(!used.Contains(ease))
@@ -300,20 +297,17 @@ namespace MateAnimator{
 		
 		public void setEasingCurve() {
 			string name = getSelectedEaseName(category,selectedIndex);
-			if(name == "None") {
-				curve = new AnimationCurve();
-				curve.AddKey(new Keyframe(0, 0, 1, 1));
-				curve.AddKey(new Keyframe(1, 0, 1, 1));
-			}
-			else if(name == "Custom") {
-				if(curve.length <= 0) {
-					curve = getCurve(Ease.Linear);
-					this.Repaint();
-				}
+			if(name == "Custom") {
+                if(curve.length <= 0) {
+                    curve = getCurve(Ease.Linear);
+                    this.Repaint();
+                }
 				return;
 			}
-			curve = getCurve((Ease)getSelectedEaseIndex(category,selectedIndex));
-			selectedCurve = getCurve((Ease)getSelectedEaseIndex(category,selectedIndex));
+
+            Ease ease = (Ease)AMTimeline.GetEaseIndex(getSelectedEaseIndex(category, selectedIndex));
+            curve = getCurve(ease);
+            selectedCurve = getCurve(ease);
 			this.Repaint();
 		}
 		
@@ -544,8 +538,6 @@ namespace MateAnimator{
 					_curve.AddKey(new Keyframe(0.900f,1.00f,-0.01f,-0.01f));
 					_curve.AddKey(new Keyframe(1.000f,1.00f,0.00f,0.00f));
 				    break;
-                case Ease.INTERNAL_Zero:
-                    break;
 			}
 			return _curve;
 		}

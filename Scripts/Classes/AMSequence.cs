@@ -44,7 +44,7 @@ namespace MateAnimator{
 	        mInsertActionTrack.Add(valueSet);
 	    }
 
-	    public void Build(string goName, bool autoKill, UpdateType updateType) {
+	    public void Build(bool autoKill, UpdateType updateType, bool updateTimeIndependent) {
 	        if(mSequence != null) {
                 mSequence.Kill();
 	            mInsertActionTrack = null;
@@ -53,12 +53,12 @@ namespace MateAnimator{
 
             //create sequence
             mSequence = DOTween.Sequence();
-            mSequence.SetId(string.Format("{0}:{1}", goName, mTake.name));
-            mSequence.SetUpdate(updateType);
+            //mSequence.SetId(string.Format("{0}:{1}", goName, mTake.name));
+            mSequence.SetUpdate(updateType, updateTimeIndependent);
             mSequence.SetAutoKill(mIsAutoKill = autoKill);
             mSequence.SetLoops(mTake.numLoop, mTake.loopMode);
-            mSequence.OnComplete(OnSequenceComplete);
-            mSequence.OnStepComplete(OnSequenceStepComplete);
+            //mSequence.OnComplete(OnSequenceComplete);
+            //mSequence.OnStepComplete(OnSequenceStepComplete);
             
 	        mTake.maintainCaches(mTarget);
 

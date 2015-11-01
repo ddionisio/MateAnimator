@@ -41,6 +41,7 @@ namespace MateAnimator{
 	    public DisableAction onDisableAction = DisableAction.Pause;
 
 	    public UpdateType updateType = UpdateType.Normal;
+        public bool updateTimeIndependent = false;
 	    // hide
 
 	    public event OnTake takeCompleteCallback;
@@ -244,7 +245,7 @@ namespace MateAnimator{
 	        Sequence seq = amSeq.sequence;
 
 	        if(seq == null) {
-	            amSeq.Build(gameObject.name, sequenceKillWhenDone, updateType);
+	            amSeq.Build(sequenceKillWhenDone, updateType, updateTimeIndependent);
 	            seq = amSeq.sequence;
 	        }
 	        else
@@ -419,10 +420,9 @@ namespace MateAnimator{
 
 	        mStarted = true;
 	        if(sequenceLoadAll && mSequences != null) {
-	            string goName = gameObject.name;
 	            for(int i = 0; i < mSequences.Length; i++) {
 	                if(mSequences[i].sequence == null)
-	                    mSequences[i].Build(goName, sequenceKillWhenDone, updateType);
+                        mSequences[i].Build(sequenceKillWhenDone, updateType, updateTimeIndependent);
 	            }
 	        }
 
