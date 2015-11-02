@@ -27,13 +27,14 @@ namespace MateAnimator{
 
 	    #region action
 	    public override int getNumberOfFrames(int frameRate) {
-	        if(!canTween || (endFrame == -1 || endFrame == frame))
+	        if(!canTween && (endFrame == -1 || endFrame == frame))
 	            return 1;
 	        else if(endFrame == -1)
 	            return -1;
 	        return endFrame - frame;
 	    }
 	    public override void build(AMSequence seq, AMTrack track, int index, UnityEngine.Object obj) {
+            Transform trans = obj as Transform;
 	        int frameRate = seq.take.frameRate;
 
 	        //allow tracks with just one key
@@ -41,11 +42,13 @@ namespace MateAnimator{
 	            interp = (int)Interpolation.None;
 
 			if(!canTween) {
-	            seq.Insert(new AMActionTransLocalRot(this, frameRate, obj as Transform, rotation));
+                var tween = DOTween.To(new AMPlugValueSet<Quaternion>(), () => rotation, (x) => trans.localRotation=x, rotation, getTime(frameRate));
+                tween.plugOptions = new AMPlugValueSetOptions(seq.sequence);
+
+                seq.Insert(this, tween);
 			}
 			else if(endFrame == -1) return;
 	        else {
-                Transform trans = obj as Transform;
 	            Quaternion endRotation = (track.keys[index + 1] as AMRotationKey).rotation;
 
                 var tween = DOTween.To(new PureQuaternionPlugin(), () => trans.localRotation, (x) => trans.localRotation=x, endRotation, getTime(frameRate));

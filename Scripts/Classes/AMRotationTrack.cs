@@ -94,7 +94,7 @@ namespace MateAnimator{
 	            AMRotationKey key = keys[i] as AMRotationKey;
 	            AMRotationKey keyNext = i + 1 < keys.Count ? keys[i + 1] as AMRotationKey : null;
 
-	            if(frame >= (float)key.endFrame && (keyNext != null && keyNext.endFrame != -1)) continue;
+	            if(frame >= (float)key.endFrame && keyNext != null && (!keyNext.canTween || keyNext.endFrame != -1)) continue;
 	            // if no ease
 	            if(!key.canTween || keyNext == null) {
 					t.localRotation =  key.rotation;
@@ -155,7 +155,7 @@ namespace MateAnimator{
                 AMRotationKey key = keys[i] as AMRotationKey;
                 AMRotationKey keyNext = i + 1 < keys.Count ? keys[i + 1] as AMRotationKey : null;
 
-                if(frame >= (float)key.endFrame && (keyNext != null && keyNext.endFrame != -1)) continue;
+                if(frame >= (float)key.endFrame && keyNext != null && (!keyNext.canTween || keyNext.endFrame != -1)) continue;
                 // if no ease
                 if(!key.canTween || keyNext == null) {
                     return key.rotation;

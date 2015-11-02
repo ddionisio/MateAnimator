@@ -25,7 +25,7 @@ namespace MateAnimator{
 
 	    #region action
 	    public override int getNumberOfFrames(int frameRate) {
-	        if(!canTween || (endFrame == -1 || endFrame == frame))
+	        if(!canTween && (endFrame == -1 || endFrame == frame))
 	            return 1;
 	        else if(endFrame == -1)
 	            return -1;
@@ -43,16 +43,27 @@ namespace MateAnimator{
 	        if(!canTween) {
 	            switch((track as AMRotationEulerTrack).axis) {
 	                case AMRotationEulerTrack.Axis.X:
-	                    seq.Insert(new AMActionTransLocalRotEulerX(this, frameRate, target, rotation.x));
+                        float _x = rotation.x;
+                        var tweenX = DOTween.To(new AMPlugValueSet<float>(), () => _x, (x) => { var a=target.localEulerAngles; a.x=x; target.localEulerAngles=a; }, _x, getTime(frameRate));
+                        tweenX.plugOptions = new AMPlugValueSetOptions(seq.sequence);
+                        seq.Insert(this, tweenX);
 	                    break;
 	                case AMRotationEulerTrack.Axis.Y:
-	                    seq.Insert(new AMActionTransLocalRotEulerY(this, frameRate, target, rotation.y));
+	                    float _y = rotation.y;
+                        var tweenY = DOTween.To(new AMPlugValueSet<float>(), () => _y, (y) => { var a=target.localEulerAngles; a.y=y; target.localEulerAngles=a; }, _y, getTime(frameRate));
+                        tweenY.plugOptions = new AMPlugValueSetOptions(seq.sequence);
+                        seq.Insert(this, tweenY);
 	                    break;
 	                case AMRotationEulerTrack.Axis.Z:
-	                    seq.Insert(new AMActionTransLocalRotEulerZ(this, frameRate, target, rotation.z));
+	                    float _z = rotation.z;
+                        var tweenZ = DOTween.To(new AMPlugValueSet<float>(), () => _z, (z) => { var a=target.localEulerAngles; a.z=z; target.localEulerAngles=a; }, _z, getTime(frameRate));
+                        tweenZ.plugOptions = new AMPlugValueSetOptions(seq.sequence);
+                        seq.Insert(this, tweenZ);
 	                    break;
 	                default:
-	                    seq.Insert(new AMActionTransLocalRotEuler(this, frameRate, target, rotation));
+                        var tweenV = DOTween.To(new AMPlugValueSet<Vector3>(), () => rotation, (r) => { target.localEulerAngles=r; }, rotation, getTime(frameRate));
+                        tweenV.plugOptions = new AMPlugValueSetOptions(seq.sequence);
+                        seq.Insert(this, tweenV);
 	                    break;
 	            }
 	        }
