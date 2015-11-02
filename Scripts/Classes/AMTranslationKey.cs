@@ -117,13 +117,20 @@ namespace MateAnimator{
 	        if(track.keys.Count == 1)
 	            interp = (int)Interpolation.None;
 
+            Transform trans = obj as Transform;
+
 	        AMTranslationTrack tTrack = track as AMTranslationTrack;
 	        bool pixelSnap = tTrack.pixelSnap;
 	        float ppu = tTrack.pixelPerUnit;
-
+            
 	        if(!canTween) {
 	            //TODO: world position
-	            seq.Insert(new AMActionTransLocalPos(this, frameRate, obj as Transform, pixelSnap ? new Vector3(Mathf.Round(position.x*ppu)/ppu, Mathf.Round(position.y*ppu)/ppu, Mathf.Round(position.z*ppu)/ppu) : position));
+                Vector3 pos = pixelSnap ? new Vector3(Mathf.Round(position.x*ppu)/ppu, Mathf.Round(position.y*ppu)/ppu, Mathf.Round(position.z*ppu)/ppu) : position;
+
+                var tweener = DOTween.To(new AMPlugValueSet<Vector3>(), () => pos, (x) => trans.localPosition=x, pos, getTime(frameRate));
+                tweener.plugOptions = new AMPlugValueSetOptions(seq.sequence);
+
+                seq.Insert(this, tweener);
 	        }
 	        else {
 	            if(path.Length <= 1) return;
@@ -131,7 +138,6 @@ namespace MateAnimator{
 
 	            Tweener ret = null;
 
-                Transform trans = obj as Transform;
 	            bool isRelative = false;
 
                 PathType pathType = path.Length == 2 ? PathType.Linear : PathType.CatmullRom;

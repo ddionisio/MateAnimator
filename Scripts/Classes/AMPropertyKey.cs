@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Reflection;
 
 using DG.Tweening;
+using DG.Tweening.CustomPlugins;
 using DG.Tweening.Plugins;
 
 namespace MateAnimator{
@@ -154,7 +155,7 @@ namespace MateAnimator{
                                 case AMPropertyTrack.ValueType.Vector4:
                                     tween = DOTween.To(new Vector4Plugin(), () => (Vector4)propInfo.GetValue(comp, null), (x) => propInfo.SetValue(comp, x, null), endKey.vect4, getTime(frameRate)); break;
                                 case AMPropertyTrack.ValueType.Quaternion:
-                                    tween = DOTween.To(new AMPlugQuaternion(), () => (Quaternion)propInfo.GetValue(comp, null), (x) => propInfo.SetValue(comp, x, null), endKey.quat, getTime(frameRate)); break;
+                                    tween = DOTween.To(new PureQuaternionPlugin(), () => (Quaternion)propInfo.GetValue(comp, null), (x) => propInfo.SetValue(comp, x, null), endKey.quat, getTime(frameRate)); break;
                             }
                         }
                         else {
@@ -180,7 +181,7 @@ namespace MateAnimator{
                                     case AMPropertyTrack.ValueType.Vector4:
                                         tween = DOTween.To(new Vector4Plugin(), () => (Vector4)fieldInfo.GetValue(comp), (x) => fieldInfo.SetValue(comp, x), endKey.vect4, getTime(frameRate)); break;
                                     case AMPropertyTrack.ValueType.Quaternion:
-                                        tween = DOTween.To(new AMPlugQuaternion(), () => (Quaternion)fieldInfo.GetValue(comp), (x) => fieldInfo.SetValue(comp, x), endKey.quat, getTime(frameRate)); break;
+                                        tween = DOTween.To(new PureQuaternionPlugin(), () => (Quaternion)fieldInfo.GetValue(comp), (x) => fieldInfo.SetValue(comp, x), endKey.quat, getTime(frameRate)); break;
                                 }
                             }
                         }

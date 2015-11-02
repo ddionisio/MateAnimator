@@ -77,48 +77,44 @@ namespace MateAnimator{
 	    public override void previewFrame(AMITarget target, float frame, int frameRate, bool play, float playSpeed) {
 			Transform t = GetTarget(target) as Transform;
 
+            int keyCount = keys.Count;
+
 	        if(!t) return;
-	        if(keys == null || keys.Count <= 0) return;
+	        if(keys == null || keyCount <= 0) return;
+
 	        // if before or equal to first frame, or is the only frame
-	        if((frame <= (float)keys[0].frame) || ((keys[0] as AMRotationKey).endFrame == -1)) {
-				t.localRotation = (keys[0] as AMRotationKey).rotation;
+            AMRotationKey firstKey = keys[0] as AMRotationKey;
+            if(firstKey.endFrame == -1 || (frame <= (float)firstKey.frame && !firstKey.canTween)) {
+                t.localRotation = firstKey.rotation;
 	            return;
 	        }
-	        // if beyond or equal to last frame
-	        if(frame >= (float)(keys[keys.Count - 2] as AMRotationKey).endFrame) {
-	            t.localRotation = (keys[keys.Count - 1] as AMRotationKey).rotation;
-	            return;
-	        }
+
 	        // if lies on rotation action
 	        for(int i = 0; i < keys.Count; i++) {
 	            AMRotationKey key = keys[i] as AMRotationKey;
 	            AMRotationKey keyNext = i + 1 < keys.Count ? keys[i + 1] as AMRotationKey : null;
 
-	            if((frame < (float)key.frame) || (frame > (float)key.endFrame)) continue;
-	            // if on startFrame or is no ease
-	            if(frame == (float)key.frame || (!key.canTween && frame < (float)key.endFrame)) {
+	            if(frame >= (float)key.endFrame && (keyNext != null && keyNext.endFrame != -1)) continue;
+	            // if no ease
+	            if(!key.canTween || keyNext == null) {
 					t.localRotation =  key.rotation;
-	                return;
-	            }
-	            // if on endFrame
-	            if(frame == (float)key.endFrame) {
-	                t.localRotation = keyNext.rotation;
 	                return;
 	            }
 	            // else find Quaternion using easing function
 
-	            float framePositionInAction = frame - (float)key.frame;
-	            if(framePositionInAction < 0f) framePositionInAction = 0f;
+                float numFrames = (float)key.getNumberOfFrames(frameRate);
+
+                float framePositionInAction = Mathf.Clamp(frame - (float)key.frame, 0f, numFrames);
 
 	            Quaternion qStart = key.rotation;
 	            Quaternion qEnd = keyNext.rotation;
 
 	            if(key.hasCustomEase()) {
-                    t.localRotation = Quaternion.LerpUnclamped(qStart, qEnd, AMUtil.EaseCustom(0.0f, 1.0f, framePositionInAction / key.getNumberOfFrames(frameRate), key.easeCurve));
+                    t.localRotation = Quaternion.LerpUnclamped(qStart, qEnd, AMUtil.EaseCustom(0.0f, 1.0f, framePositionInAction / numFrames, key.easeCurve));
 	            }
 	            else {
 	                var ease = AMUtil.GetEasingFunction((Ease)key.easeType);
-	                t.localRotation = Quaternion.LerpUnclamped(qStart, qEnd, ease(framePositionInAction, key.getNumberOfFrames(frameRate), key.amplitude, key.period));
+                    t.localRotation = Quaternion.LerpUnclamped(qStart, qEnd, ease(framePositionInAction, numFrames, key.amplitude, key.period));
 	            }
 
 	            return;
@@ -147,47 +143,41 @@ namespace MateAnimator{
 
 	        return false;
 	    }
-	    public Quaternion getRotationAtFrame(int frame, int frameRate) {
-	        // if before or equal to first frame, or is the only frame
-	        if((frame <= keys[0].frame) || ((keys[0] as AMRotationKey).endFrame == -1)) {
-	            //rotation = (cache[0] as AMRotationAction).getStartQuaternion();
-	            return (keys[0] as AMRotationKey).rotation;
-	        }
-	        // if beyond or equal to last frame
-	        if(frame >= (keys[keys.Count - 2] as AMRotationKey).endFrame) {
-	            //rotation = (cache[cache.Count-2] as AMRotationAction).getEndQuaternion();
-	            return (keys[keys.Count - 1] as AMRotationKey).rotation;
-	        }
-	        // if lies on rotation action
-	        for(int i = 0; i < keys.Count; i++) {
-	            AMRotationKey key = keys[i] as AMRotationKey;
-	            AMRotationKey keyNext = i + 1 < keys.Count ? keys[i + 1] as AMRotationKey : null;
+	    Quaternion getRotationAtFrame(int frame, int frameRate) {
+            // if before or equal to first frame, or is the only frame
+            AMRotationKey firstKey = keys[0] as AMRotationKey;
+            if(firstKey.endFrame == -1 || (frame <= (float)firstKey.frame && !firstKey.canTween)) {
+                return firstKey.rotation;
+            }
 
-	            if((frame < key.frame) || (frame > key.endFrame)) continue;
-	            // if on startFrame or no ease
-	            if(frame == key.frame || (!key.canTween && frame < key.endFrame)) {
-	                return key.rotation;
-	            }
-	            // if on endFrame
-	            if(frame == key.endFrame) {
-	                return keyNext.rotation;
-	            }
-	            // else find Quaternion using easing function
+            // if lies on rotation action
+            for(int i = 0; i < keys.Count; i++) {
+                AMRotationKey key = keys[i] as AMRotationKey;
+                AMRotationKey keyNext = i + 1 < keys.Count ? keys[i + 1] as AMRotationKey : null;
 
-	            Quaternion qStart = key.rotation;
-	            Quaternion qEnd = keyNext.rotation;
+                if(frame >= (float)key.endFrame && (keyNext != null && keyNext.endFrame != -1)) continue;
+                // if no ease
+                if(!key.canTween || keyNext == null) {
+                    return key.rotation;
+                }
+                // else find Quaternion using easing function
 
-	            int framePositionInAction = frame - key.frame;
-	            if(framePositionInAction < 0f) framePositionInAction = 0;
+                float numFrames = (float)key.getNumberOfFrames(frameRate);
 
-	            if(key.hasCustomEase()) {
-                    return Quaternion.LerpUnclamped(qStart, qEnd, AMUtil.EaseCustom(0.0f, 1.0f, (float)framePositionInAction / (float)key.getNumberOfFrames(frameRate), key.easeCurve));
-	            }
-	            else {
-	                var ease = AMUtil.GetEasingFunction((Ease)key.easeType);
-                    return Quaternion.LerpUnclamped(qStart, qEnd, ease(framePositionInAction, key.getNumberOfFrames(frameRate), key.amplitude, key.period));
-	            }
-	        }
+                float framePositionInAction = Mathf.Clamp(frame - (float)key.frame, 0f, numFrames);
+
+                Quaternion qStart = key.rotation;
+                Quaternion qEnd = keyNext.rotation;
+
+                if(key.hasCustomEase()) {
+                    return Quaternion.LerpUnclamped(qStart, qEnd, AMUtil.EaseCustom(0.0f, 1.0f, framePositionInAction / numFrames, key.easeCurve));
+                }
+                else {
+                    var ease = AMUtil.GetEasingFunction((Ease)key.easeType);
+                    return Quaternion.LerpUnclamped(qStart, qEnd, ease(framePositionInAction, numFrames, key.amplitude, key.period));
+                }
+            }
+
 	        Debug.LogError("Animator: Could not get rotation at frame '" + frame + "'");
 	        return Quaternion.identity;
 	    }

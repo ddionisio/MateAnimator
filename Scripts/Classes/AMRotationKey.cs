@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 
 using DG.Tweening;
+using DG.Tweening.CustomPlugins;
 
 namespace MateAnimator{
 	[AddComponentMenu("")]
@@ -47,7 +48,7 @@ namespace MateAnimator{
                 Transform trans = obj as Transform;
 	            Quaternion endRotation = (track.keys[index + 1] as AMRotationKey).rotation;
 
-                var tween = DOTween.To(new AMPlugQuaternion(), () => trans.localRotation, (x) => trans.localRotation=x, endRotation, getTime(frameRate));
+                var tween = DOTween.To(new PureQuaternionPlugin(), () => trans.localRotation, (x) => trans.localRotation=x, endRotation, getTime(frameRate));
 
                 if(hasCustomEase())
                     tween.SetEase(easeCurve);

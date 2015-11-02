@@ -10,7 +10,63 @@ using DG.Tweening.Plugins;
 using DG.Tweening.Plugins.Core;
 using DG.Tweening.Plugins.Options;
 
-namespace MateAnimator{
+namespace MateAnimator {
+    public struct AMPlugValueSetOptions {
+        public delegate int GetCounterCallback();
+
+        private GetCounterCallback mOnCounter;
+        private int mCounter;
+
+        public AMPlugValueSetOptions(Sequence seq) {
+            mOnCounter = () => seq.CompletedLoops();
+            mCounter = -1;
+        }
+
+        public bool isRefresh {
+            get {
+                int _c = mOnCounter();
+                if(mCounter != _c) {
+                    mCounter = _c;
+                    return true;
+                }
+                return false;
+            }
+        }
+
+        public void Reset() {
+            mCounter = -1;
+        }
+    }
+
+    /// <summary>
+    /// Note: Set getter as the value to be passed to setter
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    public class AMPlugValueSet<T> : ABSTweenPlugin<T, T, AMPlugValueSetOptions> {
+        public override T ConvertToStartValue(TweenerCore<T, T, AMPlugValueSetOptions> t, T value) {
+            return value;
+        }
+
+        public override void EvaluateAndApply(AMPlugValueSetOptions options, Tween t, bool isRelative, DOGetter<T> getter, DOSetter<T> setter, float elapsed, T startValue, T changeValue, float duration, bool usingInversePosition, UpdateNotice updateNotice) {
+            if(options.isRefresh)
+                setter(getter());
+        }
+
+        public override float GetSpeedBasedDuration(AMPlugValueSetOptions options, float unitsXSecond, T changeValue) {
+            return 1.0f/unitsXSecond;
+        }
+
+        public override void Reset(TweenerCore<T, T, AMPlugValueSetOptions> t) {
+            t.plugOptions.Reset();
+        }
+
+        public override void SetChangeValue(TweenerCore<T, T, AMPlugValueSetOptions> t) { }
+
+        public override void SetFrom(TweenerCore<T, T, AMPlugValueSetOptions> t, bool isRelative) { }
+
+        public override void SetRelativeEndValue(TweenerCore<T, T, AMPlugValueSetOptions> t) { }
+    }
+
     public class AMActionTween : ABSTweenPlugin<bool, bool, NoOptions> {
 	    private const int trackValIndStart = -1;
 

@@ -53,12 +53,10 @@ namespace MateAnimator{
 
             //create sequence
             mSequence = DOTween.Sequence();
-            //mSequence.SetId(string.Format("{0}:{1}", goName, mTake.name));
             mSequence.SetUpdate(updateType, updateTimeIndependent);
             mSequence.SetAutoKill(mIsAutoKill = autoKill);
             mSequence.SetLoops(mTake.numLoop, mTake.loopMode);
-            //mSequence.OnComplete(OnSequenceComplete);
-            //mSequence.OnStepComplete(OnSequenceStepComplete);
+            mSequence.OnComplete(OnSequenceComplete);
             
 	        mTake.maintainCaches(mTarget);
 
@@ -149,10 +147,5 @@ namespace MateAnimator{
 	            }
 	        }
 	    }
-
-        void OnSequenceStepComplete() {
-            if(mActionTween != null)
-                mActionTween.Reset();
-        }
 	}
 }

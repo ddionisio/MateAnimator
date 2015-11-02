@@ -593,7 +593,7 @@ namespace MateAnimator{
 
 	        if(orientationOnly) {
 	            foreach(AMTrack track in trackValues) {
-	                if(track is AMOrientationTrack || track is AMRotationTrack)
+	                if(track is AMOrientationTrack)// || track is AMRotationTrack)
 	                    track.previewFrame(itarget, _frame, frameRate, play, playSpeed);
 	            }
 	        }
