@@ -94,7 +94,8 @@ namespace MateAnimator {
                 if(cachedMethodInfo != null) return cachedMethodInfo;
                 if(methodName == null) return null;
                 Component comp = target.GetComponent(componentName);
-                cachedMethodInfo = comp.GetType().GetMethod(methodName, GetParamTypes());
+                var paramTypes = GetParamTypes();
+                cachedMethodInfo = paramTypes != null ? comp.GetType().GetMethod(methodName, paramTypes) : null;
                 return cachedMethodInfo;
             }
             else {
@@ -303,7 +304,12 @@ namespace MateAnimator {
         System.Type[] GetParamTypes() {
             List<System.Type> ret = new List<System.Type>(parameters.Count);
             foreach(AMEventParameter param in parameters) {
-                ret.Add(param.getParamType());
+                var type = param.getParamType();
+                //invalid param?
+                if(type == null)
+                    return null;
+
+                ret.Add(type);
             }
             return ret.ToArray();
         }
