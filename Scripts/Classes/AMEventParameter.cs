@@ -238,7 +238,7 @@ namespace MateAnimator{
 	                catch(System.Exception e) {
 	                    ret = null;
 	                    //TODO: find a better way
-	                    Debug.LogError(e.ToString());
+	                    //Debug.LogError(e.ToString());
 	                }
 	            }
 	        }
@@ -478,7 +478,7 @@ namespace MateAnimator{
 	            else return val_obj.name;
 
 	        if(valueType == (int)ValueType.Array) return "Array";
-	        if(valueType == (int)ValueType.Enum) return val_enum.ToString();
+	        if(valueType == (int)ValueType.Enum) return val_enum != null ? val_enum.ToString() : "";
 	        Debug.LogError("Animator: Type not found for Event Parameter.");
 	        return "object";
 	    } 
