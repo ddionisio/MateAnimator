@@ -47,6 +47,8 @@ Installation
 
 TODO
 ====
+* DOTween Update
+* Allow typing of function for SendMessage event key.
 * Import/Export - AnimatorMeta sort of does this already, but adding a JSON format wouldn't hurt.
 * Add a way to make this tool extensive - will help with implementing tk2d, etc.
 * Work with MechAnim. - allow change state, etc. and preview.

@@ -215,14 +215,16 @@ namespace MateAnimator {
 
             var assemblyName = TypeName.Substring(0, endInd);
 
-            // Attempt to load the indicated Assembly
-            var assembly = System.Reflection.Assembly.Load(assemblyName);
-            if(assembly == null)
+            try {
+                // Attempt to load the indicated Assembly
+                var assembly = System.Reflection.Assembly.Load(assemblyName);
+
+                // Ask that assembly to return the proper Type
+                return assembly.GetType(TypeName);
+            }
+            catch { // Most likely not found
                 return null;
-
-            // Ask that assembly to return the proper Type
-            return assembly.GetType(TypeName);
-
+            }
         }
 
         public virtual Type getParamType() {
@@ -247,7 +249,7 @@ namespace MateAnimator {
                         object obj = System.Activator.CreateInstance("UnityEngine.dll", val_string).Unwrap();
                         ret = obj != null ? obj.GetType() : null;
                     }
-                    catch(System.Exception e) {
+                    catch {
                         ret = null;
                         //TODO: find a better way
                         //Debug.LogError(e.ToString());
