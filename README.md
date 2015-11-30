@@ -18,27 +18,19 @@ Import/Export, Code Generator are currently disabled.
 ###Dependencies###
 * HOTween v1.3.380
 
-Installation
-============
-* Make sure to get HOTween and install to your project: http://hotween.demigiant.com/download.html
-* Clone this project to your Assets folder (or Plugins if you are scripting in javascript).  If your project is already setup for Git, then clone this project as a submodule.
-* Open your project, you should be able to see "Cutscene Editor" in the Window menu, or M8/Animator in the 'Add Component' droplist.
 
 Updates
 =======
 ### Update 4 ###
 * Unity 5 compatibility.
-
 ### Update 3 ###
 * Added Rotation Euler.  This will allow you to create spin animations.  Includes exclusive rotation for x, y, or z (be careful of Gimbal-lock!).
 * Added Material track.  Now you can animate any properties you specify in the shader used by the material.  This requires a GameObject with a Renderer component.  You can also use this to override the material.  For now there is no preview during editing.
 * A bunch of refactoring to remove editor specific code in AnimatorData.  You will no longer see any editor API when using AnimatorData.
 * Various tweaks to building sequences.
-
 ### Update 2 ###
 * Added Mate Animator track.  Now you can play animations in your animation, while you animate.  Useful for choreography and ensuring timing between multiple animations on the scene.  Note: Currently doesn't execute event and trigger tracks.
 * Fixes with null exceptions here and there.
-
 ### Update 1 ###
 * Undo/Redo reworked and changed to comply with Unity 4.3
 * Keyboard shortcuts: arrowkeys to select keys/tracks, copy/paste/duplicate for keys, delete to delete selected keys.
@@ -46,19 +38,25 @@ Updates
 * Sprite animation support.  You can also drag sprites to the Animator window to automatically add the track/keys.
 * Camera Transition added back.
 
+
+Installation
+============
+* Make sure to get HOTween and install to your project: http://hotween.demigiant.com/download.html
+* Clone this project to your Assets folder (or Plugins if you are scripting in javascript).  If your project is already setup for Git, then clone this project as a submodule.
+* Open your project, you should be able to see "Cutscene Editor" in the Window menu, or M8/Animator in the 'Add Component' droplist.
+
 TODO
 ====
-* DOTween Upgrade
-* Refactor how data is stored (Remove the use of MonoBehaviour, may now be possible with the new serialization API)
-* Debug controls on inspector while running the game in the Editor.
-* Camera transition refactor (too glitchy, maybe do something like UE4's director)
-* Scene preview for Material property track.
+* DOTween Update
+* Allow typing of function for SendMessage event key.
 * Import/Export - AnimatorMeta sort of does this already, but adding a JSON format wouldn't hurt.
 * Add a way to make this tool extensive - will help with implementing tk2d, etc.
 * Work with MechAnim. - allow change state, etc. and preview.
-* Work with Particles - allow play/pause/stop and preview. (seems impossible without the proper API in ParticleSystem)
+* Work with Particles - allow play/pause/stop and preview.
+* Scene preview for Material property track.
 * Some glitches with mouse events.
 * Refactor the entire UI code...(might as well create a new project)
+* Camera transition fixes (too glitchy, maybe do something like UE4's director)
 
 DEBUG
 =====
