@@ -201,6 +201,7 @@ namespace MateAnimator{
 
 	        // Get the name of the assembly (Assumption is that we are using
 	        // fully-qualified type names)
+            int endInd = TypeName.IndexOf('.');
 	        var assemblyName = TypeName.Substring(0, endInd);
 
             try {
