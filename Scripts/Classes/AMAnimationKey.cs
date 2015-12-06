@@ -2,6 +2,7 @@ using UnityEngine;
 using System.Collections;
 
 using DG.Tweening;
+using DG.Tweening.Plugins;
 using DG.Tweening.Plugins.Core;
 
 namespace MateAnimator{
@@ -26,7 +27,7 @@ namespace MateAnimator{
 	    // get number of frames, -1 is infinite
 	    public override int getNumberOfFrames(int frameRate) {
 	        if(!amClip) return -1;
-	        //if(wrapMode != WrapMode.Once) return -1;
+	        if(wrapMode != WrapMode.Once) return -1;
 	        return Mathf.CeilToInt(amClip.length * (float)frameRate);
 	    }
 
@@ -42,42 +43,75 @@ namespace MateAnimator{
 	            if(index > 0) {
 	                AMAnimationKey prevKey = track.keys[index - 1] as AMAnimationKey;
 
-                    var tween = DOTween.To(new AMPlugAnimationCrossFade(), () => 0, (x) => { }, 0, duration);
-                    tween.plugOptions = new AMPlugAnimationCrossFadeOptions() {
-                        anim=anim,
-                        crossFadeTime=crossfadeTime,
-                        prevAnimState=anim[prevKey.amClip.name],
-                        prevWrap=prevKey.wrapMode,
-                        prevStartTime=prevKey.getWaitTime(frameRate, 0.0f),
-                        animState=anim[amClip.name],
-                        wrap=wrapMode,
-                        startTime=waitTime
-                    };
+                    var prevAnimState = anim[prevKey.amClip.name];
+                    var prevWrap = prevKey.wrapMode;
+                    var prevStartTime = prevKey.getWaitTime(frameRate, 0.0f);
+                    var animState = anim[amClip.name];
+
+                    var tween = DOTween.To(new FloatPlugin(), () => 0f, (x) => {
+                        if(x < crossfadeTime) {
+                            float weight = x / crossfadeTime;
+
+                            prevAnimState.enabled = true;
+                            prevAnimState.wrapMode = prevWrap;
+                            prevAnimState.weight = 1.0f - weight;
+                            prevAnimState.time = (waitTime + x) - prevStartTime;
+
+                            animState.enabled = true;
+                            animState.wrapMode = wrapMode;
+                            animState.weight = weight;
+                            animState.time = x;
+
+                            anim.Sample();
+
+                            prevAnimState.enabled = false;
+                            animState.enabled = false;
+                        }
+                        else {
+                            animState.enabled = true;
+                            animState.wrapMode = wrapMode;
+                            animState.weight = 1.0f;
+                            animState.time = x;
+
+                            anim.Sample();
+
+                            animState.enabled = false;
+                        }
+                    }, duration, duration);
 
                     seq.Insert(this, tween);
 	            }
                 else {
-                    var tween = DOTween.To(new AMPlugAnimation(), () => 0, (x) => { }, 0, duration);
-                    tween.plugOptions = new AMPlugAnimationOptions() {
-                        anim=anim,
-                        animState=anim[amClip.name],
-                        wrap=wrapMode,
-                        fadeIn=true,
-                        fadeInTime=crossfadeTime
-                    };
+                    var animState = anim[amClip.name];
+                    
+                    var tween = DOTween.To(new FloatPlugin(), () => 0f, (x) => {
+                        animState.enabled = true;
+                        animState.wrapMode = wrapMode;
+                        animState.time = x;
+
+                        if(x < crossfadeTime)
+                            animState.weight = x/crossfadeTime;
+                        else
+                            animState.weight = 1.0f;
+
+                        anim.Sample();
+                        animState.enabled = false;
+                    }, duration, duration);
 
                     seq.Insert(this, tween);
                 }
 	        }
             else {
-                var tween = DOTween.To(new AMPlugAnimation(), () => 0, (x) => { }, 0, duration);
-                tween.plugOptions = new AMPlugAnimationOptions() {
-                    anim=anim,
-                    animState=anim[amClip.name],
-                    wrap=wrapMode,
-                    fadeIn=false,
-                    fadeInTime=0f
-                };
+                var animState = anim[amClip.name];
+
+                var tween = DOTween.To(new FloatPlugin(), () => 0f, (x) => {
+                    animState.enabled = true;
+                    animState.wrapMode = wrapMode;
+                    animState.time = x;
+                    animState.weight = 1.0f;
+                    anim.Sample();
+                    animState.enabled = false;
+                }, duration, duration);
 
                 seq.Insert(this, tween);
             }

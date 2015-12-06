@@ -9,6 +9,8 @@ namespace MateAnimator{
 
 	    public static void SampleAnimation(Animation anim, string clipName, WrapMode wrap, float weight, float time) {
 	        AnimationState animState = anim[clipName];
+            if(!animState)
+                return;
 	        animState.enabled = true;
 	        animState.wrapMode = wrap;
 	        animState.weight = weight;
@@ -19,6 +21,8 @@ namespace MateAnimator{
 
 	    public static void SampleAnimationFadeIn(Animation anim, string clipName, WrapMode wrap, float fadeDelay, float time) {
 	        AnimationState animState = anim[clipName];
+            if(!animState)
+                return;
 	        animState.enabled = true;
 	        animState.wrapMode = wrap;
 	        animState.weight = time < fadeDelay ? time/fadeDelay : 1.0f;
