@@ -6,60 +6,11 @@ using DG.Tweening;
 using DG.Tweening.Core;
 using DG.Tweening.Core.Easing;
 using DG.Tweening.Core.Enums;
+using DG.Tweening.Plugins;
 using DG.Tweening.Plugins.Core;
 using DG.Tweening.Plugins.Options;
 
 namespace MateAnimator{
-    public struct AMPlugOrientationOptions {
-        public Transform start;
-        public Transform end;
-    }
-
-    public class AMPlugOrientation : ABSTweenPlugin<Quaternion, Quaternion, AMPlugOrientationOptions> {
-
-        public override Quaternion ConvertToStartValue(TweenerCore<Quaternion, Quaternion, AMPlugOrientationOptions> t, Quaternion value) {
-            return value;
-        }
-
-        public override void EvaluateAndApply(AMPlugOrientationOptions options, Tween t, bool isRelative, DOGetter<Quaternion> getter, DOSetter<Quaternion> setter, float elapsed, Quaternion startValue, Quaternion changeValue, float duration, bool usingInversePosition, UpdateNotice updateNotice) {
-            Transform targetTrans = t.target as Transform;
-            Transform sTarget = options.start, eTarget = options.end;
-
-            if(sTarget == null && eTarget == null)
-                return;
-            else if(sTarget == null)
-                targetTrans.LookAt(eTarget);
-            else if(eTarget == null || sTarget == eTarget)
-                targetTrans.LookAt(sTarget);
-            else {
-                float time = EaseManager.Evaluate(t, elapsed, duration, t.easeOvershootOrAmplitude, t.easePeriod);
-
-                Quaternion s = Quaternion.LookRotation(sTarget.position - targetTrans.position);
-                Quaternion e = Quaternion.LookRotation(eTarget.position - targetTrans.position);
-
-                setter(Quaternion.LerpUnclamped(s, e, time));
-            }
-        }
-
-        public override float GetSpeedBasedDuration(AMPlugOrientationOptions options, float unitsXSecond, Quaternion changeValue) {
-            return changeValue.eulerAngles.magnitude / unitsXSecond;
-        }
-
-        public override void Reset(TweenerCore<Quaternion, Quaternion, AMPlugOrientationOptions> t) {
-        }
-
-        public override void SetChangeValue(TweenerCore<Quaternion, Quaternion, AMPlugOrientationOptions> t) {
-            if(t.plugOptions.start && t.plugOptions.end)
-                t.changeValue = t.plugOptions.end.rotation * Quaternion.Inverse(t.plugOptions.start.rotation);
-        }
-
-        public override void SetFrom(TweenerCore<Quaternion, Quaternion, AMPlugOrientationOptions> t, bool isRelative) {
-        }
-
-        public override void SetRelativeEndValue(TweenerCore<Quaternion, Quaternion, AMPlugOrientationOptions> t) {
-        }
-	}
-
 	[AddComponentMenu("")]
 	public class AMOrientationKey : AMKey {
 
@@ -171,10 +122,21 @@ namespace MateAnimator{
             Transform sTarget = GetTarget(seq.target);
             Transform eTarget = canTween ? (track.keys[index+1] as AMOrientationKey).GetTarget(seq.target) : null;
 
-            var tween = DOTween.To(new AMPlugOrientation(), () => trans.rotation, (x) => trans.rotation=x, trans.rotation, getTime(frameRate));
+            var tween = DOTween.To(new FloatPlugin(), () => 0f, (x) => {
+                if(sTarget == null && eTarget == null)
+                    return;
+                else if(sTarget == null)
+                    trans.LookAt(eTarget);
+                else if(eTarget == null || sTarget == eTarget)
+                    trans.LookAt(sTarget);
+                else {
+                    Quaternion s = Quaternion.LookRotation(sTarget.position - trans.position);
+                    Quaternion e = Quaternion.LookRotation(eTarget.position - trans.position);
 
-            tween.plugOptions = new AMPlugOrientationOptions() { start=sTarget, end=eTarget };
-
+                    trans.rotation = Quaternion.Lerp(s, e, x);
+                }
+            }, 1f, getTime(frameRate));
+            
             if(sTarget != eTarget) {
                 if(hasCustomEase())
                     tween.SetEase(easeCurve);
