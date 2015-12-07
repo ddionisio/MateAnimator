@@ -12,16 +12,14 @@ using DG.Tweening.Plugins.Options;
 
 namespace MateAnimator {
     public struct AMPlugValueSetOptions {
-        public delegate int GetCounterCallback();
-
-        private GetCounterCallback mOnCounter;
+        private Sequence mSeq;
 
         public AMPlugValueSetOptions(Sequence seq) {
-            mOnCounter = () => seq.CompletedLoops();
+            mSeq = seq;
         }
 
         public bool Refresh(ref int counter) {
-            int _c = mOnCounter();
+            int _c = mSeq.CompletedLoops();
             if(counter != _c) {
                 counter = _c;
 
@@ -63,7 +61,7 @@ namespace MateAnimator {
     }
 
     /// <summary>
-    /// setter is passed the elapsed time
+    /// setter is passed the elapsed time, getter is not used
     /// </summary>
     public class AMPlugValueSetElapsed : ABSTweenPlugin<float, float, AMPlugValueSetOptions> {
         private int mCounter = -1;
