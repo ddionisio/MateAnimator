@@ -248,8 +248,6 @@ namespace MateAnimator{
 	            amSeq.Build(sequenceKillWhenDone, updateType, updateTimeIndependent);
 	            seq = amSeq.sequence;
 	        }
-	        else
-	            amSeq.Reset(true);
 
 	        mNowPlayingTakeIndex = index;
 
@@ -313,7 +311,7 @@ namespace MateAnimator{
 	            cf.playParam = null;
 	        }
 
-	        mSequences[mNowPlayingTakeIndex].Reset(false);
+	        mSequences[mNowPlayingTakeIndex].Reset();
 
 	        mLastPlayingTakeIndex = mNowPlayingTakeIndex;
 	        mNowPlayingTakeIndex = -1;

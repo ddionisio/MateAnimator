@@ -12,9 +12,6 @@ namespace MateAnimator {
 	    private Sequence mSequence;
         private bool mIsAutoKill;
 
-	    private AMActionTween mActionTween;
-	    private List<AMActionData> mInsertActionTrack;
-
 	    public int id { get { return mId; } }
 	    public AMITarget target { get { return mTarget; } }
 	    public AMTakeData take { get { return mTake; } }
@@ -33,22 +30,13 @@ namespace MateAnimator {
 	        mSequence.Insert(key.getWaitTime(mTake.frameRate, 0.0f), tween);
 	    }
 
-	    /// <summary>
-	    /// Only call this during build, the inserted value will be appended to the current insertValueTrack and will
-	    /// be processed after track is complete.
-	    /// </summary>
-	    public void Insert(AMActionData valueSet) {
-	        if(mInsertActionTrack == null)
-	            mInsertActionTrack = new List<AMActionData>();
-	        mInsertActionTrack.Add(valueSet);
-	    }
+        public void Insert(float atPosition, Tweener tween) {
+            mSequence.Insert(atPosition, tween);
+        }
 
 	    public void Build(bool autoKill, UpdateType updateType, bool updateTimeIndependent) {
-	        if(mSequence != null) {
+	        if(mSequence != null)
                 mSequence.Kill();
-	            mInsertActionTrack = null;
-	            mActionTween = null;
-	        }
 
             //create sequence
             mSequence = DOTween.Sequence();
@@ -60,8 +48,6 @@ namespace MateAnimator {
 	        mTake.maintainCaches(mTarget);
 
 	        float minWaitTime = float.MaxValue;
-
-	        List<List<AMActionData>> trackValueSets = null;
 
 	        foreach(AMTrack track in mTake.trackValues) {
 	            Object tgt = null;
@@ -79,22 +65,7 @@ namespace MateAnimator {
 	                    if(waitTime < minWaitTime)
 	                        minWaitTime = waitTime;
 	                }
-
-	                //check to see if we have value sets for this track
-	                if(mInsertActionTrack != null) {
-	                    if(trackValueSets == null)
-	                        trackValueSets = new List<List<AMActionData>>();
-	                    trackValueSets.Add(mInsertActionTrack);
-	                    mInsertActionTrack = null;
-	                }
 	            }
-	        }
-
-	        //build the value track
-	        mInsertActionTrack = null;
-	        if(trackValueSets != null && trackValueSets.Count > 0) {
-	            mActionTween = new AMActionTween(trackValueSets);
-                mSequence.Insert(mActionTween.startTime, DOTween.To(mActionTween, () => mSequence.IsBackwards(), x => { }, false, mActionTween.duration));
 	        }
 
 	        //prepend delay at the beginning
@@ -102,14 +73,11 @@ namespace MateAnimator {
 	            mSequence.PrependInterval(minWaitTime);
 	    }
 
-	    public void Reset(bool ignoreSequence) {
-	        if(!ignoreSequence && mSequence != null) {
+	    public void Reset() {
+	        if(mSequence != null) {
 	            mSequence.Pause();
                 mSequence.Goto(0);
 	        }
-
-	        if(mActionTween != null)
-	            mActionTween.Reset();
 	    }
 
 	    /// <summary>
@@ -120,8 +88,6 @@ namespace MateAnimator {
                 mSequence.Kill();
 	            mSequence = null;
 	        }
-
-	        mActionTween = null;
 
 	        mTarget = null;
 	        mTake = null;
