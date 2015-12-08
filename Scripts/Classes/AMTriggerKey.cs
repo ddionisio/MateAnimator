@@ -32,7 +32,9 @@ namespace MateAnimator{
 
 	    public override void build(AMSequence seq, AMTrack track, int index, UnityEngine.Object obj) {
             AMTriggerData parm = new AMTriggerData() { valueString=this.valueString, valueInt=this.valueInt, valueFloat=this.valueFloat };
-	        seq.sequence.InsertCallback(getWaitTime(seq.take.frameRate, 0.0f), ()=>seq.Trigger(this, parm));
+            var tween = DOTween.To(new AMPlugValueSetElapsed(), () => 0, (x) => seq.Trigger(this, parm), 0, 1.0f/seq.take.frameRate);
+            tween.plugOptions = new AMPlugValueSetOptions(seq.sequence);
+            seq.Insert(this, tween);
 	    }
 
 	    #endregion

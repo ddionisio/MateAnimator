@@ -93,40 +93,57 @@ namespace MateAnimator{
 	    }
 
 	    public override void previewFrame(AMITarget itarget, float frame, int frameRate, bool play, float playSpeed) {
+            if(keys == null || keys.Count <= 0) return;
+
 	        AMCameraFade.getCameraFade();
 
-	        for(int i = 0; i < keys.Count; i++) {
-	            AMCameraSwitcherKey key = keys[i] as AMCameraSwitcherKey;
-	            
-	            //before first frame
-	            if(frame <= key.frame) {
-	                AMCameraFade.reset();
-	                if(!key.hasStartTarget(itarget)) return;
+            // if before or equal to first frame, or is the only frame
+            AMCameraSwitcherKey firstKey = keys[0] as AMCameraSwitcherKey;
+            if(firstKey.endFrame == -1 || (frame <= (float)firstKey.frame && !firstKey.canTween)) {
+                AMCameraFade.reset();
+                if(!firstKey.hasStartTarget(itarget)) return;
 
-	                if(key.type == 0)
-	                    AMUtil.SetTopCamera(key.getCamera(itarget), GetCachedCameras(itarget));
-	                else
-	                    showColor(key.color);
-	                return;
-	            }
-	            //between first and last frame
-	            else if(frame <= key.endFrame) {
-	                if(!key.hasStartTarget(itarget) || !key.hasEndTarget(itarget)) return;
-	                //targets are equal
-	                if(key.targetsAreEqual(itarget)) {
-	                    AMCameraFade.reset();
-	                    if(key.type == 0)
-	                        AMUtil.SetTopCamera(key.getCamera(itarget), GetCachedCameras(itarget));
-	                    else
-	                        showColor(key.color);
-	                }
-	                else {
-	                    AMCameraFade.clearRenderTexture();
-	                    previewCameraFade(itarget, frame, key);
-	                }
-	                return;
-	            }
-	        }
+                if(firstKey.type == 0)
+                    AMUtil.SetTopCamera(firstKey.getCamera(itarget), GetCachedCameras(itarget));
+                else
+                    showColor(firstKey.color);
+                return;
+            }
+
+            for(int i = 0; i < keys.Count; i++) {
+                AMCameraSwitcherKey key = keys[i] as AMCameraSwitcherKey;
+                AMCameraSwitcherKey keyNext = i + 1 < keys.Count ? keys[i + 1] as AMCameraSwitcherKey : null;
+
+                if(frame >= (float)key.endFrame && keyNext != null && (!keyNext.canTween || keyNext.endFrame != -1)) continue;
+                // if no ease
+                if(!key.canTween || keyNext == null) {
+                    AMCameraFade.reset();
+                    if(!key.hasStartTarget(itarget)) return;
+
+                    if(key.type == 0)
+                        AMUtil.SetTopCamera(key.getCamera(itarget), GetCachedCameras(itarget));
+                    else
+                        showColor(key.color);
+                    return;
+                }
+                // else find t using easing function
+
+                if(!key.hasStartTarget(itarget) || !key.hasEndTarget(itarget)) return;
+                //targets are equal
+                if(key.targetsAreEqual(itarget)) {
+                    AMCameraFade.reset();
+                    if(key.type == 0)
+                        AMUtil.SetTopCamera(key.getCamera(itarget), GetCachedCameras(itarget));
+                    else
+                        showColor(key.color);
+                }
+                else {
+                    AMCameraFade.clearRenderTexture();
+                    previewCameraFade(itarget, frame, key);
+                }
+
+                return;
+            }
 	    }
 
 	    public Camera[] getAllCameras(AMITarget itarget) {
@@ -171,21 +188,20 @@ namespace MateAnimator{
 	        cf.mode = action.cameraFadeType;
 	        cf.setupMaterials();
 	        cf.r = action.cameraFadeParameters.ToArray();
-	                
-	        float percentage = (float)(frame-action.frame)/(float)(action.endFrame-action.frame);
-	        float value;
+	             
+            float t = (float)(frame-action.frame)/(float)(action.endFrame-action.frame);
 
-	        // calculate and set value
-	        if(action.hasCustomEase()) {
-	            value = AMUtil.EaseCustom(1.0f, -1.0f, percentage, action.easeCurve);
-	        }
-	        else {
-	            var ease = AMUtil.GetEasingFunction((Ease)action.easeType);
-                value = 1.0f - ease(percentage, 1.0f, action.amplitude, action.period);
-	        }
+            float percentage;
+            if(action.hasCustomEase()) {
+                percentage = AMUtil.EaseCustom(0.0f, 1.0f, t, action.easeCurve);
+            }
+            else {
+                var ease = AMUtil.GetEasingFunction((Ease)action.easeType);
+                percentage = ease(t, 1.0f, action.amplitude, action.period);
+            }
 
-	        cf.value = value;
-	        cf.percent = percentage;
+            cf.value = 1.0f - percentage;
+            cf.percent = percentage;
 	    }
 
 	    private void setColors(AMCameraFade cf, int firstTargetType, int secondTargetType, bool isReversed, AMCameraSwitcherKey action) {

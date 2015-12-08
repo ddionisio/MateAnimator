@@ -328,20 +328,29 @@ namespace MateAnimator {
                 if(component == null) return;
                 comp = component;
             }
-            if(cachedMethodInfo == null)
-                cachedMethodInfo = comp.GetType().GetMethod(methodName, GetParamTypes());
-
-            float waitTime = getWaitTime(seq.take.frameRate, 0.0f);
+            
+            float duration = 1.0f/seq.take.frameRate;
 
             if(useSendMessage) {
-                if(parameters == null || parameters.Count <= 0)
-                    seq.sequence.InsertCallback(waitTime, () => comp.SendMessage(methodName, null, SendMessageOptions.DontRequireReceiver));
-                else
-                    seq.sequence.InsertCallback(waitTime, () => comp.SendMessage(methodName, parameters[0].toObject(), SendMessageOptions.DontRequireReceiver));
+                if(parameters == null || parameters.Count <= 0) {
+                    var tween = DOTween.To(new AMPlugValueSetElapsed(), () => 0, (x)=>comp.SendMessage(methodName, null, SendMessageOptions.DontRequireReceiver), 0, duration);
+                    tween.plugOptions = new AMPlugValueSetOptions(seq.sequence);
+                    seq.Insert(this, tween);
+                }
+                else {
+                    var tween = DOTween.To(new AMPlugValueSetElapsed(), () => 0, (x) => comp.SendMessage(methodName, parameters[0].toObject(), SendMessageOptions.DontRequireReceiver), 0, duration);
+                    tween.plugOptions = new AMPlugValueSetOptions(seq.sequence);
+                    seq.Insert(this, tween);
+                }
             }
             else {
+                var method = cachedMethodInfo != null ? cachedMethodInfo : comp.GetType().GetMethod(methodName, GetParamTypes());
+
                 object[] parms = buildParams();
-                seq.sequence.InsertCallback(waitTime, () => cachedMethodInfo.Invoke(comp, parms));
+
+                var tween = DOTween.To(new AMPlugValueSetElapsed(), () => 0, (x) => method.Invoke(comp, parms), 0, duration);
+                tween.plugOptions = new AMPlugValueSetOptions(seq.sequence);
+                seq.Insert(this, tween);
             }
         }
 

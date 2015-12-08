@@ -6,61 +6,11 @@ using DG.Tweening;
 using DG.Tweening.Core;
 using DG.Tweening.Core.Easing;
 using DG.Tweening.Core.Enums;
+using DG.Tweening.Plugins;
 using DG.Tweening.Plugins.Core;
 using DG.Tweening.Plugins.Options;
 
-namespace MateAnimator{
-    public struct AMPlugCameraSwitcherOptions {
-        public AMCameraSwitcherKey camSwitcher;
-        public int frameRate;
-        public AMITarget itarget;
-        public Camera[] allCameras;
-    }
-
-    public class AMPlugCameraSwitcher : ABSTweenPlugin<int, int, AMPlugCameraSwitcherOptions> {
-	    
-	    private float mLastElapsed;
-
-        public override int ConvertToStartValue(TweenerCore<int, int, AMPlugCameraSwitcherOptions> t, int value) {
-            return value;
-        }
-
-        public override void EvaluateAndApply(AMPlugCameraSwitcherOptions options, Tween t, bool isRelative, DOGetter<int> getter, DOSetter<int> setter, float elapsed, int startValue, int changeValue, float duration, bool usingInversePosition, UpdateNotice updateNotice) {
-            AMCameraFade cf = AMCameraFade.getCameraFade();
-
-            AMCameraSwitcherKey.PlayParam param = cf.playParam;
-            if(param == null) {
-                param = cf.playParam = new AMCameraSwitcherKey.PlayParam();
-            }
-            param.Apply(options.camSwitcher, options.frameRate, options.itarget, options.allCameras, elapsed - mLastElapsed < 0.0f);
-
-            mLastElapsed = elapsed;
-
-            cf.value = 1.0f - EaseManager.Evaluate(t, elapsed, duration, t.easeOvershootOrAmplitude, t.easePeriod);
-            cf.percent = elapsed/duration;
-        }
-
-        public override float GetSpeedBasedDuration(AMPlugCameraSwitcherOptions options, float unitsXSecond, int changeValue) {
-            return ((float)changeValue)/unitsXSecond;
-        }
-
-        public override void Reset(TweenerCore<int, int, AMPlugCameraSwitcherOptions> t) {
-
-        }
-
-        public override void SetChangeValue(TweenerCore<int, int, AMPlugCameraSwitcherOptions> t) {
-
-        }
-
-        public override void SetFrom(TweenerCore<int, int, AMPlugCameraSwitcherOptions> t, bool isRelative) {
-
-        }
-
-        public override void SetRelativeEndValue(TweenerCore<int, int, AMPlugCameraSwitcherOptions> t) {
-
-        }
-	}
-
+namespace MateAnimator {
 	public class AMCameraSwitcherKey : AMKey {
 	    public enum Fade {
 	        CrossFade = 0,
@@ -283,10 +233,28 @@ namespace MateAnimator{
 	        if(endFrame == -1 || !hasTargets(seq.target) || targetsAreEqual(seq.target)) return;
 
 	        Camera[] allCameras = (track as AMCameraSwitcherTrack).GetCachedCameras(seq.target);
+            int frameRate = seq.take.frameRate;
+            float frameCount = getNumberOfFrames(frameRate);
+            var itarget = seq.target;
+            var _seq = seq.sequence;
 
-	        var tween = DOTween.To(new AMPlugCameraSwitcher(), () => 0, (x) => { }, 0, getTime(seq.take.frameRate));
+            var tween = DOTween.To(new FloatPlugin(), () => 0f, (x) => {
+                AMCameraFade cf = AMCameraFade.getCameraFade();
 
-            tween.plugOptions = new AMPlugCameraSwitcherOptions() { frameRate=seq.take.frameRate, itarget=seq.target, allCameras=allCameras };
+                AMCameraSwitcherKey.PlayParam param = cf.playParam;
+                if(param == null) {
+                    param = cf.playParam = new AMCameraSwitcherKey.PlayParam();
+                }
+                param.Apply(this, frameRate, itarget, allCameras, _seq.IsBackwards());
+
+                cf.percent = x/frameCount;
+                cf.value = 1.0f - cf.percent;
+            }, frameCount, frameCount/frameRate);
+
+            if(hasCustomEase())
+                tween.SetEase(easeCurve);
+            else
+                tween.SetEase((Ease)easeType, amplitude, period);
 
             seq.Insert(this, tween);
 	    }

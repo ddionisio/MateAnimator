@@ -4,6 +4,8 @@ using System.Collections.Generic;
 using System.Reflection;
 using System.Linq;
 
+using DG.Tweening;
+
 namespace MateAnimator{
 	[AddComponentMenu("")]
 	public class AMGOSetActiveKey : AMKey {
@@ -32,8 +34,9 @@ namespace MateAnimator{
 
 	        if(go == null) return;
 
-	        //active won't really be set, it's just a filler along with ease
-	        seq.Insert(new AMActionGOActive(this, seq.take.frameRate, go, setActive));
+            var tween = DOTween.To(new AMPlugValueSet<bool>(), () => setActive, (x) => go.SetActive(x), setActive, getTime(seq.take.frameRate));
+            tween.plugOptions = new AMPlugValueSetOptions(seq.sequence);
+	        seq.Insert(this, tween);
 	    }
 	    #endregion
 	}
