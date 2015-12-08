@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 using DG.Tweening;
 
-namespace MateAnimator{
+namespace MateAnimator {
 	public class AMSequence {
 	    private int mId;
 	    private AMITarget mTarget;
@@ -30,7 +30,6 @@ namespace MateAnimator{
 	    }
 
 	    public void Insert(AMKey key, Tweener tween) {
-
 	        mSequence.Insert(key.getWaitTime(mTake.frameRate, 0.0f), tween);
 	    }
 

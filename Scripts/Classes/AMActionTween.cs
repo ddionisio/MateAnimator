@@ -41,8 +41,11 @@ namespace MateAnimator {
         }
 
         public override void EvaluateAndApply(AMPlugValueSetOptions options, Tween t, bool isRelative, DOGetter<T> getter, DOSetter<T> setter, float elapsed, T startValue, T changeValue, float duration, bool usingInversePosition, UpdateNotice updateNotice) {
-            if(options.Refresh(ref mCounter))
+            if(updateNotice == UpdateNotice.RewindStep)
+                mCounter = -1;
+            else if(options.Refresh(ref mCounter)) {
                 setter(getter());
+            }
         }
 
         public override float GetSpeedBasedDuration(AMPlugValueSetOptions options, float unitsXSecond, T changeValue) {
@@ -71,7 +74,9 @@ namespace MateAnimator {
         }
 
         public override void EvaluateAndApply(AMPlugValueSetOptions options, Tween t, bool isRelative, DOGetter<float> getter, DOSetter<float> setter, float elapsed, float startValue, float changeValue, float duration, bool usingInversePosition, UpdateNotice updateNotice) {
-            if(options.Refresh(ref mCounter))
+            if(updateNotice == UpdateNotice.RewindStep)
+                mCounter = -1;
+            else if(options.Refresh(ref mCounter))
                 setter(elapsed);
         }
 
