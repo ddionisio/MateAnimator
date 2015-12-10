@@ -939,7 +939,7 @@ namespace MateAnimator{
 
 	        if(tickerSpeed <= 0) tickerSpeed = 1;
 	        ticker = (ticker + 1) % tickerSpeed;
-	        EditorGUIUtility.LookLikeControls();
+	        AMEditorUtil.ResetDisplayControls();
 	        // reset mouse over element
 	        mouseOverElement = (int)ElementType.None;
 	        mouseOverFrame = 0;
@@ -3582,10 +3582,10 @@ namespace MateAnimator{
 	            }
 	            else if(pTrack.valueType == (int)AMPropertyTrack.ValueType.Sprite) {
 	                UnityEngine.Object val = pKey.valObj;
-	                GUI.skin = null; EditorGUIUtility.LookLikeControls();
+	                GUI.skin = null; AMEditorUtil.ResetDisplayControls();
 	                rectField.height = 16.0f;
 	                UnityEngine.Object nval = EditorGUI.ObjectField(rectField, val, typeof(Sprite), false);
-	                GUI.skin = skin; EditorGUIUtility.LookLikeControls();
+	                GUI.skin = skin; AMEditorUtil.ResetDisplayControls();
 	                if(val != nval) {
 	                    AnimatorDataEdit.RecordUndoTrackAndKeys(sTrack, false, "Change Property Value");
 	                    pKey.valObj = nval;
@@ -3918,10 +3918,10 @@ namespace MateAnimator{
 	            }
 	            else if(aTrack.propertyType == AMMaterialTrack.ValueType.TexEnv) {
 	                //texture
-	                GUI.skin = null; EditorGUIUtility.LookLikeControls();
+	                GUI.skin = null; AMEditorUtil.ResetDisplayControls();
 	                rectField.height = 16.0f;
 	                Texture nval = EditorGUI.ObjectField(rectField, aKey.texture, typeof(Texture), false) as Texture;
-	                GUI.skin = skin; EditorGUIUtility.LookLikeControls();
+	                GUI.skin = skin; AMEditorUtil.ResetDisplayControls();
 
 	                if(aKey.texture != nval) {
 	                    AnimatorDataEdit.RecordUndoTrackAndKeys(sTrack, false, "Change Material Property Value");
@@ -4096,11 +4096,11 @@ namespace MateAnimator{
 	            GUI.Label(rectLabelField, name);
 	            GUI.skin = null;
 	            Rect rectObjectField = new Rect(rect.x, rectLabelField.y + rectLabelField.height + margin, rect.width, 16f);
-	            EditorGUIUtility.LookLikeControls();
+	            AMEditorUtil.ResetDisplayControls();
 	            // field
 	            if(data.setObject(EditorGUI.ObjectField(rectObjectField, data.val_obj, t, true))) saveChanges = true;
 	            GUI.skin = skin;
-	            EditorGUIUtility.LookLikeControls();
+	            AMEditorUtil.ResetDisplayControls();
 	            //return;
 	        }
 	        else if(t == typeof(UnityEngine.Object)) {
@@ -4109,10 +4109,10 @@ namespace MateAnimator{
 	            GUI.Label(rectLabelField, name);
 	            Rect rectObjectField = new Rect(rect.x, rectLabelField.y + rectLabelField.height + margin, rect.width, 16f);
 	            GUI.skin = null;
-	            EditorGUIUtility.LookLikeControls();
+	            AMEditorUtil.ResetDisplayControls();
 	            if(data.setObject(EditorGUI.ObjectField(rectObjectField, data.val_obj, typeof(UnityEngine.Object), true))) saveChanges = true;
 	            GUI.skin = skin;
-	            EditorGUIUtility.LookLikeControls();
+	            AMEditorUtil.ResetDisplayControls();
 	        }
 	        else if(t.IsEnum) {
 	            height_field += 40f + margin;
@@ -4136,7 +4136,7 @@ namespace MateAnimator{
 	        if(rect.width < 22f) return;
 	        // show object field for track, used in OnGUI. Needs to be updated for every track type.
 	        GUI.skin = null;
-	        EditorGUIUtility.LookLikeControls();
+	        AMEditorUtil.ResetDisplayControls();
 	        // add objectfield for every track type
 	        // translation/rotation
 	        if(amTrack is AMTranslationTrack || amTrack is AMRotationTrack || amTrack is AMRotationEulerTrack) {
@@ -4241,7 +4241,7 @@ namespace MateAnimator{
 	        }
 
 	        GUI.skin = skin;
-	        EditorGUIUtility.LookLikeControls();
+	        AMEditorUtil.ResetDisplayControls();
 	    }
 	    void showAlertMissingObjectType(string type) {
 	        EditorUtility.DisplayDialog("Missing " + type, "You must add a " + type + " to the track before you can add keys.", "Okay");

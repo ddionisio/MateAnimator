@@ -2,6 +2,7 @@ using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEditor;
+using UnityEditor.SceneManagement;
 using System.Linq;
 
 namespace MateAnimator{
@@ -106,9 +107,9 @@ namespace MateAnimator{
 	        if(GUILayout.Button("Export...", GUILayout.Width(80f))) {
 	            bool shouldExit = false;
 	            bool performExport = true;
-	            if(EditorApplication.currentScene == "") {
+	            if(string.IsNullOrEmpty(EditorSceneManager.GetActiveScene().name)) {
 	                if(EditorUtility.DisplayDialog("Save Current Scene", "The current scene must be saved before an export is performed.", "Save Current Scene", "Cancel")) {
-	                    EditorApplication.SaveScene();
+                        EditorSceneManager.SaveScene(EditorSceneManager.GetActiveScene());
 	                    EditorUtility.DisplayDialog("Performing Export...", "The current scene has been saved. Now performing export.", "Continue");
 	                }
 	                else {
@@ -146,10 +147,10 @@ namespace MateAnimator{
 	            int index = gameObjs.IndexOf(go);
 	            if(gameObjsSelected[index] != null && (bool)!gameObjsSelected[index]) DestroyImmediate(go);
 	        }
-	        // save with changes
-	        EditorApplication.SaveScene(saveScenePath, true);
-	        // restore scene
-	        EditorApplication.OpenScene(saveScenePath);
+            // save with changes
+            EditorSceneManager.SaveScene(EditorSceneManager.GetActiveScene(), saveScenePath, true);
+            // restore scene
+            EditorSceneManager.OpenScene(saveScenePath);
 	        // refresh project directory
 	        AssetDatabase.Refresh();
 	        return true;

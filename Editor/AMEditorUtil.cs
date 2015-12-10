@@ -52,5 +52,9 @@ namespace MateAnimator{
 			}
 			return "Assets/";
 		}
+        public static void ResetDisplayControls() {
+            EditorGUIUtility.labelWidth = 0f;
+            EditorGUIUtility.fieldWidth = 0f;
+        }
 	}
 }

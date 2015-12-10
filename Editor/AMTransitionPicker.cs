@@ -185,7 +185,7 @@ namespace MateAnimator{
 	        // load skin
 	        AMTimeline.loadSkin(ref skin, ref cachedSkinName, position);
 	    	LoadTextures();
-	        EditorGUIUtility.LookLikeControls();
+	        AMEditorUtil.ResetDisplayControls();
 	        #region drag logic
 	        Event e = Event.current;
 	        Rect rectWindow = new Rect(0f, 0f, position.width, position.height);
@@ -590,7 +590,7 @@ namespace MateAnimator{
 	                GUILayout.Space(height_parameter_space);
 	                GUILayout.Label("Shape");
 	                GUI.skin = null;
-	                EditorGUIUtility.LookLikeControls();
+	                AMEditorUtil.ResetDisplayControls();
 	                GUILayout.BeginHorizontal();
 	        		EditorGUIUtility.labelWidth = 0f;
 	                irisShape = (Texture2D)EditorGUILayout.ObjectField("", irisShape, typeof(Texture2D), false, GUILayout.Width(64));
@@ -659,7 +659,7 @@ namespace MateAnimator{
 	                // shape texture
 	                GUILayout.Label("Shape");
 	                GUI.skin = null;
-	                EditorGUIUtility.LookLikeControls();
+	                AMEditorUtil.ResetDisplayControls();
 	                GUILayout.BeginHorizontal();
 	        		EditorGUIUtility.labelWidth = 0f;
 					irisShape = (Texture2D)EditorGUILayout.ObjectField("", irisShape, typeof(Texture2D), false, GUILayout.Width(64));
