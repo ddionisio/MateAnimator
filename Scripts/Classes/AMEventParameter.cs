@@ -181,7 +181,7 @@ namespace MateAnimator {
             if(valueType == (int)ValueType.Vector4) return (val_vect4/* as object*/);
             if(valueType == (int)ValueType.Color) return (val_color/* as object*/);
             if(valueType == (int)ValueType.Rect) return (val_rect/* as object*/);
-            if(valueType == (int)ValueType.Object) return (val_obj/* as object*/);
+            if(valueType == (int)ValueType.Object) return (val_obj ? val_obj : null/* as object*/);
             if(valueType == (int)ValueType.Enum) return val_enum;
             if(valueType == (int)ValueType.Array) return null;
 

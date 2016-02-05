@@ -13,19 +13,25 @@ using DG.Tweening.Plugins.Options;
 namespace MateAnimator {
     public struct AMPlugValueSetOptions {
         private Sequence mSeq;
+        private int mLoopCount;
 
         public AMPlugValueSetOptions(Sequence seq) {
             mSeq = seq;
+            mLoopCount = 0;
+            mSeq.OnStepComplete(OnStepComplete);
         }
 
         public bool Refresh(ref int counter) {
-            int _c = mSeq.CompletedLoops();
-            if(counter != _c) {
-                counter = _c;
+            if(counter != mLoopCount) {
+                counter = mLoopCount;
 
                 return true;
             }
             return false;
+        }
+
+        void OnStepComplete() {
+            mLoopCount++;
         }
     }
 
