@@ -335,7 +335,7 @@ namespace MateAnimator{
 	        if(useSendMessage)
                 seq.Insert(new AMActionSendMessage(this, seq.take.frameRate, comp, methodName, parameters == null || parameters.Count <= 0 ? null : parameters[0].toObject()));
 	        else
-                seq.Insert(new AMActionMethodCall(this, seq.take.frameRate, comp, cachedMethodInfo, buildParams()));
+                seq.Insert(new AMActionMethodCall(this, seq.take.frameRate, comp ? comp : null, cachedMethodInfo, buildParams()));
 	    }
 	    #endregion
 	}

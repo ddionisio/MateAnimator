@@ -468,7 +468,8 @@ namespace MateAnimator{
         }
 
         public override void Apply(float t, bool backwards) {
-            mMethodInfo.Invoke(mObj, mParms);
+            if(mMethodInfo != null && mObj != null)
+                mMethodInfo.Invoke(mObj, mParms);
         }
     }
 }
