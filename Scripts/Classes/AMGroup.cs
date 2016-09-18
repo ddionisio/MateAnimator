@@ -2,7 +2,7 @@ using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 
-namespace MateAnimator{
+namespace M8.Animator {
 	[System.Serializable]
 	public class AMGroup {
 

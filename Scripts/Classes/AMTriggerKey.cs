@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 using DG.Tweening;
 
-namespace MateAnimator{
+namespace M8.Animator {
 	public struct AMTriggerData {
 	    public string valueString;
 	    public int valueInt;

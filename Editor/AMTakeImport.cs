@@ -5,7 +5,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace MateAnimator{
+namespace M8.Animator {
 	public class AMTakeImport : EditorWindow {
 		
 		public static List<GameObject> newReference = new List<GameObject>();

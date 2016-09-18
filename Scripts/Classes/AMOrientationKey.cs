@@ -10,7 +10,7 @@ using DG.Tweening.Plugins;
 using DG.Tweening.Plugins.Core;
 using DG.Tweening.Plugins.Options;
 
-namespace MateAnimator{
+namespace M8.Animator {
 	[AddComponentMenu("")]
 	public class AMOrientationKey : AMKey {
 

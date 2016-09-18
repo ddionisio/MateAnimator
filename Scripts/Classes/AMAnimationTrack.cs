@@ -2,7 +2,7 @@ using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 
-namespace MateAnimator{
+namespace M8.Animator {
 	[AddComponentMenu("")]
 	public class AMAnimationTrack : AMTrack {
 	    public override bool canTween { get { return false; } }

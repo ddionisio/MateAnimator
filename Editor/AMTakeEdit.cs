@@ -3,7 +3,7 @@ using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 
-namespace MateAnimator{
+namespace M8.Animator {
 	public class AMTakeEdit {
 	    public int selectedTrack = -1;			// currently selected track index
 	    public int selectedFrame = 1;			// currently selected frame (frame to preview, not necessarily in context selection)

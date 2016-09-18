@@ -2,7 +2,7 @@ using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 
-namespace MateAnimator{
+namespace M8.Animator {
 	public struct AMPath {
 	    public Vector3[] path;
 	    public int interp;			// interpolation

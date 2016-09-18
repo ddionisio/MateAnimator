@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using System;
 
-namespace MateAnimator{
+namespace M8.Animator {
 	/// <summary>
 	/// Animator timeline.  Use for interacting with a global animator data.  Make sure to set 'global' to true in AnimatorData.
 	/// </summary>

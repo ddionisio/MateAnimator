@@ -5,7 +5,7 @@ using DG.Tweening;
 using DG.Tweening.Plugins;
 using DG.Tweening.Plugins.Core;
 
-namespace MateAnimator{
+namespace M8.Animator {
 	[AddComponentMenu("")]
 	public class AMAnimationKey : AMKey {
 	    public WrapMode wrapMode;	// animation wrap mode

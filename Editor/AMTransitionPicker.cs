@@ -5,7 +5,7 @@ using UnityEditor;
 
 using DG.Tweening;
 
-namespace MateAnimator{
+namespace M8.Animator {
 	public class AMTransitionPicker : EditorWindow {
 	    // ordered names, used as quick reference in transition picker and popup
 	    public static string[] TransitionNames = new string[]{

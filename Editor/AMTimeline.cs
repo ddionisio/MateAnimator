@@ -8,7 +8,7 @@ using System.Linq;
 
 using DG.Tweening;
 
-namespace MateAnimator{
+namespace M8.Animator {
 	public class AMTimeline : EditorWindow {
 	    [MenuItem("Window/Cutscene Editor")]
 	    static void Init() {

@@ -5,7 +5,7 @@ using UnityEditor;
 
 using DG.Tweening;
 
-namespace MateAnimator{
+namespace M8.Animator {
 	public class AMEasePicker : EditorWindow {
 		
 		public static AMEasePicker window = null;

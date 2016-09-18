@@ -3,7 +3,7 @@ using UnityEditor;
 
 using System.IO;
 
-namespace MateAnimator{
+namespace M8.Animator {
 	public struct AMEditorResource {
 	    private static string skinsDir = null;
 	    private static string textureEditorDir = null;

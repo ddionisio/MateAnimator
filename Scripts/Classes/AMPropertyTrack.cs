@@ -6,7 +6,7 @@ using System;
 
 using DG.Tweening;
 
-namespace MateAnimator{
+namespace M8.Animator {
 	[AddComponentMenu("")]
 	public class AMPropertyTrack : AMTrack {
 	    public enum ValueType {

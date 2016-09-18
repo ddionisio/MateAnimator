@@ -4,7 +4,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System;
 
-namespace MateAnimator{
+namespace M8.Animator {
 	public class AMOptions : EditorWindow {
 	    public static AMOptions window = null;
 

@@ -4,7 +4,7 @@ using System.Linq;
 using System.Collections;
 using System.Collections.Generic;
 
-namespace MateAnimator{
+namespace M8.Animator {
 	public class AnimatorDataEdit {
 	    public static void SetDirtyKeys(AMTrack track) {
 	        foreach(AMKey key in track.keys)

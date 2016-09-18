@@ -1,7 +1,7 @@
 ﻿using UnityEngine;
 using System.Collections.Generic;
 
-namespace MateAnimator{
+namespace M8.Animator {
 	public interface AMITarget {
 	    float animScale { get; }
 

@@ -3,7 +3,7 @@ using UnityEditor;
 using System.Collections;
 using System.Collections.Generic;
 
-namespace MateAnimator{
+namespace M8.Animator {
 	[CustomEditor(typeof(AnimatorData))]
 	public class AnimatorDataInspector : Editor {
 	    private enum MetaCommand {

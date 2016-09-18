@@ -4,7 +4,7 @@ using System.Collections;
 
 using DG.Tweening;
 
-namespace MateAnimator{
+namespace M8.Animator {
 	public class AMSettings : EditorWindow {
 	    public static AMSettings window = null;
 

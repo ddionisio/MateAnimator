@@ -5,7 +5,7 @@ Animator++
 
 Based on: https://github.com/absameen/Animator_Timeline
 
-Now remade to use HOTween: http://www.holoville.com/hotween/index.html
+Now remade to use DOTween: http://dotween.demigiant.com/index.php
 
 This takes advantage of Sequence and the ability to cache all the tweens at startup. This allows the Animator to be used in critical parts of the game.
 
@@ -16,11 +16,13 @@ Mega Morph has been removed.
 Import/Export, Code Generator are currently disabled. 
 
 ###Dependencies###
-* HOTween v1.3.380
+* DOTween v1.1.310
 
 
 Updates
 =======
+### Update 5 ###
+* Converted to use DOTween
 ### Update 4 ###
 * Unity 5 compatibility.
 ### Update 3 ###
@@ -41,21 +43,23 @@ Updates
 
 Installation
 ============
-* Make sure to get HOTween and install to your project: http://hotween.demigiant.com/download.html
+* Make sure to get DOTween and install to your project: http://dotween.demigiant.com/download.php
 * Clone this project to your Assets folder (or Plugins if you are scripting in javascript).  If your project is already setup for Git, then clone this project as a submodule.
 * Open your project, you should be able to see "Cutscene Editor" in the Window menu, or M8/Animator in the 'Add Component' droplist.
 
 TODO
 ====
-* DOTween Update
+* Find a way to use serialization for tracks to remove the need for component.
+* Dynamic frame scrolling and expand/shrink (get rid of the unnecessary configuration of total frames)
+* Unify pathing of position track to all other tracks.
+* Alternate Meta by using ID component (easier, less human error, but with a little bit more overhead)
 * Allow typing of function for SendMessage event key.
 * Import/Export - AnimatorMeta sort of does this already, but adding a JSON format wouldn't hurt.
 * Add a way to make this tool extensive - will help with implementing tk2d, etc.
 * Work with MechAnim. - allow change state, etc. and preview.
 * Work with Particles - allow play/pause/stop and preview.
 * Scene preview for Material property track.
-* Some glitches with mouse events.
-* Refactor the entire UI code...(might as well create a new project)
+* Any other glitches with mouse events.
 * Camera transition fixes (too glitchy, maybe do something like UE4's director)
 
 DEBUG

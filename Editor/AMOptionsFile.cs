@@ -4,7 +4,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 
-namespace MateAnimator{
+namespace M8.Animator {
 	[System.Serializable]
 	public class AMOptionsFile : ScriptableObject {
 

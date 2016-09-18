@@ -11,7 +11,7 @@ using DG.Tweening.Plugins.Core;
 using DG.Tweening.Plugins.Core.PathCore;
 using DG.Tweening.Plugins.Options;
 
-namespace MateAnimator{
+namespace M8.Animator {
 	[AddComponentMenu("")]
 	public class AMTranslationKey : AMKey {
         public const int pathResolution = 10;

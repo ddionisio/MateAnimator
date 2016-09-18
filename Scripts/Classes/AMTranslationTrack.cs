@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using DG.Tweening;
 
 //Note: no longer using global
-namespace MateAnimator{
+namespace M8.Animator {
 	[AddComponentMenu("")]
 	public class AMTranslationTrack : AMTrack {
 	    [SerializeField]

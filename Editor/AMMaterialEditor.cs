@@ -3,7 +3,7 @@ using UnityEditor;
 using System.Collections;
 using System.Collections.Generic;
 
-namespace MateAnimator{
+namespace M8.Animator {
 	public class AMMaterialEditor : EditorWindow {
 	    public static AMMaterialEditor window { get; private set; }
 

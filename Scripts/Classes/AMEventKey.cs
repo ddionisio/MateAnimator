@@ -6,7 +6,7 @@ using System.Linq;
 
 using DG.Tweening;
 
-namespace MateAnimator {
+namespace M8.Animator {
     [AddComponentMenu("")]
     public class AMEventKey : AMKey {
 

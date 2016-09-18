@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace MateAnimator{
+namespace M8.Animator {
 	public class ComboBox
 	{
 		private static bool forceToUnShow = false; 

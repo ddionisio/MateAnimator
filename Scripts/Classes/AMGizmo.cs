@@ -1,7 +1,7 @@
 using UnityEngine;
 using System.Collections;
 
-namespace MateAnimator{
+namespace M8.Animator {
 	public struct AMGizmo {
 	    public static Color defaultColor = Color.white;
 

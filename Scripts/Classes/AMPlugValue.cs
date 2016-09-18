@@ -8,7 +8,7 @@ using DG.Tweening.Core.Enums;
 using DG.Tweening.Plugins.Core;
 using DG.Tweening.Plugins.Options;
 
-namespace MateAnimator{
+namespace M8.Animator {
     public struct AMPlugAnimationOptions {
         public Animation anim;
         public AnimationState animState;

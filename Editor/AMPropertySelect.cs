@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using System;
 
-namespace MateAnimator{
+namespace M8.Animator {
 	public class AMPropertySelect : EditorWindow {
 	    private AnimatorDataEdit __aData;
 

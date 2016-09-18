@@ -3,7 +3,7 @@ using System.Collections;
 
 using DG.Tweening;
 
-namespace MateAnimator{
+namespace M8.Animator {
 	[AddComponentMenu("")]
 	public class AMAudioKey : AMKey {
 

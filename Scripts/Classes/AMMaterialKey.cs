@@ -6,7 +6,7 @@ using System.Reflection;
 using DG.Tweening;
 using DG.Tweening.Plugins;
 
-namespace MateAnimator{
+namespace M8.Animator {
 	[AddComponentMenu("")]
 	public class AMMaterialKey : AMKey {
 	    public int endFrame;

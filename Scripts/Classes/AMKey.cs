@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 using DG.Tweening;
 
-namespace MateAnimator{
+namespace M8.Animator {
 	[AddComponentMenu("")]
 	public class AMKey : MonoBehaviour {
 	    public enum Interpolation {

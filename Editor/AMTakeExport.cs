@@ -5,7 +5,7 @@ using UnityEditor;
 using UnityEditor.SceneManagement;
 using System.Linq;
 
-namespace MateAnimator{
+namespace M8.Animator {
 	public class AMTakeExport : EditorWindow {
 	    public static AMTakeExport window = null;
 

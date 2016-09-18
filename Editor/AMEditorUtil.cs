@@ -2,7 +2,7 @@
 using UnityEditor;
 using System.Collections.Generic;
 
-namespace MateAnimator{
+namespace M8.Animator {
 	public struct AMEditorUtil {
 	    public static List<Sprite> GetSprites(UnityEngine.Object[] objs) {
 	        List<Sprite> sprites = new List<Sprite>(objs.Length);

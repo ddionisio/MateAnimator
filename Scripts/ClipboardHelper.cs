@@ -4,7 +4,7 @@ using UnityEngine;
 using System;
 using System.Reflection;
 
-namespace MateAnimator{
+namespace M8.Animator {
 	public class ClipboardHelper
 	{
 	    private static PropertyInfo m_systemCopyBufferProperty = null;

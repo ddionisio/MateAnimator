@@ -2,7 +2,7 @@
 using System.Collections;
 using System.Reflection;
 
-namespace MateAnimator{
+namespace M8.Animator {
 	//[RequireComponent(typeof(Camera))]
 	[ExecuteInEditMode]
 	public class AMCameraFade : MonoBehaviour {

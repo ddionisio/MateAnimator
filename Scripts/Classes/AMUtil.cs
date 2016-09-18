@@ -3,7 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 
-namespace MateAnimator{
+namespace M8.Animator {
 	public struct AMUtil {
 	    private static Transform[] mRoots; //generated to grab targets
 

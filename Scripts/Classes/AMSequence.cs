@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 using DG.Tweening;
 
-namespace MateAnimator {
+namespace M8.Animator {
 	public class AMSequence {
 	    private int mId;
 	    private AMITarget mTarget;

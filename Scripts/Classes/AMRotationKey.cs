@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using DG.Tweening;
 using DG.Tweening.CustomPlugins;
 
-namespace MateAnimator{
+namespace M8.Animator {
 	[AddComponentMenu("")]
 	public class AMRotationKey : AMKey {
 

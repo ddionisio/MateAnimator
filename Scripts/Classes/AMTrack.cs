@@ -2,7 +2,7 @@ using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 
-namespace MateAnimator{
+namespace M8.Animator {
 	[AddComponentMenu("")]
 	public abstract class AMTrack : MonoBehaviour {
 	    public delegate AMKey OnAddKey(GameObject go, System.Type type);

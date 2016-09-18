@@ -6,7 +6,7 @@ using System.Linq;
 
 using DG.Tweening;
 
-namespace MateAnimator{
+namespace M8.Animator {
 	[ExecuteInEditMode]
 	[AddComponentMenu("M8/Animator")]
 	public class AnimatorData : MonoBehaviour, AMITarget, AMIMeta {

@@ -7,7 +7,7 @@ using DG.Tweening;
 using DG.Tweening.CustomPlugins;
 using DG.Tweening.Plugins;
 
-namespace MateAnimator {
+namespace M8.Animator {
     [AddComponentMenu("")]
     public class AMPropertyKey : AMKey {
         public int endFrame;

@@ -2,7 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 
-namespace MateAnimator{
+namespace M8.Animator {
 	[RequireComponent(typeof(Renderer))]
 	public class AMMaterialController : MonoBehaviour {
 	    

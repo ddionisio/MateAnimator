@@ -7,7 +7,7 @@ using System.Reflection;
 
 using DG.Tweening;
 
-namespace MateAnimator{
+namespace M8.Animator {
 	[System.Serializable]
 	public class AMTakeData {
 	    public delegate void OnSequenceDone(AMTakeData take);
