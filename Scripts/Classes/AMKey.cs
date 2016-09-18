@@ -2,7 +2,7 @@ using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 
-using Holoville.HOTween;
+using DG.Tweening;
 
 namespace MateAnimator{
 	[AddComponentMenu("")]
@@ -18,7 +18,7 @@ namespace MateAnimator{
 	    public int interp = 0;			// interpolation
 
 	    public int frame;
-	    public int easeType = (int)0;//AMTween.EaseType.linear; 			// ease type, AMTween.EaseType enum
+	    public int easeType = (int)Ease.Linear;//AMTween.EaseType.linear; 			// ease type, AMTween.EaseType enum
 		//-1 = None
 	    
 	    public float amplitude = 0.0f;
@@ -110,14 +110,14 @@ namespace MateAnimator{
 	    }
 
 	    public bool hasCustomEase() {
-	        if(easeType == (int)EaseType.AnimationCurve) return true;
+            if(easeType == (int)Ease.INTERNAL_Custom) return true;
 	        return false;
 	    }
 
 	    public bool setEaseType(int easeType) {
 	        if(easeType != this.easeType) {
 	            this.easeType = easeType;
-				if(easeType == (int)EaseType.AnimationCurve && customEase.Count <= 0) {
+                if(easeType == (int)Ease.INTERNAL_Custom && customEase.Count <= 0) {
 	                // set up default custom ease with linear
 	                customEase = new List<float>() {
 						0f,0f,1f,1f,

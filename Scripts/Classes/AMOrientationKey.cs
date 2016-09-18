@@ -2,76 +2,15 @@ using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 
-using Holoville.HOTween;
-using Holoville.HOTween.Core;
-using Holoville.HOTween.Plugins.Core;
+using DG.Tweening;
+using DG.Tweening.Core;
+using DG.Tweening.Core.Easing;
+using DG.Tweening.Core.Enums;
+using DG.Tweening.Plugins;
+using DG.Tweening.Plugins.Core;
+using DG.Tweening.Plugins.Options;
 
 namespace MateAnimator{
-	public class AMPlugOrientation : ABSTweenPlugin {
-	    internal static System.Type[] validPropTypes = { typeof(Quaternion) };
-	    internal static System.Type[] validValueTypes = { typeof(Quaternion) };
-
-	    Transform sTarget;
-	    Transform eTarget;
-
-	    Quaternion changeVal;
-
-	    protected override object startVal { get { return _startVal; } set { _startVal = value; } }
-
-	    protected override object endVal { get { return _endVal; } set { _endVal = value; } }
-
-	    public AMPlugOrientation(Transform start, Transform end)
-	        : base(null, false) { this.sTarget = start; this.eTarget = end; }
-
-	    public AMPlugOrientation(Transform start, Transform end, bool isRelative)
-	        : base(null, isRelative) { this.sTarget = start; this.eTarget = end; }
-
-	    public AMPlugOrientation(Transform start, Transform end, EaseType easeType)
-	        : base(null, easeType, false) { this.sTarget = start; this.eTarget = end; }
-
-	    public AMPlugOrientation(Transform start, Transform end, EaseType easeType, bool isRelative)
-	        : base(null, easeType, isRelative) { this.sTarget = start; this.eTarget = end; }
-
-	    public AMPlugOrientation(Transform start, Transform end, AnimationCurve curve)
-	        : base(null, curve, false) { this.sTarget = start; this.eTarget = end; }
-
-	    public AMPlugOrientation(Transform start, Transform end, AnimationCurve curve, bool isRelative)
-	        : base(null, curve, isRelative) { this.sTarget = start; this.eTarget = end; }
-
-	    protected override float GetSpeedBasedDuration(float p_speed) {
-	        return p_speed;
-	    }
-
-	    protected override void SetChangeVal() {
-	    }
-
-	    protected override void SetIncremental(int p_diffIncr) {
-	    }
-	    protected override void SetIncrementalRestart() { }
-
-	    protected override void DoUpdate(float p_totElapsed) {
-	        Transform t = tweenObj.target as Transform;
-
-	        if(sTarget == null && eTarget == null)
-	            return;
-	        else if(sTarget == null)
-	            t.LookAt(eTarget);
-	        else if(eTarget == null || sTarget == eTarget)
-	            t.LookAt(sTarget);
-	        else {
-	            float time = ease(p_totElapsed, 0f, 1f, _duration, tweenObj.easeOvershootOrAmplitude, tweenObj.easePeriod);
-
-	            Quaternion s = Quaternion.LookRotation(sTarget.position - t.position);
-	            Quaternion e = Quaternion.LookRotation(eTarget.position - t.position);
-
-	            t.rotation = Quaternion.Slerp(s, e, time);
-	        }
-	    }
-
-	    protected override void SetValue(object p_value) { }
-	    protected override object GetValue() { return null; }
-	}
-
 	[AddComponentMenu("")]
 	public class AMOrientationKey : AMKey {
 
@@ -165,33 +104,49 @@ namespace MateAnimator{
 				time = AMUtil.EaseCustom(0.0f, 1.0f, percentage, easeCurve);
 			}
 			else {
-				TweenDelegate.EaseFunc ease = AMUtil.GetEasingFunction((EaseType)easeType);
-				time = ease(percentage, 0.0f, 1.0f, 1.0f, amplitude, period);
+				var ease = AMUtil.GetEasingFunction((Ease)easeType);
+				time = ease(percentage, 1.0f, amplitude, period);
 			}
 			
-			return Quaternion.Slerp(s, e, time);
+			return Quaternion.LerpUnclamped(s, e, time);
 		}
 
 	    #region action
 	    public override void build(AMSequence seq, AMTrack track, int index, UnityEngine.Object obj) {
-	        if(!obj) return;
-	        int frameRate = seq.take.frameRate;
-	        if(!canTween) {
-	            seq.Insert(this, HOTween.To(obj, getTime(frameRate), new TweenParms().Prop("rotation", new AMPlugOrientation(GetTarget(seq.target), null))));
-			}
-	        if(endFrame == -1) return;
-	        Transform tgt = GetTarget(seq.target), tgte = (track.keys[index+1] as AMOrientationKey).GetTarget(seq.target);
-			if(tgt == tgte) {
-				seq.Insert(this, HOTween.To(obj, getTime(frameRate), new TweenParms().Prop("rotation", new AMPlugOrientation(tgt, null))));
-	        }
-	        else {
-	            if(hasCustomEase()) {
-					seq.Insert(this, HOTween.To(obj, getTime(frameRate), new TweenParms().Prop("rotation", new AMPlugOrientation(tgt, tgte)).Ease(easeCurve)));
-	            }
-	            else {
-					seq.Insert(this, HOTween.To(obj, getTime(frameRate), new TweenParms().Prop("rotation", new AMPlugOrientation(tgt, tgte)).Ease((EaseType)easeType, amplitude, period)));
-	            }
-	        }
+	        if(!obj || (canTween && endFrame == -1)) return;
+
+            int frameRate = seq.take.frameRate;
+
+            Transform trans = obj as Transform;
+
+            Transform sTarget = GetTarget(seq.target);
+            Transform eTarget = canTween ? (track.keys[index+1] as AMOrientationKey).GetTarget(seq.target) : null;
+
+            var tween = DOTween.To(new FloatPlugin(), () => 0f, (x) => {
+                if(sTarget == null && eTarget == null)
+                    return;
+                else if(sTarget == null)
+                    trans.LookAt(eTarget);
+                else if(eTarget == null || sTarget == eTarget)
+                    trans.LookAt(sTarget);
+                else {
+                    Quaternion s = Quaternion.LookRotation(sTarget.position - trans.position);
+                    Quaternion e = Quaternion.LookRotation(eTarget.position - trans.position);
+
+                    trans.rotation = Quaternion.Lerp(s, e, x);
+                }
+            }, 1f, getTime(frameRate));
+            
+            if(sTarget != eTarget) {
+                if(hasCustomEase())
+                    tween.SetEase(easeCurve);
+                else
+                    tween.SetEase((Ease)easeType, amplitude, period);
+            }
+            else
+                tween.SetEase(Ease.Linear);
+
+            seq.Insert(this, tween);
 	    }
 	    #endregion
 	}

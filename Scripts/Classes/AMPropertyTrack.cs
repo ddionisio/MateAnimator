@@ -4,8 +4,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using System;
 
-using Holoville.HOTween.Core;
-using Holoville.HOTween;
+using DG.Tweening;
 
 namespace MateAnimator{
 	[AddComponentMenu("")]
@@ -405,116 +404,93 @@ namespace MateAnimator{
 	        if(!isCached)
 	            RefreshData(comp);
 
-	        // if before or equal to first frame, or is the only frame
-	        AMPropertyKey ckey = keys[0] as AMPropertyKey;
-	        if((frame <= (float)ckey.frame) || ckey.endFrame == -1) {
-	            //go.rotation = (cache[0] as AMPropertyAction).getStartQuaternion();
-	            setComponentValueFromCachedInfo(comp, ckey.getValue(valueType));
-	            refreshTransform(go);
-	            return;
-	        }
-	        // if not tweenable and beyond last frame
-	        ckey = keys[keys.Count - 1] as AMPropertyKey;
-	        if(!canTween && frame >= (float)ckey.frame) {
-	            setComponentValueFromCachedInfo(comp, ckey.getValue(valueType));
-	            refreshTransform(go);
-	            return;
-	        }
-	        //if tweenable and beyond last tweenable
-	        ckey = keys[keys.Count - 2] as AMPropertyKey;
-	        if(frame >= (float)ckey.endFrame) {
-	            setComponentValueFromCachedInfo(comp, (keys[keys.Count - 1] as AMPropertyKey).getValue(valueType));
-	            refreshTransform(go);
-	            return;
-	        }
-	        // if lies on property action
-	        for(int i = 0; i < keys.Count; i++) {
-	            AMPropertyKey key = keys[i] as AMPropertyKey;
-	            AMPropertyKey keyNext = i + 1 < keys.Count ? keys[i + 1] as AMPropertyKey : null;
+            // if before or equal to first frame, or is the only frame
+            AMPropertyKey firstKey = keys[0] as AMPropertyKey;
+            if(firstKey.endFrame == -1 || (frame <= (float)firstKey.frame && !firstKey.canTween)) {
+                //go.rotation = (cache[0] as AMPropertyAction).getStartQuaternion();
+                setComponentValueFromCachedInfo(comp, firstKey.getValue(valueType));
+                refreshTransform(go);
+                return;
+            }
 
-	            if((frame < (float)key.frame) || (frame > (float)key.endFrame)) continue;
-	            //if(quickPreview && !key.targetsAreEqual()) return;	// quick preview; if action will execute then skip
-	            // if on startFrame or is no tween
-	            if(frame == (float)key.frame || ((!key.canTween || !canTween) && frame < (float)key.endFrame)) {
-	                setComponentValueFromCachedInfo(comp, key.getValue(valueType));
-	                refreshTransform(go);
-	                return;
-	            }
-	            // if on endFrame
-	            if(frame == (float)key.endFrame) {
-	                if(!key.canTween || !canTween || !keyNext)
-	                    continue;
-	                else {
-	                    setComponentValueFromCachedInfo(comp, keyNext.getValue(valueType));
-	                    refreshTransform(go);
-	                    return;
-	                }
-	            }
-	            // else find value using easing function
+            // if lies on property action
+            for(int i = 0; i < keys.Count; i++) {
+                AMPropertyKey key = keys[i] as AMPropertyKey;
+                AMPropertyKey keyNext = i + 1 < keys.Count ? keys[i + 1] as AMPropertyKey : null;
 
-	            float framePositionInAction = frame - (float)key.frame;
-	            if(framePositionInAction < 0f) framePositionInAction = 0f;
+                if(frame >= (float)key.endFrame && keyNext != null && (!keyNext.canTween || keyNext.endFrame != -1)) continue;
+                // if no ease
+                if(!key.canTween || keyNext == null) {
+                    setComponentValueFromCachedInfo(comp, key.getValue(valueType));
+                    refreshTransform(go);
+                    return;
+                }
+                // else find value using easing function
 
-	            float t;
+                float numFrames = (float)key.getNumberOfFrames(frameRate);
 
-	            if(key.hasCustomEase()) {
-	                t = AMUtil.EaseCustom(0.0f, 1.0f, framePositionInAction / key.getNumberOfFrames(frameRate), key.easeCurve);
-	            }
-	            else {
-	                TweenDelegate.EaseFunc ease = AMUtil.GetEasingFunction((EaseType)key.easeType);
-	                t = ease(framePositionInAction, 0.0f, 1.0f, key.getNumberOfFrames(frameRate), key.amplitude, key.period);
-	            }
+                float framePositionInAction = Mathf.Clamp(frame - (float)key.frame, 0f, numFrames);
 
-	            //qCurrent.x = ease(qStart.x,qEnd.x,percentage);
-	            switch((ValueType)valueType) {
-	                case ValueType.Integer:
-	                    setComponentValueFromCachedInfo(comp, keyNext ? Mathf.RoundToInt(Mathf.Lerp(Convert.ToSingle(key.val), Convert.ToSingle(keyNext.val), t)) : Convert.ToInt32(key.val));
-	                    break;
-	                case ValueType.Long:
-	                    setComponentValueFromCachedInfo(comp, keyNext ? (long)Mathf.RoundToInt(Mathf.Lerp(Convert.ToSingle(key.val), Convert.ToSingle(keyNext.val), t)) : Convert.ToInt64(key.val));
-	                    break;
-	                case ValueType.Float:
-	                    setComponentValueFromCachedInfo(comp, keyNext ? Mathf.Lerp(Convert.ToSingle(key.val), Convert.ToSingle(keyNext.val), t) : Convert.ToSingle(key.val));
-	                    break;
-	                case ValueType.Double:
-	                    setComponentValueFromCachedInfo(comp, keyNext ? key.val + ((double)t) * (keyNext.val - key.val) : key.val);
-	                    break;
-	                case ValueType.Vector2:
-	                    setComponentValueFromCachedInfo(comp, keyNext ? Vector2.Lerp(key.vect2, keyNext.vect2, t) : key.vect2);
-	                    break;
-	                case ValueType.Vector3:
-	                    setComponentValueFromCachedInfo(comp, keyNext ? Vector3.Lerp(key.vect3, keyNext.vect3, t) : key.vect3);
-	                    break;
-	                case ValueType.Color:
-	                    setComponentValueFromCachedInfo(comp, keyNext ? Color.Lerp(key.color, keyNext.color, t) : key.color);
-	                    break;
-	                case ValueType.Rect:
-	                    if(keyNext) {
-	                        Rect vStartRect = key.rect;
-	                        Rect vEndRect = keyNext.rect;
-	                        Rect vCurrentRect = new Rect();
-	                        vCurrentRect.x = Mathf.Lerp(vStartRect.x, vEndRect.x, t);
-	                        vCurrentRect.y = Mathf.Lerp(vStartRect.y, vEndRect.y, t);
-	                        vCurrentRect.width = Mathf.Lerp(vStartRect.width, vEndRect.width, t);
-	                        vCurrentRect.height = Mathf.Lerp(vStartRect.height, vEndRect.height, t);
-	                        setComponentValueFromCachedInfo(comp, vCurrentRect);
-	                    }
-	                    else
-	                        setComponentValueFromCachedInfo(comp, key.rect);
-	                    break;
-	                case ValueType.Vector4:
-	                    setComponentValueFromCachedInfo(comp, keyNext ? Vector4.Lerp(key.vect4, keyNext.vect4, t) : key.vect4);
-	                    break;
-	                case ValueType.Quaternion:
-	                    setComponentValueFromCachedInfo(comp, keyNext ? Quaternion.Slerp(key.quat, keyNext.quat, t) : key.quat);
-	                    break;
-	                default:
-	                    Debug.LogError("Animator: Invalid ValueType " + valueType.ToString());
-	                    break;
-	            }
-	            refreshTransform(go);
-	            return;
-	        }
+                float t;
+
+                if(key.hasCustomEase()) {
+                    t = AMUtil.EaseCustom(0.0f, 1.0f, framePositionInAction / key.getNumberOfFrames(frameRate), key.easeCurve);
+                }
+                else {
+                    var ease = AMUtil.GetEasingFunction((Ease)key.easeType);
+                    t = ease(framePositionInAction, key.getNumberOfFrames(frameRate), key.amplitude, key.period);
+                }
+
+                //qCurrent.x = ease(qStart.x,qEnd.x,percentage);
+                switch((ValueType)valueType) {
+                    case ValueType.Integer:
+                        setComponentValueFromCachedInfo(comp, keyNext ? Mathf.RoundToInt(Mathf.Lerp(Convert.ToSingle(key.val), Convert.ToSingle(keyNext.val), t)) : Convert.ToInt32(key.val));
+                        break;
+                    case ValueType.Long:
+                        setComponentValueFromCachedInfo(comp, keyNext ? (long)Mathf.RoundToInt(Mathf.Lerp(Convert.ToSingle(key.val), Convert.ToSingle(keyNext.val), t)) : Convert.ToInt64(key.val));
+                        break;
+                    case ValueType.Float:
+                        setComponentValueFromCachedInfo(comp, keyNext ? Mathf.Lerp(Convert.ToSingle(key.val), Convert.ToSingle(keyNext.val), t) : Convert.ToSingle(key.val));
+                        break;
+                    case ValueType.Double:
+                        setComponentValueFromCachedInfo(comp, keyNext ? key.val + ((double)t) * (keyNext.val - key.val) : key.val);
+                        break;
+                    case ValueType.Vector2:
+                        setComponentValueFromCachedInfo(comp, keyNext ? Vector2.Lerp(key.vect2, keyNext.vect2, t) : key.vect2);
+                        break;
+                    case ValueType.Vector3:
+                        setComponentValueFromCachedInfo(comp, keyNext ? Vector3.Lerp(key.vect3, keyNext.vect3, t) : key.vect3);
+                        break;
+                    case ValueType.Color:
+                        setComponentValueFromCachedInfo(comp, keyNext ? Color.Lerp(key.color, keyNext.color, t) : key.color);
+                        break;
+                    case ValueType.Rect:
+                        if(keyNext) {
+                            Rect vStartRect = key.rect;
+                            Rect vEndRect = keyNext.rect;
+                            Rect vCurrentRect = new Rect();
+                            vCurrentRect.x = Mathf.Lerp(vStartRect.x, vEndRect.x, t);
+                            vCurrentRect.y = Mathf.Lerp(vStartRect.y, vEndRect.y, t);
+                            vCurrentRect.width = Mathf.Lerp(vStartRect.width, vEndRect.width, t);
+                            vCurrentRect.height = Mathf.Lerp(vStartRect.height, vEndRect.height, t);
+                            setComponentValueFromCachedInfo(comp, vCurrentRect);
+                        }
+                        else
+                            setComponentValueFromCachedInfo(comp, key.rect);
+                        break;
+                    case ValueType.Vector4:
+                        setComponentValueFromCachedInfo(comp, keyNext ? Vector4.Lerp(key.vect4, keyNext.vect4, t) : key.vect4);
+                        break;
+                    case ValueType.Quaternion:
+                        setComponentValueFromCachedInfo(comp, keyNext ? Quaternion.Slerp(key.quat, keyNext.quat, t) : key.quat);
+                        break;
+                    default:
+                        Debug.LogError("Animator: Invalid ValueType " + valueType.ToString());
+                        break;
+                }
+                refreshTransform(go);
+                return;
+            }
 	    }
 	    public void refreshTransform(GameObject targetGO) {
 	        if(Application.isPlaying || !targetGO) return;

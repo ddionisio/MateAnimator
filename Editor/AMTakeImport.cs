@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEditor;
+using UnityEditor.SceneManagement;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -42,7 +43,7 @@ namespace MateAnimator{
 			GUIStyle padding = new GUIStyle();
 			padding.padding = new RectOffset(4,4,4,4);
 			GUILayout.BeginVertical(padding);
-			EditorGUIUtility.LookLikeControls();
+			AMEditorUtil.ResetDisplayControls();
 			GUILayout.BeginHorizontal();
 				GUILayout.Label(newReference.Count+" possible duplicate"+(newReference.Count > 1 ? "s" : "")+" found:");
 				GUILayout.FlexibleSpace();
@@ -176,7 +177,7 @@ namespace MateAnimator{
 		public static void openAdditiveAndDeDupe(string scenePath)
 		{
 			List<GameObject> origGOs = ((GameObject[])GameObject.FindObjectsOfType(typeof(GameObject))).ToList();
-			EditorApplication.OpenSceneAdditive(scenePath);
+            EditorSceneManager.OpenScene(scenePath, OpenSceneMode.Additive);
 			List<GameObject> updGOs = ((GameObject[])GameObject.FindObjectsOfType(typeof(GameObject))).ToList();
 			List<GameObject> newGOs = updGOs.Except(origGOs).ToList();
 			

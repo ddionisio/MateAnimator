@@ -2,8 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 
-using Holoville.HOTween.Core;
-using Holoville.HOTween;
+using DG.Tweening;
 
 namespace MateAnimator{
 	[AddComponentMenu("")]
@@ -55,7 +54,7 @@ namespace MateAnimator{
 	        a.frame = _frame;
 	        a.rotation = _rotation;
 	        // set default ease type to linear
-	        a.easeType = (int)EaseType.Linear;
+	        a.easeType = (int)Ease.Linear;
 
 	        // add a new key
 	        keys.Add(a);
@@ -87,47 +86,41 @@ namespace MateAnimator{
 
 	        if(!t) return;
 	        if(keys == null || keys.Count <= 0) return;
-	        // if before or equal to first frame, or is the only frame
-	        if((frame <= (float)keys[0].frame) || ((keys[0] as AMRotationEulerKey).endFrame == -1)) {
-	            ApplyRot(t, (keys[0] as AMRotationEulerKey).rotation);
-	            return;
-	        }
-	        // if beyond or equal to last frame
-	        if(frame >= (float)(keys[keys.Count - 2] as AMRotationEulerKey).endFrame) {
-	            ApplyRot(t, (keys[keys.Count - 1] as AMRotationEulerKey).rotation);
-	            return;
-	        }
+
+            // if before or equal to first frame, or is the only frame
+            AMRotationEulerKey firstKey = keys[0] as AMRotationEulerKey;
+            if(firstKey.endFrame == -1 || (frame <= (float)firstKey.frame && !firstKey.canTween)) {
+                ApplyRot(t, firstKey.rotation);
+                return;
+            }
+            
 	        // if lies on rotation action
 	        for(int i = 0; i < keys.Count; i++) {
 	            AMRotationEulerKey key = keys[i] as AMRotationEulerKey;
 	            AMRotationEulerKey keyNext = i + 1 < keys.Count ? keys[i + 1] as AMRotationEulerKey : null;
 
-	            if((frame < (float)key.frame) || (frame > (float)key.endFrame)) continue;
-	            // if on startFrame or is no ease
-	            if(frame == (float)key.frame || (!key.canTween && frame < (float)key.endFrame)) {
-	                ApplyRot(t, key.rotation);
-	                return;
-	            }
-	            // if on endFrame
-	            if(frame == (float)key.endFrame) {
-	                ApplyRot(t, keyNext.rotation);
-	                return;
-	            }
-	            // else find Quaternion using easing function
+                if(frame >= (float)key.endFrame && keyNext != null && (!keyNext.canTween || keyNext.endFrame != -1)) continue;
+                // if no ease
+                if(!key.canTween || keyNext == null) {
+                    ApplyRot(t, key.rotation);
+                    return;
+                }
+                // else easing function
 
-	            float framePositionInAction = frame - (float)key.frame;
-	            if(framePositionInAction < 0f) framePositionInAction = 0f;
+                float numFrames = (float)key.getNumberOfFrames(frameRate);
 
-	            Vector3 qStart = key.rotation;
-	            Vector3 qEnd = keyNext.rotation;
+                float framePositionInAction = Mathf.Clamp(frame - (float)key.frame, 0f, numFrames);
 
-	            if(key.hasCustomEase()) {
-	                ApplyRot(t, Vector3.Lerp(qStart, qEnd, AMUtil.EaseCustom(0.0f, 1.0f, framePositionInAction / key.getNumberOfFrames(frameRate), key.easeCurve)));
-	            }
-	            else {
-	                TweenDelegate.EaseFunc ease = AMUtil.GetEasingFunction((EaseType)key.easeType);
-	                ApplyRot(t, Vector3.Lerp(qStart, qEnd, ease(framePositionInAction, 0.0f, 1.0f, key.getNumberOfFrames(frameRate), key.amplitude, key.period)));
-	            }
+                Vector3 qStart = key.rotation;
+                Vector3 qEnd = keyNext.rotation;
+
+                if(key.hasCustomEase()) {
+                    ApplyRot(t, Vector3.Lerp(qStart, qEnd, AMUtil.EaseCustom(0.0f, 1.0f, framePositionInAction / numFrames, key.easeCurve)));
+                }
+                else {
+                    var ease = AMUtil.GetEasingFunction((Ease)key.easeType);
+                    ApplyRot(t, Vector3.Lerp(qStart, qEnd, ease(framePositionInAction, numFrames, key.amplitude, key.period)));
+                }
 
 	            return;
 	        }
@@ -175,49 +168,43 @@ namespace MateAnimator{
 	                break;
 	        }
 	    }
-	    public Vector3 getRotationAtFrame(int frame, int frameRate) {
-	        // if before or equal to first frame, or is the only frame
-	        if((frame <= keys[0].frame) || ((keys[0] as AMRotationEulerKey).endFrame == -1)) {
-	            //rotation = (cache[0] as AMRotationAction).getStartQuaternion();
-	            return (keys[0] as AMRotationEulerKey).rotation;
-	        }
-	        // if beyond or equal to last frame
-	        if(frame >= (keys[keys.Count - 2] as AMRotationEulerKey).endFrame) {
-	            //rotation = (cache[cache.Count-2] as AMRotationAction).getEndQuaternion();
-	            return (keys[keys.Count - 1] as AMRotationEulerKey).rotation;
-	        }
+	    Vector3 getRotationAtFrame(int frame, int frameRate) {
+            // if before or equal to first frame, or is the only frame
+            AMRotationEulerKey firstKey = keys[0] as AMRotationEulerKey;
+            if(firstKey.endFrame == -1 || (frame <= (float)firstKey.frame && !firstKey.canTween)) {
+                return firstKey.rotation;
+            }
+            
 	        // if lies on rotation action
-	        for(int i = 0; i < keys.Count; i++) {
-	            AMRotationEulerKey key = keys[i] as AMRotationEulerKey;
-	            AMRotationEulerKey keyNext = i + 1 < keys.Count ? keys[i + 1] as AMRotationEulerKey : null;
+            for(int i = 0; i < keys.Count; i++) {
+                AMRotationEulerKey key = keys[i] as AMRotationEulerKey;
+                AMRotationEulerKey keyNext = i + 1 < keys.Count ? keys[i + 1] as AMRotationEulerKey : null;
 
-	            if((frame < key.frame) || (frame > key.endFrame)) continue;
-	            // if on startFrame or no ease
-	            if(frame == key.frame || (!key.canTween && frame < key.endFrame)) {
-	                return key.rotation;
-	            }
-	            // if on endFrame
-	            if(frame == key.endFrame) {
-	                return keyNext.rotation;
-	            }
-	            // else find Quaternion using easing function
+                if(frame >= (float)key.endFrame && keyNext != null && (!keyNext.canTween || keyNext.endFrame != -1)) continue;
+                // if no ease
+                if(!key.canTween || keyNext == null) {
+                    return key.rotation;
+                }
+                // else easing function
 
-	            Vector3 qStart = key.rotation;
-	            Vector3 qEnd = keyNext.rotation;
+                float numFrames = (float)key.getNumberOfFrames(frameRate);
 
-	            int framePositionInAction = frame - key.frame;
-	            if(framePositionInAction < 0f) framePositionInAction = 0;
+                float framePositionInAction = Mathf.Clamp(frame - (float)key.frame, 0f, numFrames);
 
-	            if(key.hasCustomEase()) {
-	                return Vector3.Lerp(qStart, qEnd, AMUtil.EaseCustom(0.0f, 1.0f, (float)framePositionInAction / (float)key.getNumberOfFrames(frameRate), key.easeCurve));
-	            }
-	            else {
-	                TweenDelegate.EaseFunc ease = AMUtil.GetEasingFunction((EaseType)key.easeType);
-	                return Vector3.Lerp(qStart, qEnd, ease(framePositionInAction, 0.0f, 1.0f, key.getNumberOfFrames(frameRate), 0.0f, 0.0f));
-	            }
-	        }
-	        Debug.LogError("Animator: Could not get rotation at frame '" + frame + "'");
-	        return Vector3.zero;
+                Vector3 qStart = key.rotation;
+                Vector3 qEnd = keyNext.rotation;
+
+                if(key.hasCustomEase()) {
+                    return Vector3.Lerp(qStart, qEnd, AMUtil.EaseCustom(0.0f, 1.0f, framePositionInAction / numFrames, key.easeCurve));
+                }
+                else {
+                    var ease = AMUtil.GetEasingFunction((Ease)key.easeType);
+                    return Vector3.Lerp(qStart, qEnd, ease(framePositionInAction, numFrames, key.amplitude, key.period));
+                }
+            }
+
+            Debug.LogError("Animator: Could not get rotation at frame '" + frame + "'");
+            return Vector3.zero;
 	    }
 	    public Vector3 getInitialRotation() {
 	        return (keys[0] as AMRotationEulerKey).rotation;

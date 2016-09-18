@@ -2,26 +2,21 @@
 using System.Collections;
 using System.Collections.Generic;
 
-using Holoville.HOTween;
-using Holoville.HOTween.Core;
+using DG.Tweening;
 
-namespace MateAnimator{
+namespace MateAnimator {
 	public class AMSequence {
 	    private int mId;
 	    private AMITarget mTarget;
 	    private AMTakeData mTake;
 	    private Sequence mSequence;
-
-	    private AMActionTween mActionTween;
-	    private List<AMActionData> mInsertActionTrack;
+        private bool mIsAutoKill;
 
 	    public int id { get { return mId; } }
 	    public AMITarget target { get { return mTarget; } }
 	    public AMTakeData take { get { return mTake; } }
 	    public Sequence sequence { get { return mSequence; } }
-
-	    public TweenDelegate.TweenCallbackWParms triggerCallback { get { return OnTrigger; } }
-
+        
 	    public AMSequence(AMITarget itarget, int id, AMTakeData take) {
 	        mTarget = itarget;
 	        mId = id;
@@ -35,37 +30,24 @@ namespace MateAnimator{
 	        mSequence.Insert(key.getWaitTime(mTake.frameRate, 0.0f), tween);
 	    }
 
-	    /// <summary>
-	    /// Only call this during build, the inserted value will be appended to the current insertValueTrack and will
-	    /// be processed after track is complete.
-	    /// </summary>
-	    public void Insert(AMActionData valueSet) {
-	        if(mInsertActionTrack == null)
-	            mInsertActionTrack = new List<AMActionData>();
-	        mInsertActionTrack.Add(valueSet);
-	    }
+        public void Insert(float atPosition, Tweener tween) {
+            mSequence.Insert(atPosition, tween);
+        }
 
-	    public void Build(string goName, bool autoKill, UpdateType updateType) {
-	        if(mSequence != null) {
-	            HOTween.Kill(mSequence);
-	            mInsertActionTrack = null;
-	            mActionTween = null;
-	        }
+	    public void Build(bool autoKill, UpdateType updateType, bool updateTimeIndependent) {
+	        if(mSequence != null)
+                mSequence.Kill();
 
-	        mSequence = new Sequence(
-	            new SequenceParms()
-	            .Id(string.Format("{0}:{1}", goName, mTake.name))
-	            .UpdateType(updateType)
-	            .AutoKill(autoKill)
-	            .Loops(mTake.numLoop, mTake.loopMode)
-	            .OnComplete(OnSequenceComplete)
-                .OnStepComplete(OnSequenceStepComplete));
-
+            //create sequence
+            mSequence = DOTween.Sequence();
+            mSequence.SetUpdate(updateType, updateTimeIndependent);
+            mSequence.SetAutoKill(mIsAutoKill = autoKill);
+            mSequence.SetLoops(mTake.numLoop, mTake.loopMode);
+            mSequence.OnComplete(OnSequenceComplete);
+            
 	        mTake.maintainCaches(mTarget);
 
 	        float minWaitTime = float.MaxValue;
-
-	        List<List<AMActionData>> trackValueSets = null;
 
 	        foreach(AMTrack track in mTake.trackValues) {
 	            Object tgt = null;
@@ -83,23 +65,7 @@ namespace MateAnimator{
 	                    if(waitTime < minWaitTime)
 	                        minWaitTime = waitTime;
 	                }
-
-	                //check to see if we have value sets for this track
-	                if(mInsertActionTrack != null) {
-	                    if(trackValueSets == null)
-	                        trackValueSets = new List<List<AMActionData>>();
-	                    trackValueSets.Add(mInsertActionTrack);
-	                    mInsertActionTrack = null;
-	                }
 	            }
-	        }
-
-	        //build the value track
-	        mInsertActionTrack = null;
-	        if(trackValueSets != null && trackValueSets.Count > 0) {
-	            mActionTween = new AMActionTween(trackValueSets);
-	            mSequence.Insert(mActionTween.startTime, HOTween.To(this, mActionTween.duration, new TweenParms().Prop("id", mActionTween)));
-	            
 	        }
 
 	        //prepend delay at the beginning
@@ -107,14 +73,11 @@ namespace MateAnimator{
 	            mSequence.PrependInterval(minWaitTime);
 	    }
 
-	    public void Reset(bool ignoreSequence) {
-	        if(!ignoreSequence && mSequence != null) {
+	    public void Reset() {
+	        if(mSequence != null) {
 	            mSequence.Pause();
-	            mSequence.GoTo(0);
+                mSequence.Goto(0);
 	        }
-
-	        if(mActionTween != null)
-                mActionTween.Reset(false);
 	    }
 
 	    /// <summary>
@@ -122,39 +85,32 @@ namespace MateAnimator{
 	    /// </summary>
 	    public void Destroy() {
 	        if(mSequence != null) {
-	            HOTween.Kill(mSequence);
+                mSequence.Kill();
 	            mSequence = null;
 	        }
-
-	        mActionTween = null;
 
 	        mTarget = null;
 	        mTake = null;
 	    }
+
+        public void Trigger(AMKey key, AMTriggerData data) {
+            mTarget.SequenceTrigger(this, key, data);
+        }
 
 	    void OnSequenceComplete() {
 	        mTake.PlayComplete(mTarget);
 
 	        mTarget.SequenceComplete(this);
 
-	        if(!mSequence.autoKillOnComplete) {
+            if(!mIsAutoKill) {
 	            if(mTake.loopBackToFrame >= 0) {
-	                if(mSequence.isReversed)
-	                    mSequence.Reverse();
+                    if(mSequence.IsBackwards())
+                        mSequence.Flip();
 
 	                (mTarget as AnimatorData).PlayAtFrame(mTake.name, mTake.loopBackToFrame);
 	                return;
 	            }
 	        }
-	    }
-
-        void OnSequenceStepComplete() {
-            if(mActionTween != null)
-                mActionTween.Reset(mSequence.isLoopingBack);
-        }
-
-	    void OnTrigger(TweenEvent dat) {
-	        mTarget.SequenceTrigger(this, (AMKey)dat.parms[0], (AMTriggerData)dat.parms[1]);
 	    }
 	}
 }

@@ -1,8 +1,9 @@
 using UnityEngine;
 using System.Collections;
 
-using Holoville.HOTween;
-using Holoville.HOTween.Core;
+using DG.Tweening;
+using DG.Tweening.Plugins;
+using DG.Tweening.Plugins.Core;
 
 namespace MateAnimator{
 	[AddComponentMenu("")]
@@ -26,36 +27,11 @@ namespace MateAnimator{
 	    // get number of frames, -1 is infinite
 	    public override int getNumberOfFrames(int frameRate) {
 	        if(!amClip) return -1;
-	        //if(wrapMode != WrapMode.Once) return -1;
+	        if(wrapMode != WrapMode.Once) return -1;
 	        return Mathf.CeilToInt(amClip.length * (float)frameRate);
 	    }
 
 	    #region action
-	    void OnMethodCallbackParams(TweenEvent dat) {
-	        //TODO: figure out a way to play the animation backwards...
-	        if(!dat.tween.isLoopingBack) {
-	            Animation anim = dat.parms[0] as Animation;
-	            if(anim != null && amClip != null) {
-	                float elapsed = dat.tween.elapsed;
-	                float frameRate = (float)dat.parms[1];
-	                float curFrame = frameRate * elapsed;
-	                float numFrames = getNumberOfFrames(Mathf.RoundToInt(frameRate));
-
-	                if(numFrames > 0.0f && curFrame > frame + numFrames) return;
-
-	                if(wrapMode != WrapMode.Default)
-	                    anim.wrapMode = wrapMode;
-
-	                if(crossfade) {
-	                    anim.CrossFade(amClip.name, crossfadeTime);
-	                }
-	                else {
-	                    anim.Play(amClip.name);
-	                }
-	            }
-	        }
-	    }
-
 	    public override void build(AMSequence seq, AMTrack track, int index, UnityEngine.Object target) {
 	        int frameRate = seq.take.frameRate;
 	        float waitTime = getWaitTime(frameRate, 0.0f);
@@ -63,24 +39,82 @@ namespace MateAnimator{
 
 	        float duration = wrapMode == WrapMode.Once ? amClip.length : ((seq.take.getLastFrame()-frame)+1)/(float)frameRate;
 
-	        Holoville.HOTween.Plugins.Core.ABSTweenPlugin plug;
-
 	        if(crossfade) {
 	            if(index > 0) {
 	                AMAnimationKey prevKey = track.keys[index - 1] as AMAnimationKey;
-	                plug = new AMPlugAnimationCrossFade(anim, crossfadeTime, prevKey.amClip.name, prevKey.wrapMode, prevKey.getWaitTime(frameRate, 0.0f), amClip.name, wrapMode, waitTime);
+
+                    var prevAnimState = anim[prevKey.amClip.name];
+                    var prevWrap = prevKey.wrapMode;
+                    var prevStartTime = prevKey.getWaitTime(frameRate, 0.0f);
+                    var animState = anim[amClip.name];
+
+                    var tween = DOTween.To(new FloatPlugin(), () => 0f, (x) => {
+                        if(x < crossfadeTime) {
+                            float weight = x / crossfadeTime;
+
+                            prevAnimState.enabled = true;
+                            prevAnimState.wrapMode = prevWrap;
+                            prevAnimState.weight = 1.0f - weight;
+                            prevAnimState.time = (waitTime + x) - prevStartTime;
+
+                            animState.enabled = true;
+                            animState.wrapMode = wrapMode;
+                            animState.weight = weight;
+                            animState.time = x;
+
+                            anim.Sample();
+
+                            prevAnimState.enabled = false;
+                            animState.enabled = false;
+                        }
+                        else {
+                            animState.enabled = true;
+                            animState.wrapMode = wrapMode;
+                            animState.weight = 1.0f;
+                            animState.time = x;
+
+                            anim.Sample();
+
+                            animState.enabled = false;
+                        }
+                    }, duration, duration);
+
+                    seq.Insert(this, tween);
 	            }
-	            else
-	                plug = new AMPlugAnimation(anim, amClip.name, wrapMode, true, crossfadeTime);
+                else {
+                    var animState = anim[amClip.name];
+                    
+                    var tween = DOTween.To(new FloatPlugin(), () => 0f, (x) => {
+                        animState.enabled = true;
+                        animState.wrapMode = wrapMode;
+                        animState.time = x;
+
+                        if(x < crossfadeTime)
+                            animState.weight = x/crossfadeTime;
+                        else
+                            animState.weight = 1.0f;
+
+                        anim.Sample();
+                        animState.enabled = false;
+                    }, duration, duration);
+
+                    seq.Insert(this, tween);
+                }
 	        }
-	        else
-	            plug = new AMPlugAnimation(anim, amClip.name, wrapMode, false, 0.0f);
+            else {
+                var animState = anim[amClip.name];
 
-	        seq.sequence.Insert(waitTime, HOTween.To(target, duration, new TweenParms().Prop("animation", plug)));
+                var tween = DOTween.To(new FloatPlugin(), () => 0f, (x) => {
+                    animState.enabled = true;
+                    animState.wrapMode = wrapMode;
+                    animState.time = x;
+                    animState.weight = 1.0f;
+                    anim.Sample();
+                    animState.enabled = false;
+                }, duration, duration);
 
-
-	        //seq.Insert(new AMActionAnimation(this, seq.take.frameRate, (target as GameObject).animation));
-	        //seq.sequence.InsertCallback(getWaitTime(seq.take.frameRate, 0.0f), OnMethodCallbackParams, (target as GameObject).animation, (float)seq.take.frameRate);
+                seq.Insert(this, tween);
+            }
 	    }
 	    #endregion
 	}

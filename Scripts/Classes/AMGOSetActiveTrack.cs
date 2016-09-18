@@ -3,8 +3,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
-using Holoville.HOTween;
-
 namespace MateAnimator{
 	[AddComponentMenu("")]
 	public class AMGOSetActiveTrack : AMTrack {
@@ -70,11 +68,12 @@ namespace MateAnimator{
 	    }
 
 	    public override void buildSequenceStart(AMSequence seq) {
-	        GameObject go = GetTarget(seq.target) as GameObject;
-
 	        //need to add activate game object on start to 'reset' properly during reverse
 	        if(keys.Count > 0 && keys[0].frame > 0) {
-	            seq.Insert(new AMActionGOActive(0.0f, keys[0].getWaitTime(seq.take.frameRate, 0.0f), go, startActive));
+                GameObject go = GetTarget(seq.target) as GameObject;
+                var tween = DG.Tweening.DOTween.To(new AMPlugValueSet<bool>(), () => startActive, (x) => go.SetActive(x), startActive, keys[0].getWaitTime(seq.take.frameRate, 0.0f));
+                tween.plugOptions = new AMPlugValueSetOptions(seq.sequence);
+                seq.Insert(0f, tween);
 	        }
 	    }
 

@@ -2,8 +2,8 @@
 using System.Collections;
 using System.Collections.Generic;
 
-using Holoville.HOTween;
-using Holoville.HOTween.Core;
+using DG.Tweening;
+
 namespace MateAnimator{
 	public struct AMTriggerData {
 	    public string valueString;
@@ -31,9 +31,10 @@ namespace MateAnimator{
 	    #region action
 
 	    public override void build(AMSequence seq, AMTrack track, int index, UnityEngine.Object obj) {
-	        seq.sequence.InsertCallback(getWaitTime(seq.take.frameRate, 0.0f), seq.triggerCallback,
-	            this,
-	            new AMTriggerData() { valueString=this.valueString, valueInt=this.valueInt, valueFloat=this.valueFloat });
+            AMTriggerData parm = new AMTriggerData() { valueString=this.valueString, valueInt=this.valueInt, valueFloat=this.valueFloat };
+            var tween = DOTween.To(new AMPlugValueSetElapsed(), () => 0, (x) => seq.Trigger(this, parm), 0, 1.0f/seq.take.frameRate);
+            tween.plugOptions = new AMPlugValueSetOptions(seq.sequence);
+            seq.Insert(this, tween);
 	    }
 
 	    #endregion

@@ -3,8 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEditor;
 
-using Holoville.HOTween.Core;
-using Holoville.HOTween;
+using DG.Tweening;
 
 namespace MateAnimator{
 	public class AMTransitionPicker : EditorWindow {
@@ -186,7 +185,7 @@ namespace MateAnimator{
 	        // load skin
 	        AMTimeline.loadSkin(ref skin, ref cachedSkinName, position);
 	    	LoadTextures();
-	        EditorGUIUtility.LookLikeControls();
+	        AMEditorUtil.ResetDisplayControls();
 	        #region drag logic
 	        Event e = Event.current;
 	        Rect rectWindow = new Rect(0f, 0f, position.width, position.height);
@@ -591,7 +590,7 @@ namespace MateAnimator{
 	                GUILayout.Space(height_parameter_space);
 	                GUILayout.Label("Shape");
 	                GUI.skin = null;
-	                EditorGUIUtility.LookLikeControls();
+	                AMEditorUtil.ResetDisplayControls();
 	                GUILayout.BeginHorizontal();
 	        		EditorGUIUtility.labelWidth = 0f;
 	                irisShape = (Texture2D)EditorGUILayout.ObjectField("", irisShape, typeof(Texture2D), false, GUILayout.Width(64));
@@ -660,7 +659,7 @@ namespace MateAnimator{
 	                // shape texture
 	                GUILayout.Label("Shape");
 	                GUI.skin = null;
-	                EditorGUIUtility.LookLikeControls();
+	                AMEditorUtil.ResetDisplayControls();
 	                GUILayout.BeginHorizontal();
 	        		EditorGUIUtility.labelWidth = 0f;
 					irisShape = (Texture2D)EditorGUILayout.ObjectField("", irisShape, typeof(Texture2D), false, GUILayout.Width(64));
@@ -1043,8 +1042,8 @@ namespace MateAnimator{
 	            _value = AMUtil.EaseCustom(1.0f, -1.0f, Mathf.Clamp(percent, 0f, 1f), key.getCustomEaseCurve());
 	        }
 	        else {
-	            TweenDelegate.EaseFunc ease = AMUtil.GetEasingFunction((EaseType)key.easeType);
-	            _value = ease(Mathf.Clamp(percent, 0f, 1f), 1.0f, -1.0f, 1.0f, key.amplitude, key.period);
+	            var ease = AMUtil.GetEasingFunction((Ease)key.easeType);
+	            _value = 1.0f - ease(Mathf.Clamp(percent, 0f, 1f), 1.0f, key.amplitude, key.period);
 	        }
 	    }
 

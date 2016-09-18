@@ -2,8 +2,8 @@ using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 
-using Holoville.HOTween;
-using Holoville.HOTween.Plugins;
+using DG.Tweening;
+using DG.Tweening.CustomPlugins;
 
 namespace MateAnimator{
 	[AddComponentMenu("")]
@@ -27,13 +27,14 @@ namespace MateAnimator{
 
 	    #region action
 	    public override int getNumberOfFrames(int frameRate) {
-	        if(!canTween || (endFrame == -1 || endFrame == frame))
+	        if(!canTween && (endFrame == -1 || endFrame == frame))
 	            return 1;
 	        else if(endFrame == -1)
 	            return -1;
 	        return endFrame - frame;
 	    }
 	    public override void build(AMSequence seq, AMTrack track, int index, UnityEngine.Object obj) {
+            Transform trans = obj as Transform;
 	        int frameRate = seq.take.frameRate;
 
 	        //allow tracks with just one key
@@ -41,16 +42,23 @@ namespace MateAnimator{
 	            interp = (int)Interpolation.None;
 
 			if(!canTween) {
-	            seq.Insert(new AMActionTransLocalRot(this, frameRate, obj as Transform, rotation));
+                var tween = DOTween.To(new AMPlugValueSet<Quaternion>(), () => rotation, (x) => trans.localRotation=x, rotation, getTime(frameRate));
+                tween.plugOptions = new AMPlugValueSetOptions(seq.sequence);
+
+                seq.Insert(this, tween);
 			}
 			else if(endFrame == -1) return;
 	        else {
 	            Quaternion endRotation = (track.keys[index + 1] as AMRotationKey).rotation;
 
-	            if(hasCustomEase())
-	                seq.Insert(this, HOTween.To(obj, getTime(frameRate), new TweenParms().Prop("localRotation", new AMPlugQuaternionSlerp(endRotation)).Ease(easeCurve)));
-	            else
-	                seq.Insert(this, HOTween.To(obj, getTime(frameRate), new TweenParms().Prop("localRotation", new AMPlugQuaternionSlerp(endRotation)).Ease((EaseType)easeType, amplitude, period)));
+                var tween = DOTween.To(new PureQuaternionPlugin(), () => trans.localRotation, (x) => trans.localRotation=x, endRotation, getTime(frameRate));
+
+                if(hasCustomEase())
+                    tween.SetEase(easeCurve);
+                else
+                    tween.SetEase((Ease)easeType, amplitude, period);
+
+                seq.Insert(this, tween);
 	        }
 	    }
 	    #endregion

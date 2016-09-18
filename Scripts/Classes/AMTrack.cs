@@ -1,8 +1,6 @@
 using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
-using System.Text;
-using Holoville.HOTween;
 
 namespace MateAnimator{
 	[AddComponentMenu("")]

@@ -132,7 +132,8 @@ namespace MateAnimator{
 	        anim.sequenceKillWhenDone = GUILayout.Toggle(anim.sequenceKillWhenDone, "Kill Sequence When Done");
 	        anim.playOnEnable = GUILayout.Toggle(anim.playOnEnable, "Play On Enable");
 	        anim.onDisableAction = (AnimatorData.DisableAction)EditorGUILayout.EnumPopup("On Disable", anim.onDisableAction);
-	        anim.updateType = (Holoville.HOTween.UpdateType)EditorGUILayout.EnumPopup("Update", anim.updateType);
+	        anim.updateType = (DG.Tweening.UpdateType)EditorGUILayout.EnumPopup("Update", anim.updateType);
+            anim.updateTimeIndependent = EditorGUILayout.Toggle("Time Independent", anim.updateTimeIndependent);
 
 	        if(PrefabUtility.GetPrefabType(aData.gameObject) != PrefabType.Prefab) {
 	            AMTimeline timeline = AMTimeline.window;

@@ -4,8 +4,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using System;
 
-using Holoville.HOTween.Core;
-using Holoville.HOTween;
+using DG.Tweening;
 
 namespace MateAnimator{
 	[AddComponentMenu("")]
@@ -226,63 +225,43 @@ namespace MateAnimator{
 	            if(!mIsInit)
 	                Init(target);
 
-	            // if before or equal to first frame, or is the only frame
-	            AMMaterialKey ckey = keys[0] as AMMaterialKey;
-	            if((frame <= (float)ckey.frame) || ckey.endFrame == -1) {
-	                ckey.ApplyValue(_propertyType, _property, mPropId, mMatInstance);
-	                return;
-	            }
-	            // if not tweenable and beyond last frame
-	            ckey = keys[keys.Count - 1] as AMMaterialKey;
-	            if(!canTween && frame >= (float)ckey.frame) {
-	                ckey.ApplyValue(_propertyType, _property, mPropId, mMatInstance);
-	                return;
-	            }
-	            //if tweenable and beyond last tweenable
-	            ckey = keys[keys.Count - 2] as AMMaterialKey;
-	            if(frame >= (float)ckey.endFrame) {
-	                ckey.ApplyValue(_propertyType, _property, mPropId, mMatInstance);
-	                return;
-	            }
-	            // if lies on property action
-	            for(int i = 0; i < keys.Count; i++) {
-	                AMMaterialKey key = keys[i] as AMMaterialKey;
-	                AMMaterialKey keyNext = i + 1 < keys.Count ? keys[i + 1] as AMMaterialKey : null;
+                // if before or equal to first frame, or is the only frame
+                AMMaterialKey firstKey = keys[0] as AMMaterialKey;
+                if(firstKey.endFrame == -1 || (frame <= (float)firstKey.frame && !firstKey.canTween)) {
+                    firstKey.ApplyValue(_propertyType, _property, mPropId, mMatInstance);
+                    return;
+                }
 
-	                if((frame < (float)key.frame) || (frame > (float)key.endFrame)) continue;
-	                //if(quickPreview && !key.targetsAreEqual()) return;	// quick preview; if action will execute then skip
-	                // if on startFrame or is no tween
-	                if(frame == (float)key.frame || ((!key.canTween || !canTween) && frame < (float)key.endFrame)) {
-	                    key.ApplyValue(_propertyType, _property, mPropId, mMatInstance);
-	                    return;
-	                }
-	                // if on endFrame
-	                if(frame == (float)key.endFrame) {
-	                    if(!key.canTween || !canTween || !keyNext)
-	                        continue;
-	                    else {
-	                        keyNext.ApplyValue(_propertyType, _property, mPropId, mMatInstance);
-	                        return;
-	                    }
-	                }
-	                // else find value using easing function
+                // if lies on property action
+                for(int i = 0; i < keys.Count; i++) {
+                    AMMaterialKey key = keys[i] as AMMaterialKey;
+                    AMMaterialKey keyNext = i + 1 < keys.Count ? keys[i + 1] as AMMaterialKey : null;
 
-	                float framePositionInAction = frame - (float)key.frame;
-	                if(framePositionInAction < 0f) framePositionInAction = 0f;
+                    if(frame >= (float)key.endFrame && keyNext != null && (!keyNext.canTween || keyNext.endFrame != -1)) continue;
+                    // if no ease
+                    if(!key.canTween || keyNext == null) {
+                        key.ApplyValue(_propertyType, _property, mPropId, mMatInstance);
+                        return;
+                    }
+                    // else find value using easing function
 
-	                float t;
+                    float numFrames = (float)key.getNumberOfFrames(frameRate);
 
-	                if(key.hasCustomEase()) {
-	                    t = AMUtil.EaseCustom(0.0f, 1.0f, framePositionInAction / key.getNumberOfFrames(frameRate), key.easeCurve);
-	                }
-	                else {
-	                    TweenDelegate.EaseFunc ease = AMUtil.GetEasingFunction((EaseType)key.easeType);
-	                    t = ease(framePositionInAction, 0.0f, 1.0f, key.getNumberOfFrames(frameRate), key.amplitude, key.period);
-	                }
+                    float framePositionInAction = Mathf.Clamp(frame - (float)key.frame, 0f, numFrames);
 
-	                AMMaterialKey.ApplyValueLerp(_propertyType, _property, mPropId, mMatInstance, key, keyNext, t);
-	                return;
-	            }
+                    float t;
+
+                    if(key.hasCustomEase()) {
+                        t = AMUtil.EaseCustom(0.0f, 1.0f, framePositionInAction / key.getNumberOfFrames(frameRate), key.easeCurve);
+                    }
+                    else {
+                        var ease = AMUtil.GetEasingFunction((Ease)key.easeType);
+                        t = ease(framePositionInAction, key.getNumberOfFrames(frameRate), key.amplitude, key.period);
+                    }
+
+                    AMMaterialKey.ApplyValueLerp(_propertyType, _property, mPropId, mMatInstance, key, keyNext, t);
+                    return;
+                }
 	        }
 	    }
 

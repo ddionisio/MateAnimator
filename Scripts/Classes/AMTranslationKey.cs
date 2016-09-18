@@ -2,12 +2,19 @@ using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 
-using Holoville.HOTween;
-using Holoville.HOTween.Plugins;
+using DG.Tweening;
+using DG.Tweening.Core;
+using DG.Tweening.Core.Easing;
+using DG.Tweening.Core.Enums;
+using DG.Tweening.Plugins;
+using DG.Tweening.Plugins.Core;
+using DG.Tweening.Plugins.Core.PathCore;
+using DG.Tweening.Plugins.Options;
 
 namespace MateAnimator{
 	[AddComponentMenu("")]
 	public class AMTranslationKey : AMKey {
+        public const int pathResolution = 10;
 	    public const int SUBDIVISIONS_MULTIPLIER = 16;
 
 	    public Vector3 position;
@@ -52,7 +59,7 @@ namespace MateAnimator{
 	                }
 
 	                // Create the path.
-	                mPathPreview = new AMPathPreview((Interpolation)interp == Interpolation.Curve ? PathType.Curved : PathType.Linear, pts);
+	                mPathPreview = new AMPathPreview((Interpolation)interp == Interpolation.Curve ? PathType.CatmullRom : PathType.Linear, pts);
 
 	                // Store arc lengths tables for constant speed.
 	                mPathPreview.StoreTimeToLenTables(mPathPreview.path.Length * SUBDIVISIONS_MULTIPLIER);
@@ -83,18 +90,17 @@ namespace MateAnimator{
 	    #region action
 
 	    //for pixel-snapping
-	    public class PlugVector3PathSnap : PlugVector3Path {
-	        private float mUnitConv;
+        public class PlugVector3PathSnap : PathPlugin {
+            public float unitConv;
 
-	        public PlugVector3PathSnap(Vector3[] p_path, float unitConv, PathType p_type = PathType.Curved) : base(p_path, p_type) { mUnitConv=unitConv; }
-	        public PlugVector3PathSnap(Vector3[] p_path, float unitConv, bool p_isRelative, PathType p_type = PathType.Curved) : base(p_path, p_isRelative, p_type) { mUnitConv=unitConv; }
-	        public PlugVector3PathSnap(Vector3[] p_path, float unitConv, EaseType p_easeType, PathType p_type = PathType.Curved) : base(p_path, p_easeType, p_type) { mUnitConv=unitConv; }
-	        public PlugVector3PathSnap(Vector3[] p_path, float unitConv, AnimationCurve p_easeAnimCurve, bool p_isRelative, PathType p_type = PathType.Curved) : base(p_path, p_easeAnimCurve, p_isRelative, p_type) { mUnitConv=unitConv; }
-	        public PlugVector3PathSnap(Vector3[] p_path, float unitConv, EaseType p_easeType, bool p_isRelative, PathType p_type = PathType.Curved) : base(p_path, p_easeType, p_isRelative, p_type) { mUnitConv=unitConv; }
+            public PlugVector3PathSnap(float aUnitConv) { unitConv = aUnitConv; }
 
-	        protected override void SetValue(Vector3 p_value) {
-	            base.SetValue(new Vector3(Mathf.Round(p_value.x*mUnitConv)/mUnitConv, Mathf.Round(p_value.y*mUnitConv)/mUnitConv, Mathf.Round(p_value.z*mUnitConv)/mUnitConv));
-	        }
+            public override void EvaluateAndApply(PathOptions options, Tween t, bool isRelative, DOGetter<Vector3> getter, DOSetter<Vector3> setter, float elapsed, Path startValue, Path changeValue, float duration, bool usingInversePosition, UpdateNotice updateNotice) {
+                base.EvaluateAndApply(options, t, isRelative, 
+                    ()=>getter(), 
+                    (x)=>setter(new Vector3(Mathf.Round(x.x*unitConv)/unitConv, Mathf.Round(x.y*unitConv)/unitConv, Mathf.Round(x.z*unitConv)/unitConv)), 
+                    elapsed, startValue, changeValue, duration, usingInversePosition, updateNotice);
+            }
 	    }
 
 	    public override int getNumberOfFrames(int frameRate) {
@@ -111,44 +117,41 @@ namespace MateAnimator{
 	        if(track.keys.Count == 1)
 	            interp = (int)Interpolation.None;
 
+            Transform trans = obj as Transform;
+
 	        AMTranslationTrack tTrack = track as AMTranslationTrack;
 	        bool pixelSnap = tTrack.pixelSnap;
 	        float ppu = tTrack.pixelPerUnit;
-
+            
 	        if(!canTween) {
 	            //TODO: world position
-	            seq.Insert(new AMActionTransLocalPos(this, frameRate, obj as Transform, pixelSnap ? new Vector3(Mathf.Round(position.x*ppu)/ppu, Mathf.Round(position.y*ppu)/ppu, Mathf.Round(position.z*ppu)/ppu) : position));
+                Vector3 pos = pixelSnap ? new Vector3(Mathf.Round(position.x*ppu)/ppu, Mathf.Round(position.y*ppu)/ppu, Mathf.Round(position.z*ppu)/ppu) : position;
+
+                var tweener = DOTween.To(new AMPlugValueSet<Vector3>(), () => pos, (x) => trans.localPosition=x, pos, getTime(frameRate));
+                tweener.plugOptions = new AMPlugValueSetOptions(seq.sequence);
+
+                seq.Insert(this, tweener);
 	        }
 	        else {
 	            if(path.Length <= 1) return;
 	            if(getNumberOfFrames(seq.take.frameRate) <= 0) return;
 
-	            object tweenTarget = obj;
-	            string tweenProp = "localPosition";
-
 	            Tweener ret = null;
 
 	            bool isRelative = false;
 
-	            if(hasCustomEase()) {
-	                if(path.Length == 2)
-	                    ret = HOTween.To(tweenTarget, getTime(frameRate), new TweenParms().Prop(tweenProp, pixelSnap ? new PlugVector3PathSnap(path, ppu, isRelative, PathType.Linear) : new PlugVector3Path(path, isRelative, PathType.Linear)).Ease(easeCurve));
-	                else {
-	                    PlugVector3Path p = pixelSnap ? new PlugVector3PathSnap(path, ppu, isRelative) : new PlugVector3Path(path, isRelative);
-	                    p.ClosePath(isClosed);
-	                    ret = HOTween.To(tweenTarget, getTime(frameRate), new TweenParms().Prop(tweenProp, p).Ease(easeCurve));
-	                }
-	            }
-	            else {
-	                if(path.Length == 2)
-	                    ret = HOTween.To(tweenTarget, getTime(frameRate), new TweenParms().Prop(tweenProp, pixelSnap ? new PlugVector3PathSnap(path, ppu, isRelative, PathType.Linear) : new PlugVector3Path(path, isRelative, PathType.Linear)).Ease((EaseType)easeType, amplitude, period));
-	                else {
-	                    PlugVector3Path p = pixelSnap ? new PlugVector3PathSnap(path, ppu, isRelative) : new PlugVector3Path(path, isRelative);
-	                    p.ClosePath(isClosed);
-	                    ret = HOTween.To(tweenTarget, getTime(frameRate), new TweenParms().Prop(tweenProp, p).Ease((EaseType)easeType, amplitude, period));
-	                }
-	            }
+                PathType pathType = path.Length == 2 ? PathType.Linear : PathType.CatmullRom;
 
+                if(pixelSnap)
+                    ret = DOTween.To(new PlugVector3PathSnap(ppu), () => trans.localPosition, x => trans.localPosition=x, new Path(pathType, path, pathResolution), getTime(frameRate)).SetRelative(isRelative).SetOptions(isClosed);
+                else
+                    ret = trans.DOLocalPath(path, getTime(frameRate), pathType, PathMode.Full3D, pathResolution, null).SetRelative(isRelative).SetOptions(isClosed);
+                            
+                if(hasCustomEase())
+                    ret.SetEase(easeCurve);
+                else
+                    ret.SetEase((Ease)easeType, amplitude, period);
+                
 	            seq.Insert(this, ret);
 	        }
 	    }

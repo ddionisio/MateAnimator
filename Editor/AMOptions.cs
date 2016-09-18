@@ -78,7 +78,7 @@ namespace MateAnimator{
 	        GUIStyle styleTabSelectionBG = new GUIStyle(GUI.skin.GetStyle("GroupElementBG"));
 	        styleTabSelectionBG.normal.background = EditorStyles.toolbar.normal.background;
 	        GUILayout.BeginVertical(/*GUI.skin.GetStyle("GroupElementBG")*/styleTabSelectionBG, GUILayout.Width(121f));
-	        EditorGUIUtility.LookLikeControls();
+            AMEditorUtil.ResetDisplayControls();
 	        GUIStyle styleTabButton = new GUIStyle(EditorStyles.toolbarButton);
 	        styleTabButton.fontSize = 12;
 	        styleTabButton.fixedHeight = 30;
@@ -90,7 +90,7 @@ namespace MateAnimator{
 	        #endregion
 	        #region options
 	        GUILayout.BeginVertical();
-	        EditorGUIUtility.LookLikeControls();
+	        AMEditorUtil.ResetDisplayControls();
 
 	        GUIStyle styleArea = new GUIStyle(GUI.skin.textArea);
 	        scrollView = GUILayout.BeginScrollView(scrollView, styleArea);
@@ -281,7 +281,7 @@ namespace MateAnimator{
 	        #endregion
 	        #region quick add
 	        else if(tabIndex == (int)tabType.QuickAdd) {
-	            EditorGUIUtility.LookLikeControls();
+	            AMEditorUtil.ResetDisplayControls();
 	            GUILayout.Space(3f);
 	            GUILayout.BeginHorizontal();
 	            GUILayout.Space(width_indent);

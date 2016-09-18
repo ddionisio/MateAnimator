@@ -4,7 +4,8 @@ using System.Collections.Generic;
 using System.Reflection;
 using System.Linq;
 
-using Holoville.HOTween;
+using DG.Tweening;
+
 namespace MateAnimator{
 	[ExecuteInEditMode]
 	[AddComponentMenu("M8/Animator")]
@@ -39,7 +40,8 @@ namespace MateAnimator{
 
 	    public DisableAction onDisableAction = DisableAction.Pause;
 
-	    public UpdateType updateType = UpdateType.Update;
+	    public UpdateType updateType = UpdateType.Normal;
+        public bool updateTimeIndependent = false;
 	    // hide
 
 	    public event OnTake takeCompleteCallback;
@@ -79,14 +81,14 @@ namespace MateAnimator{
 	    public bool isPlaying {
 	        get {
 	            Sequence seq = currentPlayingSequence;
-	            return seq != null && !(seq.isPaused || seq.isComplete);
+	            return seq != null && seq.IsPlaying();
 	        }
 	    }
 
 	    public bool isPaused {
 	        get {
 	            Sequence seq = currentPlayingSequence;
-	            return seq != null && seq.isPaused;
+	            return seq == null || !seq.IsPlaying();
 	        }
 	    }
 
@@ -95,26 +97,26 @@ namespace MateAnimator{
 	            Sequence seq = currentPlayingSequence;
 	            if(seq != null) {
 	                if(value) {
-	                    if(!seq.isReversed)
-	                        seq.Reverse();
+                        if(!seq.IsBackwards())
+                            seq.Flip();
 	                }
 	                else {
-	                    if(seq.isReversed)
-	                        seq.Reverse();
+                        if(seq.IsBackwards())
+                            seq.Flip();
 	                }
 	            }
 	        }
 
 	        get {
 	            Sequence seq = currentPlayingSequence;
-	            return seq != null && seq.isReversed;
+	            return seq != null && seq.IsBackwards();
 	        }
 	    }
 
 	    public float runningTime {
 	        get {
 	            Sequence seq = currentPlayingSequence;
-	            return seq != null ? seq.elapsed : 0.0f;
+	            return seq != null ? seq.Elapsed() : 0.0f;
 	        }
 	    }
 	    public float totalTime {
@@ -243,26 +245,24 @@ namespace MateAnimator{
 	        Sequence seq = amSeq.sequence;
 
 	        if(seq == null) {
-	            amSeq.Build(gameObject.name, sequenceKillWhenDone, updateType);
+	            amSeq.Build(sequenceKillWhenDone, updateType, updateTimeIndependent);
 	            seq = amSeq.sequence;
 	        }
-	        else
-	            amSeq.Reset(true);
 
 	        mNowPlayingTakeIndex = index;
 
 	        newPlayTake.PlayStart(this, newPlayTake.frameRate * time, 1.0f); //notify take that we are playing
 
 	        if(seq != null) {
-	            if(loop) {
+	            /*if(loop) {
 	                seq.loops = -1;
 	            }
 	            else {
 	                seq.loops = newPlayTake.numLoop;
-	            }
+	            }*/
 
 	            seq.timeScale = mAnimScale;
-	            seq.GoToAndPlay(time);
+                seq.Goto(time, true);
 	        }
 	    }
 
@@ -311,7 +311,7 @@ namespace MateAnimator{
 	            cf.playParam = null;
 	        }
 
-	        mSequences[mNowPlayingTakeIndex].Reset(false);
+	        mSequences[mNowPlayingTakeIndex].Reset();
 
 	        mLastPlayingTakeIndex = mNowPlayingTakeIndex;
 	        mNowPlayingTakeIndex = -1;
@@ -322,7 +322,7 @@ namespace MateAnimator{
 	        Sequence seq = currentPlayingSequence;
 	        if(take != null && seq != null) {
 	            float t = frame / take.frameRate;
-	            seq.GoTo(t);
+	            seq.Goto(t);
 	        }
 	        else {
 	            Debug.LogWarning("No take playing...");
@@ -331,8 +331,8 @@ namespace MateAnimator{
 
 	    public void Reverse() {
 	        Sequence seq = currentPlayingSequence;
-	        if(seq != null)
-	            seq.Reverse();
+            if(seq != null)
+                seq.Flip();
 	    }
 
 	    // preview a single frame (used for scrubbing)
@@ -418,10 +418,9 @@ namespace MateAnimator{
 
 	        mStarted = true;
 	        if(sequenceLoadAll && mSequences != null) {
-	            string goName = gameObject.name;
 	            for(int i = 0; i < mSequences.Length; i++) {
 	                if(mSequences[i].sequence == null)
-	                    mSequences[i].Build(goName, sequenceKillWhenDone, updateType);
+                        mSequences[i].Build(sequenceKillWhenDone, updateType, updateTimeIndependent);
 	            }
 	        }
 

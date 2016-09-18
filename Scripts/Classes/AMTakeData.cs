@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 
-using Holoville.HOTween;
+using DG.Tweening;
 
 namespace MateAnimator{
 	[System.Serializable]
@@ -593,7 +593,7 @@ namespace MateAnimator{
 
 	        if(orientationOnly) {
 	            foreach(AMTrack track in trackValues) {
-	                if(track is AMOrientationTrack || track is AMRotationTrack)
+	                if(track is AMOrientationTrack)// || track is AMRotationTrack)
 	                    track.previewFrame(itarget, _frame, frameRate, play, playSpeed);
 	            }
 	        }
@@ -840,9 +840,9 @@ namespace MateAnimator{
 	                if(track != null && track.keys != null) {
 	                    foreach(AMKey key in track.keys) {
 	                        //update key's interpolation
-	                        if(key.easeType == -1) {
+	                        if(key.easeType == (int)Ease.Unset) {
 	                            key.interp = (int)AMKey.Interpolation.None;
-	                            key.easeType = 0;
+                                key.easeType = (int)Ease.Linear;
 	                        }
 
 	                        if(key.version != track.version) {

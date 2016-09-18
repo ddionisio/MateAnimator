@@ -3,8 +3,8 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
 
-using Holoville.HOTween;
-using Holoville.HOTween.Plugins;
+using DG.Tweening;
+using DG.Tweening.Plugins;
 
 namespace MateAnimator{
 	[AddComponentMenu("")]
@@ -93,84 +93,101 @@ namespace MateAnimator{
 
 	    public override void build(AMSequence seq, AMTrack track, int index, UnityEngine.Object target) {
 	        AMMaterialTrack matTrack = track as AMMaterialTrack;
+            AMMaterialTrack.ValueType propType = matTrack.propertyType;
 
 	        Material matInst = matTrack.materialInstance;
+
 	        string prop = matTrack.property;
-	        AMMaterialTrack.ValueType propType = matTrack.propertyType;
+            int propId = Shader.PropertyToID(prop);
 
 	        int frameRate = seq.take.frameRate;
+
+            Tweener tween = null;
+
+            int keyCount = track.keys.Count;
+            AMMaterialKey endKey = index + 1 < keyCount ? track.keys[index + 1] as AMMaterialKey : null;
+            float frameCount = endKey != null ? endKey.frame - frame + 1 : 1f;
 
 	        switch(propType) {
 	            case AMMaterialTrack.ValueType.Float:
 	            case AMMaterialTrack.ValueType.Range:
-	                if(!canTween || matTrack.keys.Count == 1) //allow one key
-	                    seq.Insert(new AMActionMaterialFloatSet(this, frameRate, matInst, prop, val));
-	                else {
-	                    AMMaterialKey endKey = track.keys[index + 1] as AMMaterialKey;
-	                    if(targetsAreEqual(propType, endKey)) return;
+                    if(!canTween || keyCount == 1) {//allow one key
+                        var setTween = DOTween.To(new AMPlugValueSet<float>(), () => val, (x) => matInst.SetFloat(propId, x), val, frameCount/frameRate);
+                        setTween.plugOptions = new AMPlugValueSetOptions(seq.sequence);
+                        seq.Insert(this, setTween);
+                    }
+                    else {
+                        if(targetsAreEqual(propType, endKey)) return;
 
-	                    if(hasCustomEase())
-	                        seq.Insert(this, HOTween.To(this, getTime(frameRate), new TweenParms().Prop(bsField, new AMPlugMaterialFloat(matInst, prop, endKey.val)).Ease(easeCurve)));
-	                    else
-	                        seq.Insert(this, HOTween.To(this, getTime(frameRate), new TweenParms().Prop(bsField, new AMPlugMaterialFloat(matInst, prop, endKey.val)).Ease((EaseType)easeType, amplitude, period)));
-	                }
+                        tween = DOTween.To(new FloatPlugin(), () => matInst.GetFloat(propId), (x) => matInst.SetFloat(propId, x), endKey.val, getTime(frameRate));
+                    }
 	                break;
 	            case AMMaterialTrack.ValueType.Vector:
-	                if(!canTween || matTrack.keys.Count == 1) //allow one key
-	                    seq.Insert(new AMActionMaterialVectorSet(this, frameRate, matInst, prop, vector));
-	                else {
-	                    AMMaterialKey endKey = track.keys[index + 1] as AMMaterialKey;
-	                    if(targetsAreEqual(propType, endKey)) return;
+                    if(!canTween || keyCount == 1) {//allow one key
+                        var setTween = DOTween.To(new AMPlugValueSet<Vector4>(), () => vector, (x) => matInst.SetVector(propId, x), vector, frameCount/frameRate);
+                        setTween.plugOptions = new AMPlugValueSetOptions(seq.sequence);
+                        seq.Insert(this, setTween);
+                    }
+                    else {
+                        if(targetsAreEqual(propType, endKey)) return;
 
-	                    if(hasCustomEase())
-	                        seq.Insert(this, HOTween.To(this, getTime(frameRate), new TweenParms().Prop(bsField, new AMPlugMaterialVector4(matInst, prop, endKey.vector)).Ease(easeCurve)));
-	                    else
-	                        seq.Insert(this, HOTween.To(this, getTime(frameRate), new TweenParms().Prop(bsField, new AMPlugMaterialVector4(matInst, prop, endKey.vector)).Ease((EaseType)easeType, amplitude, period)));
-	                }
+                        tween = DOTween.To(new Vector4Plugin(), () => matInst.GetVector(propId), (x) => matInst.SetVector(propId, x), endKey.vector, getTime(frameRate));
+                    }
 	                break;
 	            case AMMaterialTrack.ValueType.Color:
-	                if(!canTween || matTrack.keys.Count == 1) //allow one key
-	                    seq.Insert(new AMActionMaterialColorSet(this, frameRate, matInst, prop, color));
-	                else {
-	                    AMMaterialKey endKey = track.keys[index + 1] as AMMaterialKey;
-	                    if(targetsAreEqual(propType, endKey)) return;
+                    if(!canTween || keyCount == 1) {//allow one key
+                        var val = color;
+                        var setTween = DOTween.To(new AMPlugValueSet<Color>(), () => val, (x) => matInst.SetColor(propId, x), val, frameCount/frameRate);
+                        setTween.plugOptions = new AMPlugValueSetOptions(seq.sequence);
+                        seq.Insert(this, setTween);
+                    }
+                    else {
+                        if(targetsAreEqual(propType, endKey)) return;
 
-	                    if(hasCustomEase())
-	                        seq.Insert(this, HOTween.To(this, getTime(frameRate), new TweenParms().Prop(bsField, new AMPlugMaterialColor(matInst, prop, endKey.color)).Ease(easeCurve)));
-	                    else
-	                        seq.Insert(this, HOTween.To(this, getTime(frameRate), new TweenParms().Prop(bsField, new AMPlugMaterialColor(matInst, prop, endKey.color)).Ease((EaseType)easeType, amplitude, period)));
-	                }
+                        tween = DOTween.To(new ColorPlugin(), () => matInst.GetColor(propId), (x) => matInst.SetColor(propId, x), endKey.color, getTime(frameRate));
+                    }
 	                break;
 	            case AMMaterialTrack.ValueType.TexOfs:
-	                if(!canTween || matTrack.keys.Count == 1) //allow one key
-	                    seq.Insert(new AMActionMaterialTexOfsSet(this, frameRate, matInst, prop, texOfs));
-	                else {
-	                    AMMaterialKey endKey = track.keys[index + 1] as AMMaterialKey;
-	                    if(targetsAreEqual(propType, endKey)) return;
+                    if(!canTween || keyCount == 1) {//allow one key
+                        var val = texOfs;
+                        var setTween = DOTween.To(new AMPlugValueSet<Vector2>(), () => val, (x) => matInst.SetTextureOffset(prop, x), val, frameCount/frameRate);
+                        setTween.plugOptions = new AMPlugValueSetOptions(seq.sequence);
+                        seq.Insert(this, setTween);
+                    }
+                    else {
+                        if(targetsAreEqual(propType, endKey)) return;
 
-	                    if(hasCustomEase())
-	                        seq.Insert(this, HOTween.To(this, getTime(frameRate), new TweenParms().Prop(bsField, new AMPlugMaterialTexOfs(matInst, prop, endKey.texOfs)).Ease(easeCurve)));
-	                    else
-	                        seq.Insert(this, HOTween.To(this, getTime(frameRate), new TweenParms().Prop(bsField, new AMPlugMaterialTexOfs(matInst, prop, endKey.texOfs)).Ease((EaseType)easeType, amplitude, period)));
-	                }
+                        tween = DOTween.To(new Vector2Plugin(), () => matInst.GetTextureOffset(prop), (x) => matInst.SetTextureOffset(prop, x), endKey.texOfs, getTime(frameRate));
+                    }
 	                break;
 	            case AMMaterialTrack.ValueType.TexScale:
-	                if(!canTween || matTrack.keys.Count == 1) //allow one key
-	                    seq.Insert(new AMActionMaterialTexScaleSet(this, frameRate, matInst, prop, texScale));
-	                else {
-	                    AMMaterialKey endKey = track.keys[index + 1] as AMMaterialKey;
-	                    if(targetsAreEqual(propType, endKey)) return;
+                    if(!canTween || keyCount == 1) {//allow one key
+                        var val = texScale;
+                        var setTween = DOTween.To(new AMPlugValueSet<Vector2>(), () => val, (x) => matInst.SetTextureScale(prop, x), val, frameCount/frameRate);
+                        setTween.plugOptions = new AMPlugValueSetOptions(seq.sequence);
+                        seq.Insert(this, setTween);
+                    }
+                    else {
+                        if(targetsAreEqual(propType, endKey)) return;
 
-	                    if(hasCustomEase())
-	                        seq.Insert(this, HOTween.To(this, getTime(frameRate), new TweenParms().Prop(bsField, new AMPlugMaterialTexScale(matInst, prop, endKey.texScale)).Ease(easeCurve)));
-	                    else
-	                        seq.Insert(this, HOTween.To(this, getTime(frameRate), new TweenParms().Prop(bsField, new AMPlugMaterialTexScale(matInst, prop, endKey.texScale)).Ease((EaseType)easeType, amplitude, period)));
-	                }
+                        tween = DOTween.To(new Vector2Plugin(), () => matInst.GetTextureScale(prop), (x) => matInst.SetTextureScale(prop, x), endKey.texScale, getTime(frameRate));
+                    }
 	                break;
 	            case AMMaterialTrack.ValueType.TexEnv:
-	                seq.Insert(new AMActionMaterialTexSet(this, frameRate, matInst, prop, texture));
+                    var texEnvTween = DOTween.To(new AMPlugValueSet<Texture>(), () => texture, (x) => matInst.SetTexture(propId, x), texture, frameCount/frameRate);
+                    texEnvTween.plugOptions = new AMPlugValueSetOptions(seq.sequence);
+                    seq.Insert(this, texEnvTween);
 	                break;
 	        }
+
+            if(tween != null) {
+                if(hasCustomEase())
+                    tween.SetEase(easeCurve);
+                else
+                    tween.SetEase((Ease)easeType, amplitude, period);
+
+                seq.Insert(this, tween);
+            }
 	    }
 
 	    public string getValueString(AMMaterialTrack.ValueType valueType, AMMaterialKey nextKey, bool brief) {
@@ -219,14 +236,15 @@ namespace MateAnimator{
 	    }
 
 	    public bool targetsAreEqual(AMMaterialTrack.ValueType valueType, AMMaterialKey nextKey) {
-	        if(nextKey) {
-	            if(valueType == AMMaterialTrack.ValueType.Float || valueType == AMMaterialTrack.ValueType.Range) return val == nextKey.val;
-	            if(valueType == AMMaterialTrack.ValueType.Vector) return vector == nextKey.vector;
-	            if(valueType == AMMaterialTrack.ValueType.Color) return color == nextKey.color;
-	            if(valueType == AMMaterialTrack.ValueType.TexOfs) return texOfs == nextKey.texOfs;
-	            if(valueType == AMMaterialTrack.ValueType.TexScale) return texScale == nextKey.texScale;
-	        }
-	        return false;
+            if(nextKey) {
+                if(valueType == AMMaterialTrack.ValueType.Float || valueType == AMMaterialTrack.ValueType.Range) return val == nextKey.val;
+                if(valueType == AMMaterialTrack.ValueType.Vector) return vector == nextKey.vector;
+                if(valueType == AMMaterialTrack.ValueType.Color) return color == nextKey.color;
+                if(valueType == AMMaterialTrack.ValueType.TexOfs) return texOfs == nextKey.texOfs;
+                if(valueType == AMMaterialTrack.ValueType.TexScale) return texScale == nextKey.texScale;
+            }
+
+            return true;
 	    }
 
 	    public object getValue(AMMaterialTrack.ValueType valueType) {

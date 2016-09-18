@@ -2,58 +2,15 @@
 using System.Collections;
 using System.Collections.Generic;
 
-using Holoville.HOTween;
-using Holoville.HOTween.Plugins.Core;
-using Holoville.HOTween.Core;
+using DG.Tweening;
+using DG.Tweening.Core;
+using DG.Tweening.Core.Easing;
+using DG.Tweening.Core.Enums;
+using DG.Tweening.Plugins;
+using DG.Tweening.Plugins.Core;
+using DG.Tweening.Plugins.Options;
 
-namespace MateAnimator{
-	public class AMPlugCameraSwitcher : ABSTweenPlugin {
-	    private AMCameraSwitcherKey mCamSwitcher;
-	    private int mFrameRate;
-	    private AMITarget mITarget;
-	    private Camera[] mAllCams;
-	    private float mLastElapsed;
-
-	    protected override object startVal { get { return _startVal; } set { _startVal = value; } }
-
-	    protected override object endVal { get { return _endVal; } set { _endVal = value; } }
-
-	    public AMPlugCameraSwitcher(AMCameraSwitcherKey camSwitcher, int frameRate, AMITarget itarget, Camera[] allCameras)
-	        : base(null, false) {
-	        mCamSwitcher = camSwitcher;
-	        mFrameRate = frameRate;
-	        mITarget = itarget;
-	        mAllCams = allCameras;
-	    }
-
-	    protected override float GetSpeedBasedDuration(float p_speed) {
-	        return p_speed;
-	    }
-
-	    protected override void SetChangeVal() { }
-
-	    protected override void SetIncremental(int p_diffIncr) { }
-	    protected override void SetIncrementalRestart() { }
-
-	    protected override void DoUpdate(float p_totElapsed) {
-	        AMCameraFade cf = AMCameraFade.getCameraFade();
-
-	        AMCameraSwitcherKey.PlayParam param = cf.playParam;
-	        if(param == null) {
-	            param = cf.playParam = new AMCameraSwitcherKey.PlayParam();
-	        }
-	        param.Apply(mCamSwitcher, mFrameRate, mITarget, mAllCams, p_totElapsed - mLastElapsed < 0.0f);
-
-	        mLastElapsed = p_totElapsed;
-
-	        cf.value = ease(p_totElapsed, 1f, -1f, _duration, tweenObj.easeOvershootOrAmplitude, tweenObj.easePeriod);
-	        cf.percent = p_totElapsed/_duration;
-	    }
-
-	    protected override void SetValue(object p_value) { }
-	    protected override object GetValue() { return AMCameraFade.getCameraFade().value; }
-	}
-
+namespace MateAnimator {
 	public class AMCameraSwitcherKey : AMKey {
 	    public enum Fade {
 	        CrossFade = 0,
@@ -276,10 +233,30 @@ namespace MateAnimator{
 	        if(endFrame == -1 || !hasTargets(seq.target) || targetsAreEqual(seq.target)) return;
 
 	        Camera[] allCameras = (track as AMCameraSwitcherTrack).GetCachedCameras(seq.target);
+            int frameRate = seq.take.frameRate;
+            float frameCount = getNumberOfFrames(frameRate);
+            var itarget = seq.target;
+            var _seq = seq.sequence;
 
-	        //use 'this' with property 'type' as a placeholder since AMPlugCameraSwitcher does not require any property
-	        seq.Insert(this, HOTween.To(this, getTime(seq.take.frameRate), new TweenParms().Prop("type", 
-	            new AMPlugCameraSwitcher(this, seq.take.frameRate, seq.target, allCameras))));
+            var tween = DOTween.To(new FloatPlugin(), () => 0f, (x) => {
+                AMCameraFade cf = AMCameraFade.getCameraFade();
+
+                AMCameraSwitcherKey.PlayParam param = cf.playParam;
+                if(param == null) {
+                    param = cf.playParam = new AMCameraSwitcherKey.PlayParam();
+                }
+                param.Apply(this, frameRate, itarget, allCameras, _seq.IsBackwards());
+
+                cf.percent = x/frameCount;
+                cf.value = 1.0f - cf.percent;
+            }, frameCount, frameCount/frameRate);
+
+            if(hasCustomEase())
+                tween.SetEase(easeCurve);
+            else
+                tween.SetEase((Ease)easeType, amplitude, period);
+
+            seq.Insert(this, tween);
 	    }
 	        
 	    void CameraFadeNoneTargets(int typeEnd, Color colorEnd, Camera camEnd, Camera[] allCams) {

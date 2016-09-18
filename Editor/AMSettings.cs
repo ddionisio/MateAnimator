@@ -2,7 +2,7 @@ using UnityEngine;
 using UnityEditor;
 using System.Collections;
 
-using Holoville.HOTween;
+using DG.Tweening;
 
 namespace MateAnimator{
 	public class AMSettings : EditorWindow {
@@ -107,13 +107,13 @@ namespace MateAnimator{
 	        GUILayout.Label("Loop");
 	        GUILayout.Space(2f);
 	        GUILayout.BeginHorizontal(GUI.skin.box);
-	        EditorGUIUtility.LookLikeControls(50.0f, 100.0f);
+            EditorGUIUtility.labelWidth = 50f; EditorGUIUtility.fieldWidth = 100f;
 	        loopCount = EditorGUILayout.IntField("Count", loopCount);
 	        if(loopCount < 0) loopCount = -1;
 	        loopMode = (LoopType)EditorGUILayout.EnumPopup("Mode", loopMode);
 	        GUILayout.EndHorizontal();
 
-	        EditorGUIUtility.LookLikeControls();
+	        AMEditorUtil.ResetDisplayControls();
 
 	        GUILayout.Space(2f);
 	        //pausePreviousTake = EditorGUILayout.Toggle("Pause Prev. Take", pausePreviousTake);

@@ -2,6 +2,8 @@ using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 
+using DG.Tweening;
+
 namespace MateAnimator{
 	[AddComponentMenu("")]
 	public class AMOrientationTrack : AMTrack {
@@ -37,7 +39,7 @@ namespace MateAnimator{
 	        a.frame = _frame;
 			a.SetTarget(itarget, target);
 	        // set default ease type to linear
-	        a.easeType = (int)0;// AMTween.EaseType.linear;
+	        a.easeType = (int)Ease.Linear;// AMTween.EaseType.linear;
 	        // add a new key
 	        keys.Add(a);
 	        // update cache
@@ -73,38 +75,42 @@ namespace MateAnimator{
 	    public override void previewFrame(AMITarget itarget, float frame, int frameRate, bool play, float playSpeed) {
 			Transform t = GetTarget(itarget) as Transform;
 
-	        if(keys == null || keys.Count <= 0) {
-	            return;
-	        }
+	        if(keys == null || keys.Count <= 0) return;
+
+            // if before or equal to first frame, or is the only frame
+            AMOrientationKey firstKey = keys[0] as AMOrientationKey;
+            if(firstKey.endFrame == -1 || (frame <= (float)firstKey.frame && !firstKey.canTween)) {
+                Transform keyt = firstKey.GetTarget(itarget);
+                if(keyt)
+                    t.LookAt(keyt);
+                return;
+            }
+
 	        for(int i = 0; i < keys.Count; i++) {
 				AMOrientationKey key = keys[i] as AMOrientationKey;
-				Transform keyt = key.GetTarget(itarget);
-				Transform keyet = i + 1 < keys.Count ? (keys[i+1] as AMOrientationKey).GetTarget(itarget) : null;
+                AMOrientationKey keyNext = i + 1 < keys.Count ? keys[i+1] as AMOrientationKey : null;
 
-				if(!key.canTween && frame == (float)key.endFrame && i < keys.Count - 1)
-					continue;
+                if(frame >= (float)key.endFrame && keyNext != null && (!keyNext.canTween || keyNext.endFrame != -1)) continue;
 
-	            // before first frame
-				if(frame <= key.frame) {
-					if(!keyt) return;
-					t.LookAt(keyt);
-	                return;
-	                // between first and last frame
-	            }
-				else if(frame <= key.endFrame) {
-					if(!keyt || !keyet) return;
-	                float framePositionInPath = frame - (float)keys[i].frame;
-	                if(framePositionInPath < 0f) framePositionInPath = 0f;
-	                float percentage = framePositionInPath / keys[i].getNumberOfFrames(frameRate);
-					t.rotation = key.getQuaternionAtPercent(t, keyt, keyet, percentage);
-	                return;
-	                // after last frame
-	            }
-	            else if(i == keys.Count - 2) {
-					if(!keyet) return;
-					t.LookAt(keyet);
-	                return;
-	            }
+                Transform keyt = key.GetTarget(itarget);
+
+                // if no ease
+                if(!key.canTween || keyNext == null) {
+                    if(keyt)
+                        t.LookAt(keyt);
+                    return;
+                }
+                // else easing function
+                                
+                Transform keyet = keyNext.GetTarget(itarget);
+
+                float numFrames = (float)key.getNumberOfFrames(frameRate);
+
+		        float framePositionInAction = Mathf.Clamp(frame - (float)key.frame, 0f, numFrames);
+
+                t.rotation = key.getQuaternionAtPercent(t, keyt, keyet, framePositionInAction / numFrames);
+
+                return;
 	        }
 	    }
 

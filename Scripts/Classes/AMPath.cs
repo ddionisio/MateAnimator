@@ -2,8 +2,6 @@ using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 
-using Holoville.HOTween.Core;
-
 namespace MateAnimator{
 	public struct AMPath {
 	    public Vector3[] path;
