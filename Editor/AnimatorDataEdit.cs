@@ -302,7 +302,6 @@ namespace M8.Animator {
 	        a.loopMode = dupTake.loopMode;
 	        a.frameRate = dupTake.frameRate;
 	        a.numFrames = dupTake.numFrames;
-	        a.startFrame = dupTake.startFrame;
 	        //a.lsTracks = new List<AMTrack>();
 	        //a.dictTracks = new Dictionary<int,AMTrack>();
 

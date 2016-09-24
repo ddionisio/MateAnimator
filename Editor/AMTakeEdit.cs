@@ -11,7 +11,10 @@ namespace M8.Animator {
 
 	    public int playbackSpeedIndex = 2;		// default playback speed x1
 
-	    public List<int> contextSelection = new List<int>();	// list of all frames included in the context selection
+        public float startFrame = 1f;               // first frame to render
+        public float endFrame = 100f;
+
+        public List<int> contextSelection = new List<int>();	// list of all frames included in the context selection
 	    public List<int> ghostSelection = new List<int>();		// list of all frames included in the ghost selection
 	    public List<int> contextSelectionTracks = new List<int>();
 
@@ -24,7 +27,10 @@ namespace M8.Animator {
 	        selectedFrame = 1;
 	        selectedGroup = 0;
 	        playbackSpeedIndex = 2;
-	    }
+
+            startFrame = 1f;
+            endFrame = 100f;
+        }
 
 	    // select a track by index
 	    public void selectTrack(AMTakeData take, int index, bool isShiftDown, bool isControlDown) {
@@ -156,9 +162,9 @@ namespace M8.Animator {
 	        selectedFrame = num;
 	        selectTrack(take, track, isShiftDown, isControlDown);
 
-	        if((selectedFrame < take.startFrame) || (selectedFrame > take.endFrame)) {
-	            take.startFrame = selectedFrame;
-	            take.endFrame = take.startFrame + (int)numFramesToRender - 1;
+	        if((selectedFrame < startFrame) || (selectedFrame > endFrame)) {
+	            startFrame = selectedFrame;
+	            endFrame = startFrame + (int)numFramesToRender - 1;
 	        }
 	        take.selectedFrame = selectedFrame;
 	    }

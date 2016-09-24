@@ -16,9 +16,7 @@ namespace M8.Animator {
 	    public string name;					// take name
 	    public int frameRate = 24;				// frames per second
 	    public int numFrames = 1440;			// number of frames
-	    public float startFrame = 1f;				// first frame to render
-	    public float endFrame = 100f;
-	    
+	    	    
 	    public int numLoop = 1; //number of times this plays before it is done
 	    public LoopType loopMode = LoopType.Restart;
 	    public int loopBackToFrame = -1; //set this to loop back at given frame when sequence is complete, make sure numLoop = 1 and loopMode is Restart
@@ -66,8 +64,6 @@ namespace M8.Animator {
 	        name = "Take 1";
 	        frameRate = 24;
 	        numFrames = 1440;
-	        startFrame = 1f;
-	        endFrame = 100f;
 
 	        numLoop = 1;
 	        loopMode = LoopType.Restart;

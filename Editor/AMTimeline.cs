@@ -1769,11 +1769,11 @@ namespace M8.Animator {
 	                mouseOverElement = (int)ElementType.Other;
 	                if(dragType == (int)DragType.MoveSelection || dragType == (int)DragType.ContextSelection || dragType == (int)DragType.ResizeAction) {
 	                    if(ticker == 0) {
-	                        aData.currentTake.startFrame = Mathf.Clamp(++aData.currentTake.startFrame, 1, aData.currentTake.numFrames);
-	                        mouseXOverFrame = Mathf.Clamp((int)aData.currentTake.startFrame + (int)numFramesToRender, 1, aData.currentTake.numFrames);
+                            TakeEditCurrent().startFrame = Mathf.Clamp(++TakeEditCurrent().startFrame, 1, aData.currentTake.numFrames);
+	                        mouseXOverFrame = Mathf.Clamp((int)TakeEditCurrent().startFrame + (int)numFramesToRender, 1, aData.currentTake.numFrames);
 	                    }
 	                    else {
-	                        mouseXOverFrame = Mathf.Clamp((int)aData.currentTake.startFrame + (int)numFramesToRender, 1, aData.currentTake.numFrames);
+	                        mouseXOverFrame = Mathf.Clamp((int)TakeEditCurrent().startFrame + (int)numFramesToRender, 1, aData.currentTake.numFrames);
 	                    }
 	                }
 	                // drag left, over tracks
@@ -1783,25 +1783,25 @@ namespace M8.Animator {
 	                tickerSpeed = Mathf.Clamp(50 - Mathf.CeilToInt(difference / 1.5f), 1, 50);
 	                if(dragType == (int)DragType.MoveSelection || dragType == (int)DragType.ContextSelection || dragType == (int)DragType.ResizeAction) {
 	                    if(ticker == 0) {
-	                        aData.currentTake.startFrame = Mathf.Clamp(--aData.currentTake.startFrame, 1, aData.currentTake.numFrames);
-	                        mouseXOverFrame = Mathf.Clamp((int)aData.currentTake.startFrame - 2, 1, aData.currentTake.numFrames);
+	                        TakeEditCurrent().startFrame = Mathf.Clamp(--TakeEditCurrent().startFrame, 1, aData.currentTake.numFrames);
+	                        mouseXOverFrame = Mathf.Clamp((int)TakeEditCurrent().startFrame - 2, 1, aData.currentTake.numFrames);
 	                    }
 	                    else {
-	                        mouseXOverFrame = Mathf.Clamp((int)aData.currentTake.startFrame, 1, aData.currentTake.numFrames);
+	                        mouseXOverFrame = Mathf.Clamp((int)TakeEditCurrent().startFrame, 1, aData.currentTake.numFrames);
 	                    }
 	                }
 	            }
 	        }
 	        Rect rectHScrollbar = new Rect(width_track + width_playback_controls, position.height - height_indicator_footer + 2f, position.width - (width_track + width_playback_controls) - (aData.isInspectorOpen ? width_inspector_open - 4f : width_inspector_closed) - 21f, height_indicator_footer - 2f);
 	        float frame_width_HScrollbar = ((rectHScrollbar.width - 44f - (aData.isInspectorOpen ? 4f : 0f)) / ((float)aData.currentTake.numFrames - 1f));
-	        Rect rectResizeHScrollbarLeft = new Rect(rectHScrollbar.x + 18f + frame_width_HScrollbar * (aData.currentTake.startFrame - 1f), rectHScrollbar.y + 2f, 15f, 15f);
-	        Rect rectResizeHScrollbarRight = new Rect(rectHScrollbar.x + 18f + frame_width_HScrollbar * (aData.currentTake.endFrame - 1f) - 3f, rectHScrollbar.y + 2f, 15f, 15f);
+	        Rect rectResizeHScrollbarLeft = new Rect(rectHScrollbar.x + 18f + frame_width_HScrollbar * (TakeEditCurrent().startFrame - 1f), rectHScrollbar.y + 2f, 15f, 15f);
+	        Rect rectResizeHScrollbarRight = new Rect(rectHScrollbar.x + 18f + frame_width_HScrollbar * (TakeEditCurrent().endFrame - 1f) - 3f, rectHScrollbar.y + 2f, 15f, 15f);
 	        Rect rectHScrollbarThumb = new Rect(rectResizeHScrollbarLeft.x, rectResizeHScrollbarLeft.y - 2f, rectResizeHScrollbarRight.x - rectResizeHScrollbarLeft.x + rectResizeHScrollbarRight.width, rectResizeHScrollbarLeft.height);
 	        if(!aData.isInspectorOpen) rectHScrollbar.width += 4f;
 	        // if number of frames fit on screen, disable horizontal scrollbar and set startframe to 1
 	        if(aData.currentTake.numFrames < numFramesToRender) {
 	            GUI.HorizontalScrollbar(rectHScrollbar, 1f, 1f, 1f, 1f);
-	            aData.currentTake.startFrame = 1;
+	            TakeEditCurrent().startFrame = 1;
 	        }
 	        else {
 	            bool hideResizeThumbs = false;
@@ -1812,8 +1812,8 @@ namespace M8.Animator {
 	            }
 	            mouseXOverHScrollbarFrame = Mathf.CeilToInt(aData.currentTake.numFrames * ((e.mousePosition.x - rectHScrollbar.x - GUI.skin.horizontalScrollbarLeftButton.fixedWidth) / (rectHScrollbar.width - GUI.skin.horizontalScrollbarLeftButton.fixedWidth * 2)));
 	            if(!rectResizeHScrollbarLeft.Contains(e.mousePosition) && !rectResizeHScrollbarRight.Contains(e.mousePosition) && EditorWindow.mouseOverWindow == this && dragType != (int)DragType.ResizeHScrollbarLeft && dragType != (int)DragType.ResizeHScrollbarRight && mouseOverElement != (int)ElementType.ResizeHScrollbarLeft && mouseOverElement != (int)ElementType.ResizeHScrollbarRight)
-	                aData.currentTake.startFrame = Mathf.Clamp((int)GUI.HorizontalScrollbar(rectHScrollbar, (float)aData.currentTake.startFrame, (int)numFramesToRender - 1f, 1f, aData.currentTake.numFrames), 1, aData.currentTake.numFrames);
-	            else Mathf.Clamp(GUI.HorizontalScrollbar(rectHScrollbar, (float)aData.currentTake.startFrame, (int)numFramesToRender - 1f, 1f, aData.currentTake.numFrames), 1f, aData.currentTake.numFrames);
+	                TakeEditCurrent().startFrame = Mathf.Clamp((int)GUI.HorizontalScrollbar(rectHScrollbar, (float)TakeEditCurrent().startFrame, (int)numFramesToRender - 1f, 1f, aData.currentTake.numFrames), 1, aData.currentTake.numFrames);
+	            else Mathf.Clamp(GUI.HorizontalScrollbar(rectHScrollbar, (float)TakeEditCurrent().startFrame, (int)numFramesToRender - 1f, 1f, aData.currentTake.numFrames), 1f, aData.currentTake.numFrames);
 	            // scrollbar bg overlay (used to hide inconsistent thumb)
 	            GUI.Box(new Rect(rectHScrollbar.x + 18f, rectHScrollbar.y, rectHScrollbar.width - 18f * 2f, rectHScrollbar.height), "", GUI.skin.horizontalScrollbar);
 	            // scrollbar thumb overlay (used to hide inconsistent thumb)
@@ -1839,7 +1839,7 @@ namespace M8.Animator {
 	                mouseOverElement = (int)ElementType.ResizeHScrollbarRight;
 	            }
 	        }
-	        aData.currentTake.endFrame = aData.currentTake.startFrame + (int)numFramesToRender - 1;
+	        TakeEditCurrent().endFrame = TakeEditCurrent().startFrame + (int)numFramesToRender - 1;
 	        if(rectHScrollbar.Contains(e.mousePosition) && mouseOverElement == (int)ElementType.None) {
 	            mouseOverElement = (int)ElementType.Other;
 	        }
@@ -1867,13 +1867,13 @@ namespace M8.Animator {
 	        }
 	        int key_dist = 5;
 	        if(numFramesToRender >= 100) key_dist = Mathf.FloorToInt(numFramesToRender / 100) * 10;
-	        int firstMarkedKey = (int)aData.currentTake.startFrame;
+	        int firstMarkedKey = (int)TakeEditCurrent().startFrame;
 	        if(firstMarkedKey % key_dist != 0 && firstMarkedKey != 1) {
 	            firstMarkedKey += key_dist - firstMarkedKey % key_dist;
 	        }
 	        float lastNumberX = -1f;
-	        for(int i = firstMarkedKey; i <= (int)aData.currentTake.endFrame; i += key_dist) {
-	            float newKeyNumberX = width_track + current_width_frame * (i - (int)aData.currentTake.startFrame) - 1f;
+	        for(int i = firstMarkedKey; i <= (int)TakeEditCurrent().endFrame; i += key_dist) {
+	            float newKeyNumberX = width_track + current_width_frame * (i - (int)TakeEditCurrent().startFrame) - 1f;
 	            string key_number;
 	            if(oData.time_numbering) key_number = frameToTime(i, (float)aData.currentTake.frameRate).ToString("N2");
 	            else key_number = i.ToString();
@@ -1883,7 +1883,7 @@ namespace M8.Animator {
 	                rectKeyNumber.width = position.width - (aData.isInspectorOpen ? width_inspector_open : width_inspector_closed) - 20f - rectKeyNumber.x;
 	                didCutLabel = true;
 	            }
-	            if(!(didCutLabel && aData.currentTake.endFrame == aData.currentTake.numFrames)) {
+	            if(!(didCutLabel && TakeEditCurrent().endFrame == aData.currentTake.numFrames)) {
 	                if(rectKeyNumber.x > lastNumberX + 3f) {
 	                    GUI.Label(rectKeyNumber, key_number);
 	                    lastNumberX = rectKeyNumber.x + GUI.skin.label.CalcSize(new GUIContent(key_number)).x;
@@ -1944,7 +1944,7 @@ namespace M8.Animator {
 	        GUILayout.BeginVertical();
 	        // frames vertical	
 	        GUILayout.BeginHorizontal(GUILayout.Height(height_track));
-	        mouseXOverFrame = (int)aData.currentTake.startFrame + Mathf.CeilToInt((e.mousePosition.x - width_track) / current_width_frame) - 1;
+	        mouseXOverFrame = (int)TakeEditCurrent().startFrame + Mathf.CeilToInt((e.mousePosition.x - width_track) / current_width_frame) - 1;
 	        if(dragType == (int)DragType.CursorHand && justStartedHandGrab) {
 	            startScrubFrame = mouseXOverFrame;
 	            justStartedHandGrab = false;
@@ -1993,8 +1993,8 @@ namespace M8.Animator {
 	        if((oData.showFramesForCollapsedTracks || isAnyTrackFoldedOut) && (trackCount > 0)) drawIndicator(aData.currentTake.selectedFrame);
 	        #endregion
 	        #region horizontal scrollbar tooltip
-	        string strHScrollbarLeftTooltip = (oData.time_numbering ? frameToTime((int)aData.currentTake.startFrame, (float)aData.currentTake.frameRate).ToString("N2") : aData.currentTake.startFrame.ToString());
-	        string strHScrollbarRightTooltip = (oData.time_numbering ? frameToTime((int)aData.currentTake.endFrame, (float)aData.currentTake.frameRate).ToString("N2") : aData.currentTake.endFrame.ToString());
+	        string strHScrollbarLeftTooltip = (oData.time_numbering ? frameToTime((int)TakeEditCurrent().startFrame, (float)aData.currentTake.frameRate).ToString("N2") : TakeEditCurrent().startFrame.ToString());
+	        string strHScrollbarRightTooltip = (oData.time_numbering ? frameToTime((int)TakeEditCurrent().endFrame, (float)aData.currentTake.frameRate).ToString("N2") : TakeEditCurrent().endFrame.ToString());
 	        GUIStyle styleLabelCenter = new GUIStyle(GUI.skin.label);
 	        styleLabelCenter.alignment = TextAnchor.MiddleCenter;
 	        Vector2 _label_size;
@@ -2618,7 +2618,8 @@ namespace M8.Animator {
 	        //string tooltip = "";
 	        int t = _track.id;
 	        AMTakeData curTake = aData.currentTake;
-	        int selectedTrack = TakeEdit(curTake).selectedTrack;
+            AMTakeEdit curTakeEdit = TakeEdit(curTake);
+	        int selectedTrack = curTakeEdit.selectedTrack;
 	        // frames start
 	        if(!_track.foldout && !oData.showFramesForCollapsedTracks) {
 	            track_y += height_track_foldin;
@@ -2644,7 +2645,7 @@ namespace M8.Animator {
 	        }
 	        else {
 	            texFrSet.wrapMode = TextureWrapMode.Repeat;
-	            float startPos = curTake.startFrame % 5f;
+	            float startPos = curTakeEdit.startFrame % 5f;
 	            GUI.DrawTextureWithTexCoords(rectFramesBirdsEye, texFrSet, new Rect(startPos / 5f, 0f, numFrames / 5f, 1f));
 	            float birdsEyeFadeAlpha = (1f - (current_width_frame - width_frame_birdseye_min)) / 1.2f;
 	            if(birdsEyeFadeAlpha > 0f) {
@@ -2662,7 +2663,7 @@ namespace M8.Animator {
 	                // dragging only one frame that has a key. do not show ghost selection
 	                if(birdseye && TakeEditCurrent().contextSelection.Count == 2 && TakeEditCurrent().contextSelection[0] == TakeEditCurrent().contextSelection[1] && _track.hasKeyOnFrame(TakeEditCurrent().contextSelection[0])) {
 	                    GUI.color = new Color(0f, 0f, 1f, .5f);
-	                    GUI.DrawTexture(new Rect(current_width_frame * (TakeEditCurrent().ghostSelection[0] - curTake.startFrame) - width_birdseye / 2f + current_width_frame / 2f, 0f, width_birdseye, _current_height_frame), texKeyBirdsEye);
+	                    GUI.DrawTexture(new Rect(current_width_frame * (TakeEditCurrent().ghostSelection[0] - curTakeEdit.startFrame) - width_birdseye / 2f + current_width_frame / 2f, 0f, width_birdseye, _current_height_frame), texKeyBirdsEye);
 	                    GUI.color = Color.white;
 	                }
 	                else if(TakeEditCurrent().ghostSelection != null) {
@@ -2671,18 +2672,18 @@ namespace M8.Animator {
 	                    for(int i = 0; i < TakeEditCurrent().ghostSelection.Count; i += 2) {
 	                        int contextFrameStart = TakeEditCurrent().ghostSelection[i];
 	                        int contextFrameEnd = TakeEditCurrent().ghostSelection[i + 1];
-	                        if(contextFrameStart < (int)curTake.startFrame) contextFrameStart = (int)curTake.startFrame;
-	                        if(contextFrameEnd > (int)curTake.endFrame) contextFrameEnd = (int)curTake.endFrame;
+	                        if(contextFrameStart < (int)curTakeEdit.startFrame) contextFrameStart = (int)curTakeEdit.startFrame;
+	                        if(contextFrameEnd > (int)curTakeEdit.endFrame) contextFrameEnd = (int)curTakeEdit.endFrame;
 	                        float contextWidth = (contextFrameEnd - contextFrameStart + 1) * current_width_frame;
-	                        GUI.DrawTexture(new Rect(rectFramesBirdsEye.x + (contextFrameStart - curTake.startFrame) * current_width_frame, rectFramesBirdsEye.y + 1f, contextWidth, rectFramesBirdsEye.height - 2f), EditorGUIUtility.whiteTexture);
+	                        GUI.DrawTexture(new Rect(rectFramesBirdsEye.x + (contextFrameStart - curTakeEdit.startFrame) * current_width_frame, rectFramesBirdsEye.y + 1f, contextWidth, rectFramesBirdsEye.height - 2f), EditorGUIUtility.whiteTexture);
 	                    }
 	                    // draw birds eye ghost key frames
 	                    GUI.color = new Color(0f, 0f, 1f, .5f);
-	                    foreach(int _key_frame in TakeEditCurrent().getKeyFramesInGhostSelection(curTake, (int)curTake.startFrame, (int)curTake.endFrame, t)) {
+	                    foreach(int _key_frame in TakeEditCurrent().getKeyFramesInGhostSelection(curTake, (int)curTakeEdit.startFrame, (int)curTakeEdit.endFrame, t)) {
 	                        if(birdseye)
-	                            GUI.DrawTexture(new Rect(current_width_frame * (_key_frame - curTake.startFrame) - width_birdseye / 2f + current_width_frame / 2f, 0f, width_birdseye, _current_height_frame), texKeyBirdsEye);
+	                            GUI.DrawTexture(new Rect(current_width_frame * (_key_frame - curTakeEdit.startFrame) - width_birdseye / 2f + current_width_frame / 2f, 0f, width_birdseye, _current_height_frame), texKeyBirdsEye);
 	                        else {
-	                            Rect rectFrame = new Rect(current_width_frame * (_key_frame - curTake.startFrame), 0f, current_width_frame, _current_height_frame);
+	                            Rect rectFrame = new Rect(current_width_frame * (_key_frame - curTakeEdit.startFrame), 0f, current_width_frame, _current_height_frame);
 	                            GUI.DrawTexture(new Rect(rectFrame.x + 2f, rectFrame.y + rectFrame.height - (rectFrame.width - 4f) - 2f, rectFrame.width - 4f, rectFrame.width - 4f), texFrKey);
 	                        }
 	                    }
@@ -2696,10 +2697,10 @@ namespace M8.Animator {
 	                    GUI.color = new Color(86f / 255f, 95f / 255f, 178f / 255f, .8f);
 	                    int contextFrameStart = TakeEditCurrent().contextSelection[i];
 	                    int contextFrameEnd = TakeEditCurrent().contextSelection[i + 1];
-	                    if(contextFrameStart < (int)curTake.startFrame) contextFrameStart = (int)curTake.startFrame;
-	                    if(contextFrameEnd > (int)curTake.endFrame) contextFrameEnd = (int)curTake.endFrame;
+	                    if(contextFrameStart < (int)curTakeEdit.startFrame) contextFrameStart = (int)curTakeEdit.startFrame;
+	                    if(contextFrameEnd > (int)curTakeEdit.endFrame) contextFrameEnd = (int)curTakeEdit.endFrame;
 	                    float contextWidth = (contextFrameEnd - contextFrameStart + 1) * current_width_frame;
-	                    Rect rectContextSelection = new Rect(rectFramesBirdsEye.x + (contextFrameStart - curTake.startFrame) * current_width_frame, rectFramesBirdsEye.y + 1f, contextWidth, rectFramesBirdsEye.height - 2f);
+	                    Rect rectContextSelection = new Rect(rectFramesBirdsEye.x + (contextFrameStart - curTakeEdit.startFrame) * current_width_frame, rectFramesBirdsEye.y + 1f, contextWidth, rectFramesBirdsEye.height - 2f);
 	                    GUI.DrawTexture(rectContextSelection, EditorGUIUtility.whiteTexture);
 	                    if(dragType != (int)DragType.ContextSelection) EditorGUIUtility.AddCursorRect(rectContextSelection, MouseCursor.SlideArrow);
 	                }
@@ -2716,9 +2717,9 @@ namespace M8.Animator {
 
 	                selected = ((isTrackSelected) && TakeEditCurrent().isFrameSelected(key.frame));
 	                //_track.sortKeys();
-	                if(key.frame < curTake.startFrame) continue;
-	                if(key.frame > curTake.endFrame) break;
-	                Rect rectKeyBirdsEye = new Rect(current_width_frame * (key.frame - curTake.startFrame) - width_birdseye / 2f + current_width_frame / 2f, 0f, width_birdseye, _current_height_frame);
+	                if(key.frame < curTakeEdit.startFrame) continue;
+	                if(key.frame > curTakeEdit.endFrame) break;
+	                Rect rectKeyBirdsEye = new Rect(current_width_frame * (key.frame - curTakeEdit.startFrame) - width_birdseye / 2f + current_width_frame / 2f, 0f, width_birdseye, _current_height_frame);
 	                if(selected) GUI.color = Color.blue;
 	                GUI.DrawTexture(rectKeyBirdsEye, texKeyBirdsEye);
 	                GUI.color = Color.white;
@@ -2745,9 +2746,9 @@ namespace M8.Animator {
 	                if(!key) continue;
 
 	                //_track.sortKeys();
-	                if(key.frame < curTake.startFrame) continue;
-	                if(key.frame > curTake.endFrame) break;
-	                Rect rectFrame = new Rect(current_width_frame * (key.frame - curTake.startFrame), 0f, current_width_frame, _current_height_frame);
+	                if(key.frame < curTakeEdit.startFrame) continue;
+	                if(key.frame > curTakeEdit.endFrame) break;
+	                Rect rectFrame = new Rect(current_width_frame * (key.frame - curTakeEdit.startFrame), 0f, current_width_frame, _current_height_frame);
 	                GUI.DrawTexture(new Rect(rectFrame.x + 2f, rectFrame.y + rectFrame.height - (rectFrame.width - 4f) - 2f, rectFrame.width - 4f, rectFrame.width - 4f), texFrKey);
 	            }
 	        }
@@ -2756,8 +2757,8 @@ namespace M8.Animator {
 	            int prevFrame = curTake.selectedFrame;
 	            bool clickedOnBirdsEyeKey = false;
 	            for(int i = birdseyeKeyFrames.Count - 1; i >= 0; i--) {
-	                if(birdseyeKeyFrames[i] > (int)curTake.endFrame) continue;
-	                if(birdseyeKeyFrames[i] < (int)curTake.startFrame) break;
+	                if(birdseyeKeyFrames[i] > (int)curTakeEdit.endFrame) continue;
+	                if(birdseyeKeyFrames[i] < (int)curTakeEdit.startFrame) break;
 	                if(birdseyeKeyRects[i].Contains(e.mousePosition)) {
 	                    clickedOnBirdsEyeKey = true;
 	                    // left click
@@ -2781,7 +2782,7 @@ namespace M8.Animator {
 	                }
 	            }
 	            if(!clickedOnBirdsEyeKey) {
-	                int _frame_num_birdseye = (int)curTake.startFrame + Mathf.CeilToInt(e.mousePosition.x / current_width_frame) - 1;
+	                int _frame_num_birdseye = (int)curTakeEdit.startFrame + Mathf.CeilToInt(e.mousePosition.x / current_width_frame) - 1;
 	                // left click
 	                if(e.button == 0) {
 	                    // select the frame
@@ -2811,7 +2812,7 @@ namespace M8.Animator {
 	            #region timeline actions
 	            // draw each action with seperate textures and buttons for these tracks
 	            bool drawEachAction = _track is AMAnimationTrack || _track is AMAudioTrack;
-	            int _startFrame = (int)curTake.startFrame;
+	            int _startFrame = (int)curTakeEdit.startFrame;
 	            int _endFrame = (int)(_startFrame + numFrames - 1);
 	            int action_startFrame, action_endFrame, renderFrameStart, renderFrameEnd;
 	            int cached_action_startFrame = -1, cached_action_endFrame = -1;
@@ -3045,7 +3046,7 @@ namespace M8.Animator {
 	                        Rect waveFormRect = new Rect(0, 0, 1, 1);
 	                        float endFrame = _key.getStartFrame() + _key.getNumberOfFrames(curTake.frameRate);
 	                        if(_key.loop) {
-	                            endFrame = curTake.endFrame;
+	                            endFrame = curTakeEdit.endFrame;
 	                            waveFormRect.width = (endFrame - _key.getStartFrame()) / oneShotLength;
 	                        }
 	                        if(_track.keys.Count > i + 1) {
@@ -3054,12 +3055,12 @@ namespace M8.Animator {
 	                                waveFormRect.width = (_track.keys[i+1].getStartFrame() - _key.getStartFrame())/oneShotLength;
 	                            }
 	                        }
-	                        if(_key.getStartFrame() < curTake.startFrame) {
-	                            waveFormRect.x = (curTake.startFrame - _key.getStartFrame()) / oneShotLength;
+	                        if(_key.getStartFrame() < curTakeEdit.startFrame) {
+	                            waveFormRect.x = (curTakeEdit.startFrame - _key.getStartFrame()) / oneShotLength;
 	                            waveFormRect.width -= waveFormRect.x;
 	                        }
-	                        if(curTake.endFrame < endFrame) {
-	                            waveFormRect.width += (curTake.endFrame - endFrame) / oneShotLength;
+	                        if(curTakeEdit.endFrame < endFrame) {
+	                            waveFormRect.width += (curTakeEdit.endFrame - endFrame) / oneShotLength;
 	                        }
 	                        Texture2D waveform = AssetPreview.GetAssetPreview(_key.audioClip);
 	                        if(waveform) {
@@ -3150,7 +3151,7 @@ namespace M8.Animator {
 	            if(!drawEachAction) {
 	                // timeline action button
 	                if(GUI.Button(rectTimelineActions,/*new GUIContent("",tooltip)*/"", "label") && dragType == (int)DragType.None) {
-	                    int _frame_num_action = (int)curTake.startFrame + Mathf.CeilToInt(e.mousePosition.x / current_width_frame) - 1;
+	                    int _frame_num_action = (int)curTakeEdit.startFrame + Mathf.CeilToInt(e.mousePosition.x / current_width_frame) - 1;
 	                    AMKey _action = _track.getKeyContainingFrame(_frame_num_action);
 	                    int prevFrame = curTake.selectedFrame;
 	                    // timeline select
@@ -4420,7 +4421,7 @@ namespace M8.Animator {
 
 	    void drawIndicator(int frame) {
 	        // draw the indicator texture on the timeline
-	        int _startFrame = (int)aData.currentTake.startFrame;
+	        int _startFrame = (int)TakeEditCurrent().startFrame;
 	        // abort if frame not rendered
 	        if(frame < _startFrame) return;
 	        if(frame > (_startFrame + numFramesToRender - 1)) return;
@@ -4532,7 +4533,7 @@ namespace M8.Animator {
 	                startZoomMousePosition = currentMousePosition;
 	                zoomDirectionMousePosition = currentMousePosition;
 	                startZoomValue = aData.zoom;
-	                startFrame = aData.currentTake.startFrame;
+	                startFrame = TakeEditCurrent().startFrame;
 	                startScrollViewValue = scrollViewValue.y;
 	                dragType = (int)DragType.CursorZoom;
 	                didPeakZoom = false;
@@ -4663,8 +4664,8 @@ namespace M8.Animator {
 	            }
 	            else if(dragType == (int)DragType.TimelineScrub) {
 	                int frame = mouseXOverFrame;
-	                if(frame < (int)aData.currentTake.startFrame) frame = (int)aData.currentTake.startFrame;
-	                else if(frame > (int)aData.currentTake.endFrame) frame = (int)aData.currentTake.endFrame;
+	                if(frame < (int)TakeEditCurrent().startFrame) frame = (int)TakeEditCurrent().startFrame;
+	                else if(frame > (int)TakeEditCurrent().endFrame) frame = (int)TakeEditCurrent().endFrame;
 	                selectFrame(frame);
 	                #endregion
 	                #region resize action
@@ -4730,18 +4731,18 @@ namespace M8.Animator {
 	                #region resize horizontal scrollbar left
 	            }
 	            else if(dragType == (int)DragType.ResizeHScrollbarLeft) {
-	                if(mouseXOverHScrollbarFrame <= 0) aData.currentTake.startFrame = 1;
-	                else if(mouseXOverHScrollbarFrame > aData.currentTake.numFrames) aData.currentTake.startFrame = aData.currentTake.numFrames;
-	                else aData.currentTake.startFrame = mouseXOverHScrollbarFrame;
+	                if(mouseXOverHScrollbarFrame <= 0) TakeEditCurrent().startFrame = 1;
+	                else if(mouseXOverHScrollbarFrame > aData.currentTake.numFrames) TakeEditCurrent().startFrame = aData.currentTake.numFrames;
+	                else TakeEditCurrent().startFrame = mouseXOverHScrollbarFrame;
 	                #endregion
 	                #region resize horizontal scrollbar right
 	            }
 	            else if(dragType == (int)DragType.ResizeHScrollbarRight) {
-	                if(mouseXOverHScrollbarFrame <= 0) aData.currentTake.endFrame = 1;
-	                else if(mouseXOverHScrollbarFrame > aData.currentTake.numFrames) aData.currentTake.endFrame = aData.currentTake.numFrames;
-	                else aData.currentTake.endFrame = mouseXOverHScrollbarFrame;
+	                if(mouseXOverHScrollbarFrame <= 0) TakeEditCurrent().endFrame = 1;
+	                else if(mouseXOverHScrollbarFrame > aData.currentTake.numFrames) TakeEditCurrent().endFrame = aData.currentTake.numFrames;
+	                else TakeEditCurrent().endFrame = mouseXOverHScrollbarFrame;
 	                int min = Mathf.FloorToInt((position.width - width_track - 18f - (aData.isInspectorOpen ? width_inspector_open : width_inspector_closed)) / (height_track - height_action_min));
-	                if(aData.currentTake.startFrame > aData.currentTake.endFrame - min) aData.currentTake.startFrame = aData.currentTake.endFrame - min;
+	                if(TakeEditCurrent().startFrame > TakeEditCurrent().endFrame - min) TakeEditCurrent().startFrame = TakeEditCurrent().endFrame - min;
 	                #endregion
 	                #region cursor zoom
 	            }
@@ -4749,17 +4750,17 @@ namespace M8.Animator {
 	                if(dragPan) {
 	                    if(didPeakZoom) {
 	                        if(wasZoomingIn && currentMousePosition.x <= cachedZoomMousePosition.x) {
-	                            startFrame = aData.currentTake.startFrame;
+	                            startFrame = TakeEditCurrent().startFrame;
 	                            zoomDirectionMousePosition.x = currentMousePosition.x;
 	                        }
 	                        else if(!wasZoomingIn && currentMousePosition.x >= cachedZoomMousePosition.x) {
-	                            startFrame = aData.currentTake.startFrame;
+	                            startFrame = TakeEditCurrent().startFrame;
 	                            zoomDirectionMousePosition.x = currentMousePosition.x;
 	                        }
 	                        didPeakZoom = false;
 	                    }
-	                    float frameDiff = aData.currentTake.endFrame - aData.currentTake.startFrame;
-	                    float framesInView = (aData.currentTake.endFrame-aData.currentTake.startFrame);
+	                    float frameDiff = TakeEditCurrent().endFrame - TakeEditCurrent().startFrame;
+	                    float framesInView = (TakeEditCurrent().endFrame-TakeEditCurrent().startFrame);
 	                    float areaWidth = position.width - width_track - (aData.isInspectorOpen ? width_inspector_open - 4f : width_inspector_closed) - 21f;
 	                    float currFrame = startFrame + (zoomDirectionMousePosition.x- currentMousePosition.x) * (framesInView/areaWidth);
 	                    if(currFrame <= 1) {
@@ -4776,8 +4777,8 @@ namespace M8.Animator {
 	                        didPeakZoom = true;
 	                    }
 
-	                    aData.currentTake.startFrame = currFrame;
-	                    aData.currentTake.endFrame = aData.currentTake.startFrame + frameDiff;
+	                    TakeEditCurrent().startFrame = currFrame;
+	                    TakeEditCurrent().endFrame = TakeEditCurrent().startFrame + frameDiff;
 	                    scrollViewValue.y = startScrollViewValue + (zoomDirectionMousePosition.y - currentMousePosition.y);
 	                }
 	                else {
@@ -4859,9 +4860,9 @@ namespace M8.Animator {
 	        float speed = (int)((Mathf.Clamp(Mathf.Abs(handDragAccelaration), 0, 200) / 12) * (aData.zoom + 0.2f));
 	        if(handDragAccelaration > 0) {
 
-	            if(aData.currentTake.endFrame < aData.currentTake.numFrames) {
-	                aData.currentTake.startFrame += speed;
-	                aData.currentTake.endFrame += speed;
+	            if(TakeEditCurrent().endFrame < aData.currentTake.numFrames) {
+	                TakeEditCurrent().startFrame += speed;
+	                TakeEditCurrent().endFrame += speed;
 	                if(ticker % 2 == 0) handDragAccelaration--;
 	            }
 	            else {
@@ -4869,9 +4870,9 @@ namespace M8.Animator {
 	            }
 	        }
 	        else if(handDragAccelaration < 0) {
-	            if(aData.currentTake.startFrame > 1f) {
-	                aData.currentTake.startFrame -= speed;
-	                aData.currentTake.endFrame -= speed;
+	            if(TakeEditCurrent().startFrame > 1f) {
+	                TakeEditCurrent().startFrame -= speed;
+	                TakeEditCurrent().endFrame -= speed;
 	                if(ticker % 2 == 0) handDragAccelaration++;
 	            }
 	            else {
@@ -4946,21 +4947,21 @@ namespace M8.Animator {
 	        if(aData.currentTake == null) return;
 
 	        int min = Mathf.FloorToInt((position.width - width_track - 18f - (aData.isInspectorOpen ? width_inspector_open : width_inspector_closed)) / (oData.disableTimelineActions ? height_track / 2f : height_track - height_action_min));
-	        int _mouseXOverFrame = (int)aData.currentTake.startFrame + Mathf.CeilToInt((e.mousePosition.x - width_track) / current_width_frame) - 1;
+	        int _mouseXOverFrame = (int)TakeEditCurrent().startFrame + Mathf.CeilToInt((e.mousePosition.x - width_track) / current_width_frame) - 1;
 	        // move frames with hand cursor
 	        if(dragType == (int)DragType.CursorHand && !justStartedHandGrab) {
 	            if(_mouseXOverFrame != startScrubFrame) {
-	                float numFrames = aData.currentTake.endFrame - aData.currentTake.startFrame;
+	                float numFrames = TakeEditCurrent().endFrame - TakeEditCurrent().startFrame;
 	                float dist_hand_drag = startScrubFrame - _mouseXOverFrame;
-	                aData.currentTake.startFrame += dist_hand_drag;
-	                aData.currentTake.endFrame += dist_hand_drag;
-	                if(aData.currentTake.startFrame < 1f) {
-	                    aData.currentTake.startFrame = 1f;
-	                    aData.currentTake.endFrame += numFrames - (aData.currentTake.endFrame - aData.currentTake.startFrame);
+	                TakeEditCurrent().startFrame += dist_hand_drag;
+	                TakeEditCurrent().endFrame += dist_hand_drag;
+	                if(TakeEditCurrent().startFrame < 1f) {
+	                    TakeEditCurrent().startFrame = 1f;
+	                    TakeEditCurrent().endFrame += numFrames - (TakeEditCurrent().endFrame - TakeEditCurrent().startFrame);
 	                }
-	                else if(aData.currentTake.endFrame > aData.currentTake.numFrames) {
-	                    aData.currentTake.endFrame = aData.currentTake.numFrames;
-	                    aData.currentTake.startFrame -= numFrames - (aData.currentTake.endFrame - aData.currentTake.startFrame);
+	                else if(TakeEditCurrent().endFrame > aData.currentTake.numFrames) {
+	                    TakeEditCurrent().endFrame = aData.currentTake.numFrames;
+	                    TakeEditCurrent().startFrame -= numFrames - (TakeEditCurrent().endFrame - TakeEditCurrent().startFrame);
 	                }
 	            }
 	            // calculate the number of frames to render based on zoom
@@ -4974,85 +4975,85 @@ namespace M8.Animator {
 	            current_height_frame = Mathf.Clamp(current_width_frame * 2f, 20f, (oData.disableTimelineActions ? height_track : 40f));
 	            float half = 0f;
 	            // zoom out			
-	            if(aData.currentTake.endFrame - aData.currentTake.startFrame + 1 < Mathf.FloorToInt(numFramesToRender)) {
+	            if(TakeEditCurrent().endFrame - TakeEditCurrent().startFrame + 1 < Mathf.FloorToInt(numFramesToRender)) {
 	                if((oData.scrubby_zoom_cursor && dragType == (int)DragType.CursorZoom) /*|| (aData.scrubby_zoom_slider && dragType != (int)DragType.CursorZoom)*/) {
-	                    int newPosFrame = (int)aData.currentTake.startFrame + Mathf.CeilToInt((startZoomMousePosition.x - width_track) / current_width_frame) - 1;
+	                    int newPosFrame = (int)TakeEditCurrent().startFrame + Mathf.CeilToInt((startZoomMousePosition.x - width_track) / current_width_frame) - 1;
 	                    int _diff = startZoomXOverFrame - newPosFrame;
-	                    aData.currentTake.startFrame += _diff;
-	                    aData.currentTake.endFrame += _diff;
+	                    TakeEditCurrent().startFrame += _diff;
+	                    TakeEditCurrent().endFrame += _diff;
 	                }
 	                else {
 
-	                    half = (((int)numFramesToRender - (aData.currentTake.endFrame - aData.currentTake.startFrame + 1)) / 2f);
-	                    aData.currentTake.startFrame -= Mathf.FloorToInt(half);
-	                    aData.currentTake.endFrame += Mathf.CeilToInt(half);
+	                    half = (((int)numFramesToRender - (TakeEditCurrent().endFrame - TakeEditCurrent().startFrame + 1)) / 2f);
+	                    TakeEditCurrent().startFrame -= Mathf.FloorToInt(half);
+	                    TakeEditCurrent().endFrame += Mathf.CeilToInt(half);
 	                    // clicked zoom out
 	                    if(clickedZoom) {
-	                        int newPosFrame = (int)aData.currentTake.startFrame + Mathf.CeilToInt((e.mousePosition.x - width_track) / current_width_frame) - 1;
+	                        int newPosFrame = (int)TakeEditCurrent().startFrame + Mathf.CeilToInt((e.mousePosition.x - width_track) / current_width_frame) - 1;
 	                        int _diff = _mouseXOverFrame - newPosFrame;
-	                        aData.currentTake.startFrame += _diff;
-	                        aData.currentTake.endFrame += _diff;
+	                        TakeEditCurrent().startFrame += _diff;
+	                        TakeEditCurrent().endFrame += _diff;
 	                    }
 	                }
 	                // zoom in
 	            }
-	            else if(aData.currentTake.endFrame - aData.currentTake.startFrame + 1 > Mathf.FloorToInt(numFramesToRender)) {
+	            else if(TakeEditCurrent().endFrame - TakeEditCurrent().startFrame + 1 > Mathf.FloorToInt(numFramesToRender)) {
 	                //targetPos = ((float)startZoomXOverFrame)/((float)aData.getCurrentTake().endFrame);
-	                half = (((aData.currentTake.endFrame - aData.currentTake.startFrame + 1) - numFramesToRender) / 2f);
+	                half = (((TakeEditCurrent().endFrame - TakeEditCurrent().startFrame + 1) - numFramesToRender) / 2f);
 	                //float scrubby_startframe = (float)aData.getCurrentTake().startFrame+half;
-	                aData.currentTake.startFrame += Mathf.FloorToInt(half);
-	                aData.currentTake.endFrame -= Mathf.CeilToInt(half);
+	                TakeEditCurrent().startFrame += Mathf.FloorToInt(half);
+	                TakeEditCurrent().endFrame -= Mathf.CeilToInt(half);
 	                int targetFrame = 0;
 	                // clicked zoom in
 	                if(clickedZoom) {
-	                    int newPosFrame = (int)aData.currentTake.startFrame + Mathf.CeilToInt((e.mousePosition.x - width_track) / current_width_frame) - 1;
+	                    int newPosFrame = (int)TakeEditCurrent().startFrame + Mathf.CeilToInt((e.mousePosition.x - width_track) / current_width_frame) - 1;
 	                    int _diff = _mouseXOverFrame - newPosFrame;
-	                    aData.currentTake.startFrame += _diff;
-	                    aData.currentTake.endFrame += _diff;
+	                    TakeEditCurrent().startFrame += _diff;
+	                    TakeEditCurrent().endFrame += _diff;
 	                    // scrubby zoom in
 	                }
 	                else if((oData.scrubby_zoom_cursor && dragType == (int)DragType.CursorZoom) || (oData.scrubby_zoom_slider && dragType != (int)DragType.CursorZoom)) {
 	                    if(dragType != (int)DragType.CursorZoom) {
 	                        // scrubby zoom slider to indicator
 	                        targetFrame = aData.currentTake.selectedFrame;
-	                        float dist_scrubbyzoom = Mathf.Round(targetFrame - Mathf.FloorToInt(aData.currentTake.startFrame + numFramesToRender / 2f));
+	                        float dist_scrubbyzoom = Mathf.Round(targetFrame - Mathf.FloorToInt(TakeEditCurrent().startFrame + numFramesToRender / 2f));
 	                        int offset = Mathf.RoundToInt(dist_scrubbyzoom * (1f - Mathf.Lerp(0.0f, 1.0f, aData.zoom)));
-	                        aData.currentTake.startFrame += offset;
-	                        aData.currentTake.endFrame += offset;
+	                        TakeEditCurrent().startFrame += offset;
+	                        TakeEditCurrent().endFrame += offset;
 	                    }
 	                    else {
 	                        // scrubby zoom cursor to mouse position
-	                        int newPosFrame = (int)aData.currentTake.startFrame + Mathf.CeilToInt((startZoomMousePosition.x - width_track) / current_width_frame) - 1;
+	                        int newPosFrame = (int)TakeEditCurrent().startFrame + Mathf.CeilToInt((startZoomMousePosition.x - width_track) / current_width_frame) - 1;
 	                        int _diff = startZoomXOverFrame - newPosFrame;
-	                        aData.currentTake.startFrame += _diff;
-	                        aData.currentTake.endFrame += _diff;
+	                        TakeEditCurrent().startFrame += _diff;
+	                        TakeEditCurrent().endFrame += _diff;
 	                    }
 	                }
 
 	            }
 	            // if beyond boundaries, adjust
 	            int diff = 0;
-	            if(aData.currentTake.endFrame > aData.currentTake.numFrames) {
-	                diff = (int)aData.currentTake.endFrame - aData.currentTake.numFrames;
-	                aData.currentTake.endFrame -= diff;
-	                aData.currentTake.startFrame += diff;
+	            if(TakeEditCurrent().endFrame > aData.currentTake.numFrames) {
+	                diff = (int)TakeEditCurrent().endFrame - aData.currentTake.numFrames;
+	                TakeEditCurrent().endFrame -= diff;
+	                TakeEditCurrent().startFrame += diff;
 	            }
-	            else if(aData.currentTake.startFrame < 1) {
-	                diff = 1 - (int)aData.currentTake.startFrame;
-	                aData.currentTake.startFrame -= diff;
-	                aData.currentTake.endFrame += diff;
+	            else if(TakeEditCurrent().startFrame < 1) {
+	                diff = 1 - (int)TakeEditCurrent().startFrame;
+	                TakeEditCurrent().startFrame -= diff;
+	                TakeEditCurrent().endFrame += diff;
 	            }
-	            if(half * 2 < (int)numFramesToRender) aData.currentTake.endFrame++;
+	            if(half * 2 < (int)numFramesToRender) TakeEditCurrent().endFrame++;
 	            cachedZoom = aData.zoom;
 	            return;
 	        }
 	        // calculates the number of frames to render based on window width
-	        if(aData.currentTake.startFrame < 1) aData.currentTake.startFrame = 1;
+	        if(TakeEditCurrent().startFrame < 1) TakeEditCurrent().startFrame = 1;
 
-	        if(aData.currentTake.endFrame < aData.currentTake.startFrame + min) aData.currentTake.endFrame = aData.currentTake.startFrame + min;
-	        if(aData.currentTake.endFrame > aData.currentTake.numFrames) aData.currentTake.endFrame = aData.currentTake.numFrames;
-	        if(aData.currentTake.startFrame > aData.currentTake.endFrame - min) aData.currentTake.startFrame = aData.currentTake.endFrame - min;
-	        numFramesToRender = aData.currentTake.endFrame - aData.currentTake.startFrame + 1;
+	        if(TakeEditCurrent().endFrame < TakeEditCurrent().startFrame + min) TakeEditCurrent().endFrame = TakeEditCurrent().startFrame + min;
+	        if(TakeEditCurrent().endFrame > aData.currentTake.numFrames) TakeEditCurrent().endFrame = aData.currentTake.numFrames;
+	        if(TakeEditCurrent().startFrame > TakeEditCurrent().endFrame - min) TakeEditCurrent().startFrame = TakeEditCurrent().endFrame - min;
+	        numFramesToRender = TakeEditCurrent().endFrame - TakeEditCurrent().startFrame + 1;
 	        current_width_frame = Mathf.Clamp((position.width - width_track - 18f - (aData.isInspectorOpen ? width_inspector_open : width_inspector_closed)) / numFramesToRender, 0f, (oData.disableTimelineActions ? height_track / 2f : height_track - height_action_min));
 	        current_height_frame = Mathf.Clamp(current_width_frame * 2f, 20f, (oData.disableTimelineActions ? height_track : 40f));
 	        if(dragType == (int)DragType.ResizeHScrollbarLeft || dragType == (int)DragType.ResizeHScrollbarRight) {
