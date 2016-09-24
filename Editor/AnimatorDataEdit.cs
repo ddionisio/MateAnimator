@@ -128,7 +128,7 @@ namespace M8.Animator {
 	    }
 
 	    public GameObject gameObject {
-	        get { return mData.gameObject; }
+	        get { return mData ? mData.gameObject : null; }
 	    }
 
 	    public AnimatorMeta meta {
@@ -301,7 +301,7 @@ namespace M8.Animator {
 	        a.numLoop = dupTake.numLoop;
 	        a.loopMode = dupTake.loopMode;
 	        a.frameRate = dupTake.frameRate;
-	        a.numFrames = dupTake.numFrames;
+	        a.endFramePadding = dupTake.endFramePadding;
 	        //a.lsTracks = new List<AMTrack>();
 	        //a.dictTracks = new Dictionary<int,AMTrack>();
 

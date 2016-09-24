@@ -19,6 +19,8 @@ namespace M8.Animator {
 		public bool disableTimelineActionsTooltip = false;
 		public bool showFramesForCollapsedTracks = true;
 	    public float gizmo_size = 0.05f;
+        public int framesPerPage = 60;
+        public int maxPage = 2;
 	    public float pixelPerUnitDefault = 100.0f;
 	    public int spriteInsertFramePerSecond = 6;
 		

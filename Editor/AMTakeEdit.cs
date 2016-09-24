@@ -67,6 +67,27 @@ namespace M8.Animator {
 	        return ind == -1 || ind >= take.trackValues.Count ? null : take.trackValues[ind];
 	    }
 
+        public int getTotalSelectedFrames(AMTakeData take) {
+            int total = 0;
+            for(int i = 0; i < contextSelectionTracks.Count; i++) {
+                int trackId = contextSelectionTracks[i];
+                AMTrack track = null;
+                for(int j = 0; j < take.trackValues.Count; j++) {
+                    if(take.trackValues[j].id == trackId) {
+                        track = take.trackValues[j];
+                        break;
+                    }
+                }
+                if(track != null) {
+                    int lastFrame = track.getLastFrame(take.frameRate);
+                    if(lastFrame > total)
+                        total = lastFrame;
+                }
+            }
+
+            return total;
+        }
+
 	    public void addGroup(AMTakeData take) {
 	        take.initGroups();
 	        AMGroup g = new AMGroup();

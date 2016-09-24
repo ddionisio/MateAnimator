@@ -154,8 +154,32 @@ namespace M8.Animator {
 	            }
 	            GUILayout.EndHorizontal();
 	            GUILayout.Space(4.0f);
-	            // sprite drag/drop fps
-	            GUILayout.BeginHorizontal();
+                // dynamic max frames
+                GUILayout.BeginHorizontal();
+                GUILayout.Space(width_indent);
+                EditorGUIUtility.labelWidth = 100.0f;
+                var lastFieldWidth = EditorGUIUtility.fieldWidth;
+                EditorGUIUtility.fieldWidth = 50.0f;
+                int fpp = EditorGUILayout.IntField("Frames/Page", oData.framesPerPage);
+                if(fpp < 15) fpp = 15;
+                if(oData.framesPerPage != fpp) {
+                    oData.framesPerPage = fpp;
+                    // save
+                    EditorUtility.SetDirty(oData);
+                }
+
+                int mp = EditorGUILayout.IntField("Max Page", oData.maxPage);
+                if(mp < 1) mp = 1;
+                if(oData.maxPage != mp) {
+                    oData.maxPage = mp;
+                    // save
+                    EditorUtility.SetDirty(oData);
+                }
+                GUILayout.EndHorizontal();
+                GUILayout.Space(4.0f);
+                EditorGUIUtility.fieldWidth = lastFieldWidth;
+                // sprite drag/drop fps
+                GUILayout.BeginHorizontal();
 	            GUILayout.Space(width_indent);
 	            EditorGUIUtility.labelWidth = 250.0f;
 	            int nfps = EditorGUILayout.IntField("Sprite Insert Frame/Second", oData.spriteInsertFramePerSecond);

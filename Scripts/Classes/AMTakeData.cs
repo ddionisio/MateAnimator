@@ -15,11 +15,11 @@ namespace M8.Animator {
 	    #region Declarations
 	    public string name;					// take name
 	    public int frameRate = 24;				// frames per second
-	    public int numFrames = 1440;			// number of frames
+        public int endFramePadding = 0;         // last frame + endFramePadding
 	    	    
 	    public int numLoop = 1; //number of times this plays before it is done
 	    public LoopType loopMode = LoopType.Restart;
-	    public int loopBackToFrame = -1; //set this to loop back at given frame when sequence is complete, make sure numLoop = 1 and loopMode is Restart
+	    public int loopBackToFrame = 0; //set this to loop back at given frame when sequence is complete, make sure numLoop = 1 and loopMode is Restart
 
 	    public List<AMTrack> trackValues = new List<AMTrack>();
 
@@ -52,6 +52,19 @@ namespace M8.Animator {
 	        }
 	    }
 
+        public int totalFrames {
+            get {
+                int _maxFrame = 0;
+                for(int i = 0; i < trackValues.Count; i++) {
+                    int frame = trackValues[i].getLastFrame(frameRate);
+                    if(frame > _maxFrame)
+                        _maxFrame = frame;
+                }
+
+                return _maxFrame;
+            }
+        }
+
 	    #endregion
 
 	    //Only used by editor
@@ -63,11 +76,11 @@ namespace M8.Animator {
 	        initGroups();
 	        name = "Take 1";
 	        frameRate = 24;
-	        numFrames = 1440;
+            endFramePadding = 0;
 
 	        numLoop = 1;
 	        loopMode = LoopType.Restart;
-	        loopBackToFrame = -1;
+	        loopBackToFrame = 0;
 
 	        track_count = 1;
 	        group_count = 0;

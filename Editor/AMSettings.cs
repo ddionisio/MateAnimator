@@ -14,6 +14,8 @@ namespace M8.Animator {
 
 	    public AnimatorDataEdit aData {
 	        get {
+                if(AMTimeline.window == null) return null;
+
 	            if(AMTimeline.window.aData != __aData) {
 	                reloadAnimatorData();
 	            }
@@ -22,15 +24,18 @@ namespace M8.Animator {
 	        }
 	    }
 
-	    private int numFrames;
+	    private int endFramePadding;
 	    private int frameRate;
 	    private int loopCount = 1;
 	    private LoopType loopMode = LoopType.Restart;
-	    private int loopBackFrame = -1;
+	    private int loopBackFrame = 0;
+        private bool loopBackFrameCheck;
 	    private bool saveChanges = false;
 	    // skins
 	    private GUISkin skin = null;
 	    private string cachedSkinName = null;
+
+        private int totalFrames;
 
 	    void OnEnable() {
 	        window = this;
@@ -51,12 +56,7 @@ namespace M8.Animator {
 	        if(aData != null && saveChanges) {
 	            AMTakeData take = aData.currentTake;
 	            bool saveNumFrames = true;
-				if((numFrames < take.numFrames) && (take.hasKeyAfter(numFrames))) {
-	                if(!EditorUtility.DisplayDialog("Data Will Be Lost", "You will lose some keys beyond frame " + numFrames + " if you continue.", "Continue Anway", "Cancel")) {
-	                    saveNumFrames = false;
-	                }
-	            }
-
+				
 				string label = take.name+": Modify Settings";
 				AMTimeline.RegisterTakesUndo(aData, label, true);
 	            take = aData.currentTake;
@@ -64,11 +64,8 @@ namespace M8.Animator {
 	            if(saveNumFrames) {
 					Undo.RegisterCompleteObjectUndo(AnimatorDataEdit.GetKeysAndTracks(take), label);
 
-	                // save numFrames
-					take.numFrames = numFrames;
-					AMKey[]dkeys = take.removeKeysAfter(aData.target, numFrames);
-					foreach(AMKey dkey in dkeys)
-						Undo.DestroyObjectImmediate(dkey);
+	                // save end frame padding
+					take.endFramePadding = endFramePadding;
 
 	                // save data
 					foreach(AMTrack track in take.trackValues) {
@@ -83,7 +80,7 @@ namespace M8.Animator {
 	            //save other data
 				take.numLoop = loopCount;
 				take.loopMode = loopMode;
-				take.loopBackToFrame = Mathf.Clamp(loopBackFrame, -1, numFrames);
+				take.loopBackToFrame = loopBackFrameCheck ? Mathf.Clamp(loopBackFrame, 1, totalFrames) : 0;
 
 	            // save data
 	            aData.SetDirtyTakes();
@@ -119,15 +116,22 @@ namespace M8.Animator {
 	        //pausePreviousTake = EditorGUILayout.Toggle("Pause Prev. Take", pausePreviousTake);
 	                
 	        GUILayout.Space(4f);
-	        GUI.enabled = loopCount <= 0;
-	        loopBackFrame = EditorGUILayout.IntSlider("Loop Back To Frame", loopBackFrame, -1, numFrames);
-	        GUI.enabled = true;
+            bool loopBackFrameEnabled = loopCount < 0;
+            GUI.enabled = loopBackFrameEnabled;
+            GUILayout.BeginHorizontal();
+            loopBackFrameCheck = EditorGUILayout.Toggle(loopBackFrameCheck, GUILayout.Width(12f));
+            GUI.enabled = loopBackFrameEnabled && loopBackFrameCheck;
+            loopBackFrame = EditorGUILayout.IntSlider("Loop Back To Frame", loopBackFrame, 1, totalFrames);
+            GUILayout.EndHorizontal();
+            GUI.enabled = true;
 	        GUILayout.Space(6f);
-	        GUILayout.Label("Number of Frames");
+	        GUILayout.Label("End Frame Padding");
 	        GUILayout.Space(2f);
-	        numFrames = EditorGUILayout.IntField(numFrames, GUI.skin.textField, GUILayout.Width(position.width - 10f - 12f));
-	        if(numFrames <= 0) numFrames = 1;
-	        GUILayout.Space(2f);
+            GUI.enabled = !loopBackFrameEnabled || !loopBackFrameCheck || loopBackFrame < 0;
+            endFramePadding = EditorGUILayout.IntField(endFramePadding, GUI.skin.textField, GUILayout.Width(position.width - 10f - 12f));
+	        if(endFramePadding < 0) endFramePadding = 0;
+            GUI.enabled = true;
+            GUILayout.Space(2f);
 	        GUILayout.Label("Frame Rate (Fps)");
 	        GUILayout.Space(2f);
 	        frameRate = EditorGUILayout.IntField(frameRate, GUI.skin.textField, GUILayout.Width(position.width - 10f - 12f));
@@ -155,13 +159,19 @@ namespace M8.Animator {
 	    void loadAnimatorData() {
 	        if(AMTimeline.window) {
 	            __aData = AMTimeline.window.aData;
+
+                if(aData == null) return;
+                if(aData.currentTake == null) return;
+
 	            AMTakeData take = aData.currentTake;
-	            numFrames = take.numFrames;
+	            endFramePadding = take.endFramePadding;
 	            frameRate = take.frameRate;
 	            loopCount = take.numLoop;
 	            loopMode = take.loopMode;
 	            loopBackFrame = take.loopBackToFrame;
-	        }
+                loopBackFrameCheck = loopBackFrame > 0;
+                totalFrames = take.totalFrames;
+            }
 	    }
 	}
 }

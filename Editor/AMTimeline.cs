@@ -615,6 +615,24 @@ namespace M8.Animator {
 	    void TakeEditRemove(AMTakeData take) {
 	        mTakeEdits.Remove(take);
 	    }
+        int GetCurTakeNumFrames() {
+            int framesPerPage = oData.framesPerPage;
+            int maxPage = oData.maxPage;
+
+            if(aData == null) return framesPerPage * maxPage;
+            
+            var curTake = aData.currentTake;
+
+            int totalFrames = curTake.totalFrames;
+
+            int numPage = Mathf.CeilToInt(totalFrames/(float)framesPerPage);
+
+            if(numPage >= maxPage)
+                return (Mathf.FloorToInt(totalFrames/(float)framesPerPage) + maxPage)*framesPerPage;
+            else
+                return framesPerPage * maxPage;
+
+        }
 	    void ClearKeysBuffer() {
 	        foreach(List<AMKey> keys in contextSelectionKeysBuffer) {
 	            foreach(AMKey key in keys)
@@ -679,6 +697,7 @@ namespace M8.Animator {
 
 	        // if preview is playing
 	        if(isPlaying || dragType == (int)DragType.TimeScrub || dragType == (int)DragType.FrameScrub) {
+                int numFrames = GetCurTakeNumFrames();
 	            int playbackSpeedIndex = TakeEdit(currentTake).playbackSpeedIndex;
 	            float timeRunning = Time.realtimeSinceStartup - playerStartTime;
 	            // determine current frame
@@ -687,7 +706,7 @@ namespace M8.Animator {
 	            if(dragType == (int)DragType.TimeScrub || dragType == (int)DragType.FrameScrub) {
 	                if(scrubSpeed < 0) scrubSpeed *= 5;
 	                curFrame += Mathf.CeilToInt(scrubSpeed);
-	                curFrame = Mathf.Clamp(curFrame, 1, currentTake.numFrames);
+	                curFrame = Mathf.Clamp(curFrame, 1, numFrames);
 	            }
 	            else {
 	                // determine speed
@@ -695,6 +714,9 @@ namespace M8.Animator {
 	                curFrame = playerStartFrame + (playerBackward ? -timeRunning * speed : timeRunning * speed);
 	                int curFrameI = Mathf.FloorToInt(curFrame);
 	                int lastFrame = currentTake.getLastFrame();
+                    if(currentTake.numLoop >= 0 || currentTake.loopBackToFrame <= 0)
+                        lastFrame += currentTake.endFramePadding;
+
 	                //reached end?
 	                if((playerBackward && curFrameI < 0) || curFrameI >= lastFrame) {
 	                    bool restart = true;
@@ -709,7 +731,7 @@ namespace M8.Animator {
 	                        if(currentTake.loopMode == LoopType.Yoyo)
 	                            playerBackward = !playerBackward;
 
-	                        if(!playerBackward && currentTake.loopBackToFrame > 0)
+	                        if(!playerBackward && currentTake.numLoop < 0 && currentTake.loopBackToFrame > 0)
 	                            startFrame = currentTake.loopBackToFrame;
 	                        else
 	                            startFrame = 1;
@@ -1027,7 +1049,10 @@ namespace M8.Animator {
 	            }
 	        }
 
-	        #endregion
+            #endregion
+
+            int numFrames = GetCurTakeNumFrames();
+
 	        #region keyboard events
 	        if(e.Equals(Event.KeyboardEvent("[enter]")) || e.Equals(Event.KeyboardEvent("return"))) {
 	            // apply renaming when pressing enter
@@ -1087,7 +1112,7 @@ namespace M8.Animator {
 	            }
 	            else if(e.Equals(Event.KeyboardEvent("right"))) {
 	                AMTakeEdit takeEdit = TakeEditCurrent();
-	                if(takeEdit.selectedTrack != -1 && takeEdit.selectedFrame < aData.currentTake.numFrames) {
+	                if(takeEdit.selectedTrack != -1 && takeEdit.selectedFrame < numFrames) {
 	                    int f = takeEdit.selectedFrame + 1;
 	                    takeEdit.contextSelection.Clear();
 	                    contextSelectFrame(f, f);
@@ -1097,7 +1122,7 @@ namespace M8.Animator {
 	            }
 	            else if(e.Equals(Event.KeyboardEvent("#right"))) {
 	                AMTakeEdit takeEdit = TakeEditCurrent();
-	                if(takeEdit.selectedTrack != -1 && takeEdit.selectedFrame < aData.currentTake.numFrames) {
+	                if(takeEdit.selectedTrack != -1 && takeEdit.selectedFrame < numFrames) {
 	                    int f = takeEdit.selectedFrame;
 	                    if(takeEdit.isFrameInContextSelection(f+1) && !takeEdit.isFrameInContextSelection(f-1))
 	                        takeEdit.contextSelectFrame(f, true);
@@ -1220,9 +1245,9 @@ namespace M8.Animator {
 	        // if is playing, disable all gui elements
 	        GUI.enabled = !(isPlaying);
 	        // if selected frame is out of range
-	        if(aData.currentTake.selectedFrame > aData.currentTake.numFrames) {
+	        if(aData.currentTake.selectedFrame > numFrames) {
 	            // select last frame
-	            timelineSelectFrame(TakeEditCurrent().selectedTrack, aData.currentTake.numFrames);
+	            timelineSelectFrame(TakeEditCurrent().selectedTrack, numFrames);
 	        }
 	        // get number of tracks in current take, use for tracks and keys, disabling zoom slider
 	        int trackCount = aData.currentTake.getTrackCount();
@@ -1232,18 +1257,24 @@ namespace M8.Animator {
 	        styleLabelMenu.normal.background = null;
 	        //GUI.color = new Color(190f/255f,190f/255f,190f/255f,1f);
 	        GUI.DrawTexture(new Rect(0f, 0f, position.width, height_menu_bar - 2f), EditorStyles.toolbar.normal.background);
-	        //GUI.color = Color.white;
-	        #region select name
-	        GUI.color = aData.metaCanSavePrefabInstance ? Color.red : Color.white;
-	        GUIContent selectLabel = new GUIContent(aData.gameObject.name);
-	        Vector2 selectLabelSize = EditorStyles.toolbarButton.CalcSize(selectLabel);
-	        Rect rectSelectLabel = new Rect(margin, 0f, selectLabelSize.x, height_button_delete);
+            //GUI.color = Color.white;
+            #region select name
+            Rect rectSelectLabel;
 
-	        if(GUI.Button(rectSelectLabel, selectLabel, EditorStyles.toolbarButton)) {
-	            EditorGUIUtility.PingObject(aData.gameObject);
-	            Selection.activeGameObject = aData.gameObject;
-	        }
-	        GUI.color = Color.white;
+            if(aData.gameObject) {
+                GUI.color = aData.metaCanSavePrefabInstance ? Color.red : Color.white;
+                GUIContent selectLabel = new GUIContent(aData.gameObject.name);
+                Vector2 selectLabelSize = EditorStyles.toolbarButton.CalcSize(selectLabel);
+                rectSelectLabel = new Rect(margin, 0f, selectLabelSize.x, height_button_delete);
+
+                if(GUI.Button(rectSelectLabel, selectLabel, EditorStyles.toolbarButton)) {
+                    EditorGUIUtility.PingObject(aData.gameObject);
+                    Selection.activeGameObject = aData.gameObject;
+                }
+                GUI.color = Color.white;
+            }
+            else
+                rectSelectLabel = new Rect();
 	        #endregion
 
 	        #region options button
@@ -1437,7 +1468,7 @@ namespace M8.Animator {
 	            GUI.Label(rectLabelSettings, "Settings", styleLabelMenu);
 	        }
 	        else {
-	            string strSettings = "Settings: " + aData.currentTake.numFrames + " Frames; " + aData.currentTake.frameRate + " Fps";
+	            string strSettings = "Settings: " + numFrames + " Frames; " + aData.currentTake.frameRate + " Fps";
 	            rectLabelSettings.width = GUI.skin.label.CalcSize(new GUIContent(strSettings)).x;
 	            GUI.Label(rectLabelSettings, strSettings, styleLabelMenu);
 	        }
@@ -1678,7 +1709,7 @@ namespace M8.Animator {
 	        #region select last frame button
 	        GUI.enabled = (aData.currentTake.rootGroup != null && aData.currentTake.rootGroup.elements.Count > 0 ? !isPlaying : false);
 	        Rect rectSkipForward = new Rect(rectBtnTogglePlay.x + rectBtnTogglePlay.width + margin, rectBtnTogglePlay.y, rectBtnTogglePlay.width, rectBtnTogglePlay.height);
-	        if(GUI.Button(rectSkipForward, getSkinTextureStyleState("nav_skip_forward").background, GUI.skin.GetStyle("ButtonImage"))) timelineSelectFrame(TakeEditCurrent().selectedTrack, aData.currentTake.numFrames);
+	        if(GUI.Button(rectSkipForward, getSkinTextureStyleState("nav_skip_forward").background, GUI.skin.GetStyle("ButtonImage"))) timelineSelectFrame(TakeEditCurrent().selectedTrack, numFrames);
 	        if(rectSkipForward.Contains(e.mousePosition) && mouseOverElement == (int)ElementType.None) {
 	            mouseOverElement = (int)ElementType.Button;
 	        }
@@ -1716,7 +1747,7 @@ namespace M8.Animator {
 	        }
 	        else {
 	            // changing frame control
-	            selectFrame((int)Mathf.Clamp(EditorGUI.FloatField(new Rect(rectFrameControl.x, rectFrameControl.y + 2f, rectFrameControl.width, rectFrameControl.height), aData.currentTake.selectedFrame, GUI.skin.textField/*,styleButtonTimeControlEdit*/), 1, aData.currentTake.numFrames));
+	            selectFrame((int)Mathf.Clamp(EditorGUI.FloatField(new Rect(rectFrameControl.x, rectFrameControl.y + 2f, rectFrameControl.width, rectFrameControl.height), aData.currentTake.selectedFrame, GUI.skin.textField/*,styleButtonTimeControlEdit*/), 1, numFrames));
 	            if(rectFrameControl.Contains(e.mousePosition) && mouseOverElement == (int)ElementType.None) {
 	                mouseOverElement = (int)ElementType.Other;
 	            }
@@ -1742,7 +1773,7 @@ namespace M8.Animator {
 	        }
 	        else {
 	            // changing time control
-	            selectFrame(Mathf.Clamp(timeToFrame(EditorGUI.FloatField(new Rect(rectTimeControl.x, rectTimeControl.y + 2f, rectTimeControl.width, rectTimeControl.height), frameToTime(aData.currentTake.selectedFrame, (float)aData.currentTake.frameRate), GUI.skin.textField/*,styleButtonTimeControlEdit*/), (float)aData.currentTake.frameRate), 1, aData.currentTake.numFrames));
+	            selectFrame(Mathf.Clamp(timeToFrame(EditorGUI.FloatField(new Rect(rectTimeControl.x, rectTimeControl.y + 2f, rectTimeControl.width, rectTimeControl.height), frameToTime(aData.currentTake.selectedFrame, (float)aData.currentTake.frameRate), GUI.skin.textField/*,styleButtonTimeControlEdit*/), (float)aData.currentTake.frameRate), 1, numFrames));
 	            if(rectTimeControl.Contains(e.mousePosition) && mouseOverElement == (int)ElementType.None) {
 	                mouseOverElement = (int)ElementType.Other;
 	            }
@@ -1769,11 +1800,11 @@ namespace M8.Animator {
 	                mouseOverElement = (int)ElementType.Other;
 	                if(dragType == (int)DragType.MoveSelection || dragType == (int)DragType.ContextSelection || dragType == (int)DragType.ResizeAction) {
 	                    if(ticker == 0) {
-                            TakeEditCurrent().startFrame = Mathf.Clamp(++TakeEditCurrent().startFrame, 1, aData.currentTake.numFrames);
-	                        mouseXOverFrame = Mathf.Clamp((int)TakeEditCurrent().startFrame + (int)numFramesToRender, 1, aData.currentTake.numFrames);
+                            TakeEditCurrent().startFrame = Mathf.Clamp(++TakeEditCurrent().startFrame, 1, numFrames);
+	                        mouseXOverFrame = Mathf.Clamp((int)TakeEditCurrent().startFrame + (int)numFramesToRender, 1, numFrames);
 	                    }
 	                    else {
-	                        mouseXOverFrame = Mathf.Clamp((int)TakeEditCurrent().startFrame + (int)numFramesToRender, 1, aData.currentTake.numFrames);
+	                        mouseXOverFrame = Mathf.Clamp((int)TakeEditCurrent().startFrame + (int)numFramesToRender, 1, numFrames);
 	                    }
 	                }
 	                // drag left, over tracks
@@ -1783,23 +1814,23 @@ namespace M8.Animator {
 	                tickerSpeed = Mathf.Clamp(50 - Mathf.CeilToInt(difference / 1.5f), 1, 50);
 	                if(dragType == (int)DragType.MoveSelection || dragType == (int)DragType.ContextSelection || dragType == (int)DragType.ResizeAction) {
 	                    if(ticker == 0) {
-	                        TakeEditCurrent().startFrame = Mathf.Clamp(--TakeEditCurrent().startFrame, 1, aData.currentTake.numFrames);
-	                        mouseXOverFrame = Mathf.Clamp((int)TakeEditCurrent().startFrame - 2, 1, aData.currentTake.numFrames);
+	                        TakeEditCurrent().startFrame = Mathf.Clamp(--TakeEditCurrent().startFrame, 1, numFrames);
+	                        mouseXOverFrame = Mathf.Clamp((int)TakeEditCurrent().startFrame - 2, 1, numFrames);
 	                    }
 	                    else {
-	                        mouseXOverFrame = Mathf.Clamp((int)TakeEditCurrent().startFrame, 1, aData.currentTake.numFrames);
+	                        mouseXOverFrame = Mathf.Clamp((int)TakeEditCurrent().startFrame, 1, numFrames);
 	                    }
 	                }
 	            }
 	        }
 	        Rect rectHScrollbar = new Rect(width_track + width_playback_controls, position.height - height_indicator_footer + 2f, position.width - (width_track + width_playback_controls) - (aData.isInspectorOpen ? width_inspector_open - 4f : width_inspector_closed) - 21f, height_indicator_footer - 2f);
-	        float frame_width_HScrollbar = ((rectHScrollbar.width - 44f - (aData.isInspectorOpen ? 4f : 0f)) / ((float)aData.currentTake.numFrames - 1f));
+	        float frame_width_HScrollbar = ((rectHScrollbar.width - 44f - (aData.isInspectorOpen ? 4f : 0f)) / ((float)numFrames - 1f));
 	        Rect rectResizeHScrollbarLeft = new Rect(rectHScrollbar.x + 18f + frame_width_HScrollbar * (TakeEditCurrent().startFrame - 1f), rectHScrollbar.y + 2f, 15f, 15f);
 	        Rect rectResizeHScrollbarRight = new Rect(rectHScrollbar.x + 18f + frame_width_HScrollbar * (TakeEditCurrent().endFrame - 1f) - 3f, rectHScrollbar.y + 2f, 15f, 15f);
 	        Rect rectHScrollbarThumb = new Rect(rectResizeHScrollbarLeft.x, rectResizeHScrollbarLeft.y - 2f, rectResizeHScrollbarRight.x - rectResizeHScrollbarLeft.x + rectResizeHScrollbarRight.width, rectResizeHScrollbarLeft.height);
 	        if(!aData.isInspectorOpen) rectHScrollbar.width += 4f;
 	        // if number of frames fit on screen, disable horizontal scrollbar and set startframe to 1
-	        if(aData.currentTake.numFrames < numFramesToRender) {
+	        if(numFrames < numFramesToRender) {
 	            GUI.HorizontalScrollbar(rectHScrollbar, 1f, 1f, 1f, 1f);
 	            TakeEditCurrent().startFrame = 1;
 	        }
@@ -1810,10 +1841,10 @@ namespace M8.Animator {
 	                rectResizeHScrollbarLeft = new Rect(rectHScrollbarThumb.x - 4f, rectResizeHScrollbarLeft.y, rectHScrollbarThumb.width / 2f + 4f, rectResizeHScrollbarLeft.height);
 	                rectResizeHScrollbarRight = new Rect(rectHScrollbarThumb.x + rectHScrollbarThumb.width - rectHScrollbarThumb.width / 2f, rectResizeHScrollbarRight.y, rectResizeHScrollbarLeft.width, rectResizeHScrollbarRight.height);
 	            }
-	            mouseXOverHScrollbarFrame = Mathf.CeilToInt(aData.currentTake.numFrames * ((e.mousePosition.x - rectHScrollbar.x - GUI.skin.horizontalScrollbarLeftButton.fixedWidth) / (rectHScrollbar.width - GUI.skin.horizontalScrollbarLeftButton.fixedWidth * 2)));
+	            mouseXOverHScrollbarFrame = Mathf.CeilToInt(numFrames * ((e.mousePosition.x - rectHScrollbar.x - GUI.skin.horizontalScrollbarLeftButton.fixedWidth) / (rectHScrollbar.width - GUI.skin.horizontalScrollbarLeftButton.fixedWidth * 2)));
 	            if(!rectResizeHScrollbarLeft.Contains(e.mousePosition) && !rectResizeHScrollbarRight.Contains(e.mousePosition) && EditorWindow.mouseOverWindow == this && dragType != (int)DragType.ResizeHScrollbarLeft && dragType != (int)DragType.ResizeHScrollbarRight && mouseOverElement != (int)ElementType.ResizeHScrollbarLeft && mouseOverElement != (int)ElementType.ResizeHScrollbarRight)
-	                TakeEditCurrent().startFrame = Mathf.Clamp((int)GUI.HorizontalScrollbar(rectHScrollbar, (float)TakeEditCurrent().startFrame, (int)numFramesToRender - 1f, 1f, aData.currentTake.numFrames), 1, aData.currentTake.numFrames);
-	            else Mathf.Clamp(GUI.HorizontalScrollbar(rectHScrollbar, (float)TakeEditCurrent().startFrame, (int)numFramesToRender - 1f, 1f, aData.currentTake.numFrames), 1f, aData.currentTake.numFrames);
+	                TakeEditCurrent().startFrame = Mathf.Clamp((int)GUI.HorizontalScrollbar(rectHScrollbar, (float)TakeEditCurrent().startFrame, (int)numFramesToRender - 1f, 1f, numFrames), 1, numFrames);
+	            else Mathf.Clamp(GUI.HorizontalScrollbar(rectHScrollbar, (float)TakeEditCurrent().startFrame, (int)numFramesToRender - 1f, 1f, numFrames), 1f, numFrames);
 	            // scrollbar bg overlay (used to hide inconsistent thumb)
 	            GUI.Box(new Rect(rectHScrollbar.x + 18f, rectHScrollbar.y, rectHScrollbar.width - 18f * 2f, rectHScrollbar.height), "", GUI.skin.horizontalScrollbar);
 	            // scrollbar thumb overlay (used to hide inconsistent thumb)
@@ -1883,7 +1914,7 @@ namespace M8.Animator {
 	                rectKeyNumber.width = position.width - (aData.isInspectorOpen ? width_inspector_open : width_inspector_closed) - 20f - rectKeyNumber.x;
 	                didCutLabel = true;
 	            }
-	            if(!(didCutLabel && TakeEditCurrent().endFrame == aData.currentTake.numFrames)) {
+	            if(!(didCutLabel && TakeEditCurrent().endFrame == numFrames)) {
 	                if(rectKeyNumber.x > lastNumberX + 3f) {
 	                    GUI.Label(rectKeyNumber, key_number);
 	                    lastNumberX = rectKeyNumber.x + GUI.skin.label.CalcSize(new GUIContent(key_number)).x;
@@ -2615,6 +2646,7 @@ namespace M8.Animator {
 	        }
 	    }
 	    void showFrames(AMTrack _track, ref float track_y, Event e, bool birdseye, Vector2 scrollViewBounds) {
+            //int 
 	        //string tooltip = "";
 	        int t = _track.id;
 	        AMTakeData curTake = aData.currentTake;
@@ -2625,8 +2657,9 @@ namespace M8.Animator {
 	            track_y += height_track_foldin;
 	            return;
 	        }
-	        float numFrames = (curTake.numFrames < numFramesToRender ? curTake.numFrames : numFramesToRender);
-	        Rect rectFrames = new Rect(width_track, track_y, current_width_frame * numFrames, height_track);
+            int numFrames = GetCurTakeNumFrames();
+	        float fNumFrames = (numFrames < numFramesToRender ? numFrames : numFramesToRender);
+	        Rect rectFrames = new Rect(width_track, track_y, current_width_frame * fNumFrames, height_track);
 	        if(!_track.foldout) track_y += height_track_foldin;
 	        else track_y += height_track;
 	        if(track_y < scrollViewBounds.x) return; // if end y is before min y
@@ -2646,7 +2679,7 @@ namespace M8.Animator {
 	        else {
 	            texFrSet.wrapMode = TextureWrapMode.Repeat;
 	            float startPos = curTakeEdit.startFrame % 5f;
-	            GUI.DrawTextureWithTexCoords(rectFramesBirdsEye, texFrSet, new Rect(startPos / 5f, 0f, numFrames / 5f, 1f));
+	            GUI.DrawTextureWithTexCoords(rectFramesBirdsEye, texFrSet, new Rect(startPos / 5f, 0f, fNumFrames / 5f, 1f));
 	            float birdsEyeFadeAlpha = (1f - (current_width_frame - width_frame_birdseye_min)) / 1.2f;
 	            if(birdsEyeFadeAlpha > 0f) {
 	                GUI.color = new Color(colBirdsEyeFrames.r, colBirdsEyeFrames.g, colBirdsEyeFrames.b, birdsEyeFadeAlpha);
@@ -2813,7 +2846,7 @@ namespace M8.Animator {
 	            // draw each action with seperate textures and buttons for these tracks
 	            bool drawEachAction = _track is AMAnimationTrack || _track is AMAudioTrack;
 	            int _startFrame = (int)curTakeEdit.startFrame;
-	            int _endFrame = (int)(_startFrame + numFrames - 1);
+	            int _endFrame = (int)(_startFrame + fNumFrames - 1);
 	            int action_startFrame, action_endFrame, renderFrameStart, renderFrameEnd;
 	            int cached_action_startFrame = -1, cached_action_endFrame = -1;
 	            Texture texBox = texBoxBorder;
@@ -2951,7 +2984,7 @@ namespace M8.Animator {
 	                        AnimatorDataEdit.SetDirtyKeys(_track);
 	                    }
 	                }
-	                if((_track is AMAudioTrack || _track is AMAnimationTrack) && _track.keys[i].getNumberOfFrames(curTake.frameRate) > -1 && (_track.keys[i].getStartFrame() + _track.keys[i].getNumberOfFrames(curTake.frameRate) <= curTake.numFrames)) {
+	                if((_track is AMAudioTrack || _track is AMAnimationTrack) && _track.keys[i].getNumberOfFrames(curTake.frameRate) > -1 && (_track.keys[i].getStartFrame() + _track.keys[i].getNumberOfFrames(curTake.frameRate) <= numFrames)) {
 	                    //based on content length
 	                    action_startFrame = _track.keys[i].getStartFrame();
 	                    action_endFrame = _track.keys[i].getStartFrame() + _track.keys[i].getNumberOfFrames(curTake.frameRate) - 1;
@@ -2978,7 +3011,7 @@ namespace M8.Animator {
 	                    else {
 	                        clamped = 1;
 	                        action_endFrame = _endFrame;
-	                        if(action_endFrame > curTake.numFrames) action_endFrame = curTake.numFrames + 1;
+	                        if(action_endFrame > numFrames) action_endFrame = numFrames + 1;
 	                    }
 	                }
 	                else {
@@ -4577,12 +4610,7 @@ namespace M8.Animator {
 
 	                foreach(AMKey dkey in dKeys)
 	                    if(instantiated) { DestroyImmediate(dkey); } else { Undo.DestroyObjectImmediate(dkey); }
-
-	                dKeys = checkForOutOfBoundsFramesOnSelectedTrack();
-
-	                foreach(AMKey dkey in dKeys)
-	                    if(instantiated) { DestroyImmediate(dkey); } else { Undo.DestroyObjectImmediate(dkey); }
-
+                    
 	                // preview selected frame
 	                take.previewFrame(aData.target, take.selectedFrame);
 
@@ -4731,15 +4759,17 @@ namespace M8.Animator {
 	                #region resize horizontal scrollbar left
 	            }
 	            else if(dragType == (int)DragType.ResizeHScrollbarLeft) {
+                    int numFrames = GetCurTakeNumFrames();
 	                if(mouseXOverHScrollbarFrame <= 0) TakeEditCurrent().startFrame = 1;
-	                else if(mouseXOverHScrollbarFrame > aData.currentTake.numFrames) TakeEditCurrent().startFrame = aData.currentTake.numFrames;
+	                else if(mouseXOverHScrollbarFrame > numFrames) TakeEditCurrent().startFrame = numFrames;
 	                else TakeEditCurrent().startFrame = mouseXOverHScrollbarFrame;
 	                #endregion
 	                #region resize horizontal scrollbar right
 	            }
 	            else if(dragType == (int)DragType.ResizeHScrollbarRight) {
-	                if(mouseXOverHScrollbarFrame <= 0) TakeEditCurrent().endFrame = 1;
-	                else if(mouseXOverHScrollbarFrame > aData.currentTake.numFrames) TakeEditCurrent().endFrame = aData.currentTake.numFrames;
+                    int numFrames = GetCurTakeNumFrames();
+                    if(mouseXOverHScrollbarFrame <= 0) TakeEditCurrent().endFrame = 1;
+	                else if(mouseXOverHScrollbarFrame > numFrames) TakeEditCurrent().endFrame = numFrames;
 	                else TakeEditCurrent().endFrame = mouseXOverHScrollbarFrame;
 	                int min = Mathf.FloorToInt((position.width - width_track - 18f - (aData.isInspectorOpen ? width_inspector_open : width_inspector_closed)) / (height_track - height_action_min));
 	                if(TakeEditCurrent().startFrame > TakeEditCurrent().endFrame - min) TakeEditCurrent().startFrame = TakeEditCurrent().endFrame - min;
@@ -4769,11 +4799,12 @@ namespace M8.Animator {
 	                        currFrame = 1f;
 	                        didPeakZoom = true;
 	                    }
-	                    if(currFrame + frameDiff > aData.currentTake.numFrames) {
+                        int numFrames = GetCurTakeNumFrames();
+                        if(currFrame + frameDiff > numFrames) {
 	                        wasZoomingIn = true;
 	                        cachedZoomMousePosition = currentMousePosition;
 	                        zoomDirectionMousePosition.x = currentMousePosition.x;
-	                        currFrame = aData.currentTake.numFrames - frameDiff;
+	                        currFrame = numFrames - frameDiff;
 	                        didPeakZoom = true;
 	                    }
 
@@ -4859,8 +4890,8 @@ namespace M8.Animator {
 	    void processHandDragAcceleration() {
 	        float speed = (int)((Mathf.Clamp(Mathf.Abs(handDragAccelaration), 0, 200) / 12) * (aData.zoom + 0.2f));
 	        if(handDragAccelaration > 0) {
-
-	            if(TakeEditCurrent().endFrame < aData.currentTake.numFrames) {
+                int numFrames = GetCurTakeNumFrames();
+                if(TakeEditCurrent().endFrame < numFrames) {
 	                TakeEditCurrent().startFrame += speed;
 	                TakeEditCurrent().endFrame += speed;
 	                if(ticker % 2 == 0) handDragAccelaration--;
@@ -4945,31 +4976,31 @@ namespace M8.Animator {
 	    }
 	    void calculateNumFramesToRender(bool clickedZoom, Event e) {
 	        if(aData.currentTake == null) return;
-
-	        int min = Mathf.FloorToInt((position.width - width_track - 18f - (aData.isInspectorOpen ? width_inspector_open : width_inspector_closed)) / (oData.disableTimelineActions ? height_track / 2f : height_track - height_action_min));
+            int numFrames = GetCurTakeNumFrames();
+            int min = Mathf.FloorToInt((position.width - width_track - 18f - (aData.isInspectorOpen ? width_inspector_open : width_inspector_closed)) / (oData.disableTimelineActions ? height_track / 2f : height_track - height_action_min));
 	        int _mouseXOverFrame = (int)TakeEditCurrent().startFrame + Mathf.CeilToInt((e.mousePosition.x - width_track) / current_width_frame) - 1;
 	        // move frames with hand cursor
 	        if(dragType == (int)DragType.CursorHand && !justStartedHandGrab) {
 	            if(_mouseXOverFrame != startScrubFrame) {
-	                float numFrames = TakeEditCurrent().endFrame - TakeEditCurrent().startFrame;
+	                float fNumFrames = TakeEditCurrent().endFrame - TakeEditCurrent().startFrame;
 	                float dist_hand_drag = startScrubFrame - _mouseXOverFrame;
 	                TakeEditCurrent().startFrame += dist_hand_drag;
 	                TakeEditCurrent().endFrame += dist_hand_drag;
 	                if(TakeEditCurrent().startFrame < 1f) {
 	                    TakeEditCurrent().startFrame = 1f;
-	                    TakeEditCurrent().endFrame += numFrames - (TakeEditCurrent().endFrame - TakeEditCurrent().startFrame);
+	                    TakeEditCurrent().endFrame += fNumFrames - (TakeEditCurrent().endFrame - TakeEditCurrent().startFrame);
 	                }
-	                else if(TakeEditCurrent().endFrame > aData.currentTake.numFrames) {
-	                    TakeEditCurrent().endFrame = aData.currentTake.numFrames;
-	                    TakeEditCurrent().startFrame -= numFrames - (TakeEditCurrent().endFrame - TakeEditCurrent().startFrame);
+	                else if(TakeEditCurrent().endFrame > numFrames) {
+	                    TakeEditCurrent().endFrame = numFrames;
+	                    TakeEditCurrent().startFrame -= fNumFrames - (TakeEditCurrent().endFrame - TakeEditCurrent().startFrame);
 	                }
 	            }
 	            // calculate the number of frames to render based on zoom
 	        }
 	        else if(aData.zoom != cachedZoom && dragType != (int)DragType.ResizeHScrollbarLeft && dragType != (int)DragType.ResizeHScrollbarRight) {
 	            //numFramesToRender
-	            if(oData.scrubby_zoom_slider) numFramesToRender = Mathf.Lerp(0.0f, 1.0f, aData.zoom) * ((float)aData.currentTake.numFrames - min) + min;
-	            else numFramesToRender = AMUtil.GetEasingFunction(Ease.InExpo)(aData.zoom, 1.0f, 0.0f, 0.0f) * ((float)aData.currentTake.numFrames - min) + min;
+	            if(oData.scrubby_zoom_slider) numFramesToRender = Mathf.Lerp(0.0f, 1.0f, aData.zoom) * ((float)numFrames - min) + min;
+	            else numFramesToRender = AMUtil.GetEasingFunction(Ease.InExpo)(aData.zoom, 1.0f, 0.0f, 0.0f) * ((float)numFrames - min) + min;
 	            // frame dimensions
 	            current_width_frame = Mathf.Clamp((position.width - width_track - 18f - (aData.isInspectorOpen ? width_inspector_open : width_inspector_closed)) / numFramesToRender, 0f, (oData.disableTimelineActions ? height_track / 2f : height_track - height_action_min));
 	            current_height_frame = Mathf.Clamp(current_width_frame * 2f, 20f, (oData.disableTimelineActions ? height_track : 40f));
@@ -5033,8 +5064,8 @@ namespace M8.Animator {
 	            }
 	            // if beyond boundaries, adjust
 	            int diff = 0;
-	            if(TakeEditCurrent().endFrame > aData.currentTake.numFrames) {
-	                diff = (int)TakeEditCurrent().endFrame - aData.currentTake.numFrames;
+	            if(TakeEditCurrent().endFrame > numFrames) {
+	                diff = (int)TakeEditCurrent().endFrame - numFrames;
 	                TakeEditCurrent().endFrame -= diff;
 	                TakeEditCurrent().startFrame += diff;
 	            }
@@ -5051,14 +5082,14 @@ namespace M8.Animator {
 	        if(TakeEditCurrent().startFrame < 1) TakeEditCurrent().startFrame = 1;
 
 	        if(TakeEditCurrent().endFrame < TakeEditCurrent().startFrame + min) TakeEditCurrent().endFrame = TakeEditCurrent().startFrame + min;
-	        if(TakeEditCurrent().endFrame > aData.currentTake.numFrames) TakeEditCurrent().endFrame = aData.currentTake.numFrames;
+	        if(TakeEditCurrent().endFrame > numFrames) TakeEditCurrent().endFrame = numFrames;
 	        if(TakeEditCurrent().startFrame > TakeEditCurrent().endFrame - min) TakeEditCurrent().startFrame = TakeEditCurrent().endFrame - min;
 	        numFramesToRender = TakeEditCurrent().endFrame - TakeEditCurrent().startFrame + 1;
 	        current_width_frame = Mathf.Clamp((position.width - width_track - 18f - (aData.isInspectorOpen ? width_inspector_open : width_inspector_closed)) / numFramesToRender, 0f, (oData.disableTimelineActions ? height_track / 2f : height_track - height_action_min));
 	        current_height_frame = Mathf.Clamp(current_width_frame * 2f, 20f, (oData.disableTimelineActions ? height_track : 40f));
 	        if(dragType == (int)DragType.ResizeHScrollbarLeft || dragType == (int)DragType.ResizeHScrollbarRight) {
-	            if(oData.scrubby_zoom_slider) aData.zoom = Mathf.Lerp(0f, 1f, (numFramesToRender - min) / ((float)aData.currentTake.numFrames - min));
-	            else aData.zoom = AMUtil.EaseInExpoReversed(0f, 1f, (numFramesToRender - min) / ((float)aData.currentTake.numFrames - min));
+	            if(oData.scrubby_zoom_slider) aData.zoom = Mathf.Lerp(0f, 1f, (numFramesToRender - min) / ((float)numFrames - min));
+	            else aData.zoom = AMUtil.EaseInExpoReversed(0f, 1f, (numFramesToRender - min) / ((float)numFrames - min));
 	            cachedZoom = aData.zoom;
 	        }
 	    }
@@ -5630,12 +5661,9 @@ namespace M8.Animator {
 
 	                if(sprites.Count > 1) {
 	                    float sprFPS = oData.spriteInsertFramePerSecond;
-
-	                    //expand num frames if needed
+                        
 	                    int spriteNumFrames = Mathf.RoundToInt(((float)sprites.Count/sprFPS)*(float)take.frameRate);
-	                    if(take.numFrames < frame + spriteNumFrames)
-	                        take.numFrames += (frame + spriteNumFrames) - take.numFrames;
-
+	                    
 	                    track.offsetKeysFromBy(aData.target, frame, spriteNumFrames);
 
 	                    for(int i = 0; i < sprites.Count; i++) {
@@ -5698,12 +5726,7 @@ namespace M8.Animator {
 
 	            //insert keys
 	            float sprFPS = oData.spriteInsertFramePerSecond;
-
-	            //expand num frames if needed
-	            int spriteNumFrames = Mathf.RoundToInt(((float)sprites.Count/sprFPS)*(float)take.frameRate);
-	            if(take.numFrames < spriteNumFrames)
-	                take.numFrames = spriteNumFrames;
-
+                
 	            SpriteRenderer comp = newGO.GetComponent<SpriteRenderer>();
 	            newTrack.setComponent(aData.target, comp);
 	            newTrack.setPropertyInfo(comp.GetType().GetProperty("sprite"));
@@ -6258,10 +6281,7 @@ namespace M8.Animator {
 	                newKeys.Clear();
 	            }
 	        }
-
-
-	        // show message if there are out of bounds keys
-	        checkForOutOfBoundsFramesOnSelectedTrack();
+            
 	        // update cache
 	        if(singleTrack) {
 	            TakeEditCurrent().getSelectedTrack(aData.currentTake).updateCache(aData.target);
@@ -6327,7 +6347,10 @@ namespace M8.Animator {
 	    }
 	    void contextSelectAllFrames() {
 	        RegisterTakesUndo(aData, "Select All Frames", false);
-	        TakeEditCurrent().contextSelectAllFrames(aData.currentTake.numFrames);
+            var curTake = aData.currentTake;
+            var curTakeEdit = TakeEdit(curTake);
+            int totalFrames = curTakeEdit.getTotalSelectedFrames(curTake);
+	        curTakeEdit.contextSelectAllFrames(totalFrames > 0 ? totalFrames : curTake.totalFrames);
 	    }
 	    public void contextSelectFrame(int frame, int prevFrame) {
 	        // select range if shift down
@@ -6413,52 +6436,7 @@ namespace M8.Animator {
 	            }
 	        }
 	    }
-
-	    //returns deleted keys
-	    AMKey[] checkForOutOfBoundsFramesOnSelectedTrack() {
-	        AMTakeData take = aData.currentTake;
-	        List<AMKey> dkeys = new List<AMKey>();
-	        List<AMTrack> selectedTracks = new List<AMTrack>();
-	        int shift = 1;
-	        AMTrack _track_shift = null;
-	        int increase = 0;
-	        AMTrack _track_increase = null;
-	        foreach(int track_id in TakeEdit(take).contextSelectionTracks) {
-	            AMTrack track = take.getTrack(track_id);
-	            selectedTracks.Add(track);
-	            if(track.keys.Count >= 1) {
-	                if(track.keys[0].frame < shift) {
-	                    shift = track.keys[0].frame;
-	                    _track_shift = track;
-	                }
-	                if(track.keys[track.keys.Count - 1].frame - take.numFrames > increase) {
-	                    increase = track.keys[track.keys.Count - 1].frame - take.numFrames;
-	                    _track_increase = track;
-	                }
-	            }
-	        }
-	        if(_track_shift != null) {
-	            if(EditorUtility.DisplayDialog("Shift Frames?", "Keyframes have been moved out of bounds before the first frame. Some data will be lost if frames are not shifted.", "Shift", "No")) {
-	                TakeEdit(take).shiftOutOfBoundsKeysOnTrack(take, aData.target, _track_shift);
-	            }
-	            else {
-	                // delete all keys beyond last frame
-	                dkeys.AddRange(take.removeKeysBefore(aData.target, 1));
-	            }
-	        }
-	        if(_track_increase != null) {
-	            if(EditorUtility.DisplayDialog("Increase Number of Frames?", "Keyframes have been pushed out of bounds beyond the last frame. Some data will be lost if the number of frames is not increased.", "Increase", "No")) {
-	                take.numFrames = _track_increase.keys[_track_increase.keys.Count - 1].frame;
-	            }
-	            else {
-	                // delete all keys beyond last frame
-	                foreach(AMTrack track in selectedTracks)
-	                    dkeys.AddRange(track.removeKeysAfter(take.numFrames));
-	            }
-	        }
-
-	        return dkeys.ToArray();
-	    }
+        
 	    void resetPreview() {
 	        // reset all object transforms to frame 1
 	        aData.currentTake.previewFrame(aData.target, 1f);

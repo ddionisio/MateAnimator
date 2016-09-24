@@ -56,13 +56,7 @@ namespace M8.Animator {
 				return animator.runningTime;
 			}
 		}
-
-		public static float totalTime {
-			get {
-				return animator.totalTime;
-			}
-		}
-
+        
 		public static void Play(string take, bool loop = false) {
 			animator.Play(take, loop);
 		}

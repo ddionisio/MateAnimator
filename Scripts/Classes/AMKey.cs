@@ -63,7 +63,7 @@ namespace M8.Animator {
 	    }
 
 	    public float getWaitTime(int frameRate, float delay) {
-	        return ((float)frame - 1f) / (float)frameRate + delay;
+	        return (frame - 1f) / frameRate + delay;
 	    }
 
 	    public virtual int getStartFrame() {
@@ -75,7 +75,7 @@ namespace M8.Animator {
 	    }
 
 	    public float getTime(int frameRate) {
-	        return (float)getNumberOfFrames(frameRate) / (float)frameRate;
+	        return getNumberOfFrames(frameRate) / (float)frameRate;
 	    }
 
 	    public virtual AnimatorTimeline.JSONAction getJSONAction(int frameRate) {

@@ -21,9 +21,6 @@ namespace M8.Animator {
 	        mTarget = itarget;
 	        mId = id;
 	        mTake = take;
-
-	        if(mTake.loopBackToFrame > 0 && mTake.numLoop <= 0)
-	            mTake.numLoop = 1;
 	    }
 
 	    public void Insert(AMKey key, Tweener tween) {
@@ -42,7 +39,16 @@ namespace M8.Animator {
             mSequence = DOTween.Sequence();
             mSequence.SetUpdate(updateType, updateTimeIndependent);
             mSequence.SetAutoKill(mIsAutoKill = autoKill);
-            mSequence.SetLoops(mTake.numLoop, mTake.loopMode);
+
+            if(mTake.numLoop < 0 && mTake.loopBackToFrame > 0) {
+                if(mTake.loopMode == LoopType.Yoyo)
+                    mSequence.SetLoops(2, mTake.loopMode);
+                else
+                    mSequence.SetLoops(1, mTake.loopMode); //allow sequence to end so we can loop back to specific frame
+            }
+            else
+                mSequence.SetLoops(mTake.numLoop, mTake.loopMode);
+
             mSequence.OnComplete(OnSequenceComplete);
             
 	        mTake.maintainCaches(mTarget);
@@ -71,6 +77,10 @@ namespace M8.Animator {
 	        //prepend delay at the beginning
 	        if(minWaitTime > 0.0f)
 	            mSequence.PrependInterval(minWaitTime);
+
+            //append delay at the end
+            if((mTake.numLoop >= 0 || mTake.loopBackToFrame <= 0) && mTake.endFramePadding > 0)
+                mSequence.AppendInterval(mTake.endFramePadding/(float)mTake.frameRate);
 	    }
 
 	    public void Reset() {
@@ -103,11 +113,8 @@ namespace M8.Animator {
 	        mTarget.SequenceComplete(this);
 
             if(!mIsAutoKill) {
-	            if(mTake.loopBackToFrame >= 0) {
-                    if(mSequence.IsBackwards())
-                        mSequence.Flip();
-
-	                (mTarget as AnimatorData).PlayAtFrame(mTake.name, mTake.loopBackToFrame);
+	            if(mTake.numLoop < 0 && mTake.loopBackToFrame > 0) {
+                    (mTarget as AnimatorData).PlayAtFrame(mTake.name, mTake.loopBackToFrame);
 	                return;
 	            }
 	        }

@@ -123,7 +123,7 @@ namespace M8.Animator {
 	        get {
 	            AMTakeData take = mCurrentPlayingTake;
 	            if(take == null) return 0f;
-	            else return (float)take.numFrames / (float)take.frameRate;
+	            else return (take.totalFrames + take.endFramePadding) / (float)take.frameRate;
 	        }
 	    }
 

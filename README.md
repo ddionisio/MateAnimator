@@ -21,6 +21,9 @@ Import/Export, Code Generator are currently disabled.
 
 Updates
 =======
+* Added dynamic expanding of frames in the timeline.  Number of frames is no longer configurable.  Can be configured in Options
+* Changed how "Loop back to frame" works, requires loop count < 0.
+* Added "End frame padding", allows for delay at the end.
 * Converted to use DOTween
 * Unity 5 compatibility.
 
@@ -34,7 +37,6 @@ Installation
 TODO
 ====
 * Find a way to use serialization for tracks to remove the need for component.
-* Dynamic frame scrolling and expand/shrink (get rid of the unnecessary configuration of total frames)
 * Unify pathing of position track to all other tracks.
 * Alternate Meta by using ID component (easier, less human error, but with a little bit more overhead)
 * Allow typing of function for SendMessage event key.
