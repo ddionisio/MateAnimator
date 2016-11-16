@@ -108,12 +108,15 @@ namespace M8.Animator {
         }
 
         //set target to a valid ref. for meta
-        public bool setMethodInfo(GameObject target, Component component, bool setComponent, MethodInfo methodInfo, ParameterInfo[] cachedParameterInfos, bool restoreValues) {
+        public bool setMethodInfo(GameObject target, Component component, bool setComponent, MethodInfo methodInfo, ParameterInfo[] cachedParameterInfos, bool restoreValues, System.Action<AMEventKey> onPreChange) {
             MethodInfo _methodInfo = getMethodInfo(target);
 
             // if different component or methodinfo
             string _componentName = component.GetType().Name;
             if((_methodInfo != methodInfo) || (this.componentName != _componentName) || !isMatch(cachedParameterInfos)) {
+                if(onPreChange != null)
+                    onPreChange(this);
+
                 this.component = setComponent ? component : null;
                 this.componentName = _componentName;
                 methodName = methodInfo.Name;
@@ -161,22 +164,17 @@ namespace M8.Animator {
             return false;
         }
 
-        public bool setUseSendMessage(bool useSendMessage) {
+        public bool setUseSendMessage(bool useSendMessage, System.Action<AMEventKey> onPreChange) {
             if(this.useSendMessage != useSendMessage) {
+                if(onPreChange != null)
+                    onPreChange(this);
+
                 this.useSendMessage = useSendMessage;
                 return true;
             }
             return false;
         }
-
-        /*public bool setParameters(object[] parameters) {
-            if(this.parameters != parameters) {
-                this.parameters = parameters;
-                return true;
-            }
-            return false;
-        }*/
-
+        
         // copy properties from key
         public override void CopyTo(AMKey key) {
 

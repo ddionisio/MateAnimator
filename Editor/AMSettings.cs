@@ -66,13 +66,6 @@ namespace M8.Animator {
 
 	                // save end frame padding
 					take.endFramePadding = endFramePadding;
-
-	                // save data
-					foreach(AMTrack track in take.trackValues) {
-						foreach(AMKey key in track.keys)
-							EditorUtility.SetDirty(key);
-	                    EditorUtility.SetDirty(track);
-	                }
 	            }
 	            // save frameRate
 				take.frameRate = frameRate;
@@ -81,10 +74,7 @@ namespace M8.Animator {
 				take.numLoop = loopCount;
 				take.loopMode = loopMode;
 				take.loopBackToFrame = loopBackFrameCheck ? Mathf.Clamp(loopBackFrame, 1, totalFrames) : 0;
-
-	            // save data
-	            aData.SetDirtyTakes();
-
+                
 	            EditorWindow.GetWindow(typeof(AMTimeline)).Repaint();
 	        }
 	    }

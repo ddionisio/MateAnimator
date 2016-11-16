@@ -206,9 +206,6 @@ namespace M8.Animator {
 							track.updateCache(aData.target);
 							// preview new position
 	                        aData.currentTake.previewFrame(aData.target, aData.currentTake.selectedFrame);
-							// save data
-							EditorUtility.SetDirty(track);
-							AnimatorDataEdit.SetDirtyKeys(track);
 						}
 						this.Close();
 					}

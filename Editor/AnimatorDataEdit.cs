@@ -6,11 +6,6 @@ using System.Collections.Generic;
 
 namespace M8.Animator {
 	public class AnimatorDataEdit {
-	    public static void SetDirtyKeys(AMTrack track) {
-	        foreach(AMKey key in track.keys)
-	            EditorUtility.SetDirty(key);
-	    }
-
 	    public static void RecordUndoTrackAndKeys(AMTrack track, bool complete, string label) {
 	        if(complete) {
 	            Undo.RegisterCompleteObjectUndo(track, label);
@@ -21,13 +16,7 @@ namespace M8.Animator {
 	            Undo.RecordObjects(track.keys.ToArray(), label);
 	        }
 	    }
-
-	    public static void SetDirtyTracks(AMTakeData take) {
-	        foreach(AMTrack track in take.trackValues) {
-	            EditorUtility.SetDirty(track);
-	        }
-	    }
-
+        
 	    public static MonoBehaviour[] GetKeysAndTracks(AMTakeData take) {
 	        List<MonoBehaviour> behaviours = new List<MonoBehaviour>();
 
@@ -44,12 +33,8 @@ namespace M8.Animator {
 
 	        return behaviours.ToArray();
 	    }
-
-	#if UNITY_5
+        
 	    [DrawGizmo(GizmoType.Active | GizmoType.NotInSelectionHierarchy | GizmoType.InSelectionHierarchy)]
-	#else
-	    [DrawGizmo(GizmoType.Active | GizmoType.NotSelected | GizmoType.SelectedOrChild)]
-	#endif
 	    static void DrawGizmos(AnimatorData aData, GizmoType gizmoType) {
 	        //check if it's the one opened
 	        if(AMTimeline.window != null && AMTimeline.window.aData != null && AMTimeline.window.aData.IsDataMatch(aData)) {
@@ -188,18 +173,7 @@ namespace M8.Animator {
 	        else
 	            Undo.RecordObject(mData, label);
 	    }
-
-	    public void SetDirty() {
-	        EditorUtility.SetDirty(mData);
-	    }
-
-	    public void SetDirtyTakes() {
-	        if(meta)
-	            UnityEditor.EditorUtility.SetDirty(meta);
-	        else
-	            UnityEditor.EditorUtility.SetDirty(mData);
-	    }
-
+        
 	    public void RegisterTakesUndo(string label, bool complete) {
 	        UnityEngine.Object obj = meta ? (UnityEngine.Object)meta : (UnityEngine.Object)mData;
 
@@ -217,9 +191,6 @@ namespace M8.Animator {
 	            AddNewTake();
 
 	            mCurrentTakeInd = 0;
-
-	            // save data
-	            SetDirty();
 	        }
 	        else {
 	            foreach(AMTakeData take in takes) {
@@ -234,17 +205,15 @@ namespace M8.Animator {
 	        if(takes != null) {
 	            foreach(AMTakeData take in takes) {
 	                if(take != null) {
-	                    if(take.maintainCaches(mDataTarget)) {
-	                        SetDirtyTracks(take);
+	                    if(take.maintainCaches(mDataTarget))	                        
 	                        hasChanges = true;
-	                    }
 	                }
 	            }
 	        }
 
-	        if(hasChanges)
-	            SetDirty();
-	    }
+            if(hasChanges)
+                UnityEditor.SceneManagement.EditorSceneManager.MarkAllScenesDirty(); //don't want to undo corrections on takes
+        }
 	    
 	    public AMTakeData AddNewTake() {
 	        string name = "Take" + (takes.Count + 1);

@@ -120,10 +120,8 @@ namespace M8.Animator {
 	                //uncheck isGlobal to any other animator data on scene
 	                AnimatorData[] anims = FindObjectsOfType<AnimatorData>();
 	                for(int i = 0;i < anims.Length;i++) {
-	                    if(!aData.IsDataMatch(anims[i]) && anims[i].isGlobal) {
+	                    if(!aData.IsDataMatch(anims[i]) && anims[i].isGlobal)
 	                        anims[i].isGlobal = false;
-	                        EditorUtility.SetDirty(anims[i]);
-	                    }
 	                }
 	            }
 	        }
@@ -219,7 +217,6 @@ namespace M8.Animator {
 	        if(GUI.changed) {
 	            if(AMTimeline.window)
 	                AMTimeline.window.Repaint();
-	            aData.SetDirty();
 	        }
 	    }
 	}

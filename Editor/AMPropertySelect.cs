@@ -219,7 +219,6 @@ namespace M8.Animator {
 	            // set component
 	            track.setComponent(aData.target, propertyComponent);
 				track.updateCache(aData.target);
-	            EditorUtility.SetDirty(track);
 	        }
 	        this.Close();
 	    }

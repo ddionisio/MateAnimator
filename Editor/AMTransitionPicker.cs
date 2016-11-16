@@ -460,9 +460,6 @@ namespace M8.Animator {
 	            track.updateCache(aData.target);
 	            // preview frame
 	            aData.currentTake.previewFrame(aData.target, aData.currentTake.selectedFrame);
-	            // save data
-	            EditorUtility.SetDirty(track);
-	            AnimatorDataEdit.SetDirtyKeys(track);
 	            if(AMTimeline.window) AMTimeline.window.Repaint();
 	            this.Close();
 	        }
