@@ -21,6 +21,7 @@ Import/Export, Code Generator are currently disabled.
 
 Updates
 =======
+* Added DOTWEEN_HYPER_COMPATIBLE define symbol when using DOTWeen Hyper Compatible version, make sure to add this symbol in the player settings.
 * Added dynamic expanding of frames in the timeline.  Number of frames is no longer configurable.  Can be configured in Options
 * Changed how "Loop back to frame" works, requires loop count < 0.
 * Added "End frame padding", allows for delay at the end.
@@ -31,6 +32,9 @@ Updates
 Installation
 ============
 * Make sure to get DOTween and install to your project: http://dotween.demigiant.com/download.php
+  * If you are using the Hyper Compatible version, make sure to add DOTWEEN_HYPER_COMPATIBLE in the player settings
+  * Go to Edit->Project Settings->Player
+  * Add **DOTWEEN_HYPER_COMPATIBLE** in Scripting Define Symbols
 * Clone this project to your Assets folder (or Plugins if you are scripting in javascript).  If your project is already setup for Git, then clone this project as a submodule.
 * Open your project, you should be able to see "Cutscene Editor" in the Window menu, or M8/Animator in the 'Add Component' droplist.
 

@@ -84,7 +84,7 @@ namespace M8.Animator {
                         tween = DOTween.To(new FloatPlugin(), () => target.localEulerAngles.z, (z) => { var a=target.localEulerAngles; a.z=z; target.localEulerAngles=a; }, endRotation.z, getTime(frameRate));
 	                    break;
 	                default:
-                        tween = DOTween.To(new Vector3Plugin(), () => target.localEulerAngles, (x) => target.localEulerAngles=x, endRotation, getTime(frameRate));
+                        tween = DOTween.To(AMPluginFactory.CreateVector3(), () => target.localEulerAngles, (x) => target.localEulerAngles=x, endRotation, getTime(frameRate));
 	                    break;
 	            }
 
