@@ -2121,9 +2121,9 @@ namespace M8.Animator {
 	        }
 	        #endregion
 	        if(e.alt && !isDragging) startZoomXOverFrame = mouseXOverFrame;
-	        if(isDragging && dragType != (int)DragType.None)
+	        /*if(isDragging && dragType != (int)DragType.None)
 	            e.Use();
-	        else if(e.type == EventType.MouseMove)
+	        else */if(e.type == EventType.MouseMove)
 	            Repaint();
 
 	        if(doRefresh) {
@@ -2937,7 +2937,7 @@ namespace M8.Animator {
 	                if(_track.keys[i].version != _track.version) {
                         // if cache is null, recheck for component and update caches
                         //aData = (AnimatorData)GameObject.Find("AnimatorData").GetComponent("AnimatorData");
-                        if(curTake.maintainCaches(aData.target))
+                        if(!Application.isPlaying && curTake.maintainCaches(aData.target))
                             //Just set the scenes dirty since we don't want to undo this
                             UnityEditor.SceneManagement.EditorSceneManager.MarkAllScenesDirty();
 	                }
