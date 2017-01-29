@@ -292,10 +292,12 @@ namespace M8.Animator {
 
 	        a.track_count = dupTake.track_count;
 
+            var itarget = mData as AMITarget;
+
 	        if(dupTake.trackValues != null) {
 	            a.trackValues = new List<AMTrack>();
 	            foreach(AMTrack track in dupTake.trackValues) {
-	                GameObject holderGO = (this as AMITarget).holder.gameObject;
+	                GameObject holderGO = itarget.holder.gameObject;
 	                AMTrack dupTrack = (addCompUndo ? UnityEditor.Undo.AddComponent(holderGO, track.GetType()) : holderGO.AddComponent(track.GetType())) as AMTrack;
 	                dupTrack.enabled = false;
 	                track.CopyTo(dupTrack);
