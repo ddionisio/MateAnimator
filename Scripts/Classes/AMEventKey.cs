@@ -177,10 +177,10 @@ namespace M8.Animator {
         
         // copy properties from key
         public override void CopyTo(AMKey key) {
+            base.CopyTo(key);
 
             AMEventKey a = key as AMEventKey;
-            a.enabled = false;
-            a.frame = frame;
+
             a.component = component;
             a.componentName = componentName;
             a.useSendMessage = useSendMessage;

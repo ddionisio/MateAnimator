@@ -168,7 +168,9 @@ namespace M8.Animator {
 	    }
 
 	    public override void CopyTo(AMKey key) {
-	        AMCameraSwitcherKey a = key as AMCameraSwitcherKey;
+            base.CopyTo(key);
+
+            AMCameraSwitcherKey a = key as AMCameraSwitcherKey;
 	        a.type = type;
 	        a._camera = _camera;
 	        a._cameraPath = _cameraPath;

@@ -73,13 +73,12 @@ namespace M8.Animator {
 		}
 
 	    public override void CopyTo(AMKey key) {
-			AMOrientationKey a = key as AMOrientationKey;
-	        a.enabled = false;
-	        a.frame = frame;
-	        a.target = target;
+            base.CopyTo(key);
+
+            AMOrientationKey a = key as AMOrientationKey;
+
+            a.target = target;
 			a.targetPath = targetPath;
-	        a.easeType = easeType;
-	        a.customEase = new List<float>(customEase);
 	    }
 
 		public override int getNumberOfFrames(int frameRate) {

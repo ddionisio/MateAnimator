@@ -29,16 +29,14 @@ namespace M8.Animator {
 
         // copy properties from key
         public override void CopyTo(AMKey key) {
-            AMPropertyKey a = key as AMPropertyKey;
-            a.enabled = false;
+            base.CopyTo(key);
 
-            a.frame = frame;
+            AMPropertyKey a = key as AMPropertyKey;
+                        
             a.val = val;
             a.valObj = valObj;
             a.valString = valString;
-            a.vect4 = vect4;
-            a.easeType = easeType;
-            a.customEase = new List<float>(customEase);
+            a.vect4 = vect4;            
         }
 
         //use in preview for specific refresh after setting the property with given obj

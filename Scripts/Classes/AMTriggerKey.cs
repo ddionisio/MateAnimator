@@ -19,10 +19,10 @@ namespace M8.Animator {
 
 	    // copy properties from key
 	    public override void CopyTo(AMKey key) {
+            base.CopyTo(key);
 
 	        AMTriggerKey a = key as AMTriggerKey;
-	        a.enabled = false;
-	        a.frame = frame;
+	                    
 	        a.valueString = valueString;
 	        a.valueInt = valueInt;
 	        a.valueFloat = valueFloat;

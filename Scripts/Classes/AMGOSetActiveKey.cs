@@ -18,10 +18,11 @@ namespace M8.Animator {
 	    }
 	    // copy properties from key
 	    public override void CopyTo(AMKey key) {
-			AMGOSetActiveKey a = key as AMGOSetActiveKey;
-	        a.enabled = false;
-	        a.frame = frame;
-	        a.setActive = setActive;
+            base.CopyTo(key);
+
+            AMGOSetActiveKey a = key as AMGOSetActiveKey;
+
+            a.setActive = setActive;
 	    }
 
 	    #region action

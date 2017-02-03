@@ -44,16 +44,12 @@ namespace M8.Animator {
 	    }
 
 	    public override void CopyTo(AMKey key) {
-	        AMMaterialKey a = key as AMMaterialKey;
-	        a.enabled = false;
+            base.CopyTo(key);
 
-	        a.frame = frame;
+            AMMaterialKey a = key as AMMaterialKey;
 
-	        a.texture = texture;
+            a.texture = texture;
 	        a._val4 = _val4;
-	                
-	        a.easeType = easeType;
-	        a.customEase = new List<float>(customEase);
 	    }
 
 	    public void ApplyValue(AMMaterialTrack.ValueType valueType, string prop, int propId, Material mat) {

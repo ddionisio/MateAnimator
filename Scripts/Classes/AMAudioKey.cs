@@ -13,10 +13,10 @@ namespace M8.Animator {
 
 	    // copy properties from key
 	    public override void CopyTo(AMKey key) {
+            base.CopyTo(key);
 
-			AMAudioKey a = key as AMAudioKey;
-	        a.enabled = false;
-	        a.frame = frame;
+            AMAudioKey a = key as AMAudioKey;
+
 	        a.audioClip = audioClip;
 	        a.loop = loop;
 	    	a.oneShot = oneShot;

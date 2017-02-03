@@ -15,14 +15,16 @@ namespace M8.Animator {
 
 	    // copy properties from key
 	    public override void CopyTo(AMKey key) {
+            base.CopyTo(key);
 
-	        AMAnimationKey a = key as AMAnimationKey;
-	        a.enabled = false;
-	        a.frame = frame;
+            AMAnimationKey a = key as AMAnimationKey;
+
 	        a.wrapMode = wrapMode;
 	        a.amClip = amClip;
 	        a.crossfade = crossfade;
-	    }
+            a.crossfadeTime = crossfadeTime;
+
+        }
 
 	    // get number of frames, -1 is infinite
 	    public override int getNumberOfFrames(int frameRate) {

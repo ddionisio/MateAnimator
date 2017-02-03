@@ -47,8 +47,17 @@ namespace M8.Animator {
 		}
 
 	    public virtual void CopyTo(AMKey key) {
-	        Debug.LogError("Animator: No override for CopyTo()");
-	    }
+            key.interp = interp;
+            key.frame = frame;
+            key.easeType = easeType;
+
+            if(customEase != null)
+                key.customEase = new List<float>(customEase);
+            else
+                key.customEase = null;
+
+            key.enabled = false;
+        }
 
 		public virtual System.Type GetRequiredComponent() {
 			return null;

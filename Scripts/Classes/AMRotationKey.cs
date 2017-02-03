@@ -16,13 +16,12 @@ namespace M8.Animator {
 
 	    // copy properties from key
 	    public override void CopyTo(AMKey key) {
-			AMRotationKey a = key as AMRotationKey;
-	        a.enabled = false;
-	        a.frame = frame;
-	        //a.type = type;
-	        a.rotation = rotation;
-	        a.easeType = easeType;
-	        a.customEase = new List<float>(customEase);
+            base.CopyTo(key);
+
+            AMRotationKey a = key as AMRotationKey;
+	        
+            //a.type = type;
+            a.rotation = rotation;
 	    }
 
 	    #region action

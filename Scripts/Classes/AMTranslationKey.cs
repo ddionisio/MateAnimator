@@ -77,13 +77,12 @@ namespace M8.Animator {
 
 	    // copy properties from key
 	    public override void CopyTo(AMKey key) {
-			AMTranslationKey a = key as AMTranslationKey;
-	        a.enabled = false;
-	        a.frame = frame;
+            base.CopyTo(key);
+
+            AMTranslationKey a = key as AMTranslationKey;
+
 	        a.position = position;
-	        a.interp = interp;
-	        a.easeType = easeType;
-	        a.customEase = new List<float>(customEase);
+	        
 	        a.isConstSpeed = isConstSpeed;
 	    }
 
