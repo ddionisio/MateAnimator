@@ -130,9 +130,8 @@ namespace M8.Animator {
             //check in-between
             for(int i = 0; i < keyCount; i++) {
                 AMTranslationKey key = keys[i] as AMTranslationKey;
-                AMTranslationKey keyNext = i < keyCount - 1 ? keys[i+1] as AMTranslationKey : null;
-
-                if(iFrame >= key.endFrame && keyNext != null && (!keyNext.canTween || keyNext.path.Length > 1)) continue;
+                
+                if(iFrame >= key.endFrame && i < keyCount - 1) continue;
 
                 if(!key.canTween || key.path.Length == 1) {
                     SetPosition(t, key.position);

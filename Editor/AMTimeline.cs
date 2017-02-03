@@ -2121,9 +2121,9 @@ namespace M8.Animator {
 	        }
 	        #endregion
 	        if(e.alt && !isDragging) startZoomXOverFrame = mouseXOverFrame;
-	        /*if(isDragging && dragType != (int)DragType.None)
+	        if(isDragging && dragType != (int)DragType.None && e.type != EventType.Layout && e.type != EventType.Repaint)
 	            e.Use();
-	        else */if(e.type == EventType.MouseMove)
+	        else if(e.type == EventType.MouseMove)
 	            Repaint();
 
 	        if(doRefresh) {
