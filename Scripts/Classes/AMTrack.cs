@@ -209,6 +209,10 @@ namespace M8.Animator {
 	        }
 	    }
 
+        public void Reset(AMITarget itarget, int frameRate) {
+            previewFrame(itarget, 0f, frameRate, false, 1.0f);
+        }
+
 	    /// <summary>
 	    /// Called when we are switching take
 	    /// </summary>

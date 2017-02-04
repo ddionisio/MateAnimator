@@ -13,7 +13,8 @@ namespace M8.Animator {
 	    public enum DisableAction {
 	        None,
 	        Pause,
-	        Stop
+	        Stop,
+            Reset //this guarantees that all tracks are set back to the first frame
 	    }
 
 	    public delegate void OnTake(AnimatorData anim, AMTakeData take);
@@ -393,8 +394,14 @@ namespace M8.Animator {
 	                Pause();
 	                break;
 	            case DisableAction.Stop:
-	                Stop();
-	                break;
+                    Stop();
+                    break;
+                case DisableAction.Reset:
+                    if(mNowPlayingTakeIndex != -1)
+                        Stop();
+                    if(mLastPlayingTakeIndex != -1)
+                        mSequences[mLastPlayingTakeIndex].take.Reset(this);
+                    break;
 	        }
 
 	        mAnimScale = 1.0f;

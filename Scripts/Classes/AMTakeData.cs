@@ -622,6 +622,11 @@ namespace M8.Animator {
 	            track.PlayStart(itarget, _frame, frameRate, animScale);
 	    }
 
+        public void Reset(AMITarget itarget) {
+            foreach(AMTrack track in trackValues) //call to start
+                track.Reset(itarget, frameRate);
+        }
+
 	    /// <summary>
 	    /// Call this when we are switching take
 	    /// </summary>
