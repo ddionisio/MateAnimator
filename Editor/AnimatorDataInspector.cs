@@ -125,13 +125,42 @@ namespace M8.Animator {
 	                }
 	            }
 	        }
-	                
-	        anim.sequenceLoadAll = GUILayout.Toggle(anim.sequenceLoadAll, "Build All Sequence On Start");
-	        anim.sequenceKillWhenDone = GUILayout.Toggle(anim.sequenceKillWhenDone, "Kill Sequence When Done");
-	        anim.playOnEnable = GUILayout.Toggle(anim.playOnEnable, "Play On Enable");
-	        anim.onDisableAction = (AnimatorData.DisableAction)EditorGUILayout.EnumPopup("On Disable", anim.onDisableAction);
-	        anim.updateType = (DG.Tweening.UpdateType)EditorGUILayout.EnumPopup("Update", anim.updateType);
-            anim.updateTimeIndependent = EditorGUILayout.Toggle("Time Independent", anim.updateTimeIndependent);
+	        
+            var sequenceLoadAll = GUILayout.Toggle(anim.sequenceLoadAll, "Build All Sequence On Start");
+            if(anim.sequenceLoadAll != sequenceLoadAll) {
+                aData.RegisterUndo("Set Sequence Load All", false);
+                anim.sequenceLoadAll = sequenceLoadAll;
+            }
+
+            var sequenceKillWhenDone = GUILayout.Toggle(anim.sequenceKillWhenDone, "Kill Sequence When Done");
+            if(anim.sequenceKillWhenDone != sequenceKillWhenDone) {
+                aData.RegisterUndo("Set Sequence Kill All When Done", false);
+                anim.sequenceKillWhenDone = sequenceKillWhenDone;
+            }
+
+            var playOnEnable = GUILayout.Toggle(anim.playOnEnable, "Play On Enable");
+            if(anim.playOnEnable != playOnEnable) {
+                aData.RegisterUndo("Set Play On Enable", false);
+                anim.playOnEnable = playOnEnable;
+            }
+
+            var onDisableAction = (AnimatorData.DisableAction)EditorGUILayout.EnumPopup("On Disable", anim.onDisableAction);
+            if(anim.onDisableAction != onDisableAction) {
+                aData.RegisterUndo("Set On Disable Action", false);
+                anim.onDisableAction = onDisableAction;
+            }
+
+            var updateType = (DG.Tweening.UpdateType)EditorGUILayout.EnumPopup("Update", anim.updateType);
+            if(anim.updateType != updateType) {
+                aData.RegisterUndo("Set Update Type", false);
+                anim.updateType = updateType;
+            }
+
+            var updateTimeIndependent = EditorGUILayout.Toggle("Time Independent", anim.updateTimeIndependent);
+            if(anim.updateTimeIndependent != updateTimeIndependent) {
+                aData.RegisterUndo("Set Time Independent", false);
+                anim.updateTimeIndependent = updateTimeIndependent;
+            }
 
 	        if(PrefabUtility.GetPrefabType(aData.gameObject) != PrefabType.Prefab) {
 	            AMTimeline timeline = AMTimeline.window;
