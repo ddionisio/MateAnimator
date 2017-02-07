@@ -281,6 +281,10 @@ namespace M8.Animator {
 	            yield return wait;
 	    }
 
+        public void ResetTake(int take) {
+            mSequences[take].take.Reset(this);
+        }
+
 	    public void Pause() {
 	        AMTakeData take = mCurrentPlayingTake;
 	        if(take == null) return;
@@ -400,7 +404,7 @@ namespace M8.Animator {
                     if(mNowPlayingTakeIndex != -1)
                         Stop();
                     if(mLastPlayingTakeIndex != -1)
-                        mSequences[mLastPlayingTakeIndex].take.Reset(this);
+                        ResetTake(mLastPlayingTakeIndex);
                     break;
 	        }
 
