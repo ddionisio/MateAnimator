@@ -415,7 +415,8 @@ namespace M8.Animator {
 	        if(!Application.isPlaying)
 	            return;
 
-	        _dataHolder.SetActive(false);
+            if(_dataHolder)
+	            _dataHolder.SetActive(false);
 
 	        List<AMTakeData> _t = _takes;
 	        mSequences = new AMSequence[_t.Count];
