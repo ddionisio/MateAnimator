@@ -487,6 +487,8 @@ namespace M8.Animator {
 	    }
 
 	    Transform AMITarget.GetCache(string path) {
+            if(mCache == null) return null;
+
 	        Transform ret = null;
 	        mCache.TryGetValue(path, out ret);
 	        return ret;
