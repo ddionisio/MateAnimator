@@ -36,7 +36,7 @@ namespace M8.Animator {
 	        if(go == null) return;
 
             var tween = DOTween.To(new AMPlugValueSet<bool>(), () => setActive, (x) => go.SetActive(x), setActive, getTime(seq.take.frameRate));
-            tween.plugOptions = new AMPlugValueSetOptions(seq.sequence);
+            tween.plugOptions.SetSequence(seq);
 	        seq.Insert(this, tween);
 	    }
 	    #endregion

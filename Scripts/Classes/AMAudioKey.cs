@@ -50,7 +50,7 @@ namespace M8.Animator {
                 }
             }, 0, (loop && !oneShot) ? 1f/frameRate : getTime(seq.take.frameRate));
 
-            tweenV.plugOptions = new AMPlugValueSetOptions(_seq);
+            tweenV.plugOptions.SetSequence(seq);
 
             seq.Insert(this, tweenV);
 

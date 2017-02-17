@@ -127,7 +127,7 @@ namespace M8.Animator {
                 Vector3 pos = pixelSnap ? new Vector3(Mathf.Round(position.x*ppu)/ppu, Mathf.Round(position.y*ppu)/ppu, Mathf.Round(position.z*ppu)/ppu) : position;
 
                 var tweener = DOTween.To(new AMPlugValueSet<Vector3>(), () => pos, (x) => trans.localPosition=x, pos, getTime(frameRate));
-                tweener.plugOptions = new AMPlugValueSetOptions(seq.sequence);
+                tweener.plugOptions.SetSequence(seq);
 
                 seq.Insert(this, tweener);
 	        }

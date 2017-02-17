@@ -16,8 +16,11 @@ namespace M8.Animator {
 	    public AMITarget target { get { return mTarget; } }
 	    public AMTakeData take { get { return mTake; } }
 	    public Sequence sequence { get { return mSequence; } }
-        
-	    public AMSequence(AMITarget itarget, int id, AMTakeData take) {
+
+        public event System.Action completeCallback;
+        public event System.Action stepCompleteCallback;
+
+        public AMSequence(AMITarget itarget, int id, AMTakeData take) {
 	        mTarget = itarget;
 	        mId = id;
 	        mTake = take;
@@ -50,6 +53,7 @@ namespace M8.Animator {
                 mSequence.SetLoops(mTake.numLoop, mTake.loopMode);
 
             mSequence.OnComplete(OnSequenceComplete);
+            mSequence.OnStepComplete(OnStepComplete);
             
 	        mTake.maintainCaches(mTarget);
 
@@ -108,7 +112,10 @@ namespace M8.Animator {
         }
 
 	    void OnSequenceComplete() {
-	        mTake.PlayComplete(mTarget);
+            if(completeCallback != null)
+                completeCallback();
+
+            mTake.PlayComplete(mTarget);
 
 	        mTarget.SequenceComplete(this);
 
@@ -119,5 +126,10 @@ namespace M8.Animator {
 	            }
 	        }
 	    }
-	}
+
+        void OnStepComplete() {
+            if(stepCompleteCallback != null)
+                stepCompleteCallback();
+        }
+    }
 }

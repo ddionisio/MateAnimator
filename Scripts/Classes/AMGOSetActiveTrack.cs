@@ -72,7 +72,7 @@ namespace M8.Animator {
 	        if(keys.Count > 0 && keys[0].frame > 0) {
                 GameObject go = GetTarget(seq.target) as GameObject;
                 var tween = DG.Tweening.DOTween.To(new AMPlugValueSet<bool>(), () => startActive, (x) => go.SetActive(x), startActive, keys[0].getWaitTime(seq.take.frameRate, 0.0f));
-                tween.plugOptions = new AMPlugValueSetOptions(seq.sequence);
+                tween.plugOptions.SetSequence(seq);
                 seq.Insert(0f, tween);
 	        }
 	    }

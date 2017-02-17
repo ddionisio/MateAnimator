@@ -332,12 +332,12 @@ namespace M8.Animator {
             if(useSendMessage) {
                 if(parameters == null || parameters.Count <= 0) {
                     var tween = DOTween.To(new AMPlugValueSetElapsed(), () => 0, (x)=>comp.SendMessage(methodName, null, SendMessageOptions.DontRequireReceiver), 0, duration);
-                    tween.plugOptions = new AMPlugValueSetOptions(seq.sequence);
+                    tween.plugOptions.SetSequence(seq);
                     seq.Insert(this, tween);
                 }
                 else {
                     var tween = DOTween.To(new AMPlugValueSetElapsed(), () => 0, (x) => comp.SendMessage(methodName, parameters[0].toObject(), SendMessageOptions.DontRequireReceiver), 0, duration);
-                    tween.plugOptions = new AMPlugValueSetOptions(seq.sequence);
+                    tween.plugOptions.SetSequence(seq);
                     seq.Insert(this, tween);
                 }
             }
@@ -347,7 +347,7 @@ namespace M8.Animator {
                 object[] parms = buildParams();
 
                 var tween = DOTween.To(new AMPlugValueSetElapsed(), () => 0, (x) => method.Invoke(comp, parms), 0, duration);
-                tween.plugOptions = new AMPlugValueSetOptions(seq.sequence);
+                tween.plugOptions.SetSequence(seq);
                 seq.Insert(this, tween);
             }
         }

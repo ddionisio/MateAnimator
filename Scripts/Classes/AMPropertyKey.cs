@@ -79,77 +79,77 @@ namespace M8.Animator {
                 case AMPropertyTrack.ValueType.Integer: {
                         int _val = System.Convert.ToInt32(val);
                         var tween = DOTween.To(new AMPlugValueSet<int>(), () => _val, GenerateSetter(propTrack, comp, _val), _val, time);
-                        tween.plugOptions = new AMPlugValueSetOptions(seq.sequence);
+                        tween.plugOptions.SetSequence(seq);
                         return tween;
                     }
                 case AMPropertyTrack.ValueType.Float: {
                         float _val = System.Convert.ToSingle(val);
                         var tween = DOTween.To(new AMPlugValueSet<float>(), () => _val, GenerateSetter(propTrack, comp, _val), _val, time);
-                        tween.plugOptions = new AMPlugValueSetOptions(seq.sequence);
+                        tween.plugOptions.SetSequence(seq);
                         return tween;
                     }
                 case AMPropertyTrack.ValueType.Double: {
                         var tween = DOTween.To(new AMPlugValueSet<double>(), () => val, GenerateSetter(propTrack, comp, val), val, time);
-                        tween.plugOptions = new AMPlugValueSetOptions(seq.sequence);
+                        tween.plugOptions.SetSequence(seq);
                         return tween;
                     }
                 case AMPropertyTrack.ValueType.Long: {
                         long _val = System.Convert.ToInt64(val);
                         var tween = DOTween.To(new AMPlugValueSet<long>(), () => _val, GenerateSetter(propTrack, comp, _val), _val, time);
-                        tween.plugOptions = new AMPlugValueSetOptions(seq.sequence);
+                        tween.plugOptions.SetSequence(seq);
                         return tween;
                     }
                 case AMPropertyTrack.ValueType.Vector2: {
                         Vector2 _val = vect2;
                         var tween = DOTween.To(new AMPlugValueSet<Vector2>(), () => _val, GenerateSetter(propTrack, comp, _val), _val, time);
-                        tween.plugOptions = new AMPlugValueSetOptions(seq.sequence);
+                        tween.plugOptions.SetSequence(seq);
                         return tween;
                     }
                 case AMPropertyTrack.ValueType.Vector3: {
                         Vector3 _val = vect3;
                         var tween = DOTween.To(new AMPlugValueSet<Vector3>(), () => _val, GenerateSetter(propTrack, comp, _val), _val, time);
-                        tween.plugOptions = new AMPlugValueSetOptions(seq.sequence);
+                        tween.plugOptions.SetSequence(seq);
                         return tween;
                     }
                 case AMPropertyTrack.ValueType.Color: {
                         Color _val = color;
                         var tween = DOTween.To(new AMPlugValueSet<Color>(), () => _val, GenerateSetter(propTrack, comp, _val), _val, time);
-                        tween.plugOptions = new AMPlugValueSetOptions(seq.sequence);
+                        tween.plugOptions.SetSequence(seq);
                         return tween;
                     }
                 case AMPropertyTrack.ValueType.Rect: {
                         Rect _val = rect;
                         var tween = DOTween.To(new AMPlugValueSet<Rect>(), () => _val, GenerateSetter(propTrack, comp, _val), _val, time);
-                        tween.plugOptions = new AMPlugValueSetOptions(seq.sequence);
+                        tween.plugOptions.SetSequence(seq);
                         return tween;
                     }
                 case AMPropertyTrack.ValueType.Vector4: {
                         var tween = DOTween.To(new AMPlugValueSet<Vector4>(), () => vect4, GenerateSetter(propTrack, comp, vect4), vect4, time);
-                        tween.plugOptions = new AMPlugValueSetOptions(seq.sequence);
+                        tween.plugOptions.SetSequence(seq);
                         return tween;
                     }
                 case AMPropertyTrack.ValueType.Quaternion: {
                         Quaternion _val = quat;
                         var tween = DOTween.To(new AMPlugValueSet<Quaternion>(), () => _val, GenerateSetter(propTrack, comp, _val), _val, time);
-                        tween.plugOptions = new AMPlugValueSetOptions(seq.sequence);
+                        tween.plugOptions.SetSequence(seq);
                         return tween;
                     }
                 case AMPropertyTrack.ValueType.Bool: {
                         bool _val = valb;
                         var tween = DOTween.To(new AMPlugValueSet<bool>(), () => _val, GenerateSetter(propTrack, comp, _val), _val, time);
-                        tween.plugOptions = new AMPlugValueSetOptions(seq.sequence);
+                        tween.plugOptions.SetSequence(seq);
                         return tween;
                     }
                 case AMPropertyTrack.ValueType.String: {
                         var tween = DOTween.To(new AMPlugValueSet<string>(), () => valString, GenerateSetter(propTrack, comp, valString), valString, time);
-                        tween.plugOptions = new AMPlugValueSetOptions(seq.sequence);
+                        tween.plugOptions.SetSequence(seq);
                         return tween;
                     }
                 case AMPropertyTrack.ValueType.Sprite: {
                         var spriteRenderer = comp as SpriteRenderer;
                         var _val = valObj as Sprite;
                         var tween = DOTween.To(new AMPlugValueSet<Sprite>(), () => _val, (x) => spriteRenderer.sprite = x, _val, time);
-                        tween.plugOptions = new AMPlugValueSetOptions(seq.sequence);
+                        tween.plugOptions.SetSequence(seq);
                         return tween;
                     }
                 case AMPropertyTrack.ValueType.Enum: {
@@ -157,7 +157,7 @@ namespace M8.Animator {
                         object enumVal = infType != null ? System.Enum.ToObject(infType, (int)val) : null;
                         if(enumVal != null) {
                             var tween = DOTween.To(new AMPlugValueSet<object>(), () => enumVal, GenerateSetter(propTrack, comp, enumVal), enumVal, time);
-                            tween.plugOptions = new AMPlugValueSetOptions(seq.sequence);
+                            tween.plugOptions.SetSequence(seq);
                             return tween;
                         }
                         else {

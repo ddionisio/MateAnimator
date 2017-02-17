@@ -109,7 +109,7 @@ namespace M8.Animator {
 	            case AMMaterialTrack.ValueType.Range:
                     if(!canTween || keyCount == 1) {//allow one key
                         var setTween = DOTween.To(new AMPlugValueSet<float>(), () => val, (x) => matInst.SetFloat(propId, x), val, frameCount/frameRate);
-                        setTween.plugOptions = new AMPlugValueSetOptions(seq.sequence);
+                        setTween.plugOptions.SetSequence(seq);
                         seq.Insert(this, setTween);
                     }
                     else {
@@ -121,7 +121,7 @@ namespace M8.Animator {
 	            case AMMaterialTrack.ValueType.Vector:
                     if(!canTween || keyCount == 1) {//allow one key
                         var setTween = DOTween.To(new AMPlugValueSet<Vector4>(), () => vector, (x) => matInst.SetVector(propId, x), vector, frameCount/frameRate);
-                        setTween.plugOptions = new AMPlugValueSetOptions(seq.sequence);
+                        setTween.plugOptions.SetSequence(seq);
                         seq.Insert(this, setTween);
                     }
                     else {
@@ -134,7 +134,7 @@ namespace M8.Animator {
                     if(!canTween || keyCount == 1) {//allow one key
                         var val = color;
                         var setTween = DOTween.To(new AMPlugValueSet<Color>(), () => val, (x) => matInst.SetColor(propId, x), val, frameCount/frameRate);
-                        setTween.plugOptions = new AMPlugValueSetOptions(seq.sequence);
+                        setTween.plugOptions.SetSequence(seq);
                         seq.Insert(this, setTween);
                     }
                     else {
@@ -147,7 +147,7 @@ namespace M8.Animator {
                     if(!canTween || keyCount == 1) {//allow one key
                         var val = texOfs;
                         var setTween = DOTween.To(new AMPlugValueSet<Vector2>(), () => val, (x) => matInst.SetTextureOffset(prop, x), val, frameCount/frameRate);
-                        setTween.plugOptions = new AMPlugValueSetOptions(seq.sequence);
+                        setTween.plugOptions.SetSequence(seq);
                         seq.Insert(this, setTween);
                     }
                     else {
@@ -160,7 +160,7 @@ namespace M8.Animator {
                     if(!canTween || keyCount == 1) {//allow one key
                         var val = texScale;
                         var setTween = DOTween.To(new AMPlugValueSet<Vector2>(), () => val, (x) => matInst.SetTextureScale(prop, x), val, frameCount/frameRate);
-                        setTween.plugOptions = new AMPlugValueSetOptions(seq.sequence);
+                        setTween.plugOptions.SetSequence(seq);
                         seq.Insert(this, setTween);
                     }
                     else {
@@ -171,7 +171,7 @@ namespace M8.Animator {
 	                break;
 	            case AMMaterialTrack.ValueType.TexEnv:
                     var texEnvTween = DOTween.To(new AMPlugValueSet<Texture>(), () => texture, (x) => matInst.SetTexture(propId, x), texture, frameCount/frameRate);
-                    texEnvTween.plugOptions = new AMPlugValueSetOptions(seq.sequence);
+                    texEnvTween.plugOptions.SetSequence(seq);
                     seq.Insert(this, texEnvTween);
 	                break;
 	        }

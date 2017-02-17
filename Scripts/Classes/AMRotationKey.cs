@@ -42,7 +42,7 @@ namespace M8.Animator {
 
 			if(!canTween) {
                 var tween = DOTween.To(new AMPlugValueSet<Quaternion>(), () => rotation, (x) => trans.localRotation=x, rotation, getTime(frameRate));
-                tween.plugOptions = new AMPlugValueSetOptions(seq.sequence);
+                tween.plugOptions.SetSequence(seq);
 
                 seq.Insert(this, tween);
 			}

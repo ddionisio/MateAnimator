@@ -44,24 +44,24 @@ namespace M8.Animator {
 	                case AMRotationEulerTrack.Axis.X:
                         float _x = rotation.x;
                         var tweenX = DOTween.To(new AMPlugValueSet<float>(), () => _x, (x) => { var a=target.localEulerAngles; a.x=x; target.localEulerAngles=a; }, _x, getTime(frameRate));
-                        tweenX.plugOptions = new AMPlugValueSetOptions(seq.sequence);
+                        tweenX.plugOptions.SetSequence(seq);
                         seq.Insert(this, tweenX);
 	                    break;
 	                case AMRotationEulerTrack.Axis.Y:
 	                    float _y = rotation.y;
                         var tweenY = DOTween.To(new AMPlugValueSet<float>(), () => _y, (y) => { var a=target.localEulerAngles; a.y=y; target.localEulerAngles=a; }, _y, getTime(frameRate));
-                        tweenY.plugOptions = new AMPlugValueSetOptions(seq.sequence);
+                        tweenY.plugOptions.SetSequence(seq);
                         seq.Insert(this, tweenY);
 	                    break;
 	                case AMRotationEulerTrack.Axis.Z:
 	                    float _z = rotation.z;
                         var tweenZ = DOTween.To(new AMPlugValueSet<float>(), () => _z, (z) => { var a=target.localEulerAngles; a.z=z; target.localEulerAngles=a; }, _z, getTime(frameRate));
-                        tweenZ.plugOptions = new AMPlugValueSetOptions(seq.sequence);
+                        tweenZ.plugOptions.SetSequence(seq);
                         seq.Insert(this, tweenZ);
 	                    break;
 	                default:
                         var tweenV = DOTween.To(new AMPlugValueSet<Vector3>(), () => rotation, (r) => { target.localEulerAngles=r; }, rotation, getTime(frameRate));
-                        tweenV.plugOptions = new AMPlugValueSetOptions(seq.sequence);
+                        tweenV.plugOptions.SetSequence(seq);
                         seq.Insert(this, tweenV);
 	                    break;
 	            }

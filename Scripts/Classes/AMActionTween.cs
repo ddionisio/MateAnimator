@@ -11,14 +11,26 @@ using DG.Tweening.Plugins.Core;
 using DG.Tweening.Plugins.Options;
 
 namespace M8.Animator {
-    public struct AMPlugValueSetOptions {
-        private Sequence mSeq;
+    public struct AMPlugValueSetOptions : IPlugOptions {
+        private AMSequence mSeq;
         private int mLoopCount;
 
-        public AMPlugValueSetOptions(Sequence seq) {
-            mSeq = seq;
+        public void Reset() {
+            SetSequence(null);
+        }
+
+        public void SetSequence(AMSequence seq) {
+            if(mSeq != seq) {
+                if(mSeq != null)
+                    mSeq.stepCompleteCallback -= OnStepComplete;
+
+                mSeq = seq;
+
+                if(mSeq != null)
+                    mSeq.stepCompleteCallback += OnStepComplete;
+            }
+
             mLoopCount = 0;
-            mSeq.OnStepComplete(OnStepComplete);
         }
 
         public bool Refresh(ref int counter) {
