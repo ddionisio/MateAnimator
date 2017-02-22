@@ -280,7 +280,18 @@ namespace M8.Animator {
 
 	            key.version = version;
 
-	            AMPath path = new AMPath(keys, i);
+                AMPath path;
+                switch((AMTranslationKey.Interpolation)key.interp) {
+                    case AMKey.Interpolation.Curve:
+                        path = AMPath.GenerateCurve(keys, i);
+                        break;
+                    case AMKey.Interpolation.Linear:
+                        path = AMPath.GenerateLinear(keys, i);
+                        break;
+                    default:
+                        path = AMPath.GenerateSingle(keys[i], i);
+                        break;
+                }
 
 	            key.endFrame = path.endFrame;
 	            key.pathPreview = null;
@@ -299,7 +310,11 @@ namespace M8.Animator {
 
 	            //invalidate some keys in between
 	            if(path.startIndex < keys.Count - 1) {
-	                for(i = path.startIndex + 1; i <= path.endIndex - 1; i++) {
+                    int _endInd = path.endIndex;
+                    if(_endInd < keys.Count - 1)
+                        _endInd--;
+
+	                for(i = path.startIndex + 1; i <= _endInd; i++) {
 	                    key = keys[i] as AMTranslationKey;
 
 	                    key.version = version;
@@ -309,7 +324,7 @@ namespace M8.Animator {
 	                    key.path = new Vector3[0];
 	                }
 
-	                i = path.endIndex - 1;
+	                i = _endInd;
 	            }
 	        }
 	    }

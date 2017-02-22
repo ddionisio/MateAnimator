@@ -514,7 +514,7 @@ namespace M8.Animator {
 	        Undo.undoRedoPerformed -= OnUndoRedo;
 
 	        EditDataCleanUp();
-	    }
+	    }        
 	    void OnUndoRedo() {
 	        if(aData == null) return;
 
@@ -6255,11 +6255,17 @@ namespace M8.Animator {
 
 	        TakeEditCurrent().contextSelectFrameRange(startFrame, endFrame);
 	    }
-	    #endregion
+        #endregion
 
-	    #region Other Fns
+        #region Other Fns
 
-	    public int findWidthFontSize(float width, GUIStyle style, GUIContent content, int min = 8, int max = 15) {
+        public void Reload() {
+            ResetDragging();
+            OnDisable();
+            OnEnable();
+            Repaint();
+        }
+        public int findWidthFontSize(float width, GUIStyle style, GUIContent content, int min = 8, int max = 15) {
 	        // finds the largest font size that can fit in the given style. max 15
 	        style.fontSize = max;
 	        while(style.CalcSize(content).x > width) {

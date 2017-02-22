@@ -244,8 +244,12 @@ namespace M8.Animator {
 	        }
 
 	        if(GUI.changed) {
-	            if(AMTimeline.window)
-	                AMTimeline.window.Repaint();
+                if(AMTimeline.window) {
+                    if(metaComm != MetaCommand.None)
+                        AMTimeline.window.Reload();
+                    else
+                        AMTimeline.window.Repaint();
+                }
 	        }
 	    }
 	}
