@@ -32,7 +32,7 @@
             
             v2f vert(float4 pos : POSITION, float2 uv : TEXCOORD0) {
                 v2f o;
-                o.pos = mul(UNITY_MATRIX_MVP, pos);
+                o.pos = UnityObjectToClipPos(pos);
                 o.uv = uv;
                 o.uvm = mul(_Matrix, float4(uv, 0, 1)).xy;
                 return o;
