@@ -46,12 +46,10 @@ namespace M8.Animator {
 
 	    void OnEnable() {
 	        window = this;
-	#if UNITY_5
-	        titleContent = new GUIContent("Options");
-	#else
-	        title = "Options";
-	#endif
-	        minSize = new Vector2(545f, 365f);
+
+            titleContent = new GUIContent("Options");
+
+            minSize = new Vector2(545f, 365f);
 	        maxSize = new Vector2(1000f, this.minSize.y);
 
 	        loadAnimatorData();

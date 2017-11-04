@@ -118,7 +118,7 @@ namespace M8.Animator {
 				}
 
 				for(int i = startInd; i < names.Length; i++) {
-					Transform t = parent.FindChild(names[i]);
+					Transform t = parent.Find(names[i]);
 					if(!t) {
 						GameObject newGO = new GameObject(names[i]);
 						t = newGO.transform;

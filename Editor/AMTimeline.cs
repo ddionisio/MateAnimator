@@ -446,12 +446,8 @@ namespace M8.Animator {
 	        EditDataCleanUp();
 
 	        LoadEditorTextures();
-	#if UNITY_5
-	        titleContent = new GUIContent("Cutscene Editor");
-	#else
-	        title = "Cutscene Editor";
-	#endif
-	        minSize = new Vector2(width_track + width_playback_controls + width_inspector_open + 70f, 190f);
+            titleContent = new GUIContent("Cutscene Editor");
+            minSize = new Vector2(width_track + width_playback_controls + width_inspector_open + 70f, 190f);
 	        wantsMouseMove = true;
 	        window = this;
 	        // find component
@@ -473,24 +469,20 @@ namespace M8.Animator {
 	        buildAddTrackMenu();
 
 	        // playmode callback
-	        EditorApplication.playmodeStateChanged += OnPlayMode;
+	        EditorApplication.playModeStateChanged += OnPlayMode;
 
-	        // check for pro license (no need for Unity 5)
-	#if UNITY_5
-	        AMTakeData.isProLicense = true;
-	#else
-	        AMTakeData.isProLicense = PlayerSettings.advancedLicense;
-	#endif
+            // check for pro license (no need for Unity 5)
+            AMTakeData.isProLicense = true;
 
-	        //autoRepaintOnSceneChange = true;
+            //autoRepaintOnSceneChange = true;
 
-	        mTempHolder = new GameObject();
+            mTempHolder = new GameObject();
 	        mTempHolder.hideFlags = HideFlags.HideAndDontSave;
 
 	        Undo.undoRedoPerformed += OnUndoRedo;
 	    }
 	    void OnDisable() {
-	        EditorApplication.playmodeStateChanged -= OnPlayMode;
+	        EditorApplication.playModeStateChanged -= OnPlayMode;
 
 	        window = null;
 	        if(aData != null) {
@@ -1221,8 +1213,8 @@ namespace M8.Animator {
 	            Cursor.visible = showCursor;
 	        }
 	#else
-	        if(Screen.showCursor != showCursor) {
-	            Screen.showCursor = showCursor;
+	        if(Cursor.visible != showCursor) {
+                Cursor.visible = showCursor;
 	        }
 	#endif
 	        if(isRenamingTake || isRenamingTrack != -1 || isRenamingGroup < 0) EditorGUIUtility.AddCursorRect(rectWindow, MouseCursor.Text);
@@ -2150,8 +2142,8 @@ namespace M8.Animator {
 	        if(AMMaterialEditor.window) AMMaterialEditor.window.reloadAnimatorData();
 	    }
 
-	    void OnPlayMode() {
-	        bool justHitPlay = EditorApplication.isPlayingOrWillChangePlaymode && !EditorApplication.isPlaying;
+	    void OnPlayMode(PlayModeStateChange state) {
+	        bool justHitPlay = state == PlayModeStateChange.EnteredPlayMode;
 	        // entered playmode
 	        if(justHitPlay) {
 	            if(dragType == (int)DragType.TimeScrub || dragType == (int)DragType.FrameScrub) dragType = (int)DragType.None;

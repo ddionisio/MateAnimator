@@ -10,23 +10,25 @@ namespace M8.Animator {
 	[AddComponentMenu("")]
 	public class AnimatorDataHolder : MonoBehaviour {
 	#if UNITY_EDITOR
-	    bool showError = true;
+	    bool showError = false;
 
 	    void OnDestroy() {
 	        if(showError) {
 	            Debug.LogWarning(StackTraceUtility.ExtractStackTrace());
 	        }
 
-	        EditorApplication.playmodeStateChanged -= OnPlayModeChanged;
+	        EditorApplication.playModeStateChanged -= OnPlayModeChanged;
 	    }
 
 	    void Awake() {
-	        EditorApplication.playmodeStateChanged += OnPlayModeChanged;
+	        EditorApplication.playModeStateChanged += OnPlayModeChanged;
 	    }
 
-	    void OnPlayModeChanged() {
-	        if(EditorApplication.isPlayingOrWillChangePlaymode)
-	            showError = false;
+	    void OnPlayModeChanged(PlayModeStateChange state) {
+            if(state == PlayModeStateChange.EnteredPlayMode)
+                showError = true;
+            else if(state == PlayModeStateChange.EnteredEditMode)
+                showError = false;
 	    }
 	#endif
 	}

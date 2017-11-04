@@ -27,12 +27,9 @@ namespace M8.Animator {
 		private const float height_gameobject = 22f;
 
 		void OnEnable() {
-	#if UNITY_5
-	        titleContent = new GUIContent("Resolve Duplicates");
-	#else
-	        title = "Resolve Duplicates";
-	#endif
-			minSize = new Vector2(590f,120f);
+            titleContent = new GUIContent("Resolve Duplicates");
+
+            minSize = new Vector2(590f,120f);
 			actions = new List<int>();	
 			for(int i=0;i<newReference.Count;i++) actions.Add(0);
 		}
