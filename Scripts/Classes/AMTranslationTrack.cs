@@ -122,7 +122,7 @@ namespace M8.Animator {
             AMTranslationKey lastKey = keyCount == 1 ? firstKey : keys[keyCount-1] as AMTranslationKey;
 
             //check if past last key
-            if(iFrame >= lastKey.endFrame && !lastKey.canTween) {
+            if(iFrame >= lastKey.endFrame) {
                 SetPosition(t, lastKey.position);
                 return;
             }
@@ -314,17 +314,19 @@ namespace M8.Animator {
                     if(_endInd < keys.Count - 1)
                         _endInd--;
 
-	                for(i = path.startIndex + 1; i <= _endInd; i++) {
-	                    key = keys[i] as AMTranslationKey;
+                    if(i < _endInd) {
+                        for(i = path.startIndex + 1; i <= _endInd; i++) {
+                            key = keys[i] as AMTranslationKey;
 
-	                    key.version = version;
-	                    key.interp = interp;
-						key.easeType = easeType;
-	                    key.endFrame = key.frame;
-	                    key.path = new Vector3[0];
-	                }
+                            key.version = version;
+                            key.interp = interp;
+                            key.easeType = easeType;
+                            key.endFrame = key.frame;
+                            key.path = new Vector3[0];
+                        }
 
-	                i = _endInd;
+                        i = _endInd;
+                    }
 	            }
 	        }
 	    }
