@@ -189,10 +189,10 @@ namespace M8.Animator {
 	        Rect rectWindow = new Rect(0f, 0f, position.width, position.height);
 	        mouseOverElement = (int)ElementType.None;
 	        bool wasDragging = false;
-	        if(e.type == EventType.mouseDrag && EditorWindow.mouseOverWindow==this) {
+	        if(e.type == EventType.MouseDrag && EditorWindow.mouseOverWindow==this) {
 	            isDragging = true;
 	        }
-	        else if(e.type == EventType.mouseUp || /*EditorWindow.mouseOverWindow!=this*/Event.current.rawType == EventType.MouseUp /*|| e.mousePosition.y < 0f*/) {
+	        else if(e.type == EventType.MouseUp || /*EditorWindow.mouseOverWindow!=this*/Event.current.rawType == EventType.MouseUp /*|| e.mousePosition.y < 0f*/) {
 	            if(isDragging) {
 	                wasDragging = true;
 	                isDragging = false;

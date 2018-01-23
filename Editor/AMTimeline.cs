@@ -987,11 +987,11 @@ namespace M8.Animator {
 	        bool wasDragging = false;
 	        UnityEngine.Object[] dragItems = null;
 	        Rect dropArea = new Rect(width_track, height_menu_bar + height_control_bar + 2f, position.width - 5f - 15f - width_track - (aData.isInspectorOpen ? width_inspector_open : width_inspector_closed), position.height - height_indicator_footer - height_menu_bar - height_control_bar);
-	        if(e.type == EventType.mouseDown) {
+	        if(e.type == EventType.MouseDown) {
 	            dragPan = (e.button == 0);
 	        }
 
-	        if(e.type == EventType.mouseDrag && EditorWindow.mouseOverWindow == this) {
+	        if(e.type == EventType.MouseDrag && EditorWindow.mouseOverWindow == this) {
 	            isDragging = true;
 	        }
 	        else if(EditorWindow.mouseOverWindow == this && (e.type == EventType.DragUpdated || e.type == EventType.DragPerform) && DragAndDrop.objectReferences.Length > 0 && dropArea.Contains(currentMousePosition)) {
@@ -1026,7 +1026,7 @@ namespace M8.Animator {
 
 	            DragAndDrop.visualMode = DragAndDropVisualMode.Link;
 	        }
-	        else if((dragType == (int)DragType.CursorZoom && EditorWindow.mouseOverWindow != this) || e.type == EventType.mouseUp || /*EditorWindow.mouseOverWindow!=this*/Event.current.rawType == EventType.MouseUp /*|| e.mousePosition.y < 0f*/) {
+	        else if((dragType == (int)DragType.CursorZoom && EditorWindow.mouseOverWindow != this) || e.type == EventType.MouseUp || /*EditorWindow.mouseOverWindow!=this*/Event.current.rawType == EventType.MouseUp /*|| e.mousePosition.y < 0f*/) {
 	            if(isDragging) {
 	                wasDragging = true;
 	                isDragging = false;
@@ -1160,8 +1160,8 @@ namespace M8.Animator {
 	        // check if control or shift are down
 	        isControlDown = e.control || e.command;
 	        isShiftDown = e.shift;
-	        if(e.type == EventType.keyDown && e.keyCode == KeyCode.Space) isSpaceBarDown = true;
-	        else if(e.type == EventType.keyUp && e.keyCode == KeyCode.Space) isSpaceBarDown = false;
+	        if(e.type == EventType.KeyDown && e.keyCode == KeyCode.Space) isSpaceBarDown = true;
+	        else if(e.type == EventType.KeyUp && e.keyCode == KeyCode.Space) isSpaceBarDown = false;
 	        #endregion
 	        #region set cursor
 	        int customCursor = (int)CursorType.None;
