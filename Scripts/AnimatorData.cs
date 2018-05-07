@@ -130,8 +130,7 @@ namespace M8.Animator {
 
 	    [HideInInspector]
 	    public int codeLanguage = 0; 	// 0 = C#, 1 = Javascript
-
-	    [HideInInspector]
+        
 	    [SerializeField]
 	    private GameObject _dataHolder;
 
@@ -415,6 +414,15 @@ namespace M8.Animator {
 	        if(!Application.isPlaying)
 	            return;
 
+            if(!meta && !_dataHolder) {
+                foreach(Transform child in transform) {
+                    if(child.gameObject.name == "_animdata") {
+                        _dataHolder = child.gameObject;
+                        break;
+                    }
+                }
+            }
+
             if(_dataHolder)
 	            _dataHolder.SetActive(false);
 
@@ -452,30 +460,15 @@ namespace M8.Animator {
 	                return meta.transform;
 	            }
 	            else {
-	                if(_dataHolder == null) {
-	                    foreach(Transform child in transform) {
-	                        if(child.gameObject.name == "_animdata") {
-	                            _dataHolder = child.gameObject;
-	                            break;
-	                        }
-	                    }
-
-	                    if(_dataHolder) {
-	                        //refresh data?
-	                    }
-	                    else {
-	#if MATE_DEBUG_ANIMATOR
-	                        _dataHolder = new GameObject("_animdata", typeof(AnimatorDataHolder));
-	#else
-	                        _dataHolder = new GameObject("_animdata");
-	#endif
-	                        _dataHolder.transform.parent = transform;
-	                    }
-	                }
-
-	                return _dataHolder.transform;
+	                return _dataHolder ? _dataHolder.transform : null;
 	            }
 	        }
+
+            set {
+                if(!meta) {
+                    _dataHolder = value ? value.gameObject : null;
+                }
+            }
 	    }
 
 	    bool AMITarget.isMeta {

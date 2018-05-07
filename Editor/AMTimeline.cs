@@ -402,7 +402,11 @@ namespace M8.Animator {
 	    private string mMetaName = "";
 	    private string mMetaPath = "";
 
-	    private static Dictionary<AMTakeData, AMTakeEdit> mTakeEdits = new Dictionary<AMTakeData, AMTakeEdit>();
+        //used when we need to add track during OnGUI (workaround for things like dragging to window Unity bug)
+        private int mAddTrackTypeIndexLate = -1;
+        private int mAddTrackTypeIndexLateCounter = 0; //this is a cheesy way to allow a new cycle to happen before adding track
+
+        private static Dictionary<AMTakeData, AMTakeEdit> mTakeEdits = new Dictionary<AMTakeData, AMTakeEdit>();
 	    public static AMTakeEdit TakeEdit(AMTakeData take) {
 	        AMTakeEdit ret = null;
 	        if(!mTakeEdits.TryGetValue(take, out ret)) {
@@ -763,6 +767,21 @@ namespace M8.Animator {
 	            }
 	            currentTake.previewFrame(aData.target, curFrame, false, true, play, playbackSpeedValue[playbackSpeedIndex]);
 	        }
+            else if(mAddTrackTypeIndexLate != -1) { //add track delay
+                if(mAddTrackTypeIndexLateCounter < 1) { //TODO: this allows for one cycle to finish, need a better way to do this
+                    mAddTrackTypeIndexLateCounter++;
+                    return;
+                }
+
+                bool addCompUndo = !aData.metaCanInstantiatePrefab;
+                RegisterTakesUndo(aData, "New Track", false);
+                addTrack(mAddTrackTypeIndexLate, addCompUndo);
+
+                mAddTrackTypeIndexLate = -1;
+                mAddTrackTypeIndexLateCounter = 0;
+
+                this.Repaint();
+            }
 	        else {
 	            // autokey
 	            if(!isDragging && aData != null && aData.autoKey) {
@@ -5473,7 +5492,15 @@ namespace M8.Animator {
 	    }
 
 	    T _addTrack<T>(GameObject object_window, bool addCompUndo) where T : AMTrack {
-	        GameObject holder = aData.target.holder.gameObject;
+            if(!aData.target.holder) { //holder not found?
+                var newHolderGO = new GameObject("_animdata");
+                Undo.RegisterCreatedObjectUndo(newHolderGO, "Create Animator Holder");
+                Undo.SetTransformParent(newHolderGO.transform, aData.target.root, "Create Animator Holder");
+                aData.RegisterUndo("Create Animator Holder", false);
+                aData.target.holder = newHolderGO.transform;
+            }
+
+            GameObject holder = aData.target.holder.gameObject;
 	        T track = addCompUndo ? Undo.AddComponent<T>(holder) : holder.AddComponent<T>();
 	        aData.currentTake.addTrack(TakeEditCurrent().selectedGroup, aData.target, object_window ? object_window.transform : null, track);
 	        return track;
@@ -5881,6 +5908,10 @@ namespace M8.Animator {
 	        RegisterTakesUndo(aData, "New Track", false);
 	        addTrack((int)type, addCompUndo);
 	    }
+        void addTrackFromMenuLate(object type) {
+            mAddTrackTypeIndexLate = (int)type;
+            mAddTrackTypeIndexLateCounter = 0; //reset counter to allow one cycle to happen before adding track
+        }
 	    void buildAddTrackMenu() {
 	        menu.AddItem(new GUIContent("Translation"), false, addTrackFromMenu, (int)Track.Translation);
 	        menu.AddItem(new GUIContent("Rotation/Quaternion"), false, addTrackFromMenu, (int)Track.Rotation);
@@ -5926,10 +5957,10 @@ namespace M8.Animator {
 
 	        // Translation/Rotation/Orientation
 	        if(hasTransform) { 
-	            menu_drag.AddItem(new GUIContent("Translation"), false, addTrackFromMenu, (int)Track.Translation);
-	            menu_drag.AddItem(new GUIContent("Rotation/Quaternion"), false, addTrackFromMenu, (int)Track.Rotation);
-	            menu_drag.AddItem(new GUIContent("Rotation/Euler"), false, addTrackFromMenu, (int)Track.RotationEuler);
-	            menu_drag.AddItem(new GUIContent("Orientation"), false, addTrackFromMenu, (int)Track.Orientation);
+	            menu_drag.AddItem(new GUIContent("Translation"), false, addTrackFromMenuLate, (int)Track.Translation);
+	            menu_drag.AddItem(new GUIContent("Rotation/Quaternion"), false, addTrackFromMenuLate, (int)Track.Rotation);
+	            menu_drag.AddItem(new GUIContent("Rotation/Euler"), false, addTrackFromMenuLate, (int)Track.RotationEuler);
+	            menu_drag.AddItem(new GUIContent("Orientation"), false, addTrackFromMenuLate, (int)Track.Orientation);
 	        }
 	        else { 
 	            menu_drag.AddDisabledItem(new GUIContent("Translation")); 
@@ -5938,22 +5969,22 @@ namespace M8.Animator {
 	            menu_drag.AddDisabledItem(new GUIContent("Orientation"));
 	        }
 	        // Animation
-	        if(hasAnimation) menu_drag.AddItem(new GUIContent("Animation"), false, addTrackFromMenu, (int)Track.Animation);
+	        if(hasAnimation) menu_drag.AddItem(new GUIContent("Animation"), false, addTrackFromMenuLate, (int)Track.Animation);
 	        else menu_drag.AddDisabledItem(new GUIContent("Animation"));
 	        // Audio
-	        if(hasAudioSource) menu_drag.AddItem(new GUIContent("Audio"), false, addTrackFromMenu, (int)Track.Audio);
+	        if(hasAudioSource) menu_drag.AddItem(new GUIContent("Audio"), false, addTrackFromMenuLate, (int)Track.Audio);
 	        else menu_drag.AddDisabledItem(new GUIContent("Audio"));
 	        // Property
-	        menu_drag.AddItem(new GUIContent("Property"), false, addTrackFromMenu, (int)Track.Property);
+	        menu_drag.AddItem(new GUIContent("Property"), false, addTrackFromMenuLate, (int)Track.Property);
 	        // Material
-	        if(hasRenderer) menu_drag.AddItem(new GUIContent("Material"), false, addTrackFromMenu, (int)Track.Material);
+	        if(hasRenderer) menu_drag.AddItem(new GUIContent("Material"), false, addTrackFromMenuLate, (int)Track.Material);
 	        else menu_drag.AddDisabledItem(new GUIContent("Material"));
 	        // Event
-	        menu_drag.AddItem(new GUIContent("Event"), false, addTrackFromMenu, (int)Track.Event);
+	        menu_drag.AddItem(new GUIContent("Event"), false, addTrackFromMenuLate, (int)Track.Event);
 	        // GO Active
-	        menu_drag.AddItem(new GUIContent("GO Active"), false, addTrackFromMenu, (int)Track.GOSetActive);
+	        menu_drag.AddItem(new GUIContent("GO Active"), false, addTrackFromMenuLate, (int)Track.GOSetActive);
 	        // Camera Switcher
-	        if(hasCamera && !aData.currentTake.cameraSwitcher) menu_drag.AddItem(new GUIContent("Camera Switcher"), false, addTrackFromMenu, (int)Track.CameraSwitcher);
+	        if(hasCamera && !aData.currentTake.cameraSwitcher) menu_drag.AddItem(new GUIContent("Camera Switcher"), false, addTrackFromMenuLate, (int)Track.CameraSwitcher);
 	        else menu_drag.AddDisabledItem(new GUIContent("Camera Switcher"));
 	        
 	        if(oData.quickAdd_Combos.Count > 0) {
@@ -5967,7 +5998,7 @@ namespace M8.Animator {
 	                    if(i < combo.Count - 1) combo_name += "+ ";
 	                }
 	                if(canQuickAddCombo(combo, hasTransform, hasAnimation, hasAudioSource, hasCamera, hasAnimatorData, hasRenderer)) 
-	                    menu_drag.AddItem(new GUIContent(combo_name), false, addTrackFromMenu, 100 + oData.quickAdd_Combos.IndexOf(combo));
+	                    menu_drag.AddItem(new GUIContent(combo_name), false, addTrackFromMenuLate, 100 + oData.quickAdd_Combos.IndexOf(combo));
 	                else menu_drag.AddDisabledItem(new GUIContent(combo_name));
 	            }
 	        }

@@ -294,6 +294,14 @@ namespace M8.Animator {
 
             var itarget = mData as AMITarget;
 
+            if(!itarget.holder) { //holder not found?
+                var newHolderGO = new GameObject("_animdata");
+                Undo.RegisterCreatedObjectUndo(newHolderGO, "Create Animator Holder");
+                Undo.SetTransformParent(newHolderGO.transform, itarget.root, "Create Animator Holder");
+                Undo.RecordObject(mData, "Create Animator Holder");
+                itarget.holder = newHolderGO.transform;
+            }
+
 	        if(dupTake.trackValues != null) {
 	            a.trackValues = new List<AMTrack>();
 	            foreach(AMTrack track in dupTake.trackValues) {

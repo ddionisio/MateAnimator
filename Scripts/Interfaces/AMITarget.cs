@@ -7,7 +7,7 @@ namespace M8.Animator {
 
 	    Transform root { get; }
 
-	    Transform holder { get; }
+	    Transform holder { get; set; }
 
 	    List<AMTakeData> takes { get; }
 
