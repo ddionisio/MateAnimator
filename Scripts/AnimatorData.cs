@@ -284,7 +284,13 @@ namespace M8.Animator {
             mSequences[take].take.Reset(this);
         }
 
-	    public void Pause() {
+        public void ResetTake(string takeName) {
+            int ind = GetTakeIndex(takeName);
+            if(ind == -1) { Debug.LogError("Take not found: " + takeName); return; }
+            ResetTake(ind);
+        }
+
+        public void Pause() {
 	        AMTakeData take = mCurrentPlayingTake;
 	        if(take == null) return;
 	        take.Pause(this);
