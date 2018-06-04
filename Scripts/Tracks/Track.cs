@@ -4,9 +4,8 @@ using UnityEngine;
 
 namespace M8.Animator {
     public abstract class Track {
-        public delegate Key OnAddKey(GameObject go, System.Type type);
-        public delegate void OnKey(Track track, Key key);
-
+        public abstract SerializeType serializeType { get; }
+        
         public int id;
         public string name;
         public List<Key> keys = new List<Key>();
@@ -14,9 +13,7 @@ namespace M8.Animator {
 
         [SerializeField]
         protected string _targetPath; //for animations saved as meta
-
-        public abstract SerializeType serializeType { get; }
-
+                
         public virtual int version { get { return 1; } } //must be at least 1
 
         public virtual int order { get { return 0; } }
@@ -38,6 +35,8 @@ namespace M8.Animator {
         }
 
         public bool started { get; private set; }
+
+        //TODO: change (Set/Get)SerializeObject to Unity.Engine.Object target { get; set; }
 
         /// <summary>
         /// Stores the obj to serialized field based on track type, obj is null if _targetPath is used
@@ -106,7 +105,7 @@ namespace M8.Animator {
                 return AMUtil.GetPath(target.root, GetSerializeObject(null));
         }
 
-        public void SetTarget(ITarget target, Transform item) {
+        public virtual void SetTarget(ITarget target, Transform item) {
             if(target.isMeta && item) {
                 _targetPath = AMUtil.GetPath(target.root, item);
                 target.SetCache(_targetPath, item);

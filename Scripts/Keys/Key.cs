@@ -6,6 +6,8 @@ using DG.Tweening;
 
 namespace M8.Animator {
     public abstract class Key {
+        public abstract SerializeType serializeType { get; }
+
         public enum Interpolation {
             Curve = 0,
             Linear = 1,
@@ -23,9 +25,7 @@ namespace M8.Animator {
         public float period = 0.0f;
 
         public List<float> customEase = new List<float>();
-
-        public abstract SerializeType serializeType { get; }
-
+                
         public virtual bool canTween { get { return interp != Interpolation.None; } }
 
         private AnimationCurve _cachedEaseCurve;
@@ -65,7 +65,7 @@ namespace M8.Animator {
         /// Use sequence to insert callbacks, or some other crap, just don't insert the tweener you are returning!
         /// target is set if required. index = this key's index in the track
         /// </summary>
-        public virtual void build(AMSequence seq, AMTrack track, int index, UnityEngine.Object target) {
+        public virtual void build(SequenceControl seq, Track track, int index, UnityEngine.Object target) {
             Debug.LogError("Animator: No override for build.");
         }
 

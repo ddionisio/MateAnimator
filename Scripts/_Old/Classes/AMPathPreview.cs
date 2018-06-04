@@ -49,7 +49,7 @@ namespace M8.Animator {
 	    // ***********************************************************************************
 
 	    /// <summary>
-	    /// Creates a new <see cref="Path"/> based on the given array of <see cref="Vector3"/> points.
+	    /// Creates a new <see cref="PathData"/> based on the given array of <see cref="Vector3"/> points.
 	    /// </summary>
 	    /// <param name="p_type">Type of path</param>
 	    /// <param name="p_path">
