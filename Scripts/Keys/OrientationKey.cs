@@ -23,7 +23,7 @@ namespace M8.Animator {
         public int endFrame;
 
         public void SetTarget(ITarget itarget, Transform t) {
-            if(itarget.isMeta) {
+            if(itarget.meta) {
                 target = null;
                 targetPath = Utility.GetPath(itarget.root, t);
                 itarget.SetCache(targetPath, t);
@@ -35,7 +35,7 @@ namespace M8.Animator {
         }
         public Transform GetTarget(ITarget itarget) {
             Transform ret = null;
-            if(itarget.isMeta) {
+            if(itarget.meta) {
                 if(!string.IsNullOrEmpty(targetPath)) {
                     ret = itarget.GetCache(targetPath);
                     if(ret == null) {
@@ -50,7 +50,7 @@ namespace M8.Animator {
         }
 
         public override void maintainKey(ITarget itarget, UnityEngine.Object targetObj) {
-            if(itarget.isMeta) {
+            if(itarget.meta) {
                 if(string.IsNullOrEmpty(targetPath)) {
                     if(target) {
                         targetPath = Utility.GetPath(itarget.root, target);

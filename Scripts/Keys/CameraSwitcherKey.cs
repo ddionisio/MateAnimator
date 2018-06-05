@@ -49,7 +49,7 @@ namespace M8.Animator {
         public int endFrame;
 
         public Camera getCamera(ITarget itarget) {
-            if(itarget.isMeta) {
+            if(itarget.meta) {
                 if(!string.IsNullOrEmpty(_cameraPath)) {
                     Transform t = itarget.GetCache(_cameraPath);
                     if(t)
@@ -75,7 +75,7 @@ namespace M8.Animator {
         public bool setCamera(ITarget itarget, Camera camera) {
             if(getCamera(itarget) != camera) {
                 if(camera) {
-                    if(itarget.isMeta) {
+                    if(itarget.meta) {
                         _camera = null;
                         _cameraPath = Utility.GetPath(itarget.root, camera);
                         itarget.SetCache(_cameraPath, camera.transform);
@@ -97,7 +97,7 @@ namespace M8.Animator {
         }
 
         public Camera getCameraEnd(ITarget itarget) {
-            if(itarget.isMeta) {
+            if(itarget.meta) {
                 if(!string.IsNullOrEmpty(_cameraEndPath)) {
                     Transform t = itarget.GetCache(_cameraEndPath);
                     if(t)
@@ -122,7 +122,7 @@ namespace M8.Animator {
         }
 
         public override void maintainKey(ITarget itarget, UnityEngine.Object targetObj) {
-            if(itarget.isMeta) {
+            if(itarget.meta) {
                 if(string.IsNullOrEmpty(_cameraPath)) {
                     if(_camera) {
                         _cameraPath = Utility.GetPath(itarget.root, _camera);

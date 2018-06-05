@@ -10,8 +10,7 @@ namespace M8.Animator {
 
         List<Take> takes { get; }
 
-        AnimatorMeta meta { get; set; }
-        bool isMeta { get; }
+        AnimateMeta meta { get; set; }
 
         Transform GetCache(string path);
         void SetCache(string path, Transform obj);

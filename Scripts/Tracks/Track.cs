@@ -7,8 +7,7 @@ namespace M8.Animator {
         public abstract SerializeType serializeType { get; }
         
         public int id;
-        public string name;
-        public List<Key> keys = new List<Key>();
+        public string name;        
         public bool foldout = true;                         // whether or not to foldout track in timeline GUI
 
         [SerializeField]
@@ -17,6 +16,9 @@ namespace M8.Animator {
         public virtual int version { get { return 1; } } //must be at least 1
 
         public virtual int order { get { return 0; } }
+
+        public List<Key> keys { get { return mKeys; } set { mKeys = value; } }
+        private List<Key> mKeys = new List<Key>();
 
         /// <summary>
         /// If true, then track has settings to display even if there is no key selected.
@@ -58,7 +60,7 @@ namespace M8.Animator {
         public UnityEngine.Object GetTarget(ITarget target) {
             UnityEngine.Object ret = null;
 
-            if(target.isMeta) {
+            if(target.meta) {
                 Transform tgt = target.GetCache(_targetPath);
                 if(tgt)
                     ret = GetSerializeObject(tgt.gameObject);
@@ -99,14 +101,14 @@ namespace M8.Animator {
         }
 
         public string GetTargetPath(ITarget target) {
-            if(target.isMeta)
+            if(target.meta)
                 return _targetPath;
             else
                 return Utility.GetPath(target.root, GetSerializeObject(null));
         }
 
         public virtual void SetTarget(ITarget target, Transform item) {
-            if(target.isMeta && item) {
+            if(target.meta && item) {
                 _targetPath = Utility.GetPath(target.root, item);
                 target.SetCache(_targetPath, item);
                 SetSerializeObject(GetSerializeObject(item.gameObject));
@@ -125,7 +127,7 @@ namespace M8.Animator {
             Object obj = null;
 
             //fix the target info
-            if(itarget.isMeta) {
+            if(itarget.meta) {
                 if(string.IsNullOrEmpty(_targetPath)) {
                     obj = GetSerializeObject(null);
                     if(obj) {

@@ -61,7 +61,7 @@ namespace M8.Animator {
 
         Component GetTargetComp(ITarget target) {
             Component comp;
-            if(target.isMeta) {
+            if(target.meta) {
                 component = null;
                 GameObject go = GetTarget(target) as GameObject;
                 comp = go ? go.GetComponent(componentName) : null;
@@ -245,7 +245,7 @@ namespace M8.Animator {
         }
 
         public bool setComponent(ITarget target, Component component) {
-            if(target.isMeta) {
+            if(target.meta) {
                 string cname = component.GetType().Name;
                 this.component = null;
                 if(componentName != cname) {
@@ -297,7 +297,7 @@ namespace M8.Animator {
                     componentName = component.GetType().Name;
             }
 
-            if(itarget.isMeta) {
+            if(itarget.meta) {
                 component = null;
             }
             else if(!component && !string.IsNullOrEmpty(componentName)) {

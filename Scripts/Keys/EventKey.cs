@@ -74,7 +74,7 @@ namespace M8.Animator {
                 }
             }
 
-            if(itarget.isMeta) {
+            if(itarget.meta) {
                 component = null;
             }
             else if(!component && !string.IsNullOrEmpty(componentName) && targetObj) {
@@ -318,7 +318,7 @@ namespace M8.Animator {
 
             //get component and fill the cached method info
             Component comp;
-            if(seq.target.isMeta) {
+            if(seq.target.meta) {
                 if(string.IsNullOrEmpty(componentName)) return;
                 comp = (target as GameObject).GetComponent(componentName);
 
