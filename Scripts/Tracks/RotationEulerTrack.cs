@@ -117,10 +117,10 @@ namespace M8.Animator {
                 Vector3 qEnd = keyNext.rotation;
 
                 if(key.hasCustomEase()) {
-                    ApplyRot(t, Vector3.Lerp(qStart, qEnd, AMUtil.EaseCustom(0.0f, 1.0f, framePositionInAction / numFrames, key.easeCurve)));
+                    ApplyRot(t, Vector3.Lerp(qStart, qEnd, Utility.EaseCustom(0.0f, 1.0f, framePositionInAction / numFrames, key.easeCurve)));
                 }
                 else {
-                    var ease = AMUtil.GetEasingFunction((Ease)key.easeType);
+                    var ease = Utility.GetEasingFunction((Ease)key.easeType);
                     ApplyRot(t, Vector3.Lerp(qStart, qEnd, ease(framePositionInAction, numFrames, key.amplitude, key.period)));
                 }
 
@@ -197,10 +197,10 @@ namespace M8.Animator {
                 Vector3 qEnd = keyNext.rotation;
 
                 if(key.hasCustomEase()) {
-                    return Vector3.Lerp(qStart, qEnd, AMUtil.EaseCustom(0.0f, 1.0f, framePositionInAction / numFrames, key.easeCurve));
+                    return Vector3.Lerp(qStart, qEnd, Utility.EaseCustom(0.0f, 1.0f, framePositionInAction / numFrames, key.easeCurve));
                 }
                 else {
-                    var ease = AMUtil.GetEasingFunction(key.easeType);
+                    var ease = Utility.GetEasingFunction(key.easeType);
                     return Vector3.Lerp(qStart, qEnd, ease(framePositionInAction, numFrames, key.amplitude, key.period));
                 }
             }

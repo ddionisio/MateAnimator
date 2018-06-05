@@ -25,7 +25,7 @@ namespace M8.Animator {
         public void SetTarget(ITarget itarget, Transform t) {
             if(itarget.isMeta) {
                 target = null;
-                targetPath = AMUtil.GetPath(itarget.root, t);
+                targetPath = Utility.GetPath(itarget.root, t);
                 itarget.SetCache(targetPath, t);
             }
             else {
@@ -39,7 +39,7 @@ namespace M8.Animator {
                 if(!string.IsNullOrEmpty(targetPath)) {
                     ret = itarget.GetCache(targetPath);
                     if(ret == null) {
-                        ret = AMUtil.GetTarget(itarget.root, targetPath);
+                        ret = Utility.GetTarget(itarget.root, targetPath);
                         itarget.SetCache(targetPath, ret);
                     }
                 }
@@ -53,7 +53,7 @@ namespace M8.Animator {
             if(itarget.isMeta) {
                 if(string.IsNullOrEmpty(targetPath)) {
                     if(target) {
-                        targetPath = AMUtil.GetPath(itarget.root, target);
+                        targetPath = Utility.GetPath(itarget.root, target);
                         itarget.SetCache(targetPath, target);
                     }
                 }
@@ -65,7 +65,7 @@ namespace M8.Animator {
                     if(!string.IsNullOrEmpty(targetPath)) {
                         target = itarget.GetCache(targetPath);
                         if(!target)
-                            target = AMUtil.GetTarget(itarget.root, targetPath);
+                            target = Utility.GetTarget(itarget.root, targetPath);
                     }
                 }
 
@@ -101,10 +101,10 @@ namespace M8.Animator {
             float time = 0.0f;
 
             if(hasCustomEase()) {
-                time = AMUtil.EaseCustom(0.0f, 1.0f, percentage, easeCurve);
+                time = Utility.EaseCustom(0.0f, 1.0f, percentage, easeCurve);
             }
             else {
-                var ease = AMUtil.GetEasingFunction(easeType);
+                var ease = Utility.GetEasingFunction(easeType);
                 time = ease(percentage, 1.0f, amplitude, period);
             }
 

@@ -103,7 +103,7 @@ namespace M8.Animator {
             take = null;
         }
 
-        public void Trigger(Key key, TriggerData data) {
+        public void Trigger(Key key, TriggerParam data) {
             target.SequenceTrigger(this, key, data);
         }
 

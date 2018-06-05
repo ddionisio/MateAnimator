@@ -2,7 +2,7 @@ using UnityEngine;
 using System.Collections;
 
 namespace M8.Animator {
-	public struct AMGizmo {
+	public struct GizmoDisplay {
 	    public static Color defaultColor = Color.white;
 
 	    /// <summary>
@@ -146,12 +146,12 @@ namespace M8.Animator {
 	    //trans = the transform where path is relative to, null if path is already in world position
 	    private static void DrawPathHelper(Transform trans, Vector3[] path, Color color, string method) {
 	        //Line Draw:
-			Vector3 prevPt = trans != null ? trans.localToWorldMatrix.MultiplyPoint(AMUtil.Interp(path, 0)) : AMUtil.Interp(path, 0);
+			Vector3 prevPt = trans != null ? trans.localToWorldMatrix.MultiplyPoint(Utility.Interp(path, 0)) : Utility.Interp(path, 0);
 	        Gizmos.color = color;
 	        int SmoothAmount = path.Length * 20;
 	        for(int i = 1; i <= SmoothAmount; i++) {
 	            float pm = (float)i / SmoothAmount;
-				Vector3 currPt = AMUtil.Interp(path, pm);
+				Vector3 currPt = Utility.Interp(path, pm);
 	            if(trans != null)
 	                currPt = trans.localToWorldMatrix.MultiplyPoint(currPt);
 	            if(method == "gizmos") {

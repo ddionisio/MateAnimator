@@ -59,7 +59,7 @@ namespace M8.Animator {
 	        if(frame < keys[0].frame) {
 	            AMAnimationKey amKey = keys[0] as AMAnimationKey;
 	            if(amKey.amClip)
-	                AMUtil.SampleAnimation(anim, amKey.amClip.name, amKey.wrapMode, amKey.crossfade ? 0.0f : 1.0f, 0.0f);
+	                Utility.SampleAnimation(anim, amKey.amClip.name, amKey.wrapMode, amKey.crossfade ? 0.0f : 1.0f, 0.0f);
 	            return;
 	        }
 
@@ -74,14 +74,14 @@ namespace M8.Animator {
 	                            AMAnimationKey amPrevKey = keys[i - 1] as AMAnimationKey;
 	                            if(amPrevKey.amClip) {
 	                                float prevT = (frame - (float)amPrevKey.frame) / (float)frameRate;
-	                                AMUtil.SampleAnimationCrossFade(anim, amKey.crossfadeTime, amPrevKey.amClip.name, amPrevKey.wrapMode, prevT, amKey.amClip.name, amKey.wrapMode, t);
+	                                Utility.SampleAnimationCrossFade(anim, amKey.crossfadeTime, amPrevKey.amClip.name, amPrevKey.wrapMode, prevT, amKey.amClip.name, amKey.wrapMode, t);
 	                            }
 	                        }
 	                        else
-	                            AMUtil.SampleAnimationFadeIn(anim, amKey.amClip.name, amKey.wrapMode, amKey.crossfadeTime, t);
+	                            Utility.SampleAnimationFadeIn(anim, amKey.amClip.name, amKey.wrapMode, amKey.crossfadeTime, t);
 	                    }
 	                    else
-	                        AMUtil.SampleAnimation(anim, amKey.amClip.name, amKey.wrapMode, 1.0f, t);
+	                        Utility.SampleAnimation(anim, amKey.amClip.name, amKey.wrapMode, 1.0f, t);
 	                }
 	                break;
 	            }

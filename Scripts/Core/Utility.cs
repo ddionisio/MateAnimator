@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Text;
 
 namespace M8.Animator {
-	public struct AMUtil {
+	public struct Utility {
 	    private static Transform[] mRoots; //generated to grab targets
 
 	    public static void SampleAnimation(Animation anim, string clipName, WrapMode wrap, float weight, float time) {
@@ -79,9 +79,9 @@ namespace M8.Animator {
 	    // should the cameras be reversed
 	    public static bool isTransitionReversed(int transition, float[] r) {
 	        switch(transition) {
-	            case (int)AMCameraSwitcherKey.Fade.IrisShape:
-	            case (int)AMCameraSwitcherKey.Fade.IrisRound:
-	            case (int)AMCameraSwitcherKey.Fade.IrisBox:
+	            case (int)CameraSwitcherKey.Fade.IrisShape:
+	            case (int)CameraSwitcherKey.Fade.IrisRound:
+	            case (int)CameraSwitcherKey.Fade.IrisBox:
 	                // if iris type is grow, reverse
 	                if(r.Length >= 1 && r[0] == 1f) return true;
 	                break;

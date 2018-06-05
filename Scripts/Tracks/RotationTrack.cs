@@ -112,10 +112,10 @@ namespace M8.Animator {
                 Quaternion qEnd = keyNext.rotation;
 
                 if(key.hasCustomEase()) {
-                    t.localRotation = Quaternion.LerpUnclamped(qStart, qEnd, AMUtil.EaseCustom(0.0f, 1.0f, framePositionInAction / numFrames, key.easeCurve));
+                    t.localRotation = Quaternion.LerpUnclamped(qStart, qEnd, Utility.EaseCustom(0.0f, 1.0f, framePositionInAction / numFrames, key.easeCurve));
                 }
                 else {
-                    var ease = AMUtil.GetEasingFunction((Ease)key.easeType);
+                    var ease = Utility.GetEasingFunction((Ease)key.easeType);
                     t.localRotation = Quaternion.LerpUnclamped(qStart, qEnd, ease(framePositionInAction, numFrames, key.amplitude, key.period));
                 }
 
@@ -172,10 +172,10 @@ namespace M8.Animator {
                 Quaternion qEnd = keyNext.rotation;
 
                 if(key.hasCustomEase()) {
-                    return Quaternion.LerpUnclamped(qStart, qEnd, AMUtil.EaseCustom(0.0f, 1.0f, framePositionInAction / numFrames, key.easeCurve));
+                    return Quaternion.LerpUnclamped(qStart, qEnd, Utility.EaseCustom(0.0f, 1.0f, framePositionInAction / numFrames, key.easeCurve));
                 }
                 else {
-                    var ease = AMUtil.GetEasingFunction((Ease)key.easeType);
+                    var ease = Utility.GetEasingFunction((Ease)key.easeType);
                     return Quaternion.LerpUnclamped(qStart, qEnd, ease(framePositionInAction, numFrames, key.amplitude, key.period));
                 }
             }

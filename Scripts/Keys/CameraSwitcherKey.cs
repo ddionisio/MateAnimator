@@ -55,7 +55,7 @@ namespace M8.Animator {
                     if(t)
                         return t.GetComponent<Camera>();
                     else {
-                        t = AMUtil.GetTarget(itarget.root, _cameraPath);
+                        t = Utility.GetTarget(itarget.root, _cameraPath);
                         itarget.SetCache(_cameraPath, t);
                         if(t)
                             return t.GetComponent<Camera>();
@@ -77,7 +77,7 @@ namespace M8.Animator {
                 if(camera) {
                     if(itarget.isMeta) {
                         _camera = null;
-                        _cameraPath = AMUtil.GetPath(itarget.root, camera);
+                        _cameraPath = Utility.GetPath(itarget.root, camera);
                         itarget.SetCache(_cameraPath, camera.transform);
 
                     }
@@ -103,7 +103,7 @@ namespace M8.Animator {
                     if(t)
                         return t.GetComponent<Camera>();
                     else {
-                        t = AMUtil.GetTarget(itarget.root, _cameraEndPath);
+                        t = Utility.GetTarget(itarget.root, _cameraEndPath);
                         itarget.SetCache(_cameraEndPath, t);
                         if(t)
                             return t.GetComponent<Camera>();
@@ -125,14 +125,14 @@ namespace M8.Animator {
             if(itarget.isMeta) {
                 if(string.IsNullOrEmpty(_cameraPath)) {
                     if(_camera) {
-                        _cameraPath = AMUtil.GetPath(itarget.root, _camera);
+                        _cameraPath = Utility.GetPath(itarget.root, _camera);
                         itarget.SetCache(_cameraPath, _camera.transform);
                     }
                 }
 
                 if(string.IsNullOrEmpty(_cameraEndPath)) {
                     if(_cameraEnd) {
-                        _cameraEndPath = AMUtil.GetPath(itarget.root, _cameraEnd);
+                        _cameraEndPath = Utility.GetPath(itarget.root, _cameraEnd);
                         itarget.SetCache(_cameraEndPath, _cameraEnd.transform);
                     }
                 }
@@ -145,7 +145,7 @@ namespace M8.Animator {
                     if(!string.IsNullOrEmpty(_cameraPath)) {
                         Transform t = itarget.GetCache(_cameraPath);
                         if(!t)
-                            t = AMUtil.GetTarget(itarget.root, _cameraPath);
+                            t = Utility.GetTarget(itarget.root, _cameraPath);
                         _camera = t ? t.GetComponent<Camera>() : null;
                     }
                 }
@@ -154,7 +154,7 @@ namespace M8.Animator {
                     if(!string.IsNullOrEmpty(_cameraEndPath)) {
                         Transform t = itarget.GetCache(_cameraEndPath);
                         if(!t)
-                            t = AMUtil.GetTarget(itarget.root, _cameraEndPath);
+                            t = Utility.GetTarget(itarget.root, _cameraEndPath);
                         _cameraEnd = t ? t.GetComponent<Camera>() : null;
                     }
                 }
@@ -224,7 +224,7 @@ namespace M8.Animator {
         }
 
         public bool isReversed() {
-            return AMUtil.isTransitionReversed(cameraFadeType, cameraFadeParameters.ToArray());
+            return Utility.isTransitionReversed(cameraFadeType, cameraFadeParameters.ToArray());
         }
 
         public override void build(SequenceControl seq, Track track, int index, UnityEngine.Object target) {
@@ -260,7 +260,7 @@ namespace M8.Animator {
 
         void CameraFadeNoneTargets(int typeEnd, Color colorEnd, Camera camEnd, Camera[] allCams) {
             if(typeEnd == 0) {
-                if(camEnd) AMUtil.SetTopCamera(camEnd, allCams);
+                if(camEnd) Utility.SetTopCamera(camEnd, allCams);
             }
             else {
                 ShowColor(colorEnd);
@@ -309,7 +309,7 @@ namespace M8.Animator {
                     cf.setupRenderTexture(firstCamera);
                 }
                 else {
-                    AMUtil.SetTopCamera(firstCamera, allCams);
+                    Utility.SetTopCamera(firstCamera, allCams);
                     firstCamera.Render();
                     cf.refreshScreenTex();
                     cf.useRenderTexture = false;
@@ -324,7 +324,7 @@ namespace M8.Animator {
             // setup second target
             if(secondCamera) {
                 // camera
-                AMUtil.SetTopCamera(secondCamera, allCams);
+                Utility.SetTopCamera(secondCamera, allCams);
                 cf.hasColorBG = false;
             }
             else {
@@ -349,7 +349,7 @@ namespace M8.Animator {
             if(isReversed) {
                 //set camEnd to top
                 if(camEnd)
-                    AMUtil.SetTopCamera(cam, allCams);
+                    Utility.SetTopCamera(cam, allCams);
             }
 
             if(typeEnd == 0) {
@@ -392,7 +392,7 @@ namespace M8.Animator {
                     mCamSwitcher = camSwitcher;
 
                     float[] fadeParams = mCamSwitcher.cameraFadeParameters.ToArray();
-                    mIsReversed = AMUtil.isTransitionReversed(mCamSwitcher.type, fadeParams);
+                    mIsReversed = Utility.isTransitionReversed(mCamSwitcher.type, fadeParams);
                     mCam = mCamSwitcher.getCamera(itarget);
                     mCamEnd = mCamSwitcher.getCameraEnd(itarget);
                     mAllCams = allCameras;

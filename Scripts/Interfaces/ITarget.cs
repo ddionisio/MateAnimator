@@ -10,12 +10,13 @@ namespace M8.Animator {
 
         List<Take> takes { get; }
 
+        AnimatorMeta meta { get; set; }
         bool isMeta { get; }
 
         Transform GetCache(string path);
         void SetCache(string path, Transform obj);
         void SequenceComplete(SequenceControl seq);
-        void SequenceTrigger(SequenceControl seq, Key key, TriggerData trigDat);
+        void SequenceTrigger(SequenceControl seq, Key key, TriggerParam trigDat);
 
         string[] GetMissingTargets();
         void MaintainTargetCache(Track track);

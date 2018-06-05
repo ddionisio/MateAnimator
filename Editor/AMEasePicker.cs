@@ -124,9 +124,9 @@ namespace M8.Animator {
 
 			if(percent <= 1f) {
 				if(isCustomEase) {
-	                x_pos = AMUtil.EaseCustom(x_pos_start, x_pos_end - x_pos_start, percent < 0f ? 0f : percent, curve);
+	                x_pos = Utility.EaseCustom(x_pos_start, x_pos_end - x_pos_start, percent < 0f ? 0f : percent, curve);
 				} else {
-					var ease = AMUtil.GetEasingFunction((Ease)AMTimeline.GetEaseIndex(getSelectedEaseIndex(category,selectedIndex)));
+					var ease = Utility.GetEasingFunction((Ease)AMTimeline.GetEaseIndex(getSelectedEaseIndex(category,selectedIndex)));
 	                x_pos = x_pos_start + (x_pos_end - x_pos_start)*ease(percent < 0f ? 0f : percent, 1.0f, 0.0f, 0.0f);
 				}
 			}

@@ -542,7 +542,7 @@ namespace M8.Animator {
 	        if((this as AMITarget).isMeta && mCache.ContainsKey(track.targetPath)) {
 	            UnityEngine.Object obj = track.GetTarget(this);
 	            if(obj) {
-	                string objPath = AMUtil.GetPath(transform, obj);
+	                string objPath = Utility.GetPath(transform, obj);
 	                if(objPath != track.targetPath) {
 	                    mCache.Remove(track.targetPath);
 	                }
@@ -565,12 +565,12 @@ namespace M8.Animator {
 	    void AMITarget.GenerateMissingTargets(string[] missingPaths) {
 	        if(missingPaths != null && missingPaths.Length > 0) {
 	            for(int i = 0; i < missingPaths.Length; i++)
-	                AMUtil.CreateTarget(transform, missingPaths[i]);
+	                Utility.CreateTarget(transform, missingPaths[i]);
 
 	            //fill necessary components per track and key
 	            foreach(AMTakeData take in _takes) {
 	                foreach(AMTrack track in take.trackValues) {
-	                    Transform t = AMUtil.GetTarget(transform, track.targetPath);
+	                    Transform t = Utility.GetTarget(transform, track.targetPath);
 
 	                    System.Type compType = track.GetRequiredComponent();
 	                    if(compType != null) {

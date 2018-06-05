@@ -434,10 +434,10 @@ namespace M8.Animator {
                 float t;
 
                 if(key.hasCustomEase()) {
-                    t = AMUtil.EaseCustom(0.0f, 1.0f, framePositionInAction / key.getNumberOfFrames(frameRate), key.easeCurve);
+                    t = Utility.EaseCustom(0.0f, 1.0f, framePositionInAction / key.getNumberOfFrames(frameRate), key.easeCurve);
                 }
                 else {
-                    var ease = AMUtil.GetEasingFunction((Ease)key.easeType);
+                    var ease = Utility.GetEasingFunction((Ease)key.easeType);
                     t = ease(framePositionInAction, key.getNumberOfFrames(frameRate), key.amplitude, key.period);
                 }
 

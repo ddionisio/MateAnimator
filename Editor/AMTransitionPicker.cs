@@ -245,7 +245,7 @@ namespace M8.Animator {
 	            else GUI.DrawTexture(rectPreviewTexture, tex_transition_b);
 	        }
 	        else {
-	            bool isReversed = AMUtil.isTransitionReversed(selectedTransition, parameters.ToArray());
+	            bool isReversed = Utility.isTransitionReversed(selectedTransition, parameters.ToArray());
 	            GUI.DrawTexture(rectPreviewTexture, (isReversed ? tex_transition_a : tex_transition_b));
 	            AMCameraFade.processCameraFade(rectPreviewTexture, (isReversed ? tex_transition_b : tex_transition_a), selectedTransition, _value, Mathf.Clamp(percent, 0f, 1f), parameters.ToArray(), irisShape, e);
 	        }
@@ -1034,10 +1034,10 @@ namespace M8.Animator {
 	    void updateValue() {
 	        // calculate and set value
 	        if(key.hasCustomEase()) {
-	            _value = AMUtil.EaseCustom(1.0f, -1.0f, Mathf.Clamp(percent, 0f, 1f), key.getCustomEaseCurve());
+	            _value = Utility.EaseCustom(1.0f, -1.0f, Mathf.Clamp(percent, 0f, 1f), key.getCustomEaseCurve());
 	        }
 	        else {
-	            var ease = AMUtil.GetEasingFunction((Ease)key.easeType);
+	            var ease = Utility.GetEasingFunction((Ease)key.easeType);
 	            _value = 1.0f - ease(Mathf.Clamp(percent, 0f, 1f), 1.0f, key.amplitude, key.period);
 	        }
 	    }

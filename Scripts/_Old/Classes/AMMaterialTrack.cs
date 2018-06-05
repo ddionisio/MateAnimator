@@ -38,7 +38,7 @@ namespace M8.Animator {
 	    Material[] mMats; //material list cache
 
 	    Material mMatInstance;
-	    AMMaterialController mMatCtrl;
+	    MaterialController mMatCtrl;
 	    int mPropId;
 	    bool mIsInit;
 
@@ -252,10 +252,10 @@ namespace M8.Animator {
                     float t;
 
                     if(key.hasCustomEase()) {
-                        t = AMUtil.EaseCustom(0.0f, 1.0f, framePositionInAction / key.getNumberOfFrames(frameRate), key.easeCurve);
+                        t = Utility.EaseCustom(0.0f, 1.0f, framePositionInAction / key.getNumberOfFrames(frameRate), key.easeCurve);
                     }
                     else {
-                        var ease = AMUtil.GetEasingFunction((Ease)key.easeType);
+                        var ease = Utility.GetEasingFunction((Ease)key.easeType);
                         t = ease(framePositionInAction, key.getNumberOfFrames(frameRate), key.amplitude, key.period);
                     }
 
@@ -332,8 +332,8 @@ namespace M8.Animator {
 	        if(r) {
 	            Material mat = GetMaterial(r);
 	            if(mat) {
-	                mMatCtrl = r.GetComponent<AMMaterialController>();
-	                if(!mMatCtrl) mMatCtrl = r.gameObject.AddComponent<AMMaterialController>();
+	                mMatCtrl = r.GetComponent<MaterialController>();
+	                if(!mMatCtrl) mMatCtrl = r.gameObject.AddComponent<MaterialController>();
 	                mMatInstance = mMatCtrl.Instance(_matInd, mat);
 	            }
 	            else

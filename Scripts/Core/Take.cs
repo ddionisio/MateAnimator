@@ -658,7 +658,7 @@ namespace M8.Animator {
 
 
 
-                            AMUtil.SetTopCamera(firstCamera, cameraSwitcher.getAllCameras(itarget));
+                            Utility.SetTopCamera(firstCamera, cameraSwitcher.getAllCameras(itarget));
 
                             // set cached frame to 0 if bad frame
                             if(cf.width <= 0 || cf.height <= 0) {
@@ -682,7 +682,7 @@ namespace M8.Animator {
 
                             if(secondTargetType == 0) {
                                 Camera secondCamera = (tuple.isReversed ? tuple.camera1 : tuple.camera2);
-                                AMUtil.SetTopCamera(secondCamera, cameraSwitcher.getAllCameras(itarget));
+                                Utility.SetTopCamera(secondCamera, cameraSwitcher.getAllCameras(itarget));
                             }
                         }
 

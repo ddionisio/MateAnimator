@@ -4921,7 +4921,7 @@ namespace M8.Animator {
 	        else if(aData.zoom != cachedZoom && dragType != (int)DragType.ResizeHScrollbarLeft && dragType != (int)DragType.ResizeHScrollbarRight) {
 	            //numFramesToRender
 	            if(oData.scrubby_zoom_slider) numFramesToRender = Mathf.Lerp(0.0f, 1.0f, aData.zoom) * ((float)numFrames - min) + min;
-	            else numFramesToRender = AMUtil.GetEasingFunction(Ease.InExpo)(aData.zoom, 1.0f, 0.0f, 0.0f) * ((float)numFrames - min) + min;
+	            else numFramesToRender = Utility.GetEasingFunction(Ease.InExpo)(aData.zoom, 1.0f, 0.0f, 0.0f) * ((float)numFrames - min) + min;
 	            // frame dimensions
 	            current_width_frame = Mathf.Clamp((position.width - width_track - 18f - (aData.isInspectorOpen ? width_inspector_open : width_inspector_closed)) / numFramesToRender, 0f, (oData.disableTimelineActions ? height_track / 2f : height_track - height_action_min));
 	            current_height_frame = Mathf.Clamp(current_width_frame * 2f, 20f, (oData.disableTimelineActions ? height_track : 40f));
@@ -5010,7 +5010,7 @@ namespace M8.Animator {
 	        current_height_frame = Mathf.Clamp(current_width_frame * 2f, 20f, (oData.disableTimelineActions ? height_track : 40f));
 	        if(dragType == (int)DragType.ResizeHScrollbarLeft || dragType == (int)DragType.ResizeHScrollbarRight) {
 	            if(oData.scrubby_zoom_slider) aData.zoom = Mathf.Lerp(0f, 1f, (numFramesToRender - min) / ((float)numFrames - min));
-	            else aData.zoom = AMUtil.EaseInExpoReversed(0f, 1f, (numFramesToRender - min) / ((float)numFrames - min));
+	            else aData.zoom = Utility.EaseInExpoReversed(0f, 1f, (numFramesToRender - min) / ((float)numFrames - min));
 	            cachedZoom = aData.zoom;
 	        }
 	    }

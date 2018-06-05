@@ -147,9 +147,9 @@ namespace M8.Animator {
                 float framePositionInPath = Mathf.Clamp(frame - (float)key.frame, 0f, fNumFrames);
 
                 if(key.hasCustomEase())
-                    _value = AMUtil.EaseCustom(0.0f, 1.0f, framePositionInPath / fNumFrames, key.easeCurve);
+                    _value = Utility.EaseCustom(0.0f, 1.0f, framePositionInPath / fNumFrames, key.easeCurve);
                 else {
-                    var ease = AMUtil.GetEasingFunction((Ease)key.easeType);
+                    var ease = Utility.GetEasingFunction((Ease)key.easeType);
                     _value = ease(framePositionInPath, fNumFrames, key.amplitude, key.period);
                     if(float.IsNaN(_value)) //this really shouldn't happen...
                         return;
@@ -231,9 +231,9 @@ namespace M8.Animator {
                 float framePositionInPath = Mathf.Clamp(frame - (float)key.frame, 0f, fNumFrames);
 
                 if(key.hasCustomEase())
-                    _value = AMUtil.EaseCustom(0.0f, 1.0f, framePositionInPath / fNumFrames, key.easeCurve);
+                    _value = Utility.EaseCustom(0.0f, 1.0f, framePositionInPath / fNumFrames, key.easeCurve);
                 else {
-                    var ease = AMUtil.GetEasingFunction((Ease)key.easeType);
+                    var ease = Utility.GetEasingFunction((Ease)key.easeType);
                     _value = ease(framePositionInPath, fNumFrames, key.amplitude, key.period);
                     if(float.IsNaN(_value)) //this really shouldn't happen...
                         break;

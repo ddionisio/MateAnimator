@@ -104,7 +104,7 @@ namespace M8.Animator {
                 if(!firstKey.hasStartTarget(itarget)) return;
 
                 if(firstKey.type == 0)
-                    AMUtil.SetTopCamera(firstKey.getCamera(itarget), GetCachedCameras(itarget));
+                    Utility.SetTopCamera(firstKey.getCamera(itarget), GetCachedCameras(itarget));
                 else
                     showColor(firstKey.color);
                 return;
@@ -121,7 +121,7 @@ namespace M8.Animator {
                     if(!key.hasStartTarget(itarget)) return;
 
                     if(key.type == 0)
-                        AMUtil.SetTopCamera(key.getCamera(itarget), GetCachedCameras(itarget));
+                        Utility.SetTopCamera(key.getCamera(itarget), GetCachedCameras(itarget));
                     else
                         showColor(key.color);
                     return;
@@ -133,7 +133,7 @@ namespace M8.Animator {
                 if(key.targetsAreEqual(itarget)) {
                     AMCameraFade.reset();
                     if(key.type == 0)
-                        AMUtil.SetTopCamera(key.getCamera(itarget), GetCachedCameras(itarget));
+                        Utility.SetTopCamera(key.getCamera(itarget), GetCachedCameras(itarget));
                     else
                         showColor(key.color);
                 }
@@ -166,7 +166,7 @@ namespace M8.Animator {
 	            // camera
 	            if(action.typeEnd == 0) {
 	                Camera endCam = action.getCameraEnd(itarget);
-	                if(endCam) AMUtil.SetTopCamera(endCam, GetCachedCameras(itarget));
+	                if(endCam) Utility.SetTopCamera(endCam, GetCachedCameras(itarget));
 	                AMCameraFade.reset();
 	            }
 	            else {
@@ -193,10 +193,10 @@ namespace M8.Animator {
 
             float percentage;
             if(action.hasCustomEase()) {
-                percentage = AMUtil.EaseCustom(0.0f, 1.0f, t, action.easeCurve);
+                percentage = Utility.EaseCustom(0.0f, 1.0f, t, action.easeCurve);
             }
             else {
-                var ease = AMUtil.GetEasingFunction((Ease)action.easeType);
+                var ease = Utility.GetEasingFunction((Ease)action.easeType);
                 percentage = ease(t, 1.0f, action.amplitude, action.period);
             }
 
@@ -239,10 +239,10 @@ namespace M8.Animator {
 	        Camera secondCamera = (isReversed ? action.getCamera(itarget) : action.getCameraEnd(itarget));
 
 	        if(isReversed && frame == action.frame) {
-	            if(firstTargetType == 0) AMUtil.SetTopCamera(firstCamera, GetCachedCameras(itarget));
+	            if(firstTargetType == 0) Utility.SetTopCamera(firstCamera, GetCachedCameras(itarget));
 	        }
 	        else {
-	            if(secondTargetType == 0) AMUtil.SetTopCamera(secondCamera, GetCachedCameras(itarget));
+	            if(secondTargetType == 0) Utility.SetTopCamera(secondCamera, GetCachedCameras(itarget));
 	        }
 
 	        if(action.still || (firstTargetType != 0 && secondTargetType != 0)) return;

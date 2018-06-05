@@ -28,7 +28,7 @@ using System.Collections.Generic;
 using DG.Tweening;
 
 namespace M8.Animator {
-	public class AMPathPreview {
+	public class PathDataPreview {
 	    // VARS ///////////////////////////////////////////////////
 
 	    public float pathLength; // Stored when storing time and length tables.
@@ -55,7 +55,7 @@ namespace M8.Animator {
 	    /// <param name="p_path">
 	    /// The <see cref="Vector3"/> array used to create the path.
 	    /// </param>
-	    public AMPathPreview(PathType p_type, params Vector3[] p_path) {
+	    public PathDataPreview(PathType p_type, params Vector3[] p_path) {
 	        pathType = p_type;
 	        path = new Vector3[p_path.Length];
 	        Array.Copy(p_path, path, path.Length);
@@ -361,7 +361,7 @@ namespace M8.Animator {
 	        int len = path.Length - 2;
 	        waypointsLength = new float[len];
 	        waypointsLength[0] = 0;
-	        AMPathPreview partialPath = null;
+	        PathDataPreview partialPath = null;
 	        for(int i = 2; i < len + 1; ++i) {
 	            // Create partial path
 	            Vector3[] pts = new Vector3[4];
@@ -370,7 +370,7 @@ namespace M8.Animator {
 	            pts[2] = path[i];
 	            pts[3] = path[i + 1];
 	            if(i == 2) {
-	                partialPath = new AMPathPreview(pathType, pts);
+	                partialPath = new PathDataPreview(pathType, pts);
 	            }
 	            else {
 	                partialPath.path = pts;

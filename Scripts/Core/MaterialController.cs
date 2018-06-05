@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 namespace M8.Animator {
 	[RequireComponent(typeof(Renderer))]
-	public class AMMaterialController : MonoBehaviour {
+	public class MaterialController : MonoBehaviour {
 	    
 	    private Renderer mRenderer;
 	    private Material[] mMaterialsDefault;

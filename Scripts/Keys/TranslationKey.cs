@@ -28,9 +28,9 @@ namespace M8.Animator {
 
         public bool isClosed { get { return path[0] == path[path.Length - 1]; } }
 
-        private AMPathPreview mPathPreview;
+        private PathDataPreview mPathPreview;
 
-        public AMPathPreview pathPreview {
+        public PathDataPreview pathPreview {
             get {
                 if(mPathPreview == null) {
                     int indMod = 1;
@@ -61,7 +61,7 @@ namespace M8.Animator {
                     }
 
                     // Create the path.
-                    mPathPreview = new AMPathPreview((Interpolation)interp == Interpolation.Curve ? PathType.CatmullRom : PathType.Linear, pts);
+                    mPathPreview = new PathDataPreview((Interpolation)interp == Interpolation.Curve ? PathType.CatmullRom : PathType.Linear, pts);
 
                     // Store arc lengths tables for constant speed.
                     mPathPreview.StoreTimeToLenTables(mPathPreview.path.Length * SUBDIVISIONS_MULTIPLIER);

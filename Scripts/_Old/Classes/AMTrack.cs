@@ -65,7 +65,7 @@ namespace M8.Animator {
 	            if(tgt)
 	                ret = GetSerializeObject(tgt.gameObject);
 	            else {
-	                tgt = AMUtil.GetTarget(target.root, _targetPath);
+	                tgt = Utility.GetTarget(target.root, _targetPath);
 	                target.SetCache(_targetPath, tgt);
 	                if(tgt)
 	                    ret = GetSerializeObject(tgt.gameObject);
@@ -104,12 +104,12 @@ namespace M8.Animator {
 			if(target.isMeta)
 				return _targetPath;
 			else
-				return AMUtil.GetPath(target.root, GetSerializeObject(null));
+				return Utility.GetPath(target.root, GetSerializeObject(null));
 		}
 
 		public void SetTarget(AMITarget target, Transform item) {
 			if(target.isMeta && item) {
-				_targetPath = AMUtil.GetPath(target.root, item);
+				_targetPath = Utility.GetPath(target.root, item);
 				target.SetCache(_targetPath, item);
 				SetSerializeObject(GetSerializeObject(item.gameObject));
 			}
@@ -131,8 +131,8 @@ namespace M8.Animator {
 				if(string.IsNullOrEmpty(_targetPath)) {
 					obj = GetSerializeObject(null);
 					if(obj) {
-						_targetPath = AMUtil.GetPath(itarget.root, obj);
-						itarget.SetCache(_targetPath, AMUtil.GetTransform(obj));
+						_targetPath = Utility.GetPath(itarget.root, obj);
+						itarget.SetCache(_targetPath, Utility.GetTransform(obj));
 					}
 				}
 				SetSerializeObject(null);
@@ -143,7 +143,7 @@ namespace M8.Animator {
 					if(!string.IsNullOrEmpty(_targetPath)) {
 						Transform tgt = itarget.GetCache(_targetPath);
 						if(tgt == null)
-							tgt = AMUtil.GetTarget(itarget.root, _targetPath);
+							tgt = Utility.GetTarget(itarget.root, _targetPath);
 						if(tgt)
 							obj = GetSerializeObject(tgt.gameObject);
 						SetSerializeObject(obj);
