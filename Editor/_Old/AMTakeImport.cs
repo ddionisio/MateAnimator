@@ -40,7 +40,7 @@ namespace M8.Animator {
 			GUIStyle padding = new GUIStyle();
 			padding.padding = new RectOffset(4,4,4,4);
 			GUILayout.BeginVertical(padding);
-			AMEditorUtil.ResetDisplayControls();
+			EditorUtility.ResetDisplayControls();
 			GUILayout.BeginHorizontal();
 				GUILayout.Label(newReference.Count+" possible duplicate"+(newReference.Count > 1 ? "s" : "")+" found:");
 				GUILayout.FlexibleSpace();

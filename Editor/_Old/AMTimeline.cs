@@ -535,47 +535,47 @@ namespace M8.Animator {
 	    void LoadEditorTextures() {
 	        if(!texLoaded) {
 	            colBirdsEyeFrames = EditorGUIUtility.isProSkin ? new Color(44f / 255f, 43f / 255f, 43f / 255f, 1f) : new Color(210f / 255f, 210f / 255f, 210f / 255f, 1f);
-	            tex_cursor_zoomin = AMEditorResource.LoadEditorTexture("am_cursor_zoomin");
-	            tex_cursor_zoomout = AMEditorResource.LoadEditorTexture("am_cursor_zoomout");
-	            tex_cursor_zoom_blank = AMEditorResource.LoadEditorTexture("am_cursor_zoom_blank");
+	            tex_cursor_zoomin = EditorResource.LoadEditorTexture("am_cursor_zoomin");
+	            tex_cursor_zoomout = EditorResource.LoadEditorTexture("am_cursor_zoomout");
+	            tex_cursor_zoom_blank = EditorResource.LoadEditorTexture("am_cursor_zoom_blank");
 	            tex_cursor_zoom = null;
-	            tex_cursor_grab = AMEditorResource.LoadEditorTexture("am_cursor_grab");
-	            tex_icon_track = AMEditorResource.LoadEditorTexture("am_icon_track");
-	            tex_icon_track_hover = AMEditorResource.LoadEditorTexture("am_icon_track_hover");
-	            tex_icon_group_closed = AMEditorResource.LoadEditorTexture("am_icon_group_closed");
-	            tex_icon_group_open = AMEditorResource.LoadEditorTexture("am_icon_group_open");
-	            tex_icon_group_hover = AMEditorResource.LoadEditorTexture("am_icon_group_hover");
-	            tex_element_position = AMEditorResource.LoadEditorTexture("am_element_position");
-	            texFrKey = AMEditorResource.LoadEditorTexture(EditorGUIUtility.isProSkin ? "am_key" : "am_key_light");
-	            texFrSet = AMEditorResource.LoadEditorTexture(EditorGUIUtility.isProSkin ? "am_frame_set" : "am_frame_set_light");
-	            texKeyBirdsEye = AMEditorResource.LoadEditorTexture("am_key_birdseye");
-	            texIndLine = AMEditorResource.LoadEditorTexture("am_indicator_line");
-	            texIndHead = AMEditorResource.LoadEditorTexture("am_indicator_head");
-	            texProperties = AMEditorResource.LoadEditorTexture(EditorGUIUtility.isProSkin ? "am_information" : "am_information_light");
-	            texRightArrow = AMEditorResource.LoadEditorTexture(EditorGUIUtility.isProSkin ? "am_nav_right" : "am_nav_right_light");// inspector right arrow
-	            texLeftArrow = AMEditorResource.LoadEditorTexture(EditorGUIUtility.isProSkin ? "am_nav_left" : "am_nav_left_light");	// inspector left arrow
-	            texInterpl3[0] = AMEditorResource.LoadEditorTexture(EditorGUIUtility.isProSkin ? "am_interpl_curve" : "am_interpl_curve_light");
-	            texInterpl2[0] = texInterpl3[1] = AMEditorResource.LoadEditorTexture(EditorGUIUtility.isProSkin ? "am_interpl_linear" : "am_interpl_linear_light");
-	            texInterpl2[1] = texInterpl3[2] = AMEditorResource.LoadEditorTexture(EditorGUIUtility.isProSkin ? "am_interpl_none" : "am_interpl_none_light");
-	            texBoxBorder = AMEditorResource.LoadEditorTexture("am_box_border");
-	            texBoxRed = AMEditorResource.LoadEditorTexture("am_box_red");
+	            tex_cursor_grab = EditorResource.LoadEditorTexture("am_cursor_grab");
+	            tex_icon_track = EditorResource.LoadEditorTexture("am_icon_track");
+	            tex_icon_track_hover = EditorResource.LoadEditorTexture("am_icon_track_hover");
+	            tex_icon_group_closed = EditorResource.LoadEditorTexture("am_icon_group_closed");
+	            tex_icon_group_open = EditorResource.LoadEditorTexture("am_icon_group_open");
+	            tex_icon_group_hover = EditorResource.LoadEditorTexture("am_icon_group_hover");
+	            tex_element_position = EditorResource.LoadEditorTexture("am_element_position");
+	            texFrKey = EditorResource.LoadEditorTexture(EditorGUIUtility.isProSkin ? "am_key" : "am_key_light");
+	            texFrSet = EditorResource.LoadEditorTexture(EditorGUIUtility.isProSkin ? "am_frame_set" : "am_frame_set_light");
+	            texKeyBirdsEye = EditorResource.LoadEditorTexture("am_key_birdseye");
+	            texIndLine = EditorResource.LoadEditorTexture("am_indicator_line");
+	            texIndHead = EditorResource.LoadEditorTexture("am_indicator_head");
+	            texProperties = EditorResource.LoadEditorTexture(EditorGUIUtility.isProSkin ? "am_information" : "am_information_light");
+	            texRightArrow = EditorResource.LoadEditorTexture(EditorGUIUtility.isProSkin ? "am_nav_right" : "am_nav_right_light");// inspector right arrow
+	            texLeftArrow = EditorResource.LoadEditorTexture(EditorGUIUtility.isProSkin ? "am_nav_left" : "am_nav_left_light");	// inspector left arrow
+	            texInterpl3[0] = EditorResource.LoadEditorTexture(EditorGUIUtility.isProSkin ? "am_interpl_curve" : "am_interpl_curve_light");
+	            texInterpl2[0] = texInterpl3[1] = EditorResource.LoadEditorTexture(EditorGUIUtility.isProSkin ? "am_interpl_linear" : "am_interpl_linear_light");
+	            texInterpl2[1] = texInterpl3[2] = EditorResource.LoadEditorTexture(EditorGUIUtility.isProSkin ? "am_interpl_none" : "am_interpl_none_light");
+	            texBoxBorder = EditorResource.LoadEditorTexture("am_box_border");
+	            texBoxRed = EditorResource.LoadEditorTexture("am_box_red");
 	            //texBoxBlue = AMEditorResource.LoadTexture("am_box_blue");
-	            texBoxLightBlue = AMEditorResource.LoadEditorTexture("am_box_lightblue");
-	            texBoxDarkBlue = AMEditorResource.LoadEditorTexture("am_box_darkblue");
-	            texBoxGreen = AMEditorResource.LoadEditorTexture("am_box_green");
-	            texBoxPink = AMEditorResource.LoadEditorTexture("am_box_pink");
-	            texBoxYellow = AMEditorResource.LoadEditorTexture("am_box_yellow");
-	            texBoxOrange = AMEditorResource.LoadEditorTexture("am_box_orange");
-	            texBoxPurple = AMEditorResource.LoadEditorTexture("am_box_purple");
-	            texIconTranslation = AMEditorResource.LoadEditorTexture("am_icon_translation");
-	            texIconRotation = AMEditorResource.LoadEditorTexture("am_icon_rotation");
-	            texIconAnimation = AMEditorResource.LoadEditorTexture("am_icon_animation");
-	            texIconAudio = AMEditorResource.LoadEditorTexture("am_icon_audio");
-	            texIconProperty = AMEditorResource.LoadEditorTexture("am_icon_property");
-	            texIconEvent = AMEditorResource.LoadEditorTexture("am_icon_event");
-	            texIconOrientation = AMEditorResource.LoadEditorTexture("am_icon_orientation");
-	            texIconCameraSwitcher = AMEditorResource.LoadEditorTexture("am_icon_cameraswitcher");
-	            texIconMaterial = AMEditorResource.LoadEditorTexture("am_icon_material");
+	            texBoxLightBlue = EditorResource.LoadEditorTexture("am_box_lightblue");
+	            texBoxDarkBlue = EditorResource.LoadEditorTexture("am_box_darkblue");
+	            texBoxGreen = EditorResource.LoadEditorTexture("am_box_green");
+	            texBoxPink = EditorResource.LoadEditorTexture("am_box_pink");
+	            texBoxYellow = EditorResource.LoadEditorTexture("am_box_yellow");
+	            texBoxOrange = EditorResource.LoadEditorTexture("am_box_orange");
+	            texBoxPurple = EditorResource.LoadEditorTexture("am_box_purple");
+	            texIconTranslation = EditorResource.LoadEditorTexture("am_icon_translation");
+	            texIconRotation = EditorResource.LoadEditorTexture("am_icon_rotation");
+	            texIconAnimation = EditorResource.LoadEditorTexture("am_icon_animation");
+	            texIconAudio = EditorResource.LoadEditorTexture("am_icon_audio");
+	            texIconProperty = EditorResource.LoadEditorTexture("am_icon_property");
+	            texIconEvent = EditorResource.LoadEditorTexture("am_icon_event");
+	            texIconOrientation = EditorResource.LoadEditorTexture("am_icon_orientation");
+	            texIconCameraSwitcher = EditorResource.LoadEditorTexture("am_icon_cameraswitcher");
+	            texIconMaterial = EditorResource.LoadEditorTexture("am_icon_material");
 
 	            texLoaded = true;
 	        }
@@ -887,7 +887,7 @@ namespace M8.Animator {
 	                    mMetaPath = AssetDatabase.GetAssetPath(mMeta);
 	                }
 	                else if(!string.IsNullOrEmpty(mMetaName)) {
-	                    mMetaPath = AMEditorUtil.GetSelectionFolder() + mMetaName + ".prefab";
+	                    mMetaPath = EditorUtility.GetSelectionFolder() + mMetaName + ".prefab";
 	                }
 
 	                if(createNewMeta && !string.IsNullOrEmpty(mMetaName)) {
@@ -915,7 +915,7 @@ namespace M8.Animator {
 	                    GUILayout.Label("Path: <none>");
 	                }
 
-	                AMEditorUtil.DrawSeparator();
+	                EditorUtility.DrawSeparator();
 	                //
 
 	                if(GUILayout.Button(go ? "Add Component" : "Create AnimatorData")) {
@@ -946,7 +946,7 @@ namespace M8.Animator {
 	            GUILayout.BeginHorizontal();
 	            if(GUILayout.Button("Ignore (Not Recommended)")) {
 	                oData.ignoreMinSize = true;
-                    EditorUtility.SetDirty(oData);
+                    UnityEditor.EditorUtility.SetDirty(oData);
 	                // repaint
 	                this.Repaint();
 	            }
@@ -964,7 +964,7 @@ namespace M8.Animator {
 
 	        if(tickerSpeed <= 0) tickerSpeed = 1;
 	        ticker = (ticker + 1) % tickerSpeed;
-	        AMEditorUtil.ResetDisplayControls();
+	        EditorUtility.ResetDisplayControls();
 	        // reset mouse over element
 	        mouseOverElement = (int)ElementType.None;
 	        mouseOverFrame = 0;
@@ -1350,53 +1350,53 @@ namespace M8.Animator {
 	        if(GUI.Button(rectBtnDeleteTake, new GUIContent("", "Delete Take"),/*GUI.skin.GetStyle("ButtonImage")*/EditorStyles.toolbarButton)) {
 	            AMTakeData take = aData.currentTake;
 
-	            if((EditorUtility.DisplayDialog("Delete Take", "Are you sure you want to delete take '" + take.name + "'?", "Delete", "Cancel"))) {
-	                string label = "Delete Take: "+take.name;
+	            if((UnityEditor.EditorUtility.DisplayDialog("Delete Take", "Are you sure you want to delete take '" + take.name + "'?", "Delete", "Cancel"))) {
+	                string label = "Delete Take: "+ take.name;
 
 	                if(aData.takes.Count == 1) {
 	                    bool instantiated = RegisterTakesUndo(aData, label, false);
 	                    take = aData.currentTake;
-	                    MonoBehaviour[] behaviours = AnimatorDataEdit.GetKeysAndTracks(take);
+                        MonoBehaviour[] behaviours = AnimatorDataEdit.GetKeysAndTracks(take);
 
 	                    //just delete the tracks and keys
 	                    if(instantiated) {
 	                        foreach(MonoBehaviour b in behaviours)
-	                            DestroyImmediate(b);
+                                DestroyImmediate(b);
 	                    }
 	                    else {
 	                        foreach(MonoBehaviour b in behaviours)
-	                            Undo.DestroyObjectImmediate(b);
+                                Undo.DestroyObjectImmediate(b);
 	                    }
 
 	                    take.RevertToDefault();
-	                    TakeEdit(take).Reset();
+                        TakeEdit(take).Reset();
 	                }
 	                else {
 	                    bool instantiated = RegisterTakesUndo(aData, label, true);
 	                    take = aData.currentTake;
 	                    if(!string.IsNullOrEmpty(aData.defaultTakeName)) {
 	                        if(take.name == aData.defaultTakeName)
-	                            aData.defaultTakeName = "";
+                                aData.defaultTakeName = "";
 	                        else {
-	                            aData.defaultTakeName = aData.defaultTakeName; //this will readjust index if necessary
+                                aData.defaultTakeName = aData.defaultTakeName; //this will readjust index if necessary
 	                        }
 	                    }
 
 	                    int delTakeInd = aData.takes.IndexOf(take);
 	                    if(aData.currentTakeInd > 0 && delTakeInd <= aData.currentTakeInd)
-	                        aData.currentTakeInd--;
+                            aData.currentTakeInd--;
 
-	                    aData.takes.RemoveAt(delTakeInd);
-	                    TakeEditRemove(take);
+                        aData.takes.RemoveAt(delTakeInd);
+                        TakeEditRemove(take);
 
-	                    MonoBehaviour[] behaviours = AnimatorDataEdit.GetKeysAndTracks(take);
+                        MonoBehaviour[] behaviours = AnimatorDataEdit.GetKeysAndTracks(take);
 	                    if(instantiated) {
 	                        foreach(MonoBehaviour b in behaviours)
-	                            DestroyImmediate(b);
+                                DestroyImmediate(b);
 	                    }
 	                    else {
 	                        foreach(MonoBehaviour b in behaviours)
-	                            Undo.DestroyObjectImmediate(b);
+                                Undo.DestroyObjectImmediate(b);
 	                    }
 	                }
 	            }
@@ -1574,17 +1574,17 @@ namespace M8.Animator {
 	                AMTrack track = TakeEdit(curTake).getSelectedTrack(curTake);
 	                if(track) {
 	                    string strMsgDeleteTrack = (TakeEdit(curTake).contextSelectionTracks.Count > 1 ? "multiple tracks" : "track '" + track.name + "'");
-	                    if((EditorUtility.DisplayDialog("Delete " + strTitleDeleteTrack, "Are you sure you want to delete " + strMsgDeleteTrack + "?", "Delete", "Cancel"))) {
-	                        isRenamingTrack = -1;
+	                    if((UnityEditor.EditorUtility.DisplayDialog("Delete " + strTitleDeleteTrack, "Are you sure you want to delete " + strMsgDeleteTrack + "?", "Delete", "Cancel"))) {
+                            isRenamingTrack = -1;
 
 	                        bool instantiated = RegisterTakesUndo(aData, "Delete Track", true);
 
 	                        // delete camera fade
 	                        if(TakeEdit(curTake).selectedTrack != -1 && track == curTake.cameraSwitcher && AMCameraFade.hasInstance() && AMCameraFade.isPreview()) {
-	                            AMCameraFade.destroyImmediateInstance();
+                                AMCameraFade.destroyImmediateInstance();
 	                        }
 
-	                        List<MonoBehaviour> items = new List<MonoBehaviour>();
+                            List<MonoBehaviour> items = new List<MonoBehaviour>();
 
 	                        foreach(int track_id in TakeEdit(curTake).contextSelectionTracks) {
 	                            curTake.deleteTrack(track_id, true, ref items);
@@ -1592,19 +1592,19 @@ namespace M8.Animator {
 
 	                        if(instantiated) {
 	                            foreach(MonoBehaviour item in items)
-	                                DestroyImmediate(item);
+                                    DestroyImmediate(item);
 	                        }
 	                        else {
 	                            foreach(MonoBehaviour item in items)
-	                                Undo.DestroyObjectImmediate(item);
+                                    Undo.DestroyObjectImmediate(item);
 	                        }
 
-	                        TakeEdit(curTake).contextSelectionTracks = new List<int>();
+                            TakeEdit(curTake).contextSelectionTracks = new List<int>();
 
-	                        // deselect track
-	                        TakeEdit(curTake).selectedTrack = -1;
-	                        // deselect group
-	                        TakeEdit(curTake).selectedGroup = 0;
+                            // deselect track
+                            TakeEdit(curTake).selectedTrack = -1;
+                            // deselect group
+                            TakeEdit(curTake).selectedGroup = 0;
 	                    }
 	                }
 	                else {
@@ -1621,7 +1621,7 @@ namespace M8.Animator {
 	                List<MonoBehaviour> items = null;
 
 	                if(grp.elements.Count > 0) {
-	                    int choice = EditorUtility.DisplayDialogComplex("Delete Contents?", "'" + grp.group_name + "' contains contents that can be deleted with the group.", "Delete Contents", "Keep Contents", "Cancel");
+	                    int choice = UnityEditor.EditorUtility.DisplayDialogComplex("Delete Contents?", "'" + grp.group_name + "' contains contents that can be deleted with the group.", "Delete Contents", "Keep Contents", "Cancel");
 	                    if(choice == 2) delete = false;
 	                    else if(choice == 0) deleteContents = true;
 	                    if(delete) {
@@ -2222,7 +2222,7 @@ namespace M8.Animator {
 	    public static void loadSkin(ref GUISkin _skin, ref string skinName, Rect position) {
 	        string newSkinName = EditorGUIUtility.isProSkin ? "am_skin_dark" : "am_skin_light";
 	        if(_skin == null || newSkinName != skinName) {
-	            _skin = (GUISkin)AMEditorResource.LoadSkin(newSkinName); /*global_skin*/
+	            _skin = (GUISkin)EditorResource.LoadSkin(newSkinName); /*global_skin*/
 	            skinName = newSkinName;
 	            AMTransitionPicker.texLoaded = false;
 	            texLoaded = false;
@@ -3562,10 +3562,10 @@ namespace M8.Animator {
 	            }
 	            else if(pTrack.valueType == (int)AMPropertyTrack.ValueType.Sprite) {
 	                UnityEngine.Object val = pKey.valObj;
-	                GUI.skin = null; AMEditorUtil.ResetDisplayControls();
+	                GUI.skin = null; EditorUtility.ResetDisplayControls();
 	                rectField.height = 16.0f;
 	                UnityEngine.Object nval = EditorGUI.ObjectField(rectField, val, typeof(Sprite), false);
-	                GUI.skin = skin; AMEditorUtil.ResetDisplayControls();
+	                GUI.skin = skin; EditorUtility.ResetDisplayControls();
 	                if(val != nval) {
 	                    AnimatorDataEdit.RecordUndoTrackAndKeys(sTrack, false, "Change Property Value");
 	                    pKey.valObj = nval;
@@ -3643,7 +3643,7 @@ namespace M8.Animator {
 	                GUI.Label(rectLabel, "No usable methods found.");
 	                Rect rectButton = new Rect(width_inspector - 20f - margin, start_y + 1f, 20f, 20f);
 	                if(GUI.Button(rectButton, "?")) {
-	                    EditorUtility.DisplayDialog("Usable Methods", "Methods should be made public and be placed in scripts that are not directly derived from Component or Behaviour to be used in the Event Track (MonoBehaviour is fine).", "Okay");
+                        UnityEditor.EditorUtility.DisplayDialog("Usable Methods", "Methods should be made public and be placed in scripts that are not directly derived from Component or Behaviour to be used in the Event Track (MonoBehaviour is fine).", "Okay");
 	                }
 	                return;
 	            }
@@ -3671,7 +3671,7 @@ namespace M8.Animator {
 	                GUI.Label(rectLabelObjectMessage, "* Use Object[] instead!");
 	                GUI.color = Color.white;
 	                if(GUI.Button(rectButton, "?")) {
-	                    EditorUtility.DisplayDialog("Use Object[] Parameter Instead", "Array types derived from Object, such as GameObject[], cannot be cast correctly on runtime.\n\nUse UnityEngine.Object[] as a parameter type and then cast to (GameObject[]) in your method.\n\nIf you're trying to pass components" + (showObjectType != typeof(GameObject) ? " (such as " + showObjectType.ToString() + ")" : "") + ", you should get them from the casted GameObjects on runtime.\n\nPlease see the documentation for more information.", "Okay");
+                        UnityEditor.EditorUtility.DisplayDialog("Use Object[] Parameter Instead", "Array types derived from Object, such as GameObject[], cannot be cast correctly on runtime.\n\nUse UnityEngine.Object[] as a parameter type and then cast to (GameObject[]) in your method.\n\nIf you're trying to pass components" + (showObjectType != typeof(GameObject) ? " (such as " + showObjectType.ToString() + ")" : "") + ", you should get them from the casted GameObjects on runtime.\n\nPlease see the documentation for more information.", "Okay");
 	                }
 	                return;
 	            }
@@ -3705,7 +3705,7 @@ namespace M8.Animator {
 	            GUI.enabled = !isPlaying;
 	            Rect rectButtonSendMessageInfo = new Rect(width_inspector - 20f - margin, rectLabelSendMessage.y, 20f, 20f);
 	            if(GUI.Button(rectButtonSendMessageInfo, "?")) {
-	                EditorUtility.DisplayDialog("SendMessage vs. Invoke", "SendMessage can only be used with methods that have no more than one parameter (which can be an array).\n\nAnimator will use Invoke when SendMessage is disabled, which is slightly faster but requires caching when the take is played. Use SendMessage if caching is a problem.", "Okay");
+                    UnityEditor.EditorUtility.DisplayDialog("SendMessage vs. Invoke", "SendMessage can only be used with methods that have no more than one parameter (which can be an array).\n\nAnimator will use Invoke when SendMessage is disabled, which is slightly faster but requires caching when the take is played. Use SendMessage if caching is a problem.", "Okay");
 	            }
 	            if(cachedParameterInfos.Length > 0) {
 	                // show method parameters
@@ -3887,10 +3887,10 @@ namespace M8.Animator {
 	            }
 	            else if(aTrack.propertyType == AMMaterialTrack.ValueType.TexEnv) {
 	                //texture
-	                GUI.skin = null; AMEditorUtil.ResetDisplayControls();
+	                GUI.skin = null; EditorUtility.ResetDisplayControls();
 	                rectField.height = 16.0f;
 	                Texture nval = EditorGUI.ObjectField(rectField, aKey.texture, typeof(Texture), false) as Texture;
-	                GUI.skin = skin; AMEditorUtil.ResetDisplayControls();
+	                GUI.skin = skin; EditorUtility.ResetDisplayControls();
 
 	                if(aKey.texture != nval) {
 	                    AnimatorDataEdit.RecordUndoTrackAndKeys(sTrack, false, "Change Material Property Value");
@@ -4074,12 +4074,12 @@ namespace M8.Animator {
 	            GUI.Label(rectLabelField, name);
 	            GUI.skin = null;
 	            Rect rectObjectField = new Rect(rect.x, rectLabelField.y + rectLabelField.height + margin, rect.width, 16f);
-	            AMEditorUtil.ResetDisplayControls();
+	            EditorUtility.ResetDisplayControls();
                 // field
                 var val = EditorGUI.ObjectField(rectObjectField, data.val_obj, t, true);
                 if(data.val_obj != val) { Undo.RecordObject(eKey, "Change Event Key Field"); data.val_obj = val; }
 	            GUI.skin = skin;
-	            AMEditorUtil.ResetDisplayControls();
+	            EditorUtility.ResetDisplayControls();
 	            //return;
 	        }
 	        else if(t == typeof(UnityEngine.Object)) {
@@ -4088,11 +4088,11 @@ namespace M8.Animator {
 	            GUI.Label(rectLabelField, name);
 	            Rect rectObjectField = new Rect(rect.x, rectLabelField.y + rectLabelField.height + margin, rect.width, 16f);
 	            GUI.skin = null;
-	            AMEditorUtil.ResetDisplayControls();
+	            EditorUtility.ResetDisplayControls();
                 var val = EditorGUI.ObjectField(rectObjectField, data.val_obj, typeof(UnityEngine.Object), true);
                 if(data.val_obj != val) { Undo.RecordObject(eKey, "Change Event Key Field"); data.val_obj = val; }
                 GUI.skin = skin;
-	            AMEditorUtil.ResetDisplayControls();
+	            EditorUtility.ResetDisplayControls();
 	        }
 	        else if(t.IsEnum) {
 	            height_field += 40f + margin;
@@ -4115,7 +4115,7 @@ namespace M8.Animator {
 	        if(rect.width < 22f) return;
 	        // show object field for track, used in OnGUI. Needs to be updated for every track type.
 	        GUI.skin = null;
-	        AMEditorUtil.ResetDisplayControls();
+	        EditorUtility.ResetDisplayControls();
 	        // add objectfield for every track type
 	        // translation/rotation
 	        if(amTrack is AMTranslationTrack || amTrack is AMRotationTrack || amTrack is AMRotationEulerTrack) {
@@ -4139,7 +4139,7 @@ namespace M8.Animator {
 	        else if(amTrack is AMAnimationTrack || amTrack is AMGOSetActiveTrack) {
 	            GameObject nobj = (GameObject)EditorGUI.ObjectField(rect, amTrack.GetTarget(aData.target), typeof(GameObject), true);
 	            if(nobj && amTrack is AMAnimationTrack && nobj.GetComponent<Animation>() == null) {
-	                EditorUtility.DisplayDialog("No Animation Component", "You must add an Animation component to the GameObject before you can use it in an Animation Track.", "Okay");
+                    UnityEditor.EditorUtility.DisplayDialog("No Animation Component", "You must add an Animation component to the GameObject before you can use it in an Animation Track.", "Okay");
 	            }
 	            else if(!amTrack.isTargetEqual(aData.target, nobj)) {
 	                Undo.RecordObject(amTrack, "Set GameObject");
@@ -4164,7 +4164,7 @@ namespace M8.Animator {
 	                //check if new target has the required components
 	                bool componentsMatch = amTrack.VerifyComponents(ngo);
 
-	                if(!componentsMatch && (amTrack.keys.Count > 0) && (!EditorUtility.DisplayDialog("Data Will Be Lost", "Certain keyframes on track '" + amTrack.name + "' will be removed if you continue.", "Continue Anway", "Cancel"))) {
+	                if(!componentsMatch && (amTrack.keys.Count > 0) && (!UnityEditor.EditorUtility.DisplayDialog("Data Will Be Lost", "Certain keyframes on track '" + amTrack.name + "' will be removed if you continue.", "Continue Anway", "Cancel"))) {
 	                    changeGO = false;
 	                }
 	                if(changeGO) {
@@ -4213,10 +4213,10 @@ namespace M8.Animator {
 	        }
 
 	        GUI.skin = skin;
-	        AMEditorUtil.ResetDisplayControls();
+	        EditorUtility.ResetDisplayControls();
 	    }
 	    void showAlertMissingObjectType(string type) {
-	        EditorUtility.DisplayDialog("Missing " + type, "You must add a " + type + " to the track before you can add keys.", "Okay");
+            UnityEditor.EditorUtility.DisplayDialog("Missing " + type, "You must add a " + type + " to the track before you can add keys.", "Okay");
 	    }
 	    void showTransitionPicker(AMTrack track, AMCameraSwitcherKey key, float x = -1f, float y = -1f, float width = -1f) {
 	        if(x >= 0f && y >= 0f && width >= 0f) {
@@ -5536,9 +5536,9 @@ namespace M8.Animator {
 	                break;
 	            case (int)Track.CameraSwitcher:
 	                if(GameObject.FindObjectsOfType<Camera>().Length <= 1)
-	                    EditorUtility.DisplayDialog("Cannot add Camera Switcher", "You need at least 2 cameras in your scene to start using the Camera Switcher track.", "Okay");
+                        UnityEditor.EditorUtility.DisplayDialog("Cannot add Camera Switcher", "You need at least 2 cameras in your scene to start using the Camera Switcher track.", "Okay");
 	                else if(aData.currentTake.cameraSwitcher) // already exists
-	                    EditorUtility.DisplayDialog("Camera Switcher Already Exists", "You can only have one Camera Switcher track. Transition between cameras by adding keyframes to the track.", "Okay");
+                        UnityEditor.EditorUtility.DisplayDialog("Camera Switcher Already Exists", "You can only have one Camera Switcher track. Transition between cameras by adding keyframes to the track.", "Okay");
 	                else {
 	                    _addTrack<AMCameraSwitcherTrack>(object_window, addCompUndo);
 	                    // preview selected frame
@@ -5570,7 +5570,7 @@ namespace M8.Animator {
 	    public bool addSpriteKeysToTrack(UnityEngine.Object[] objs, int trackId, int frame) {
 	        AMPropertyTrack track = aData.currentTake.getTrack(trackId) as AMPropertyTrack;
 	        if(track && track.getTrackType() == "sprite") {
-	            List<Sprite> sprites = AMEditorUtil.GetSprites(objs);
+	            List<Sprite> sprites = EditorUtility.GetSprites(objs);
 	            if(sprites.Count > 0) {
 	                //prepare data
 	                const string label = "Add Sprite Keys";
@@ -5625,7 +5625,7 @@ namespace M8.Animator {
 	    /// Returns true if track added successfully
 	    /// </summary>
 	    public bool addSpriteTrackWithKeyObjects(UnityEngine.Object[] objs, int startFrame) {
-	        List<Sprite> sprites = AMEditorUtil.GetSprites(objs);
+	        List<Sprite> sprites = EditorUtility.GetSprites(objs);
 	        if(sprites.Count > 0) {
 	            sprites.Sort(delegate(Sprite obj1, Sprite obj2) { return obj1.name.CompareTo(obj2.name); });
 
@@ -5793,7 +5793,7 @@ namespace M8.Animator {
 	            }
 	            // if missing property, return
 	            if(!(amTrack as AMPropertyTrack).isPropertySet()) {
-	                EditorUtility.DisplayDialog("Property Not Set", "You must set the track property before you can add keys.", "Okay");
+                    UnityEditor.EditorUtility.DisplayDialog("Property Not Set", "You must set the track property before you can add keys.", "Okay");
 	                return;
 	            }
 	            (amTrack as AMPropertyTrack).addKey(aData.target, addCall, _frame);
@@ -5870,7 +5870,7 @@ namespace M8.Animator {
 	        bool shouldClearFrames = true;
 	        if(showWarning) {
 	            if(TakeEditCurrent().contextSelectionTracks.Count > 1) {
-	                if(!EditorUtility.DisplayDialog("Clear From Multiple Tracks?", "Are you sure you want to clear the selected frames from all of the selected tracks?", "Clear Frames", "Cancel")) {
+	                if(!UnityEditor.EditorUtility.DisplayDialog("Clear From Multiple Tracks?", "Are you sure you want to clear the selected frames from all of the selected tracks?", "Clear Frames", "Cancel")) {
 	                    shouldClearFrames = false;
 	                }
 	            }

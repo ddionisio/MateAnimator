@@ -48,7 +48,7 @@ namespace M8.Animator {
 	        if(curMeta != newMeta) {
 	            bool doIt = true;
 	            if(curMeta == null) {
-	                doIt = EditorUtility.DisplayDialog("Set Meta", "Setting the Meta will replace the current animation data, proceed?", "Yes", "No");
+	                doIt = UnityEditor.EditorUtility.DisplayDialog("Set Meta", "Setting the Meta will replace the current animation data, proceed?", "Yes", "No");
 	            }
 
 	            if(doIt) {
@@ -90,7 +90,7 @@ namespace M8.Animator {
 	        GUILayout.FlexibleSpace();
 	        GUILayout.EndHorizontal();
 
-	        AMEditorUtil.DrawSeparator();
+	        EditorUtility.DrawSeparator();
 	        //
 
 	        List<AMTakeData> takes = aData.takes;
@@ -191,7 +191,7 @@ namespace M8.Animator {
 	        //display missings
 	        string[] missings = aData.target.GetMissingTargets();
 	        if(missings != null && missings.Length > 0) {
-	            AMEditorUtil.DrawSeparator();
+	            EditorUtility.DrawSeparator();
 	            mMissingsFoldout = EditorGUILayout.Foldout(mMissingsFoldout, string.Format("Missing Targets [{0}]", missings.Length));
 	            if(mMissingsFoldout) {
 	                for(int i = 0;i < missings.Length;i++)
@@ -211,7 +211,7 @@ namespace M8.Animator {
 	                GUI.changed = true;
 	                break;
 	            case MetaCommand.SaveAs:
-	                string path = EditorUtility.SaveFilePanelInProject("Save AnimatorMeta", aData.name + ".prefab", "prefab", "Please enter a file name to save the animator data to");
+	                string path = UnityEditor.EditorUtility.SaveFilePanelInProject("Save AnimatorMeta", aData.name + ".prefab", "prefab", "Please enter a file name to save the animator data to");
 	                if(!string.IsNullOrEmpty(path)) {
 	                    GameObject metago = new GameObject("_meta");
 	                    metago.AddComponent<AnimatorMeta>();
@@ -222,18 +222,18 @@ namespace M8.Animator {
 	                }
 	                break;
 	            case MetaCommand.Revert:
-	                if(EditorUtility.DisplayDialog("Revert Animator Meta", "Are you sure?", "Yes", "No")) {
-	                    aData.RegisterUndo("Revert Animator Meta", true);
-	                    GameObject prefabGO = PrefabUtility.GetPrefabParent(aData.meta.gameObject) as GameObject;
-	                    aData.MetaSet(prefabGO ? prefabGO.GetComponent<AnimatorMeta>() : null, false);
-	                    GUI.changed = true;
+	                if(UnityEditor.EditorUtility.DisplayDialog("Revert Animator Meta", "Are you sure?", "Yes", "No")) {
+                        aData.RegisterUndo("Revert Animator Meta", true);
+                        GameObject prefabGO = PrefabUtility.GetPrefabParent(aData.meta.gameObject) as GameObject;
+                        aData.MetaSet(prefabGO ? prefabGO.GetComponent<AnimatorMeta>() : null, false);
+                        GUI.changed = true;
 	                }
 	                break;
 	            case MetaCommand.Instantiate:
 	                //warning if there are missing targets
 	                bool doIt = true;
 	                if(missings != null && missings.Length > 0)
-	                    doIt = EditorUtility.DisplayDialog("Break Animator Meta", "There are missing targets, some keys will be removed. Do you want to proceed?", "Yes", "No");
+	                    doIt = UnityEditor.EditorUtility.DisplayDialog("Break Animator Meta", "There are missing targets, some keys will be removed. Do you want to proceed?", "Yes", "No");
 	                if(doIt) {
 	                    aData.RegisterUndo("Break Animator Meta", false);
 	                    aData.MetaSet(null, true);

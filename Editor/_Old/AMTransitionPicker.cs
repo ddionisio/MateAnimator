@@ -136,18 +136,18 @@ namespace M8.Animator {
 
 		void LoadTextures() {
 			if (!texLoaded) {
-				tex_transition_a = AMEditorResource.LoadEditorTexture("am_transition_a");
-				tex_transition_b = AMEditorResource.LoadEditorTexture("am_transition_b");
-				tex_default_view = AMEditorResource.LoadEditorTexture(EditorGUIUtility.isProSkin ? "am_icon_default_view" : "am_icon_default_view_light");
-				tex_game_view = AMEditorResource.LoadEditorTexture(EditorGUIUtility.isProSkin ? "am_icon_game_view" : "am_icon_game_view_light");
+				tex_transition_a = EditorResource.LoadEditorTexture("am_transition_a");
+				tex_transition_b = EditorResource.LoadEditorTexture("am_transition_b");
+				tex_default_view = EditorResource.LoadEditorTexture(EditorGUIUtility.isProSkin ? "am_icon_default_view" : "am_icon_default_view_light");
+				tex_game_view = EditorResource.LoadEditorTexture(EditorGUIUtility.isProSkin ? "am_icon_game_view" : "am_icon_game_view_light");
 				//tex_transition_toggle_bg = AMEditorResource.LoadEditorTexture(EditorGUIUtility.isProSkin ? "am_transition_toggle_bg" : "am_transition_toggle_bg_light");
 				//tex_transition_toggle_button_bg = AMEditorResource.LoadEditorTexture("am_transition_toggle_button_bg");
 				//texRightArrow = AMEditorResource.LoadEditorTexture("am_nav_right");// inspector right arrow
 				//texLeftArrow = AMEditorResource.LoadEditorTexture("am_nav_left");	// inspector left arrow
-				tex_angle_0 = AMEditorResource.LoadEditorTexture(EditorGUIUtility.isProSkin ? "am_angle_0" : "am_angle_0_light");
-				tex_angle_90 = AMEditorResource.LoadEditorTexture(EditorGUIUtility.isProSkin ? "am_angle_90" : "am_angle_90_light");
-				tex_angle_180 = AMEditorResource.LoadEditorTexture(EditorGUIUtility.isProSkin ? "am_angle_180" : "am_angle_180_light");
-				tex_angle_270 = AMEditorResource.LoadEditorTexture(EditorGUIUtility.isProSkin ? "am_angle_270" : "am_angle_270_light");
+				tex_angle_0 = EditorResource.LoadEditorTexture(EditorGUIUtility.isProSkin ? "am_angle_0" : "am_angle_0_light");
+				tex_angle_90 = EditorResource.LoadEditorTexture(EditorGUIUtility.isProSkin ? "am_angle_90" : "am_angle_90_light");
+				tex_angle_180 = EditorResource.LoadEditorTexture(EditorGUIUtility.isProSkin ? "am_angle_180" : "am_angle_180_light");
+				tex_angle_270 = EditorResource.LoadEditorTexture(EditorGUIUtility.isProSkin ? "am_angle_270" : "am_angle_270_light");
 				texLoaded = true;
 			}
 		}
@@ -183,7 +183,7 @@ namespace M8.Animator {
             // load skin
             AMTimeline.loadSkin(ref skin, ref cachedSkinName, position);
 	    	LoadTextures();
-	        AMEditorUtil.ResetDisplayControls();
+	        EditorUtility.ResetDisplayControls();
 	        #region drag logic
 	        Event e = Event.current;
 	        Rect rectWindow = new Rect(0f, 0f, position.width, position.height);
@@ -585,7 +585,7 @@ namespace M8.Animator {
 	                GUILayout.Space(height_parameter_space);
 	                GUILayout.Label("Shape");
 	                GUI.skin = null;
-	                AMEditorUtil.ResetDisplayControls();
+	                EditorUtility.ResetDisplayControls();
 	                GUILayout.BeginHorizontal();
 	        		EditorGUIUtility.labelWidth = 0f;
 	                irisShape = (Texture2D)EditorGUILayout.ObjectField("", irisShape, typeof(Texture2D), false, GUILayout.Width(64));
@@ -654,7 +654,7 @@ namespace M8.Animator {
 	                // shape texture
 	                GUILayout.Label("Shape");
 	                GUI.skin = null;
-	                AMEditorUtil.ResetDisplayControls();
+	                EditorUtility.ResetDisplayControls();
 	                GUILayout.BeginHorizontal();
 	        		EditorGUIUtility.labelWidth = 0f;
 					irisShape = (Texture2D)EditorGUILayout.ObjectField("", irisShape, typeof(Texture2D), false, GUILayout.Width(64));
@@ -800,7 +800,7 @@ namespace M8.Animator {
 	            #region iris shape
 	            case (int)AMCameraSwitcherKey.Fade.IrisShape:
 	                // default shape
-	                _irisShape = (Texture2D)AMEditorResource.LoadTexture("am_iris_star_1024");
+	                _irisShape = (Texture2D)EditorResource.LoadTexture("am_iris_star_1024");
 	                // type, shrink or grow
 	                parameters.Add(AMCameraFade.Defaults.IrisShape.type);
 	                // max scale
@@ -840,7 +840,7 @@ namespace M8.Animator {
 	                parameters.Add(AMCameraFade.Defaults.IrisRound.focalY);
 	                justSetFocalPoint = new Vector2(AMCameraFade.Defaults.IrisRound.focalX, AMCameraFade.Defaults.IrisRound.focalY);
 	                // default shape
-	                _irisShape = (Texture2D)AMEditorResource.LoadTexture("am_iris_round_1024");
+	                _irisShape = (Texture2D)EditorResource.LoadTexture("am_iris_round_1024");
 	                break;
 	            #endregion
 	            #region shape wipe
@@ -848,7 +848,7 @@ namespace M8.Animator {
 	                // angle
 	                parameters.Add(AMCameraFade.Defaults.ShapeWipe.angle);
 	                // default shape
-	                _irisShape = (Texture2D)AMEditorResource.LoadTexture("am_wipe_text_1024");
+	                _irisShape = (Texture2D)EditorResource.LoadTexture("am_wipe_text_1024");
 	                // scale
 	                parameters.Add(AMCameraFade.Defaults.ShapeWipe.scale);
 	                // padding
@@ -865,7 +865,7 @@ namespace M8.Animator {
 	                // angle
 	                parameters.Add(AMCameraFade.Defaults.LinearWipe.angle);
 	                // default shape
-	                _irisShape = (Texture2D)AMEditorResource.LoadTexture("am_wipe_linear_1024");
+	                _irisShape = (Texture2D)EditorResource.LoadTexture("am_wipe_linear_1024");
 	                // padding
 	                parameters.Add(AMCameraFade.Defaults.LinearWipe.padding);
 	                justSetFocalPoint = new Vector2(-1f, -1f);
@@ -878,7 +878,7 @@ namespace M8.Animator {
 	                // starting angle
 	                parameters.Add(AMCameraFade.Defaults.RadialWipe.startingAngle);
 	                // default shape
-	                _irisShape = (Texture2D)AMEditorResource.LoadTexture("am_wipe_linear_1024");
+	                _irisShape = (Texture2D)EditorResource.LoadTexture("am_wipe_linear_1024");
 	                // focal point
 	                parameters.Add(AMCameraFade.Defaults.RadialWipe.focalX); // x
 	                parameters.Add(AMCameraFade.Defaults.RadialWipe.focalY); // y
@@ -890,7 +890,7 @@ namespace M8.Animator {
 	                // starting angle
 	                parameters.Add(AMCameraFade.Defaults.WedgeWipe.startingAngle);
 	                // default shape
-	                _irisShape = (Texture2D)AMEditorResource.LoadTexture("am_wipe_linear_1024");
+	                _irisShape = (Texture2D)EditorResource.LoadTexture("am_wipe_linear_1024");
 	                // focal point
 	                parameters.Add(AMCameraFade.Defaults.WedgeWipe.focalX); // x
 	                parameters.Add(AMCameraFade.Defaults.WedgeWipe.focalY); // y

@@ -444,7 +444,12 @@ namespace M8.Animator {
 
         AnimateMeta ITarget.meta {
             get { return _meta; }
-            set { _meta = value; }
+            set {
+                _meta = value;
+
+                if(_meta)
+                    takeData.Clear();
+            }
         }
 
         List<Take> ITarget.takes {

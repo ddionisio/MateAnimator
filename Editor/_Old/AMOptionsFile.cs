@@ -150,7 +150,7 @@ namespace M8.Animator {
 		}
 		
 		public static void export() {
-			string newPath = EditorUtility.SaveFilePanel("Export Options", Application.dataPath, "am_options_export", "unitypackage");
+			string newPath = UnityEditor.EditorUtility.SaveFilePanel("Export Options", Application.dataPath, "am_options_export", "unitypackage");
 			if(newPath.Length == 0) return;
 			AssetDatabase.ExportPackage(filePath, newPath,ExportPackageOptions.Interactive);
 		}

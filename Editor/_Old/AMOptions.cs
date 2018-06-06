@@ -76,7 +76,7 @@ namespace M8.Animator {
 	        GUIStyle styleTabSelectionBG = new GUIStyle(GUI.skin.GetStyle("GroupElementBG"));
 	        styleTabSelectionBG.normal.background = EditorStyles.toolbar.normal.background;
 	        GUILayout.BeginVertical(/*GUI.skin.GetStyle("GroupElementBG")*/styleTabSelectionBG, GUILayout.Width(121f));
-            AMEditorUtil.ResetDisplayControls();
+            EditorUtility.ResetDisplayControls();
 	        GUIStyle styleTabButton = new GUIStyle(EditorStyles.toolbarButton);
 	        styleTabButton.fontSize = 12;
 	        styleTabButton.fixedHeight = 30;
@@ -88,7 +88,7 @@ namespace M8.Animator {
 	        #endregion
 	        #region options
 	        GUILayout.BeginVertical();
-	        AMEditorUtil.ResetDisplayControls();
+	        EditorUtility.ResetDisplayControls();
 
 	        GUIStyle styleArea = new GUIStyle(GUI.skin.textArea);
 	        scrollView = GUILayout.BeginScrollView(scrollView, styleArea);
@@ -124,7 +124,7 @@ namespace M8.Animator {
 	                oData.gizmo_size = newGizmoSize;
 	                AnimatorTimeline.e_gizmoSize = newGizmoSize;
 	                GUIUtility.keyboardControl = 0;
-	                EditorUtility.SetDirty(oData);
+                    UnityEditor.EditorUtility.SetDirty(oData);
 	            }
 
 	            GUILayout.BeginVertical(GUILayout.Height(26f), GUILayout.Width(75f));
@@ -133,7 +133,7 @@ namespace M8.Animator {
 	            if(oData.gizmo_size != newGizmoSize) {
 	                oData.gizmo_size = newGizmoSize;
 	                AnimatorTimeline.e_gizmoSize = newGizmoSize;
-	                EditorUtility.SetDirty(oData);
+                    UnityEditor.EditorUtility.SetDirty(oData);
 	            }
 
 	            GUILayout.FlexibleSpace();
@@ -147,8 +147,8 @@ namespace M8.Animator {
 	            if(ppu <= 0.001f) ppu = 0.001f;
 	            if(oData.pixelPerUnitDefault != ppu) {
 	                oData.pixelPerUnitDefault = ppu;
-	                // save
-	                EditorUtility.SetDirty(oData);
+                    // save
+                    UnityEditor.EditorUtility.SetDirty(oData);
 	            }
 	            GUILayout.EndHorizontal();
 	            GUILayout.Space(4.0f);
@@ -163,7 +163,7 @@ namespace M8.Animator {
                 if(oData.framesPerPage != fpp) {
                     oData.framesPerPage = fpp;
                     // save
-                    EditorUtility.SetDirty(oData);
+                    UnityEditor.EditorUtility.SetDirty(oData);
                 }
 
                 int mp = EditorGUILayout.IntField("Max Page", oData.maxPage);
@@ -171,7 +171,7 @@ namespace M8.Animator {
                 if(oData.maxPage != mp) {
                     oData.maxPage = mp;
                     // save
-                    EditorUtility.SetDirty(oData);
+                    UnityEditor.EditorUtility.SetDirty(oData);
                 }
                 GUILayout.EndHorizontal();
                 GUILayout.Space(4.0f);
@@ -184,8 +184,8 @@ namespace M8.Animator {
 	            if(nfps <= 0) nfps = 1;
 	            if(oData.spriteInsertFramePerSecond != nfps) {
 	                oData.spriteInsertFramePerSecond = nfps;
-	                // save
-	                EditorUtility.SetDirty(oData);
+                    // save
+                    UnityEditor.EditorUtility.SetDirty(oData);
 	            }
 	            GUILayout.EndHorizontal();
 	            // time instead of frame numbers
@@ -197,8 +197,8 @@ namespace M8.Animator {
 	            GUILayout.FlexibleSpace();
 	            GUILayout.EndVertical();
 	            if(oData.setTimeNumbering(GUILayout.Toggle(oData.time_numbering, ""))) {
-	                // save
-	                EditorUtility.SetDirty(oData);
+                    // save
+                    UnityEditor.EditorUtility.SetDirty(oData);
 	            }
 	            GUILayout.EndHorizontal();
 	            // scrubby zoom cursor
@@ -210,8 +210,8 @@ namespace M8.Animator {
 	            GUILayout.FlexibleSpace();
 	            GUILayout.EndVertical();
 	            if(oData.setScrubbyZoomCursor(GUILayout.Toggle(oData.scrubby_zoom_cursor, ""))) {
-	                // save
-	                EditorUtility.SetDirty(oData);
+                    // save
+                    UnityEditor.EditorUtility.SetDirty(oData);
 	            }
 	            GUILayout.EndHorizontal();
 	            // scrubby zoom slider
@@ -223,8 +223,8 @@ namespace M8.Animator {
 	            GUILayout.FlexibleSpace();
 	            GUILayout.EndVertical();
 	            if(oData.setScrubbyZoomSlider(GUILayout.Toggle(oData.scrubby_zoom_slider, ""))) {
-	                // save
-	                EditorUtility.SetDirty(oData);
+                    // save
+                    UnityEditor.EditorUtility.SetDirty(oData);
 	            }
 	            GUILayout.EndHorizontal();
 	            // show warning for lost references
@@ -249,8 +249,8 @@ namespace M8.Animator {
 	            GUILayout.FlexibleSpace();
 	            GUILayout.EndVertical();
 	            if(oData.setIgnoreMinimumSizeWarning(GUILayout.Toggle(oData.ignoreMinSize, ""))) {
-	                // save
-	                EditorUtility.SetDirty(oData);
+                    // save
+                    UnityEditor.EditorUtility.SetDirty(oData);
 	            }
 	            GUILayout.EndHorizontal();
 	            // show frames for collapsed tracks
@@ -262,8 +262,8 @@ namespace M8.Animator {
 	            GUILayout.FlexibleSpace();
 	            GUILayout.EndVertical();
 	            if(oData.setShowFramesForCollapsedTracks(GUILayout.Toggle(oData.showFramesForCollapsedTracks, ""))) {
-	                // save
-	                EditorUtility.SetDirty(oData);
+                    // save
+                    UnityEditor.EditorUtility.SetDirty(oData);
 	            }
 	            GUILayout.EndHorizontal();
 	            // disable timeline actions
@@ -275,8 +275,8 @@ namespace M8.Animator {
 	            GUILayout.FlexibleSpace();
 	            GUILayout.EndVertical();
 	            if(oData.setDisableTimelineActions(GUILayout.Toggle(oData.disableTimelineActions, ""))) {
-	                // save
-	                EditorUtility.SetDirty(oData);
+                    // save
+                    UnityEditor.EditorUtility.SetDirty(oData);
 	                AMTimeline.recalculateNumFramesToRender();
 	            }
 	            GUILayout.EndHorizontal();
@@ -294,8 +294,8 @@ namespace M8.Animator {
 	            }
 	            else {
 	                if(oData.setDisableTimelineActionsTooltip(!GUILayout.Toggle(!oData.disableTimelineActionsTooltip, ""))) {
-	                    // save
-	                    EditorUtility.SetDirty(oData);
+                        // save
+                        UnityEditor.EditorUtility.SetDirty(oData);
 	                }
 	            }
 	            GUILayout.EndHorizontal();
@@ -303,7 +303,7 @@ namespace M8.Animator {
 	        #endregion
 	        #region quick add
 	        else if(tabIndex == (int)tabType.QuickAdd) {
-	            AMEditorUtil.ResetDisplayControls();
+	            EditorUtility.ResetDisplayControls();
 	            GUILayout.Space(3f);
 	            GUILayout.BeginHorizontal();
 	            GUILayout.Space(width_indent);
@@ -317,7 +317,7 @@ namespace M8.Animator {
 	                for(int i = 0; i < oData.quickAdd_Combos[j].Count; i++) {
 	                    if(oData.setQuickAddCombo(j, i, EditorGUILayout.Popup(oData.quickAdd_Combos[j][i], AMTimeline.TrackNames, GUILayout.Width(80f)))) {
 	                        oData.flatten_quickAdd_Combos();
-	                        EditorUtility.SetDirty(oData);
+                            UnityEditor.EditorUtility.SetDirty(oData);
 	                    }
 	                    if(i < oData.quickAdd_Combos[j].Count - 1) GUILayout.Label("+");
 	                }
@@ -330,12 +330,12 @@ namespace M8.Animator {
 	                            j--;
 	                        }
 	                        oData.flatten_quickAdd_Combos();
-	                        EditorUtility.SetDirty(oData);
+                            UnityEditor.EditorUtility.SetDirty(oData);
 	                    }
 	                if(GUILayout.Button("+", GUILayout.Width(20f), GUILayout.Height(20f))) {
 	                    oData.quickAdd_Combos[j].Add((int)AMTimeline.Track.Translation);
 	                    oData.flatten_quickAdd_Combos();
-	                    EditorUtility.SetDirty(oData);
+                        UnityEditor.EditorUtility.SetDirty(oData);
 	                }
 	                GUILayout.EndHorizontal();
 	            }
@@ -350,7 +350,7 @@ namespace M8.Animator {
 	            if(GUILayout.Button("+", GUILayout.Width(20f), GUILayout.Height(20f))) {
 	                oData.quickAdd_Combos.Add(new List<int> { (int)AMTimeline.Track.Translation });
 	                oData.flatten_quickAdd_Combos();
-	                EditorUtility.SetDirty(oData);
+                    UnityEditor.EditorUtility.SetDirty(oData);
 	            }
 	            GUILayout.EndHorizontal();
 	        }
@@ -370,7 +370,7 @@ namespace M8.Animator {
 	            GUILayout.Space(1f);
 	            if(GUILayout.Button("Import", GUILayout.Width(60f))) {
 	                //TODO: undo "Import Take(s)"
-	                string importTakesPath = EditorUtility.OpenFilePanel("Import Take(s)", "Assets/", "unity");
+	                string importTakesPath = UnityEditor.EditorUtility.OpenFilePanel("Import Take(s)", "Assets/", "unity");
 	                if(importTakesPath != "") AMTakeImport.openAdditiveAndDeDupe(importTakesPath);
 	            }
 	            GUILayout.EndVertical();
@@ -407,7 +407,7 @@ namespace M8.Animator {
 	            GUILayout.Label("Options:", labelRight, GUILayout.Width(55f));
 	            if(GUILayout.Button("Import", GUILayout.Width(60f))) {
 	                //TODO: undo for "Import Options"
-	                string importOptionsPath = EditorUtility.OpenFilePanel("Import Options", "Assets/Animator", "unitypackage");
+	                string importOptionsPath = UnityEditor.EditorUtility.OpenFilePanel("Import Options", "Assets/Animator", "unitypackage");
 	                if(importOptionsPath != "") {
 	                    AssetDatabase.ImportPackage(importOptionsPath, true);
 	                    this.Close();

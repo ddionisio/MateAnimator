@@ -4,7 +4,7 @@ using UnityEditor;
 using System.IO;
 
 namespace M8.Animator {
-	public struct AMEditorResource {
+	public struct EditorResource {
 	    private static string skinsDir = null;
 	    private static string textureEditorDir = null;
 	    private static string textureDir = null;

@@ -98,7 +98,7 @@ namespace M8.Animator {
 	        loopMode = (LoopType)EditorGUILayout.EnumPopup("Mode", loopMode);
 	        GUILayout.EndHorizontal();
 
-	        AMEditorUtil.ResetDisplayControls();
+	        EditorUtility.ResetDisplayControls();
 
 	        GUILayout.Space(2f);
 	        //pausePreviousTake = EditorGUILayout.Toggle("Pause Prev. Take", pausePreviousTake);

@@ -192,7 +192,7 @@ namespace M8.Animator {
 	        if(aData == null || !track) this.Close();
 
 	        bool changePropertyValue = true;
-	        if((track.keys.Count > 0) && (!EditorUtility.DisplayDialog("Data Will Be Lost", "You will lose all of the keyframes on track '" + track.name + "' if you continue.", "Continue Anway", "Cancel"))) {
+	        if((track.keys.Count > 0) && (!UnityEditor.EditorUtility.DisplayDialog("Data Will Be Lost", "You will lose all of the keyframes on track '" + track.name + "' if you continue.", "Continue Anway", "Cancel"))) {
 	            changePropertyValue = false;
 	        }
 	        if(changePropertyValue) {

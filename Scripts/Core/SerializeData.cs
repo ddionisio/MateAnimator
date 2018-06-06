@@ -17,6 +17,68 @@ namespace M8.Animator {
             public SerializeIndex[] keys;
         }
 
+        public static Track CreateTrack(SerializeType type) {
+            switch(type) {
+                case SerializeType.UnityAnimation:
+                    return new UnityAnimationTrack();
+                case SerializeType.Audio:
+                    return new AudioTrack();
+                case SerializeType.CameraSwitcher:
+                    return new CameraSwitcherTrack();
+                case SerializeType.Event:
+                    return new EventTrack();
+                case SerializeType.GOSetActive:
+                    return new GOSetActiveTrack();
+                case SerializeType.Material:
+                    return new MaterialTrack();
+                case SerializeType.Orientation:
+                    return new OrientationTrack();
+                case SerializeType.Property:
+                    return new PropertyTrack();
+                case SerializeType.RotationEuler:
+                    return new RotationEulerTrack();
+                case SerializeType.Rotation:
+                    return new RotationTrack();
+                case SerializeType.Translation:
+                    return new TranslationTrack();
+                case SerializeType.Trigger:
+                    return new TriggerTrack();
+            }
+
+            return null;
+        }
+
+        public static Key CreateKey(SerializeType type) {
+            switch(type) {
+                case SerializeType.UnityAnimation:
+                    return new UnityAnimationKey();
+                case SerializeType.Audio:
+                    return new AudioKey();
+                case SerializeType.CameraSwitcher:
+                    return new CameraSwitcherKey();
+                case SerializeType.Event:
+                    return new EventKey();
+                case SerializeType.GOSetActive:
+                    return new GOSetActiveKey();
+                case SerializeType.Material:
+                    return new MaterialKey();
+                case SerializeType.Orientation:
+                    return new OrientationKey();
+                case SerializeType.Property:
+                    return new PropertyKey();
+                case SerializeType.RotationEuler:
+                    return new RotationEulerKey();
+                case SerializeType.Rotation:
+                    return new RotationKey();
+                case SerializeType.Translation:
+                    return new TranslationKey();
+                case SerializeType.Trigger:
+                    return new TriggerKey();
+            }
+
+            return null;
+        }
+
         //add a list for track and key for each type here
 
         [SerializeField] AudioTrack[] _audioTracks;

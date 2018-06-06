@@ -148,7 +148,7 @@ namespace M8.Animator {
                     if(t) {
                         //draw target
                         Gizmos.color = new Color(245f / 255f, 107f / 255f, 30f / 255f, 1f);
-                        Gizmos.DrawSphere(t.position, 0.2f * (AnimatorTimeline.e_gizmoSize / 0.1f));
+                        Gizmos.DrawSphere(t.position, 0.2f * (AnimateTimeline.e_gizmoSize / 0.1f));
 
                         //draw line
                         if(!isLineDrawn) {

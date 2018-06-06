@@ -106,9 +106,9 @@ namespace M8.Animator {
 	            bool shouldExit = false;
 	            bool performExport = true;
 	            if(string.IsNullOrEmpty(EditorSceneManager.GetActiveScene().name)) {
-	                if(EditorUtility.DisplayDialog("Save Current Scene", "The current scene must be saved before an export is performed.", "Save Current Scene", "Cancel")) {
+	                if(UnityEditor.EditorUtility.DisplayDialog("Save Current Scene", "The current scene must be saved before an export is performed.", "Save Current Scene", "Cancel")) {
                         EditorSceneManager.SaveScene(EditorSceneManager.GetActiveScene());
-	                    EditorUtility.DisplayDialog("Performing Export...", "The current scene has been saved. Now performing export.", "Continue");
+                        UnityEditor.EditorUtility.DisplayDialog("Performing Export...", "The current scene has been saved. Now performing export.", "Continue");
 	                }
 	                else {
 	                    performExport = false;
@@ -129,7 +129,7 @@ namespace M8.Animator {
 	    }
 
 	    bool saveSelectedItemsToScene() {
-	        string saveScenePath = EditorUtility.SaveFilePanel("Export Take", "Assets/", (take != null ? take.name : "All_Takes"), "unity");
+	        string saveScenePath = UnityEditor.EditorUtility.SaveFilePanel("Export Take", "Assets/", (take != null ? take.name : "All_Takes"), "unity");
 	        if(saveScenePath == "") return false;
 	        // delete unselected GameObjects
 	        foreach(GameObject go in gameObjs) {

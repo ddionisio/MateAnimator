@@ -119,7 +119,7 @@ namespace M8.Animator {
 	        if(shaderPropertyInd == -1)
 	            shaderPropertyInd = 0;
 
-	        AMEditorUtil.DrawSeparator();
+	        EditorUtility.DrawSeparator();
 
 	        //shader property select
 	        shaderPropertyInd = EditorGUILayout.IntPopup("Property", shaderPropertyInd, shaderPropertyDetails, shaderPropertyInds);

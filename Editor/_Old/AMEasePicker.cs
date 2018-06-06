@@ -54,7 +54,7 @@ namespace M8.Animator {
 		
 		void OnEnable() {
 	        if(!texLoaded) {
-	            tex_orb = AMEditorResource.LoadEditorTexture("am_orb");
+	            tex_orb = EditorResource.LoadEditorTexture("am_orb");
 	            texLoaded = true;
 	        }
 

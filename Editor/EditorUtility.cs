@@ -3,7 +3,7 @@ using UnityEditor;
 using System.Collections.Generic;
 
 namespace M8.Animator {
-	public struct AMEditorUtil {
+	public struct EditorUtility {
 	    public static List<Sprite> GetSprites(UnityEngine.Object[] objs) {
 	        List<Sprite> sprites = new List<Sprite>(objs.Length);
 
