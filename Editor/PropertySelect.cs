@@ -13,7 +13,7 @@ namespace M8.Animator.Edit {
             get {
                 if(TimelineWindow.window != null && TimelineWindow.window.aData != __aData) {
                     track = null;
-                    reloadAnimatorData();
+                    reloadAnimate();
                 }
 
                 return __aData;

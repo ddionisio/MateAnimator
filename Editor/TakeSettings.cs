@@ -17,7 +17,7 @@ namespace M8.Animator.Edit {
                 if(TimelineWindow.window == null) return null;
 
                 if(TimelineWindow.window.aData != __aData) {
-                    reloadAnimatorData();
+                    reloadAnimate();
                 }
 
                 return __aData;

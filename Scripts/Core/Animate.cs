@@ -8,7 +8,7 @@ using DG.Tweening;
 
 namespace M8.Animator {
     [ExecuteInEditMode]
-    [AddComponentMenu("M8/Animator")]
+    [AddComponentMenu("M8/Animate")]
     public class Animate : MonoBehaviour, ITarget, ISerializationCallbackReceiver {
         public enum DisableAction {
             None,
