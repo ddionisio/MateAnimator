@@ -248,6 +248,7 @@ namespace M8.Animator {
         // draw gizmos
         public override void drawGizmos(ITarget target, float gizmo_size, bool inPlayMode, int frame) {
             Transform t = GetTarget(target) as Transform;
+            if(!t) return;
 
             foreach(TranslationKey key in keys) {
                 if(key != null) {

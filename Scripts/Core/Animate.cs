@@ -23,7 +23,7 @@ namespace M8.Animator {
         // show
 
         [SerializeField]
-        List<Take> takeData;
+        List<Take> takeData = new List<Take>();
 
         [SerializeField]
         int playOnStartIndex = -1;

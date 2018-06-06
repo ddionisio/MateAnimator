@@ -117,7 +117,8 @@ namespace M8.Animator {
         [SerializeField] UnityAnimationTrack[] _unityAnimationTracks;
         [SerializeField] UnityAnimationKey[] _unityAnimationKeys;
 
-        [SerializeField] TrackData[][] _takesTrackLookups;
+        [SerializeField] TrackData[] _trackLookups;
+        [SerializeField] int[] _takeTrackCounts;
 
         public void Serialize(List<Take> takes) {
             var audioTrackList = new List<AudioTrack>();
@@ -156,11 +157,15 @@ namespace M8.Animator {
             var unityAnimationTrackList = new List<UnityAnimationTrack>();
             var unityAnimationKeyList = new List<UnityAnimationKey>();
 
-            _takesTrackLookups = new TrackData[takes.Count][];
+            var trackLookupList = new List<TrackData>();
+
+            _takeTrackCounts = new int[takes.Count];
 
             //takes
             for(int takeInd = 0; takeInd < takes.Count; takeInd++) {
                 var take = takes[takeInd];
+
+                _takeTrackCounts[takeInd] = take.trackValues.Count;
 
                 //tracks
                 var trackLookups = new TrackData[take.trackValues.Count];
@@ -290,7 +295,7 @@ namespace M8.Animator {
                     trackLookups[trackInd] = trackLookup;
                 }
 
-                _takesTrackLookups[takeInd] = trackLookups;
+                trackLookupList.AddRange(trackLookups);
             }
 
             _audioTracks = audioTrackList.ToArray();
@@ -325,18 +330,23 @@ namespace M8.Animator {
 
             _triggerTracks = triggerTrackList.ToArray();
             _triggerKeys = triggerKeyList.ToArray();
+
+            _trackLookups = trackLookupList.ToArray();
         }
 
         public void Deserialize(List<Take> takes) {
+            int takeTrackLookupInd = 0;
+
             for(int takeInd = 0; takeInd < takes.Count; takeInd++) {
                 var take = takes[takeInd];
-                var takeTrackLookups = _takesTrackLookups[takeInd];
+
+                int trackCount = _takeTrackCounts[takeInd];
 
                 //generate tracks
-                var tracks = new List<Track>(takeTrackLookups.Length);
+                var tracks = new List<Track>(trackCount);
 
-                for(int trackInd = 0; trackInd < takeTrackLookups.Length; trackInd++) {
-                    var trackLookup = takeTrackLookups[trackInd];
+                for(int trackInd = 0; trackInd < trackCount; trackInd++, takeTrackLookupInd++) {
+                    var trackLookup = _trackLookups[takeTrackLookupInd];
 
                     //grab the track
                     Track track = null;

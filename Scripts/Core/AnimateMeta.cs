@@ -5,7 +5,7 @@ using UnityEngine;
 namespace M8.Animator {
     public class AnimateMeta : ScriptableObject, ISerializationCallbackReceiver {
         [SerializeField]
-        List<Take> takeData;
+        List<Take> takeData = new List<Take>();
 
         [SerializeField]
         SerializeData serializeData;
