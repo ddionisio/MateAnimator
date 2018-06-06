@@ -5317,7 +5317,7 @@ namespace M8.Animator.Edit {
                 addTrackWithGameObject(trackType, object_window);
             }
             objects_window = new List<GameObject>();
-            timelineSelectTrack(take.track_count);
+            timelineSelectTrack(take.trackCounter);
             // move scrollview to last created track
             setScrollViewValue(take.getElementY(TakeEdit(take).selectedTrack, height_track, height_track_foldin, height_group));
         }
@@ -5459,7 +5459,7 @@ namespace M8.Animator.Edit {
                 addTrack((int)SerializeType.Property);
 
                 Take take = aData.currentTake;
-                timelineSelectTrack(aData.currentTake.track_count);
+                timelineSelectTrack(aData.currentTake.trackCounter);
 
                 PropertyTrack newTrack = TakeEdit(take).getSelectedTrack(take) as PropertyTrack;
                 newTrack.SetTarget(aData.target, newGO.transform);

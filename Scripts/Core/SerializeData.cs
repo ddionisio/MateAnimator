@@ -121,6 +121,9 @@ namespace M8.Animator {
         [SerializeField] int[] _takeTrackCounts;
 
         public void Serialize(List<Take> takes) {
+            if(takes == null)
+                return;
+
             var audioTrackList = new List<AudioTrack>();
             var audioKeyList = new List<AudioKey>();
 
@@ -335,6 +338,9 @@ namespace M8.Animator {
         }
 
         public void Deserialize(List<Take> takes) {
+            if(takes == null)
+                return;
+
             int takeTrackLookupInd = 0;
 
             for(int takeInd = 0; takeInd < takes.Count; takeInd++) {

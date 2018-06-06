@@ -20,8 +20,8 @@ namespace M8.Animator {
         public List<Track> trackValues { get { return mTrackValues; } set { mTrackValues = value; } }
         private List<Track> mTrackValues = new List<Track>();
 
-        public int track_count = 1;     // number of tracks created, used to generate unique track ids
-        public int group_count = 0;     // number of groups created, used to generate unique group ids. negative number to differentiate from positive track ids
+        public int trackCounter = 1;     // number of tracks created, used to generate unique track ids
+        public int groupCounter = 0;     // number of groups created, used to generate unique group ids. negative number to differentiate from positive track ids
 
         public Group rootGroup;
         public List<Group> groupValues = new List<Group>();
@@ -79,8 +79,8 @@ namespace M8.Animator {
             loopMode = LoopType.Restart;
             loopBackToFrame = 0;
 
-            track_count = 1;
-            group_count = 0;
+            trackCounter = 1;
+            groupCounter = 0;
         }
 
         // Adding a new track type
@@ -235,23 +235,23 @@ namespace M8.Animator {
 
         public int getUniqueTrackID() {
 
-            track_count++;
+            trackCounter++;
 
             foreach(Track track in trackValues)
-                if(track.id >= track_count) track_count = track.id + 1;
+                if(track.id >= trackCounter) trackCounter = track.id + 1;
 
-            return track_count;
+            return trackCounter;
         }
 
         public int getUniqueGroupID() {
 
-            group_count--;
+            groupCounter--;
 
             foreach(Group grp in groupValues) {
-                if(grp.group_id <= group_count) group_count = grp.group_id - 1;
+                if(grp.group_id <= groupCounter) groupCounter = grp.group_id - 1;
 
             }
-            return group_count;
+            return groupCounter;
         }
 
         public int getTrackIndex(int id) {

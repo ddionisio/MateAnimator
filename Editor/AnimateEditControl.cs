@@ -123,12 +123,20 @@ namespace M8.Animator.Edit {
         }
 
         public void RegisterTakesUndo(string label, bool complete) {
-            UnityEngine.Object obj = meta ? (UnityEngine.Object)meta : (UnityEngine.Object)mData;
+            if(meta) {
+                if(complete)
+                    UnityEditor.Undo.RegisterCompleteObjectUndo(meta, label);
+                else
+                    UnityEditor.Undo.RecordObject(meta, label);
 
-            if(complete)
-                UnityEditor.Undo.RegisterCompleteObjectUndo(obj, label);
-            else
-                UnityEditor.Undo.RecordObject(obj, label);
+                UnityEditor.EditorUtility.SetDirty(meta);
+            }
+            else {
+                if(complete)
+                    UnityEditor.Undo.RegisterCompleteObjectUndo(mData, label);
+                else
+                    UnityEditor.Undo.RecordObject(mData, label);
+            }
         }
 
         public void Refresh() {
@@ -229,7 +237,7 @@ namespace M8.Animator.Edit {
                 a.initGroups();
             }
 
-            a.group_count = dupTake.group_count;
+            a.groupCounter = dupTake.groupCounter;
 
             if(dupTake.groupValues != null) {
                 a.groupValues = new List<Group>();
@@ -238,7 +246,7 @@ namespace M8.Animator.Edit {
                 }
             }
 
-            a.track_count = dupTake.track_count;
+            a.trackCounter = dupTake.trackCounter;
             
             a.trackValues = new List<Track>();
             foreach(var track in dupTake.trackValues) {
