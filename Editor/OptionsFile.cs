@@ -14,6 +14,7 @@ namespace M8.Animator.Edit {
         public bool disableTimelineActions = false;
         public bool disableTimelineActionsTooltip = false;
         public bool showFramesForCollapsedTracks = true;
+        public bool resetTakeOnClose = true;
         public float gizmo_size = 0.05f;
         public int framesPerPage = 60;
         public int maxPage = 2;
@@ -84,6 +85,14 @@ namespace M8.Animator.Edit {
         public bool setShowFramesForCollapsedTracks(bool showFramesForCollapsedTracks) {
             if(this.showFramesForCollapsedTracks != showFramesForCollapsedTracks) {
                 this.showFramesForCollapsedTracks = showFramesForCollapsedTracks;
+                return true;
+            }
+            return false;
+        }
+
+        public bool setResetTakeOnClose(bool resetTakeOnClose) {
+            if(this.resetTakeOnClose != resetTakeOnClose) {
+                this.resetTakeOnClose = resetTakeOnClose;
                 return true;
             }
             return false;

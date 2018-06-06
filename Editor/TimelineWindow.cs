@@ -383,8 +383,6 @@ namespace M8.Animator.Edit {
         private float height_event_parameters = 0f;
 
         private AnimateMeta mMeta = null;
-        private string mMetaName = "";
-        private string mMetaPath = "";
 
         //used when we need to add track during OnGUI (workaround for things like dragging to window Unity bug)
         private int mAddTrackTypeIndexLate = -1;
@@ -478,8 +476,10 @@ namespace M8.Animator.Edit {
                     // stop audio if it's playing
                     aData.currentTake.Stop(aData.target);
 
-                    // preview first frame
-                    aData.currentTake.previewFrame(aData.target, 1f);
+                    if(oData.resetTakeOnClose) {
+                        // preview first frame
+                        aData.currentTake.previewFrame(aData.target, 1f);
+                    }
                 }
 
                 aData = null;
@@ -806,45 +806,42 @@ namespace M8.Animator.Edit {
 
                     GUILayout.BeginHorizontal();
 
-                    bool createNewMeta = false;
+                    mMeta = (AnimateMeta)EditorGUILayout.ObjectField("Meta:", mMeta, typeof(AnimateMeta), false);
 
-                    if(mMeta == null) {
-                        GUI.backgroundColor = Color.green;
-                        createNewMeta = GUILayout.Button("Create Meta", GUILayout.Width(100f));
+                    var prevClr = GUI.color;
+                    GUI.color = Color.green;
 
-                        GUI.backgroundColor = Color.white;
-                        mMetaName = GUILayout.TextField(mMetaName);
+                    if(GUILayout.Button("Create", GUILayout.Width(100f))) {
+                        string path = UnityEditor.EditorUtility.SaveFilePanelInProject("Create AnimateMeta", "New Animate Meta", "asset", "Please enter a file name to save the animator data to");
+                        if(!string.IsNullOrEmpty(path)) {
+                            bool canCreate = true;
+
+                            //check if path is the same as current
+                            if(mMeta) {
+                                string curPath = AssetDatabase.GetAssetPath(mMeta);
+                                if(path == curPath)
+                                    canCreate = false; //don't need to save this since it's already being used.
+                            }
+
+                            if(canCreate) {
+                                //check if it already exists
+                                if(!string.IsNullOrEmpty(AssetDatabase.AssetPathToGUID(path))) {
+                                    //load the meta
+                                    mMeta = AssetDatabase.LoadAssetAtPath<AnimateMeta>(path);
+                                }
+                                else {
+                                    //create new meta
+                                    mMeta = ScriptableObject.CreateInstance<AnimateMeta>();
+                                    AssetDatabase.CreateAsset(mMeta, path);
+                                    AssetDatabase.SaveAssets();
+                                }
+                            }
+                        }
                     }
+
+                    GUI.color = prevClr;
 
                     GUILayout.EndHorizontal();
-
-                    if(mMeta != null) {
-                        mMetaName = mMeta.name;
-                        mMetaPath = AssetDatabase.GetAssetPath(mMeta);
-                    }
-                    else if(!string.IsNullOrEmpty(mMetaName)) {
-                        mMetaPath = EditorUtility.GetSelectionFolder() + mMetaName + ".asset";
-                    }
-
-                    if(createNewMeta && !string.IsNullOrEmpty(mMetaName)) {
-                        mMeta = ScriptableObject.CreateInstance<AnimateMeta>();
-                        AssetDatabase.CreateAsset(mMeta, mMetaPath);
-                        AssetDatabase.SaveAssets();
-                    }
-
-                    GUILayout.BeginHorizontal();
-
-                    GUILayout.Label("Select Meta: ");
-
-                    mMeta = (AnimateMeta)EditorGUILayout.ObjectField(mMeta, typeof(AnimateMeta), false);
-
-                    GUILayout.EndHorizontal();
-
-                    if(!string.IsNullOrEmpty(mMetaPath))
-                        GUILayout.Label("Path: " + mMetaPath);
-                    else {
-                        GUILayout.Label("Path: <none>");
-                    }
 
                     EditorUtility.DrawSeparator();
                     //

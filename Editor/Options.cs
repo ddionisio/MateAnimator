@@ -299,6 +299,19 @@ namespace M8.Animator.Edit {
                     }
                 }
                 GUILayout.EndHorizontal();
+                // reset takes on close
+                GUILayout.BeginHorizontal();
+                GUILayout.Space(width_indent);
+                GUILayout.BeginVertical(GUILayout.Height(26f));
+                GUILayout.FlexibleSpace();
+                GUILayout.Label("Reset Take On Close");
+                GUILayout.FlexibleSpace();
+                GUILayout.EndVertical();
+                if(oData.setResetTakeOnClose(GUILayout.Toggle(oData.resetTakeOnClose, ""))) {
+                    // save
+                    UnityEditor.EditorUtility.SetDirty(oData);
+                }
+                GUILayout.EndHorizontal();
             }
             #endregion
             #region quick add

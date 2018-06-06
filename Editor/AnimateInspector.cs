@@ -197,13 +197,33 @@ namespace M8.Animator.Edit {
 
             switch(metaComm) {
                 case MetaCommand.SaveAs:
-                    string path = UnityEditor.EditorUtility.SaveFilePanelInProject("Save AnimateMeta", aData.name + ".asset", "asset", "Please enter a file name to save the animator data to");
+                    string path = UnityEditor.EditorUtility.SaveFilePanelInProject("Save AnimateMeta", aData.name, "asset", "Please enter a file name to save the animator data to");
                     if(!string.IsNullOrEmpty(path)) {
-                        var createdMeta = ScriptableObject.CreateInstance<AnimateMeta>();
-                        AssetDatabase.CreateAsset(createdMeta, path);
-                        AssetDatabase.SaveAssets();
+                        bool canCreate = true;
 
-                        aData.MetaSet(createdMeta, true);
+                        //check if path is the same as current
+                        if(aData.meta) {
+                            string curPath = AssetDatabase.GetAssetPath(aData.meta);
+                            if(path == curPath)
+                                canCreate = false; //don't need to save this since it's already being used.
+                        }
+                                                
+                        if(canCreate) {
+                            //check if it already exists
+                            if(!string.IsNullOrEmpty(AssetDatabase.AssetPathToGUID(path))) {
+                                //load the meta and overwrite its data
+                                var loadedMeta = AssetDatabase.LoadAssetAtPath<AnimateMeta>(path);
+                                aData.MetaSet(loadedMeta, true);
+                            }                            
+                            else {
+                                //create new meta
+                                var createdMeta = ScriptableObject.CreateInstance<AnimateMeta>();
+                                AssetDatabase.CreateAsset(createdMeta, path);
+                                AssetDatabase.SaveAssets();
+
+                                aData.MetaSet(createdMeta, true);
+                            }
+                        }
                     }
                     break;
                 case MetaCommand.Instantiate:
