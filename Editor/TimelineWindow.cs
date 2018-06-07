@@ -168,20 +168,6 @@ namespace M8.Animator.Edit {
             Hand = 2
         }
 
-        public static string[] TrackNames = new string[] {
-            "Translation",
-            "Rotation",
-            "Rotation Euler",
-            "Orientation",
-            "Animation",
-            "Audio",
-            "Property",
-            "Material",
-            "Event",
-            "GameObject Active",
-            "Camera Switcher",
-            "Trigger",
-        };
         // skins
         public static string global_skin = "am_skin_dark";
         private GUISkin skin = null;
@@ -5787,7 +5773,7 @@ namespace M8.Animator.Edit {
                     string combo_name = "";
                     for(int i = 0; i < combo.Count; i++) {
                         //combo_name += Enum.GetName(typeof(Track),combo[i])+" ";
-                        combo_name += TrackNames[combo[i]] + " " + (combo[i] == (int)SerializeType.CameraSwitcher && aData.currentTake.cameraSwitcher != null ? "(Key) " : "");
+                        combo_name += SerializeTypeEditor.TrackNames[combo[i]] + " " + (combo[i] == (int)SerializeType.CameraSwitcher && aData.currentTake.cameraSwitcher != null ? "(Key) " : "");
                         if(i < combo.Count - 1) combo_name += "+ ";
                     }
                     if(canQuickAddCombo(combo, hasTransform, hasAnimation, hasAudioSource, hasCamera, hasAnimate, hasRenderer))

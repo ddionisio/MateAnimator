@@ -50,6 +50,7 @@ namespace M8.Animator {
         protected override void SetSerializeObject(UnityEngine.Object obj) {
             this.obj = obj as GameObject;
 
+            component = null;
             cachedFieldInfo = null;
             cachedPropertyInfo = null;
             isCached = false;
@@ -67,6 +68,12 @@ namespace M8.Animator {
                 comp = go ? go.GetComponent(componentName) : null;
             }
             else {
+                //need to re-grab component
+                if(!component && !string.IsNullOrEmpty(componentName)) {
+                    GameObject go = GetTarget(target) as GameObject;
+                    component = go ? go.GetComponent(componentName) : null;
+                }
+
                 comp = component;
             }
             return comp;

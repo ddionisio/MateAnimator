@@ -328,7 +328,7 @@ namespace M8.Animator.Edit {
                     GUILayout.BeginHorizontal();
                     GUILayout.Space(width_indent);
                     for(int i = 0; i < oData.quickAdd_Combos[j].Count; i++) {
-                        if(oData.setQuickAddCombo(j, i, EditorGUILayout.Popup(oData.quickAdd_Combos[j][i], TimelineWindow.TrackNames, GUILayout.Width(80f)))) {
+                        if(oData.setQuickAddCombo(j, i, EditorGUILayout.Popup(oData.quickAdd_Combos[j][i], SerializeTypeEditor.TrackNames, GUILayout.Width(80f)))) {
                             oData.flatten_quickAdd_Combos();
                             UnityEditor.EditorUtility.SetDirty(oData);
                         }

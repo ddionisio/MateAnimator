@@ -4,17 +4,12 @@ using UnityEngine;
 
 namespace M8.Animator {
     [System.Serializable]
-    public class SerializeData {
-        [System.Serializable]
-        public struct SerializeIndex {
-            public SerializeType type;
-            public int index;
-        }
-
+    public class SerializeData {        
         [System.Serializable]
         public struct TrackData {
-            public SerializeIndex index;
-            public SerializeIndex[] keys;
+            public SerializeType type;
+            public int index;
+            public int[] keyIndices;
         }
 
         public static Track CreateTrack(SerializeType type) {
@@ -231,7 +226,7 @@ namespace M8.Animator {
                     }
                     //
                     
-                    var trackLookup = new TrackData { index=new SerializeIndex { index=trackLookupIndex, type=track.serializeType }, keys=new SerializeIndex[track.keys.Count] };
+                    var trackLookup = new TrackData { type=track.serializeType, index=trackLookupIndex, keyIndices=new int[track.keys.Count] };
 
                     //keys
                     for(int keyInd = 0; keyInd < track.keys.Count; keyInd++) {
@@ -292,7 +287,7 @@ namespace M8.Animator {
                         }
                         //
 
-                        trackLookup.keys[keyInd] = new SerializeIndex { index=keyLookupIndex, type=key.serializeType };
+                        trackLookup.keyIndices[keyInd] = keyLookupIndex;
                     }
 
                     trackLookups[trackInd] = trackLookup;
@@ -355,99 +350,97 @@ namespace M8.Animator {
                     var trackLookup = _trackLookups[takeTrackLookupInd];
 
                     //grab the track
+                    SerializeType trackType = trackLookup.type;
                     Track track = null;
                     
-                    switch(trackLookup.index.type) {
+                    switch(trackType) {
                         case SerializeType.UnityAnimation:
-                            track = _unityAnimationTracks[trackLookup.index.index];
+                            track = _unityAnimationTracks[trackLookup.index];
                             break;
                         case SerializeType.Audio:
-                            track = _audioTracks[trackLookup.index.index];
+                            track = _audioTracks[trackLookup.index];
                             break;
                         case SerializeType.CameraSwitcher:
-                            track = _cameraSwitcherTracks[trackLookup.index.index];
+                            track = _cameraSwitcherTracks[trackLookup.index];
                             break;
                         case SerializeType.Event:
-                            track = _eventTracks[trackLookup.index.index];
+                            track = _eventTracks[trackLookup.index];
                             break;
                         case SerializeType.GOSetActive:
-                            track = _goSetActiveTracks[trackLookup.index.index];
+                            track = _goSetActiveTracks[trackLookup.index];
                             break;
                         case SerializeType.Material:
-                            track = _materialTracks[trackLookup.index.index];
+                            track = _materialTracks[trackLookup.index];
                             break;
                         case SerializeType.Orientation:
-                            track = _orientationTracks[trackLookup.index.index];
+                            track = _orientationTracks[trackLookup.index];
                             break;
                         case SerializeType.Property:
-                            track = _propertyTracks[trackLookup.index.index];
+                            track = _propertyTracks[trackLookup.index];
                             break;
                         case SerializeType.RotationEuler:
-                            track = _rotationEulerTracks[trackLookup.index.index];
+                            track = _rotationEulerTracks[trackLookup.index];
                             break;
                         case SerializeType.Rotation:
-                            track = _rotationTracks[trackLookup.index.index];
+                            track = _rotationTracks[trackLookup.index];
                             break;
                         case SerializeType.Translation:
-                            track = _translationTracks[trackLookup.index.index];
+                            track = _translationTracks[trackLookup.index];
                             break;
                         case SerializeType.Trigger:
-                            track = _triggerTracks[trackLookup.index.index];
+                            track = _triggerTracks[trackLookup.index];
                             break;
                         default:
-                            Debug.LogWarning("Unsupported Type: " + trackLookup.index.type);
+                            Debug.LogWarning("Unsupported Type: " + trackType);
                             break;
                     }
 
                     if(track != null) {
                         //generate keys
-                        var keys = new List<Key>(trackLookup.keys.Length);
+                        var keys = new List<Key>(trackLookup.keyIndices.Length);
 
-                        for(int keyInd = 0; keyInd < trackLookup.keys.Length; keyInd++) {
-                            var keyLookup = trackLookup.keys[keyInd];
+                        for(int keyInd = 0; keyInd < trackLookup.keyIndices.Length; keyInd++) {
+                            int keyLookupIndex = trackLookup.keyIndices[keyInd];
 
                             //grab the key
                             Key key = null;
 
-                            switch(keyLookup.type) {
+                            switch(trackType) {
                                 case SerializeType.UnityAnimation:
-                                    key = _unityAnimationKeys[keyLookup.index];
+                                    key = _unityAnimationKeys[keyLookupIndex];
                                     break;
                                 case SerializeType.Audio:
-                                    key = _audioKeys[keyLookup.index];
+                                    key = _audioKeys[keyLookupIndex];
                                     break;
                                 case SerializeType.CameraSwitcher:
-                                    key = _cameraSwitcherKeys[keyLookup.index];
+                                    key = _cameraSwitcherKeys[keyLookupIndex];
                                     break;
                                 case SerializeType.Event:
-                                    key = _eventKeys[keyLookup.index];
+                                    key = _eventKeys[keyLookupIndex];
                                     break;
                                 case SerializeType.GOSetActive:
-                                    key = _goSetActiveKeys[keyLookup.index];
+                                    key = _goSetActiveKeys[keyLookupIndex];
                                     break;
                                 case SerializeType.Material:
-                                    key = _materialKeys[keyLookup.index];
+                                    key = _materialKeys[keyLookupIndex];
                                     break;
                                 case SerializeType.Orientation:
-                                    key = _orientationKeys[keyLookup.index];
+                                    key = _orientationKeys[keyLookupIndex];
                                     break;
                                 case SerializeType.Property:
-                                    key = _propertyKeys[keyLookup.index];
+                                    key = _propertyKeys[keyLookupIndex];
                                     break;
                                 case SerializeType.RotationEuler:
-                                    key = _rotationEulerKeys[keyLookup.index];
+                                    key = _rotationEulerKeys[keyLookupIndex];
                                     break;
                                 case SerializeType.Rotation:
-                                    key = _rotationKeys[keyLookup.index];
+                                    key = _rotationKeys[keyLookupIndex];
                                     break;
                                 case SerializeType.Translation:
-                                    key = _translationKeys[keyLookup.index];
+                                    key = _translationKeys[keyLookupIndex];
                                     break;
                                 case SerializeType.Trigger:
-                                    key = _triggerKeys[keyLookup.index];
-                                    break;
-                                default:
-                                    Debug.LogWarning("Unsupported Type: " + keyLookup.type);
+                                    key = _triggerKeys[keyLookupIndex];
                                     break;
                             }
 
