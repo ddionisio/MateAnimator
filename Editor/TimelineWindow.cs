@@ -267,7 +267,6 @@ namespace M8.Animator.Edit {
                                                 //private int repaintRefreshRate = 1;		// repaint every x update frames if necessary
         private static List<MethodInfo> cachedMethodInfo = new List<MethodInfo>();
         private List<string> cachedMethodNames = new List<string>();
-        private List<Component> cachedMethodInfoComponents = new List<Component>();
         private int updateRateMethodInfoCache = 2;      // update method info cache every x update frames if necessary
         private int updateMethodInfoCacheBuffer = 0;    // temporary value
         private static int cachedIndexMethodInfo = -1;
@@ -2795,7 +2794,7 @@ namespace M8.Animator.Edit {
                         //aData = (Animate)GameObject.Find("Animate").GetComponent("Animate");
                         if(!Application.isPlaying && curTake.maintainCaches(aData.target))
                             //Just set the scenes dirty since we don't want to undo this
-                            UnityEditor.SceneManagement.EditorSceneManager.MarkAllScenesDirty();
+                            aData.SetTakesDirty();
                     }
                     if((_track is AudioTrack || _track is UnityAnimationTrack) && _track.keys[i].getNumberOfFrames(curTake.frameRate) > -1 && (_track.keys[i].getStartFrame() + _track.keys[i].getNumberOfFrames(curTake.frameRate) <= numFrames)) {
                         //based on content length
@@ -3468,7 +3467,7 @@ namespace M8.Animator.Edit {
             #endregion
             #region event inspector
             if(sTrack is EventTrack) {
-                GameObject tgtGo = sTrack.GetTarget(aData.target) as GameObject;
+                var obj = sTrack.GetTarget(aData.target);
                 EventKey eKey = (EventKey)(sTrack as EventTrack).getKeyOnFrame(_frame);
                 // value
                 if(indexMethodInfo == -1 || cachedMethodInfo.Count <= 0) {
@@ -3509,22 +3508,23 @@ namespace M8.Animator.Edit {
                     return;
                 }
 
-                // if index out of range
+                // changed, if index out of range, if no method and there's only one on the list
                 bool paramMatched = eKey.isMatch(cachedParameterInfos);
-                if((indexMethodInfo != curIndexMethod && indexMethodInfo < cachedMethodInfo.Count) || !paramMatched) {
+                if((indexMethodInfo != curIndexMethod && indexMethodInfo < cachedMethodInfo.Count) || !paramMatched || (string.IsNullOrEmpty(eKey.methodName) && cachedMethodInfo.Count == 1)) {
                     // process change
                     // update cache when modifying varaibles
-                    if(eKey.setMethodInfo(tgtGo, cachedMethodInfoComponents[indexMethodInfo], !aData.meta, cachedMethodInfo[indexMethodInfo], cachedParameterInfos, !paramMatched, null)) {
-                        UnityEditor.SceneManagement.EditorSceneManager.MarkAllScenesDirty(); //don't really want to undo this
+                    if(eKey.setMethodInfo(obj, cachedMethodInfo[indexMethodInfo], cachedParameterInfos, !paramMatched, null)) {
+                        aData.SetTakesDirty(); //don't really want to undo this
+
                         // deselect fields
                         GUIUtility.keyboardControl = 0;
                     }
                 }
-                if(cachedParameterInfos.Length > 1) {
+                if(cachedParameterInfos.Length > 1 || !(obj is Component)) {
                     // if method has more than 1 parameter, set sendmessage to false, and disable toggle
-                    if(eKey.setUseSendMessage(false, null)) {
-                        UnityEditor.SceneManagement.EditorSceneManager.MarkAllScenesDirty(); //don't really want to undo this
-                    }
+                    if(eKey.setUseSendMessage(false, null))
+                        aData.SetTakesDirty(); //don't really want to undo this
+
                     sendMessageToggleEnabled = false;   // disable sendmessage toggle
                 }
 
@@ -3988,8 +3988,8 @@ namespace M8.Animator.Edit {
                     amTrack.SetTarget(aData.target, nsrc ? nsrc.transform : null);
                 }
             }
-            // property/event
-            else if(amTrack is PropertyTrack || amTrack is EventTrack) {
+            // property
+            else if(amTrack is PropertyTrack) {
                 GameObject ngo = (GameObject)EditorGUI.ObjectField(rect, amTrack.GetTarget(aData.target), typeof(GameObject), true);
                 if(!amTrack.isTargetEqual(aData.target, ngo)) {
                     bool changeGO = true;
@@ -4031,6 +4031,41 @@ namespace M8.Animator.Edit {
                     }
                 }
             }
+            //Event
+            else if(amTrack is EventTrack) {
+                var eventTrack = (EventTrack)amTrack;
+                var prevObj = amTrack.GetTarget(aData.target);
+                var nobj = EditorGUI.ObjectField(rect, prevObj, typeof(UnityEngine.Object), true);
+                if(!amTrack.isTargetEqual(aData.target, nobj)) {
+                    bool changeObj = true;
+
+                    //check if new target has the required components
+                    var go = nobj as GameObject;
+                    var comp = nobj as Component;
+                    bool isMatched = prevObj && nobj && prevObj.GetType() == nobj.GetType();
+
+                    if(!isMatched && (amTrack.keys.Count > 0) && (!UnityEditor.EditorUtility.DisplayDialog("Data Will Be Lost", "Certain keyframes on track '" + amTrack.name + "' will be removed if you continue.", "Continue Anway", "Cancel"))) {
+                        changeObj = false;
+                    }
+                    if(changeObj) {
+                        aData.RegisterTakesUndo("Set Event Target", false);
+
+                        if(!isMatched) {
+                            //delete keys
+                            amTrack.keys = new List<Key>();
+                        }
+
+                        if(comp)
+                            eventTrack.SetTargetAsComponent(aData.target, comp.transform, comp);
+                        else if(go)
+                            eventTrack.SetTargetAsGameObject(aData.target, go);
+                        else
+                            eventTrack.SetTargetAsObject(nobj);
+
+                        amTrack.updateCache(aData.target);
+                    }
+                }
+            }
             //Material
             else if(amTrack is MaterialTrack) {
                 Renderer render = (Renderer)EditorGUI.ObjectField(rect, amTrack.GetTarget(aData.target), typeof(Renderer), true);
@@ -4044,7 +4079,7 @@ namespace M8.Animator.Edit {
                 TriggerSignal signal = (TriggerSignal)EditorGUI.ObjectField(rect, amTrack.GetTarget(aData.target), typeof(TriggerSignal), false);
                 if(!amTrack.isTargetEqual(aData.target, signal)) {
                     aData.RegisterTakesUndo("Set Trigger Signal", false);
-                    amTrack.SetTargetAsObject(signal);
+                    ((TriggerTrack)amTrack).SetSignal(signal);
                 }
             }
 
@@ -4617,13 +4652,13 @@ namespace M8.Animator.Edit {
                     // if event track has key on selected frame
                     if(selectedTrack.hasKeyOnFrame(aData.currentTake.selectedFrame)) {
                         // update methodinfo cache
-                        updateCachedMethodInfo(selectedTrack.GetTarget(aData.target) as GameObject);
+                        updateCachedMethodInfoFromObject(selectedTrack.GetTarget(aData.target));
                         updateMethodInfoCacheBuffer = updateRateMethodInfoCache;
                         // set index to method info index
 
                         if(cachedMethodInfo.Count > 0) {
                             EventKey eKey = (selectedTrack.getKeyOnFrame(aData.currentTake.selectedFrame) as EventKey);
-                            MethodInfo m = eKey.getMethodInfo(selectedTrack.GetTarget(aData.target) as GameObject);
+                            MethodInfo m = eKey.getMethodInfo(selectedTrack.GetTarget(aData.target));
                             if(m != null) {
                                 for(int i = 0; i < cachedMethodInfo.Count; i++) {
                                     if(cachedMethodInfo[i] == m) {
@@ -5084,7 +5119,8 @@ namespace M8.Animator.Edit {
             int easeTypeNameInd = GetEaseTypeNameIndex(_key.easeType);
             if(easeInd < 0 || easeInd > (int)Ease.INTERNAL_Custom) {
                 _key.easeType = Ease.Linear;
-                UnityEditor.SceneManagement.EditorSceneManager.MarkAllScenesDirty(); //don't really want to undo this
+
+                aData.SetTakesDirty(); //don't really want to undo this
             }
 
             // get text for track type
@@ -5598,10 +5634,10 @@ namespace M8.Animator.Edit {
             }
             else if(amTrack is EventTrack) {
                 // event
-                GameObject go = amTrack.GetTarget(aData.target) as GameObject;
+                var obj = amTrack.GetTarget(aData.target);
                 // if missing object, return
-                if(!go) {
-                    showAlertMissingObjectType("GameObject");
+                if(!obj) {
+                    showAlertMissingObjectType("Object");
                     return;
                 }
                 // add key to event track
@@ -6105,23 +6141,18 @@ namespace M8.Animator.Edit {
                 return false;
             }
         }
-        public void updateCachedMethodInfo(GameObject go) {
-            if(!go) return;
+        public void updateCachedMethodInfoFromObject(UnityEngine.Object obj) {
+            if(!obj) return;
             cachedMethodInfo = new List<MethodInfo>();
             cachedMethodNames = new List<string>();
-            cachedMethodInfoComponents = new List<Component>();
-            Component[] arrComponents = go.GetComponents(typeof(Component));
-            foreach(Component c in arrComponents) {
-                if(c.GetType().BaseType == typeof(Component) || c.GetType().BaseType == typeof(Behaviour)) continue;
-                MethodInfo[] methodInfos = c.GetType().GetMethods(methodFlags);
-                foreach(MethodInfo methodInfo in methodInfos) {
-                    if((methodInfo.Name == "Start") || (methodInfo.Name == "Update") || (methodInfo.Name == "Main")) continue;
-                    string methodSig = getMethodInfoSignature(methodInfo);
-                    if(!string.IsNullOrEmpty(methodSig)) {
-                        cachedMethodNames.Add(methodSig);
-                        cachedMethodInfo.Add(methodInfo);
-                        cachedMethodInfoComponents.Add(c);
-                    }
+
+            MethodInfo[] methodInfos = obj.GetType().GetMethods(methodFlags);
+            foreach(MethodInfo methodInfo in methodInfos) {
+                if((methodInfo.Name == "Start") || (methodInfo.Name == "Update") || (methodInfo.Name == "Main")) continue;
+                string methodSig = getMethodInfoSignature(methodInfo);
+                if(!string.IsNullOrEmpty(methodSig)) {
+                    cachedMethodNames.Add(methodSig);
+                    cachedMethodInfo.Add(methodInfo);
                 }
             }
         }

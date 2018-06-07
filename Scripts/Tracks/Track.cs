@@ -118,15 +118,7 @@ namespace M8.Animator {
                 SetSerializeObject(item ? GetSerializeObject(item.gameObject) : null);
             }
         }
-
-        /// <summary>
-        /// This directly sets the target with no path
-        /// </summary>
-        public virtual void SetTargetAsObject(Object obj) {
-            _targetPath = "";
-            SetSerializeObject(obj);
-        }
-
+                
         public virtual bool isTargetEqual(ITarget target, UnityEngine.Object obj) {
             return GetTarget(target) == obj;
         }

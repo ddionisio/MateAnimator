@@ -16,17 +16,10 @@ namespace M8.Animator {
             public object val;
         }
 
-        [SerializeField]
-        Component component = null;
-        [SerializeField]
-        string componentName = "";
-
         public bool useSendMessage = true;
         public List<EventParameter> parameters = new List<EventParameter>();
         public string methodName;
         private MethodInfo cachedMethodInfo;
-
-        public string getComponentName() { return componentName; }
 
         public bool isMatch(ParameterInfo[] cachedParameterInfos) {
             if(cachedParameterInfos != null && parameters != null && cachedParameterInfos.Length == parameters.Count) {
@@ -45,42 +38,7 @@ namespace M8.Animator {
             return true;
         }
 
-        public override System.Type GetRequiredComponent() {
-            if(string.IsNullOrEmpty(componentName)) return null;
-
-            System.Type type = System.Type.GetType(componentName);
-            if(type == null) {
-                int endInd = componentName.IndexOf('.');
-                if(endInd != -1) {
-                    // Get the name of the assembly (Assumption is that we are using
-                    // fully-qualified type names)
-                    var assemblyName = componentName.Substring(0, endInd);
-
-                    // Attempt to load the indicated Assembly
-                    var assembly = System.Reflection.Assembly.Load(assemblyName);
-                    if(assembly != null)
-                        // Ask that assembly to return the proper Type
-                        type = assembly.GetType(componentName);
-                }
-            }
-
-            return type;
-        }
-
-        public override void maintainKey(ITarget itarget, UnityEngine.Object targetObj) {
-            if(string.IsNullOrEmpty(componentName)) {
-                if(component) {
-                    componentName = component.GetType().Name;
-                }
-            }
-
-            if(itarget.meta) {
-                component = null;
-            }
-            else if(!component && !string.IsNullOrEmpty(componentName) && targetObj) {
-                component = ((GameObject)targetObj).GetComponent(componentName);
-            }
-
+        public override void maintainKey(ITarget itarget, UnityEngine.Object targetObj) {            
             cachedMethodInfo = null;
         }
 
@@ -89,37 +47,27 @@ namespace M8.Animator {
         }
 
         //set target to a valid ref. for meta
-        public MethodInfo getMethodInfo(GameObject target) {
-            if(target) {
-                if(string.IsNullOrEmpty(componentName)) return null;
-                if(cachedMethodInfo != null) return cachedMethodInfo;
-                if(methodName == null) return null;
-                Component comp = target.GetComponent(componentName);
+        public MethodInfo getMethodInfo(Object target) {
+            if(target && !string.IsNullOrEmpty(methodName)) {
                 var paramTypes = GetParamTypes();
-                cachedMethodInfo = paramTypes != null ? comp.GetType().GetMethod(methodName, paramTypes) : null;
+                cachedMethodInfo = paramTypes != null ? target.GetType().GetMethod(methodName, paramTypes) : null;
                 return cachedMethodInfo;
             }
             else {
-                if(component == null) return null;
-                if(cachedMethodInfo != null) return cachedMethodInfo;
-                if(methodName == null) return null;
-                cachedMethodInfo = component.GetType().GetMethod(methodName, GetParamTypes());
-                return cachedMethodInfo;
+                cachedMethodInfo = null;
+                return null;
             }
         }
 
         //set target to a valid ref. for meta
-        public bool setMethodInfo(GameObject target, Component component, bool setComponent, MethodInfo methodInfo, ParameterInfo[] cachedParameterInfos, bool restoreValues, System.Action<EventKey> onPreChange) {
+        public bool setMethodInfo(Object target, MethodInfo methodInfo, ParameterInfo[] cachedParameterInfos, bool restoreValues, System.Action<EventKey> onPreChange) {
             MethodInfo _methodInfo = getMethodInfo(target);
 
             // if different component or methodinfo
-            string _componentName = component.GetType().Name;
-            if((_methodInfo != methodInfo) || (this.componentName != _componentName) || !isMatch(cachedParameterInfos)) {
+            if((_methodInfo != methodInfo) || !isMatch(cachedParameterInfos)) {
                 if(onPreChange != null)
                     onPreChange(this);
 
-                this.component = setComponent ? component : null;
-                this.componentName = _componentName;
                 methodName = methodInfo.Name;
                 cachedMethodInfo = methodInfo;
                 //this.parameters = new object[numParameters];
@@ -181,9 +129,7 @@ namespace M8.Animator {
             base.CopyTo(key);
 
             var a = key as EventKey;
-
-            a.component = component;
-            a.componentName = componentName;
+            
             a.useSendMessage = useSendMessage;
             // parameters
             a.methodName = methodName;
@@ -201,12 +147,7 @@ namespace M8.Animator {
             return ls;
         }
 
-        public bool updateDependencies(List<GameObject> newReferences, List<GameObject> oldReferences, bool didUpdateObj, GameObject obj) {
-            if(didUpdateObj && component) {
-                component = obj.GetComponent(componentName);
-                if(!component) Debug.LogError("Animator: Component '" + componentName + "' not found on new reference for GameObject '" + obj.name + "'. Some event track data may be lost.");
-                cachedMethodInfo = null;
-            }
+        public bool updateDependencies(List<GameObject> newReferences, List<GameObject> oldReferences, bool didUpdateObj, GameObject obj) {            
             bool didUpdateParameter = false;
             foreach(EventParameter param in parameters) {
                 if(param.updateDependencies(newReferences, oldReferences) && !didUpdateParameter) didUpdateParameter = true;
@@ -316,38 +257,32 @@ namespace M8.Animator {
         public override void build(SequenceControl seq, Track track, int index, UnityEngine.Object target) {
             if(methodName == null) return;
 
-            //get component and fill the cached method info
-            Component comp;
-            if(seq.target.meta) {
-                if(string.IsNullOrEmpty(componentName)) return;
-                comp = (target as GameObject).GetComponent(componentName);
-
-            }
-            else {
-                if(component == null) return;
-                comp = component;
-            }
-
             float duration = 1.0f / seq.take.frameRate;
 
+            //can't send message if it's not a component
+            Component compSendMsg = null;
             if(useSendMessage) {
+                compSendMsg = target as Component;
+            }
+
+            if(compSendMsg) {
                 if(parameters == null || parameters.Count <= 0) {
-                    var tween = DOTween.To(new TweenPlugValueSetElapsed(), () => 0, (x) => comp.SendMessage(methodName, null, SendMessageOptions.DontRequireReceiver), 0, duration);
+                    var tween = DOTween.To(new TweenPlugValueSetElapsed(), () => 0, (x) => compSendMsg.SendMessage(methodName, null, SendMessageOptions.DontRequireReceiver), 0, duration);
                     tween.plugOptions.SetSequence(seq);
                     seq.Insert(this, tween);
                 }
                 else {
-                    var tween = DOTween.To(new TweenPlugValueSetElapsed(), () => 0, (x) => comp.SendMessage(methodName, parameters[0].toObject(), SendMessageOptions.DontRequireReceiver), 0, duration);
+                    var tween = DOTween.To(new TweenPlugValueSetElapsed(), () => 0, (x) => compSendMsg.SendMessage(methodName, parameters[0].toObject(), SendMessageOptions.DontRequireReceiver), 0, duration);
                     tween.plugOptions.SetSequence(seq);
                     seq.Insert(this, tween);
                 }
             }
             else {
-                var method = cachedMethodInfo != null ? cachedMethodInfo : comp.GetType().GetMethod(methodName, GetParamTypes());
+                var method = cachedMethodInfo != null ? cachedMethodInfo : target.GetType().GetMethod(methodName, GetParamTypes());
 
                 object[] parms = buildParams();
 
-                var tween = DOTween.To(new TweenPlugValueSetElapsed(), () => 0, (x) => method.Invoke(comp, parms), 0, duration);
+                var tween = DOTween.To(new TweenPlugValueSetElapsed(), () => 0, (x) => method.Invoke(target, parms), 0, duration);
                 tween.plugOptions.SetSequence(seq);
                 seq.Insert(this, tween);
             }

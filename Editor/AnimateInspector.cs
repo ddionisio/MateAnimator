@@ -152,10 +152,10 @@ namespace M8.Animator.Edit {
                 anim.updateTimeIndependent = updateTimeIndependent;
             }
 
-            if(PrefabUtility.GetPrefabType(aData.gameObject) != PrefabType.Prefab) {
+            if(!Application.isPlaying && PrefabUtility.GetPrefabType(aData.gameObject) != PrefabType.Prefab) {
                 TimelineWindow timeline = TimelineWindow.window;
 
-                if(timeline != null && aData == timeline.aData) {
+                if(timeline != null && timeline.aData != null && aData.target == timeline.aData.target) {
                     if(GUILayout.Button("Deselect")) {
                         timeline.aData = null;
                         timeline.Repaint();

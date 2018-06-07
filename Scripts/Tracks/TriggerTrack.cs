@@ -15,6 +15,14 @@ namespace M8.Animator {
         protected override void SetSerializeObject(UnityEngine.Object obj) { signal = obj as TriggerSignal; }
         protected override UnityEngine.Object GetSerializeObject(GameObject targetGO) { return signal; }
 
+        /// <summary>
+        /// This directly sets the target with no path, used for anything that's not a GameObject e.g. ScriptableObject
+        /// </summary>
+        public void SetSignal(TriggerSignal s) {
+            _targetPath = "";
+            SetSerializeObject(s);
+        }
+
         public override string getTrackType() {
             return "Trigger";
         }

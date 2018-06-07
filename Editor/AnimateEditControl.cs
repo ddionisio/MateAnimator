@@ -139,6 +139,13 @@ namespace M8.Animator.Edit {
             }
         }
 
+        public void SetTakesDirty() {
+            if(meta)
+                UnityEditor.EditorUtility.SetDirty(meta);
+            else
+                UnityEditor.SceneManagement.EditorSceneManager.MarkAllScenesDirty();
+        }
+
         public void Refresh() {
             if(takes == null || takes.Count == 0) {
                 //this is a newly created data
@@ -168,7 +175,7 @@ namespace M8.Animator.Edit {
             }
 
             if(hasChanges)
-                UnityEditor.SceneManagement.EditorSceneManager.MarkAllScenesDirty(); //don't want to undo corrections on takes
+                SetTakesDirty(); //don't really want to undo this
         }
 
         public Take AddNewTake() {

@@ -9,21 +9,104 @@ namespace M8.Animator {
         public override SerializeType serializeType { get { return SerializeType.Event; } }
 
         [SerializeField]
-        GameObject obj;
+        Object obj;
+        [SerializeField]
+        string componentName;
 
         public override bool canTween { get { return false; } }
 
         protected override void SetSerializeObject(UnityEngine.Object obj) {
-            this.obj = obj as GameObject;
+            this.obj = obj;
+
+            if(this.obj is Component)
+                componentName = this.obj.GetType().Name;
+            else
+                componentName = "";
         }
 
         protected override UnityEngine.Object GetSerializeObject(GameObject targetGO) {
-            return targetGO ? targetGO : obj;
+            if(targetGO) {
+                if(!string.IsNullOrEmpty(componentName)) { //grab directly from targetGO
+                    return targetGO.GetComponent(componentName);
+                }
+                else
+                    return targetGO;
+            }
+
+            return obj;
+        }
+
+        /// <summary>
+        /// Set target directly as the GameObject item, rather than an object within the item
+        /// </summary>
+        public void SetTargetAsGameObject(ITarget target, GameObject item) {
+            if(target.meta && item) {
+                _targetPath = Utility.GetPath(target.root, item);
+                target.SetCache(_targetPath, item.transform);
+
+                SetSerializeObject(item);
+                this.obj = null;
+            }
+            else {
+                _targetPath = "";
+                SetSerializeObject(item);
+            }
+        }
+
+        /// <summary>
+        /// This is to provide proper path to where the component is attached via the given item.  The "comp" is applied as the target object.
+        /// </summary>
+        public void SetTargetAsComponent(ITarget target, Transform item, Component comp) {
+            if(target.meta) {
+                if(item) {
+                    _targetPath = Utility.GetPath(target.root, item);
+                    target.SetCache(_targetPath, item);
+                }
+                else
+                    _targetPath = "";
+
+                SetSerializeObject(comp);
+                this.obj = null;
+            }
+            else {
+                _targetPath = "";
+                SetSerializeObject(comp);
+            }
+        }
+
+        /// <summary>
+        /// This directly sets the target with no path, used for anything that's not a GameObject e.g. ScriptableObject
+        /// </summary>
+        public void SetTargetAsObject(Object obj) {
+            _targetPath = "";
+            SetSerializeObject(obj);
         }
 
         public override string getTrackType() {
             return "Event";
         }
+
+        /*public override System.Type GetRequiredComponent() {
+            if(string.IsNullOrEmpty(componentName)) return null;
+
+            System.Type type = System.Type.GetType(componentName);
+            if(type == null) {
+                int endInd = componentName.IndexOf('.');
+                if(endInd != -1) {
+                    // Get the name of the assembly (Assumption is that we are using
+                    // fully-qualified type names)
+                    var assemblyName = componentName.Substring(0, endInd);
+
+                    // Attempt to load the indicated Assembly
+                    var assembly = System.Reflection.Assembly.Load(assemblyName);
+                    if(assembly != null)
+                        // Ask that assembly to return the proper Type
+                        type = assembly.GetType(componentName);
+                }
+            }
+
+            return type;
+        }*/
 
         // add a new key
         public void addKey(ITarget itarget, int _frame) {
@@ -68,18 +151,23 @@ namespace M8.Animator {
             if(go) {
                 for(int i = 0; i < oldReferences.Count; i++) {
                     if(oldReferences[i] == go) {
-                        // check if new GameObject has all the required components
-                        foreach(EventKey key in keys) {
-                            string componentName = key.getComponentName();
-                            if(newReferences[i].GetComponent(componentName) == null) {
+                        // check if new GameObject has the required component
+                        if(!string.IsNullOrEmpty(componentName)) {
+                            var comp = newReferences[i].GetComponent(componentName);
+                            if(comp == null) {
                                 // missing component
                                 Debug.LogWarning("Animator: Event Track component '" + componentName + "' not found on new reference for GameObject '" + obj.name + "'. Duplicate not replaced.");
                                 List<GameObject> lsFlagToKeep = new List<GameObject>();
                                 lsFlagToKeep.Add(oldReferences[i]);
                                 return lsFlagToKeep;
                             }
+
+                            SetTargetAsComponent(target, newReferences[i].transform, comp);
                         }
-                        SetTarget(target, newReferences[i].transform);
+                        else {
+                            SetTarget(target, newReferences[i].transform);
+                        }
+
                         didUpdateObj = true;
                         break;
                     }
