@@ -4039,6 +4039,14 @@ namespace M8.Animator.Edit {
                     amTrack.SetTarget(aData.target, render ? render.transform : null);
                 }
             }
+            //Trigger
+            else if(amTrack is TriggerTrack) {
+                TriggerSignal signal = (TriggerSignal)EditorGUI.ObjectField(rect, amTrack.GetTarget(aData.target), typeof(TriggerSignal), false);
+                if(!amTrack.isTargetEqual(aData.target, signal)) {
+                    aData.RegisterTakesUndo("Set Trigger Signal", false);
+                    amTrack.SetTargetAsObject(signal);
+                }
+            }
 
             GUI.skin = skin;
             EditorUtility.ResetDisplayControls();

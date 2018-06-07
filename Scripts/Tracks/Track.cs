@@ -60,7 +60,7 @@ namespace M8.Animator {
         public UnityEngine.Object GetTarget(ITarget target) {
             UnityEngine.Object ret = null;
 
-            if(target.meta) {
+            if(target.meta && !string.IsNullOrEmpty(_targetPath)) { //if targetPath is empty, it must be from the project, so grab it directly
                 Transform tgt = target.GetCache(_targetPath);
                 if(tgt)
                     ret = GetSerializeObject(tgt.gameObject);
@@ -117,6 +117,14 @@ namespace M8.Animator {
                 _targetPath = "";
                 SetSerializeObject(item ? GetSerializeObject(item.gameObject) : null);
             }
+        }
+
+        /// <summary>
+        /// This directly sets the target with no path
+        /// </summary>
+        public virtual void SetTargetAsObject(Object obj) {
+            _targetPath = "";
+            SetSerializeObject(obj);
         }
 
         public virtual bool isTargetEqual(ITarget target, UnityEngine.Object obj) {

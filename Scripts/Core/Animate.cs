@@ -18,7 +18,7 @@ namespace M8.Animator {
         }
 
         public delegate void OnTake(Animate anim, Take take);
-        public delegate void OnTakeTrigger(Animate anim, Take take, Key key, TriggerParam data);
+        public delegate void OnTakeTrigger(Animate anim, Take take, Key key, TriggerData data);
 
         // show
 
@@ -490,7 +490,7 @@ namespace M8.Animator {
                 takeCompleteCallback(this, seq.take);
         }
 
-        void ITarget.SequenceTrigger(SequenceControl seq, Key key, TriggerParam parm) {
+        void ITarget.SequenceTrigger(SequenceControl seq, Key key, TriggerData parm) {
             if(takeTriggerCallback != null)
                 takeTriggerCallback(this, seq.take, key, parm);
         }

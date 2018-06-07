@@ -5,12 +5,15 @@ using System.Collections.Generic;
 namespace M8.Animator {
     [System.Serializable]
     public class TriggerTrack : Track {
+
+        public TriggerSignal signal; //optional signal to call on trigger
+
         public override SerializeType serializeType { get { return SerializeType.Trigger; } }
 
         public override bool canTween { get { return false; } }
 
-        protected override void SetSerializeObject(UnityEngine.Object obj) { }
-        protected override UnityEngine.Object GetSerializeObject(GameObject targetGO) { return null; }
+        protected override void SetSerializeObject(UnityEngine.Object obj) { signal = obj as TriggerSignal; }
+        protected override UnityEngine.Object GetSerializeObject(GameObject targetGO) { return signal; }
 
         public override string getTrackType() {
             return "Trigger";
