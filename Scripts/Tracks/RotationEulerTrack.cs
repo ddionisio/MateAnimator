@@ -212,12 +212,12 @@ namespace M8.Animator {
             return (keys[0] as RotationEulerKey).rotation;
         }
 
-        public override AnimatorTimeline.JSONInit getJSONInit(ITarget target) {
+        public override AnimateTimeline.JSONInit getJSONInit(ITarget target) {
             if(!_obj || keys.Count <= 0) return null;
-            AnimatorTimeline.JSONInit init = new AnimatorTimeline.JSONInit();
+            AnimateTimeline.JSONInit init = new AnimateTimeline.JSONInit();
             init.type = "rotation";
             init.go = _obj.gameObject.name;
-            AnimatorTimeline.JSONQuaternion q = new AnimatorTimeline.JSONQuaternion();
+            AnimateTimeline.JSONQuaternion q = new AnimateTimeline.JSONQuaternion();
             q.setValue(getInitialRotation());
             init.rotation = q;
             return init;

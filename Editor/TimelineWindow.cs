@@ -3555,7 +3555,7 @@ namespace M8.Animator.Edit {
                         if(i > 0) height_all_fields += height_inspector_space;
                         // show field for each parameter
                         float height_field = 0f;
-                        showFieldFor(eKey, rectField, i.ToString(), cachedParameterInfos[i].Name, eKey.parameters[i], cachedParameterInfos[i].ParameterType, 0, ref height_field);
+                        showFieldFor(aData.target, eKey, rectField, i.ToString(), cachedParameterInfos[i].Name, eKey.parameters[i], cachedParameterInfos[i].ParameterType, 0, ref height_field);
                         rectField.y += height_field;
                         height_all_fields += height_field;
                     }
@@ -3764,7 +3764,7 @@ namespace M8.Animator.Edit {
             #endregion
         }
 
-        void showFieldFor(EventKey eKey, Rect rect, string id, string name, EventData data, Type t, int level, ref float height_field) {
+        void showFieldFor(ITarget iTarget, EventKey eKey, Rect rect, string id, string name, EventData data, Type t, int level, ref float height_field) {
             rect.x = 5f * level;
             name = typeStringBrief(t) + " " + name;
             if(t.IsArray) {
@@ -3795,7 +3795,7 @@ namespace M8.Animator.Edit {
                     rectElement.y += rect.height + margin;
                     for(int i = 0; i < parameter.lsArray.Count; i++) {
                         float prev_height = height_field;
-                        showFieldFor(eKey, rectElement, id + "_" + i, "(" + i.ToString() + ")", parameter.lsArray[i], t.GetElementType(), (level + 1), ref height_field);
+                        showFieldFor(iTarget, eKey, rectElement, id + "_" + i, "(" + i.ToString() + ")", parameter.lsArray[i], t.GetElementType(), (level + 1), ref height_field);
                         rectElement.y += height_field - prev_height;
                     }
                     // add to array button
@@ -3896,11 +3896,25 @@ namespace M8.Animator.Edit {
                 // GameObject field
                 GUI.skin = null;
                 Rect rectObjectField = new Rect(rect.x, rectLabelField.y + rectLabelField.height + margin, rect.width, 16f);
-                var val = EditorGUI.ObjectField(rectObjectField, data.val_obj, typeof(GameObject), true);
-                if(data.val_obj != val) { aData.RegisterTakesUndo("Change Event Key Field", false); data.val_obj = val; }
+
+                GameObject curGO = data.toObject(iTarget) as GameObject;
+                GameObject newGO = EditorGUI.ObjectField(rectObjectField, curGO, typeof(GameObject), true) as GameObject;
+
+                if(curGO != newGO) {
+                    aData.RegisterTakesUndo("Change Event Key Field", false);
+
+                    if(newGO) {
+                        var newGOPrefabType = PrefabUtility.GetPrefabType(newGO);
+
+                        data.SetAsGameObject(iTarget, newGO, newGOPrefabType == PrefabType.ModelPrefab || newGOPrefabType == PrefabType.Prefab);
+                    }
+                    else
+                        data.SetAsGameObject(iTarget, null, false);
+                }
+
                 GUI.skin = skin;
             }
-            else if(t.BaseType == typeof(Behaviour) || t.BaseType == typeof(Component)) {
+            else if(Utility.IsDerivedFrom(t, typeof(Component))) {
                 height_field += 40f + margin;
                 // label
                 Rect rectLabelField = new Rect(rect);
@@ -3908,9 +3922,23 @@ namespace M8.Animator.Edit {
                 GUI.skin = null;
                 Rect rectObjectField = new Rect(rect.x, rectLabelField.y + rectLabelField.height + margin, rect.width, 16f);
                 EditorUtility.ResetDisplayControls();
-                // field
-                var val = EditorGUI.ObjectField(rectObjectField, data.val_obj, t, true);
-                if(data.val_obj != val) { aData.RegisterTakesUndo("Change Event Key Field", false); data.val_obj = val; }
+
+                UnityEngine.Object curObj = data.toObject(iTarget) as UnityEngine.Object;
+                UnityEngine.Object newObj = EditorGUI.ObjectField(rectObjectField, curObj, t, true);
+
+                if(curObj != newObj) {
+                    aData.RegisterTakesUndo("Change Event Key Field", false);
+
+                    Component newComp = newObj as Component;
+                    if(newComp) {
+                        var newGOPrefabType = PrefabUtility.GetPrefabType(newComp);
+
+                        data.SetAsComponent(iTarget, newComp, newGOPrefabType == PrefabType.ModelPrefab || newGOPrefabType == PrefabType.Prefab);
+                    }
+                    else
+                        data.SetAsComponent(iTarget, null, false);
+                }
+
                 GUI.skin = skin;
                 EditorUtility.ResetDisplayControls();
                 //return;
@@ -5254,7 +5282,7 @@ namespace M8.Animator.Edit {
             string methodString = methodInfo.Name + " (";
             for(int i = 0; i < parameters.Length; i++) {
                 //unsupported param type
-                if(EventParameter.GetValueType(parameters[i].ParameterType) == -1) return "";
+                if(EventParameter.GetValueType(parameters[i].ParameterType) == EventData.ValueType.Invalid) return "";
 
                 methodString += typeStringBrief(parameters[i].ParameterType);
                 if(i < parameters.Length - 1) methodString += ", ";

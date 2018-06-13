@@ -42,7 +42,7 @@ namespace M8.Animator {
             // update cache
             updateCache(itarget);
         }
-        public override AnimatorTimeline.JSONInit getJSONInit(ITarget target) {
+        public override AnimateTimeline.JSONInit getJSONInit(ITarget target) {
             // no initial values to set
             return null;
         }

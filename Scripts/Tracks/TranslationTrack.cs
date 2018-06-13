@@ -345,12 +345,12 @@ namespace M8.Animator {
             return (keys[0] as TranslationKey).position;
         }
 
-        public override AnimatorTimeline.JSONInit getJSONInit(ITarget target) {
+        public override AnimateTimeline.JSONInit getJSONInit(ITarget target) {
             if(!_obj || keys.Count <= 0) return null;
-            AnimatorTimeline.JSONInit init = new AnimatorTimeline.JSONInit();
+            AnimateTimeline.JSONInit init = new AnimateTimeline.JSONInit();
             init.type = "position";
             init.go = _obj.gameObject.name;
-            AnimatorTimeline.JSONVector3 v = new AnimatorTimeline.JSONVector3();
+            AnimateTimeline.JSONVector3 v = new AnimateTimeline.JSONVector3();
             v.setValue(getInitialPosition());
             init.position = v;
             return init;

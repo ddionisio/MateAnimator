@@ -317,8 +317,8 @@ namespace M8.Animator {
             take.Stop(this);
 
             //end camera fade
-            if(AMCameraFade.hasInstance()) {
-                AMCameraFade cf = AMCameraFade.getCameraFade();
+            if(CameraFade.hasInstance()) {
+                CameraFade cf = CameraFade.getCameraFade();
                 cf.playParam = null;
             }
 

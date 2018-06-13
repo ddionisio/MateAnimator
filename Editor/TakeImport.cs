@@ -237,7 +237,7 @@ namespace M8.Animator.Edit {
             }
             // open de-duper
             if(newReference.Count > 0) {
-                EditorWindow windowImport = ScriptableObject.CreateInstance<AMTakeImport>();
+                EditorWindow windowImport = ScriptableObject.CreateInstance<TakeImport>();
                 windowImport.ShowUtility();
             }
         }

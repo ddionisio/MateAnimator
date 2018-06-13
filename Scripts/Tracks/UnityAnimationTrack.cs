@@ -90,7 +90,7 @@ namespace M8.Animator {
             }
         }
 
-        public override AnimatorTimeline.JSONInit getJSONInit(ITarget target) {
+        public override AnimateTimeline.JSONInit getJSONInit(ITarget target) {
             // no initial values to set
             return null;
         }

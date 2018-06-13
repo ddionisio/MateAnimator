@@ -281,7 +281,7 @@ namespace M8.Animator {
             mMatCtrl.Revert(_matInd);
         }
 
-        public override AnimatorTimeline.JSONInit getJSONInit(ITarget target) {
+        public override AnimateTimeline.JSONInit getJSONInit(ITarget target) {
             Debug.LogError("need implement");
             return null;
         }

@@ -122,7 +122,7 @@ namespace M8.Animator.Edit {
                 float newGizmoSize = GUILayout.HorizontalSlider(oData.gizmo_size, 0f, 0.1f, GUILayout.ExpandWidth(true));
                 if(oData.gizmo_size != newGizmoSize) {
                     oData.gizmo_size = newGizmoSize;
-                    AnimatorTimeline.e_gizmoSize = newGizmoSize;
+                    AnimateTimeline.e_gizmoSize = newGizmoSize;
                     GUIUtility.keyboardControl = 0;
                     UnityEditor.EditorUtility.SetDirty(oData);
                 }
@@ -132,7 +132,7 @@ namespace M8.Animator.Edit {
                 newGizmoSize = EditorGUILayout.FloatField(oData.gizmo_size, GUI.skin.textField, GUILayout.Width(75f));
                 if(oData.gizmo_size != newGizmoSize) {
                     oData.gizmo_size = newGizmoSize;
-                    AnimatorTimeline.e_gizmoSize = newGizmoSize;
+                    AnimateTimeline.e_gizmoSize = newGizmoSize;
                     UnityEditor.EditorUtility.SetDirty(oData);
                 }
 

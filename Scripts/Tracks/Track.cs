@@ -226,7 +226,7 @@ namespace M8.Animator {
         }
 
         /// <summary>
-        /// Called when stopping during runtime or preview in AMTimeline
+        /// Called when stopping during runtime or preview in TimelineWindow
         /// </summary>
         public virtual void Stop(ITarget itarget) {
         }
@@ -251,9 +251,9 @@ namespace M8.Animator {
 
         }
 
-        public virtual AnimatorTimeline.JSONInit getJSONInit(ITarget target) {
+        public virtual AnimateTimeline.JSONInit getJSONInit(ITarget target) {
             Debug.LogWarning("Animator: No override for getJSONInit()");
-            return new AnimatorTimeline.JSONInit();
+            return new AnimateTimeline.JSONInit();
         }
 
         // get key on frame

@@ -91,7 +91,7 @@ namespace M8.Animator.Edit {
         private const float y_preview_texture = 48f;
         // other variables
         public AnimateEditControl aData = null;
-        private AMOptionsFile oData = null;
+        private OptionsFile oData = null;
         public bool isPlaying = true;
         public enum DragType {
             None = -1,
@@ -130,7 +130,7 @@ namespace M8.Animator.Edit {
             setWindowSize();
             this.wantsMouseMove = true;
             loadAnimatorData();
-            oData = AMOptionsFile.loadFile();
+            oData = OptionsFile.loadFile();
             // set up here
         }
 
@@ -247,7 +247,7 @@ namespace M8.Animator.Edit {
             else {
                 bool isReversed = Utility.isTransitionReversed(selectedTransition, parameters.ToArray());
                 GUI.DrawTexture(rectPreviewTexture, (isReversed ? tex_transition_a : tex_transition_b));
-                AMCameraFade.processCameraFade(rectPreviewTexture, (isReversed ? tex_transition_b : tex_transition_a), selectedTransition, _value, Mathf.Clamp(percent, 0f, 1f), parameters.ToArray(), irisShape, e);
+                CameraFade.processCameraFade(rectPreviewTexture, (isReversed ? tex_transition_b : tex_transition_a), selectedTransition, _value, Mathf.Clamp(percent, 0f, 1f), parameters.ToArray(), irisShape, e);
             }
             GUI.color = Color.white;
             #endregion
@@ -483,15 +483,15 @@ namespace M8.Animator.Edit {
                 #region venetian blinds
                 case (int)CameraSwitcherKey.Fade.VenetianBlinds:
                     // layout, vertical or horizontal
-                    if(parameters.Count < 1) parameters.Add(AMCameraFade.Defaults.VenetianBlinds.layout);
-                    else if(parameters[0] != 0f && parameters[0] != 1f) parameters[0] = AMCameraFade.Defaults.VenetianBlinds.layout;
+                    if(parameters.Count < 1) parameters.Add(CameraFade.Defaults.VenetianBlinds.layout);
+                    else if(parameters[0] != 0f && parameters[0] != 1f) parameters[0] = CameraFade.Defaults.VenetianBlinds.layout;
                     GUILayout.BeginHorizontal();
                     GUILayout.Label("Layout");
                     parameters[0] = (float)GUILayout.SelectionGrid((int)parameters[0], new string[] { "Vertical", "Horizontal" }, 2);
                     GUILayout.EndHorizontal();
                     GUILayout.Space(height_parameter_space);
                     // number of blinds
-                    if(parameters.Count < 2) parameters.Add(AMCameraFade.Defaults.VenetianBlinds.numberOfBlinds);
+                    if(parameters.Count < 2) parameters.Add(CameraFade.Defaults.VenetianBlinds.numberOfBlinds);
                     parameters[1] = (float)EditorGUILayout.IntField("Number of Blinds", (int)parameters[1]);
                     if(parameters[1] < 2f) parameters[1] = 2f;
                     else if(parameters[1] > 100f) parameters[1] = 100f;
@@ -500,24 +500,24 @@ namespace M8.Animator.Edit {
                 #region doors
                 case (int)CameraSwitcherKey.Fade.Doors:
                     // layout, vertical or horizontal
-                    if(parameters.Count < 1) parameters.Add(AMCameraFade.Defaults.Doors.layout);
-                    else if(parameters[0] != 0f && parameters[0] != 1f) parameters[0] = AMCameraFade.Defaults.Doors.layout;
+                    if(parameters.Count < 1) parameters.Add(CameraFade.Defaults.Doors.layout);
+                    else if(parameters[0] != 0f && parameters[0] != 1f) parameters[0] = CameraFade.Defaults.Doors.layout;
                     GUILayout.BeginHorizontal();
                     GUILayout.Label("Layout");
                     parameters[0] = (float)GUILayout.SelectionGrid((int)parameters[0], new string[] { "Vertical", "Horizontal" }, 2);
                     GUILayout.EndHorizontal();
                     GUILayout.Space(height_parameter_space);
                     // type, open or close
-                    if(parameters.Count < 2) parameters.Add(AMCameraFade.Defaults.Doors.type);
-                    else if(parameters[1] != 0f && parameters[1] != 1f) parameters[1] = AMCameraFade.Defaults.Doors.type;
+                    if(parameters.Count < 2) parameters.Add(CameraFade.Defaults.Doors.type);
+                    else if(parameters[1] != 0f && parameters[1] != 1f) parameters[1] = CameraFade.Defaults.Doors.type;
                     GUILayout.BeginHorizontal();
                     GUILayout.Label("Type");
                     parameters[1] = (float)GUILayout.SelectionGrid((int)parameters[1], new string[] { "Open", "Close" }, 2);
                     GUILayout.EndHorizontal();
                     GUILayout.Space(height_parameter_space);
                     // focal point
-                    if(parameters.Count < 3) parameters.Add(AMCameraFade.Defaults.Doors.focalXorY);
-                    else if(parameters[2] < 0f && parameters[2] > 1f) parameters[2] = AMCameraFade.Defaults.Doors.focalXorY;
+                    if(parameters.Count < 3) parameters.Add(CameraFade.Defaults.Doors.focalXorY);
+                    else if(parameters[2] < 0f && parameters[2] > 1f) parameters[2] = CameraFade.Defaults.Doors.focalXorY;
                     parameters[2] = EditorGUILayout.FloatField("Focal " + (parameters[0] == 0f ? "X" : "Y"), parameters[2]);
                     if(didJustSetFocalPoint) parameters[2] = (parameters[0] == 0f ? newFocalPoint.x : newFocalPoint.y);
                     parameters[2] = Mathf.Clamp(parameters[2], 0f, 1f);
@@ -527,16 +527,16 @@ namespace M8.Animator.Edit {
                 #region iris box
                 case (int)CameraSwitcherKey.Fade.IrisBox:
                     // type, shrink or grow
-                    if(parameters.Count < 1) parameters.Add(AMCameraFade.Defaults.IrisBox.type);
-                    else if(parameters[0] != 0f && parameters[0] != 1f) parameters[0] = AMCameraFade.Defaults.IrisBox.type;
+                    if(parameters.Count < 1) parameters.Add(CameraFade.Defaults.IrisBox.type);
+                    else if(parameters[0] != 0f && parameters[0] != 1f) parameters[0] = CameraFade.Defaults.IrisBox.type;
                     GUILayout.BeginHorizontal();
                     GUILayout.Label("Type");
                     parameters[0] = (float)GUILayout.SelectionGrid((int)parameters[0], new string[] { "Shrink", "Grow" }, 2);
                     GUILayout.EndHorizontal();
                     GUILayout.Space(height_parameter_space);
                     // focal point
-                    if(parameters.Count < 2) parameters.Add(AMCameraFade.Defaults.IrisBox.focalX);
-                    if(parameters.Count < 3) parameters.Add(AMCameraFade.Defaults.IrisBox.focalY);
+                    if(parameters.Count < 2) parameters.Add(CameraFade.Defaults.IrisBox.focalX);
+                    if(parameters.Count < 3) parameters.Add(CameraFade.Defaults.IrisBox.focalY);
                     if(didJustSetFocalPoint) {
                         parameters[1] = newFocalPoint.x;
                         parameters[2] = newFocalPoint.y;
@@ -549,21 +549,21 @@ namespace M8.Animator.Edit {
                 #region iris round
                 case (int)CameraSwitcherKey.Fade.IrisRound:
                     // type, shrink or grow
-                    if(parameters.Count < 1) parameters.Add(AMCameraFade.Defaults.IrisRound.type);
-                    else if(parameters[0] != 0f && parameters[0] != 1f) parameters[0] = AMCameraFade.Defaults.IrisRound.type;
+                    if(parameters.Count < 1) parameters.Add(CameraFade.Defaults.IrisRound.type);
+                    else if(parameters[0] != 0f && parameters[0] != 1f) parameters[0] = CameraFade.Defaults.IrisRound.type;
                     GUILayout.BeginHorizontal();
                     GUILayout.Label("Type");
                     parameters[0] = (float)GUILayout.SelectionGrid((int)parameters[0], new string[] { "Shrink", "Grow" }, 2);
                     GUILayout.EndHorizontal();
                     GUILayout.Space(height_parameter_space);
                     // max scale
-                    if(parameters.Count < 2) parameters.Add(AMCameraFade.Defaults.IrisRound.maxScale);
+                    if(parameters.Count < 2) parameters.Add(CameraFade.Defaults.IrisRound.maxScale);
                     parameters[1] = EditorGUILayout.FloatField("Max Scale", parameters[1]);
                     if(parameters[1] <= 0f) parameters[1] = 0.01f;
                     GUILayout.Space(height_parameter_space);
                     // focal point
-                    if(parameters.Count < 3) parameters.Add(AMCameraFade.Defaults.IrisRound.focalX);
-                    if(parameters.Count < 4) parameters.Add(AMCameraFade.Defaults.IrisRound.focalY);
+                    if(parameters.Count < 3) parameters.Add(CameraFade.Defaults.IrisRound.focalX);
+                    if(parameters.Count < 4) parameters.Add(CameraFade.Defaults.IrisRound.focalY);
                     if(didJustSetFocalPoint) {
                         parameters[2] = newFocalPoint.x;
                         parameters[3] = newFocalPoint.y;
@@ -576,8 +576,8 @@ namespace M8.Animator.Edit {
                 #region iris shape
                 case (int)CameraSwitcherKey.Fade.IrisShape:
                     // type, shrink or grow
-                    if(parameters.Count < 1) parameters.Add(AMCameraFade.Defaults.IrisShape.type);
-                    else if(parameters[0] != 0f && parameters[0] != 1f) parameters[0] = AMCameraFade.Defaults.IrisShape.type;
+                    if(parameters.Count < 1) parameters.Add(CameraFade.Defaults.IrisShape.type);
+                    else if(parameters[0] != 0f && parameters[0] != 1f) parameters[0] = CameraFade.Defaults.IrisShape.type;
                     GUILayout.BeginHorizontal();
                     GUILayout.Label("Type");
                     parameters[0] = (float)GUILayout.SelectionGrid((int)parameters[0], new string[] { "Shrink", "Grow" }, 2);
@@ -595,12 +595,12 @@ namespace M8.Animator.Edit {
                     GUILayout.BeginVertical(GUILayout.Height(68f));
                     GUILayout.FlexibleSpace();
                     // max scale
-                    if(parameters.Count < 2) parameters.Add(AMCameraFade.Defaults.IrisShape.maxScale);
+                    if(parameters.Count < 2) parameters.Add(CameraFade.Defaults.IrisShape.maxScale);
                     parameters[1] = EditorGUILayout.FloatField("Max Scale", parameters[1]);
                     if(parameters[1] <= 0f) parameters[1] = 0.01f;
                     GUILayout.Space(height_parameter_space);
                     // rotate amount
-                    if(parameters.Count < 3) parameters.Add(AMCameraFade.Defaults.IrisShape.rotateAmount);
+                    if(parameters.Count < 3) parameters.Add(CameraFade.Defaults.IrisShape.rotateAmount);
                     parameters[2] = (float)EditorGUILayout.IntField("Rotate Amount", (int)parameters[2]);
                     //GUILayout.Space(height_parameter_space);
                     // ease rotation
@@ -611,7 +611,7 @@ namespace M8.Animator.Edit {
                     GUILayout.EndVertical();
                     GUILayout.BeginVertical();
                     // ease rotation
-                    if(parameters.Count < 4) parameters.Add(AMCameraFade.Defaults.IrisShape.easeRotation);
+                    if(parameters.Count < 4) parameters.Add(CameraFade.Defaults.IrisShape.easeRotation);
                     bool irisEaseRotation = (parameters[3] == 1f);
                     irisEaseRotation = GUILayout.Toggle(irisEaseRotation, "");
                     parameters[3] = (irisEaseRotation ? 1f : 0f);
@@ -622,8 +622,8 @@ namespace M8.Animator.Edit {
                     GUILayout.EndHorizontal();
                     GUILayout.Space(height_parameter_space);
                     // focal point
-                    if(parameters.Count < 5) parameters.Add(AMCameraFade.Defaults.IrisShape.focalX);
-                    if(parameters.Count < 6) parameters.Add(AMCameraFade.Defaults.IrisShape.focalY);
+                    if(parameters.Count < 5) parameters.Add(CameraFade.Defaults.IrisShape.focalX);
+                    if(parameters.Count < 6) parameters.Add(CameraFade.Defaults.IrisShape.focalY);
                     if(didJustSetFocalPoint) {
                         parameters[4] = newFocalPoint.x;
                         parameters[5] = newFocalPoint.y;
@@ -637,8 +637,8 @@ namespace M8.Animator.Edit {
                     parameters[5] = justSetFocalPoint.y;
                     GUILayout.Space(height_parameter_space);
                     // rotation pivot
-                    if(parameters.Count < 7) parameters.Add(AMCameraFade.Defaults.IrisShape.pivotX);
-                    if(parameters.Count < 8) parameters.Add(AMCameraFade.Defaults.IrisShape.pivotY);
+                    if(parameters.Count < 7) parameters.Add(CameraFade.Defaults.IrisShape.pivotX);
+                    if(parameters.Count < 8) parameters.Add(CameraFade.Defaults.IrisShape.pivotY);
                     Vector2 irisRotationPivot = new Vector2(parameters[6], parameters[7]);
                     irisRotationPivot = EditorGUILayout.Vector2Field("Rotation Pivot", irisRotationPivot);
                     parameters[6] = Mathf.Clamp(irisRotationPivot.x, 0f, 1f);
@@ -648,7 +648,7 @@ namespace M8.Animator.Edit {
                 #region shape wipe
                 case (int)CameraSwitcherKey.Fade.ShapeWipe:
                     // angle
-                    if(parameters.Count < 1) parameters.Add(AMCameraFade.Defaults.ShapeWipe.angle);
+                    if(parameters.Count < 1) parameters.Add(CameraFade.Defaults.ShapeWipe.angle);
                     parameters[0] = (float)EditorGUILayout.IntField("Angle", (int)parameters[0]);
                     GUILayout.Space(height_parameter_space);
 
@@ -664,41 +664,41 @@ namespace M8.Animator.Edit {
                     GUILayout.BeginVertical(GUILayout.Height(68f));
                     GUILayout.FlexibleSpace();
                     // scale
-                    if(parameters.Count < 2) parameters.Add(AMCameraFade.Defaults.ShapeWipe.scale);
+                    if(parameters.Count < 2) parameters.Add(CameraFade.Defaults.ShapeWipe.scale);
                     parameters[1] = EditorGUILayout.FloatField("Scale", parameters[1]);
                     GUILayout.Space(height_parameter_space);
                     // padding
-                    if(parameters.Count < 3) parameters.Add(AMCameraFade.Defaults.ShapeWipe.padding);
+                    if(parameters.Count < 3) parameters.Add(CameraFade.Defaults.ShapeWipe.padding);
                     parameters[2] = EditorGUILayout.FloatField("Padding", parameters[2]);
                     GUILayout.FlexibleSpace();
                     GUILayout.EndVertical();
                     GUILayout.EndHorizontal();
                     GUILayout.Space(height_parameter_space);
                     // offset start
-                    if(parameters.Count < 4) parameters.Add(AMCameraFade.Defaults.ShapeWipe.offsetStart);
+                    if(parameters.Count < 4) parameters.Add(CameraFade.Defaults.ShapeWipe.offsetStart);
                     parameters[3] = EditorGUILayout.FloatField("Offset Start", parameters[3]);
                     GUILayout.Space(height_parameter_space);
                     // offset end
-                    if(parameters.Count < 5) parameters.Add(AMCameraFade.Defaults.ShapeWipe.offsetEnd);
+                    if(parameters.Count < 5) parameters.Add(CameraFade.Defaults.ShapeWipe.offsetEnd);
                     parameters[4] = EditorGUILayout.FloatField("Offset End", parameters[4]);
                     break;
                 #endregion
                 #region linear wipe
                 case (int)CameraSwitcherKey.Fade.LinearWipe:
                     // angle
-                    if(parameters.Count < 1) parameters.Add(AMCameraFade.Defaults.LinearWipe.angle);
+                    if(parameters.Count < 1) parameters.Add(CameraFade.Defaults.LinearWipe.angle);
                     parameters[0] = (float)EditorGUILayout.IntField("Angle", (int)parameters[0]);
                     GUILayout.Space(height_parameter_space);
                     // padding
-                    if(parameters.Count < 2) parameters.Add(AMCameraFade.Defaults.LinearWipe.padding);
+                    if(parameters.Count < 2) parameters.Add(CameraFade.Defaults.LinearWipe.padding);
                     parameters[1] = EditorGUILayout.FloatField("Padding", parameters[1]);
                     break;
                 #endregion
                 #region radial wipe
                 case (int)CameraSwitcherKey.Fade.RadialWipe:
                     // direction, clockwise / counterclockwise
-                    if(parameters.Count < 1) parameters.Add(AMCameraFade.Defaults.RadialWipe.direction);
-                    else if(parameters[0] != 0f && parameters[0] != 1f) parameters[0] = AMCameraFade.Defaults.RadialWipe.direction;
+                    if(parameters.Count < 1) parameters.Add(CameraFade.Defaults.RadialWipe.direction);
+                    else if(parameters[0] != 0f && parameters[0] != 1f) parameters[0] = CameraFade.Defaults.RadialWipe.direction;
                     GUILayout.BeginHorizontal();
                     GUILayout.Label("Direction");
                     parameters[0] = (float)GUILayout.SelectionGrid((int)parameters[0], new string[] { "Clockwise", "Counter CW" }, 2);
@@ -706,7 +706,7 @@ namespace M8.Animator.Edit {
                     GUILayout.Space(height_parameter_space);
                     GUILayout.Space(3f);
                     // starting angle
-                    if(parameters.Count < 2) parameters.Add(AMCameraFade.Defaults.RadialWipe.startingAngle);
+                    if(parameters.Count < 2) parameters.Add(CameraFade.Defaults.RadialWipe.startingAngle);
                     int indexStartAngle = radialWipeAngleToIndex(parameters[1]);
                     if(indexStartAngle < 0) {
                         parameters[1] = 0f;
@@ -724,8 +724,8 @@ namespace M8.Animator.Edit {
                     GUILayout.Space(3f);
                     GUILayout.Space(height_parameter_space);
                     // focal point
-                    if(parameters.Count < 3) parameters.Add(AMCameraFade.Defaults.RadialWipe.focalX);
-                    if(parameters.Count < 4) parameters.Add(AMCameraFade.Defaults.RadialWipe.focalY);
+                    if(parameters.Count < 3) parameters.Add(CameraFade.Defaults.RadialWipe.focalX);
+                    if(parameters.Count < 4) parameters.Add(CameraFade.Defaults.RadialWipe.focalY);
                     if(didJustSetFocalPoint) {
                         parameters[2] = newFocalPoint.x;
                         parameters[3] = newFocalPoint.y;
@@ -739,7 +739,7 @@ namespace M8.Animator.Edit {
                 case (int)CameraSwitcherKey.Fade.WedgeWipe:
                     GUILayout.Space(3f);
                     // starting angle
-                    if(parameters.Count < 1) parameters.Add(AMCameraFade.Defaults.WedgeWipe.startingAngle);
+                    if(parameters.Count < 1) parameters.Add(CameraFade.Defaults.WedgeWipe.startingAngle);
                     int _indexStartAngle = radialWipeAngleToIndex(parameters[0]);
                     if(_indexStartAngle < 0) {
                         parameters[0] = 0f;
@@ -757,8 +757,8 @@ namespace M8.Animator.Edit {
                     GUILayout.Space(3f);
                     GUILayout.Space(height_parameter_space);
                     // focal point
-                    if(parameters.Count < 2) parameters.Add(AMCameraFade.Defaults.WedgeWipe.focalX);
-                    if(parameters.Count < 3) parameters.Add(AMCameraFade.Defaults.WedgeWipe.focalY);
+                    if(parameters.Count < 2) parameters.Add(CameraFade.Defaults.WedgeWipe.focalX);
+                    if(parameters.Count < 3) parameters.Add(CameraFade.Defaults.WedgeWipe.focalY);
                     if(didJustSetFocalPoint) {
                         parameters[1] = newFocalPoint.x;
                         parameters[2] = newFocalPoint.y;
@@ -781,21 +781,21 @@ namespace M8.Animator.Edit {
                 #region venetian blinds
                 case (int)CameraSwitcherKey.Fade.VenetianBlinds:
                     // layout, vertical or horizontal
-                    parameters.Add(AMCameraFade.Defaults.VenetianBlinds.layout);
+                    parameters.Add(CameraFade.Defaults.VenetianBlinds.layout);
                     // number of blinds
-                    parameters.Add(AMCameraFade.Defaults.VenetianBlinds.numberOfBlinds);
+                    parameters.Add(CameraFade.Defaults.VenetianBlinds.numberOfBlinds);
                     justSetFocalPoint = new Vector2(-1f, -1f);
                     break;
                 #endregion
                 #region doors
                 case (int)CameraSwitcherKey.Fade.Doors:
                     // layout, vertical or horizontal
-                    parameters.Add(AMCameraFade.Defaults.Doors.layout);
+                    parameters.Add(CameraFade.Defaults.Doors.layout);
                     // type, open or close
-                    parameters.Add(AMCameraFade.Defaults.Doors.type);
+                    parameters.Add(CameraFade.Defaults.Doors.type);
                     // focal point
-                    parameters.Add(AMCameraFade.Defaults.Doors.focalXorY); // x or y
-                    justSetFocalPoint = new Vector2(AMCameraFade.Defaults.Doors.focalXorY, -1f);
+                    parameters.Add(CameraFade.Defaults.Doors.focalXorY); // x or y
+                    justSetFocalPoint = new Vector2(CameraFade.Defaults.Doors.focalXorY, -1f);
                     break;
                 #endregion
                 #region iris shape
@@ -803,43 +803,43 @@ namespace M8.Animator.Edit {
                     // default shape
                     _irisShape = (Texture2D)EditorResource.LoadTexture("am_iris_star_1024");
                     // type, shrink or grow
-                    parameters.Add(AMCameraFade.Defaults.IrisShape.type);
+                    parameters.Add(CameraFade.Defaults.IrisShape.type);
                     // max scale
-                    parameters.Add(AMCameraFade.Defaults.IrisShape.maxScale);
+                    parameters.Add(CameraFade.Defaults.IrisShape.maxScale);
                     // rotate amount
-                    parameters.Add(AMCameraFade.Defaults.IrisShape.rotateAmount);
+                    parameters.Add(CameraFade.Defaults.IrisShape.rotateAmount);
                     // ease rotation
-                    parameters.Add(AMCameraFade.Defaults.IrisShape.easeRotation);
+                    parameters.Add(CameraFade.Defaults.IrisShape.easeRotation);
                     // focal point
-                    parameters.Add(AMCameraFade.Defaults.IrisShape.focalX); // x
-                    parameters.Add(AMCameraFade.Defaults.IrisShape.focalY); // y
+                    parameters.Add(CameraFade.Defaults.IrisShape.focalX); // x
+                    parameters.Add(CameraFade.Defaults.IrisShape.focalY); // y
                                                                             // rotation pivot
-                    parameters.Add(AMCameraFade.Defaults.IrisShape.pivotX); // x
-                    parameters.Add(AMCameraFade.Defaults.IrisShape.pivotY); // y
+                    parameters.Add(CameraFade.Defaults.IrisShape.pivotX); // x
+                    parameters.Add(CameraFade.Defaults.IrisShape.pivotY); // y
 
-                    justSetFocalPoint = new Vector2(AMCameraFade.Defaults.IrisShape.focalX, AMCameraFade.Defaults.IrisShape.focalY);
+                    justSetFocalPoint = new Vector2(CameraFade.Defaults.IrisShape.focalX, CameraFade.Defaults.IrisShape.focalY);
                     break;
                 #endregion
                 #region iris box
                 case (int)CameraSwitcherKey.Fade.IrisBox:
                     // type, shrink or grow
-                    parameters.Add(AMCameraFade.Defaults.IrisBox.type);
+                    parameters.Add(CameraFade.Defaults.IrisBox.type);
                     // focal point
-                    parameters.Add(AMCameraFade.Defaults.IrisBox.focalX); // x
-                    parameters.Add(AMCameraFade.Defaults.IrisBox.focalY); // y
-                    justSetFocalPoint = new Vector2(AMCameraFade.Defaults.IrisBox.focalX, AMCameraFade.Defaults.IrisBox.focalY);
+                    parameters.Add(CameraFade.Defaults.IrisBox.focalX); // x
+                    parameters.Add(CameraFade.Defaults.IrisBox.focalY); // y
+                    justSetFocalPoint = new Vector2(CameraFade.Defaults.IrisBox.focalX, CameraFade.Defaults.IrisBox.focalY);
                     break;
                 #endregion
                 #region iris round
                 case (int)CameraSwitcherKey.Fade.IrisRound:
                     // type, shrink or grow
-                    parameters.Add(AMCameraFade.Defaults.IrisRound.type);
+                    parameters.Add(CameraFade.Defaults.IrisRound.type);
                     // max scale
-                    parameters.Add(AMCameraFade.Defaults.IrisRound.maxScale);
+                    parameters.Add(CameraFade.Defaults.IrisRound.maxScale);
                     // focal point
-                    parameters.Add(AMCameraFade.Defaults.IrisRound.focalX);
-                    parameters.Add(AMCameraFade.Defaults.IrisRound.focalY);
-                    justSetFocalPoint = new Vector2(AMCameraFade.Defaults.IrisRound.focalX, AMCameraFade.Defaults.IrisRound.focalY);
+                    parameters.Add(CameraFade.Defaults.IrisRound.focalX);
+                    parameters.Add(CameraFade.Defaults.IrisRound.focalY);
+                    justSetFocalPoint = new Vector2(CameraFade.Defaults.IrisRound.focalX, CameraFade.Defaults.IrisRound.focalY);
                     // default shape
                     _irisShape = (Texture2D)EditorResource.LoadTexture("am_iris_round_1024");
                     break;
@@ -847,55 +847,55 @@ namespace M8.Animator.Edit {
                 #region shape wipe
                 case (int)CameraSwitcherKey.Fade.ShapeWipe:
                     // angle
-                    parameters.Add(AMCameraFade.Defaults.ShapeWipe.angle);
+                    parameters.Add(CameraFade.Defaults.ShapeWipe.angle);
                     // default shape
                     _irisShape = (Texture2D)EditorResource.LoadTexture("am_wipe_text_1024");
                     // scale
-                    parameters.Add(AMCameraFade.Defaults.ShapeWipe.scale);
+                    parameters.Add(CameraFade.Defaults.ShapeWipe.scale);
                     // padding
-                    parameters.Add(AMCameraFade.Defaults.ShapeWipe.padding);
+                    parameters.Add(CameraFade.Defaults.ShapeWipe.padding);
                     // offset start
-                    parameters.Add(AMCameraFade.Defaults.ShapeWipe.offsetStart);
+                    parameters.Add(CameraFade.Defaults.ShapeWipe.offsetStart);
                     // offset end
-                    parameters.Add(AMCameraFade.Defaults.ShapeWipe.offsetEnd);
+                    parameters.Add(CameraFade.Defaults.ShapeWipe.offsetEnd);
                     justSetFocalPoint = new Vector2(-1f, -1f);
                     break;
                 #endregion
                 #region linear wipe
                 case (int)CameraSwitcherKey.Fade.LinearWipe:
                     // angle
-                    parameters.Add(AMCameraFade.Defaults.LinearWipe.angle);
+                    parameters.Add(CameraFade.Defaults.LinearWipe.angle);
                     // default shape
                     _irisShape = (Texture2D)EditorResource.LoadTexture("am_wipe_linear_1024");
                     // padding
-                    parameters.Add(AMCameraFade.Defaults.LinearWipe.padding);
+                    parameters.Add(CameraFade.Defaults.LinearWipe.padding);
                     justSetFocalPoint = new Vector2(-1f, -1f);
                     break;
                 #endregion
                 #region radial wipe
                 case (int)CameraSwitcherKey.Fade.RadialWipe:
                     //direction
-                    parameters.Add(AMCameraFade.Defaults.RadialWipe.direction);
+                    parameters.Add(CameraFade.Defaults.RadialWipe.direction);
                     // starting angle
-                    parameters.Add(AMCameraFade.Defaults.RadialWipe.startingAngle);
+                    parameters.Add(CameraFade.Defaults.RadialWipe.startingAngle);
                     // default shape
                     _irisShape = (Texture2D)EditorResource.LoadTexture("am_wipe_linear_1024");
                     // focal point
-                    parameters.Add(AMCameraFade.Defaults.RadialWipe.focalX); // x
-                    parameters.Add(AMCameraFade.Defaults.RadialWipe.focalY); // y
-                    justSetFocalPoint = new Vector2(AMCameraFade.Defaults.RadialWipe.focalX, AMCameraFade.Defaults.RadialWipe.focalY);
+                    parameters.Add(CameraFade.Defaults.RadialWipe.focalX); // x
+                    parameters.Add(CameraFade.Defaults.RadialWipe.focalY); // y
+                    justSetFocalPoint = new Vector2(CameraFade.Defaults.RadialWipe.focalX, CameraFade.Defaults.RadialWipe.focalY);
                     break;
                 #endregion
                 #region wedge wipe
                 case (int)CameraSwitcherKey.Fade.WedgeWipe:
                     // starting angle
-                    parameters.Add(AMCameraFade.Defaults.WedgeWipe.startingAngle);
+                    parameters.Add(CameraFade.Defaults.WedgeWipe.startingAngle);
                     // default shape
                     _irisShape = (Texture2D)EditorResource.LoadTexture("am_wipe_linear_1024");
                     // focal point
-                    parameters.Add(AMCameraFade.Defaults.WedgeWipe.focalX); // x
-                    parameters.Add(AMCameraFade.Defaults.WedgeWipe.focalY); // y
-                    justSetFocalPoint = new Vector2(AMCameraFade.Defaults.WedgeWipe.focalX, AMCameraFade.Defaults.WedgeWipe.focalY);
+                    parameters.Add(CameraFade.Defaults.WedgeWipe.focalX); // x
+                    parameters.Add(CameraFade.Defaults.WedgeWipe.focalY); // y
+                    justSetFocalPoint = new Vector2(CameraFade.Defaults.WedgeWipe.focalX, CameraFade.Defaults.WedgeWipe.focalY);
                     break;
                 #endregion
                 default:

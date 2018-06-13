@@ -148,8 +148,8 @@ namespace M8.Animator.Edit {
 
             OptionsFile a = ScriptableObject.CreateInstance<OptionsFile>();
             AssetDatabase.CreateAsset(a, filePath);
-            a.quickAdd_Combos.Add(new List<int> { (int)AMTimeline.Track.Translation, (int)AMTimeline.Track.Orientation });
-            a.quickAdd_Combos.Add(new List<int> { (int)AMTimeline.Track.Translation, (int)AMTimeline.Track.Rotation, (int)AMTimeline.Track.Animation });
+            a.quickAdd_Combos.Add(new List<int> { (int)SerializeType.Translation, (int)SerializeType.Orientation });
+            a.quickAdd_Combos.Add(new List<int> { (int)SerializeType.Translation, (int)SerializeType.Rotation, (int)SerializeType.UnityAnimation });
             a.flatten_quickAdd_Combos();
             AssetDatabase.Refresh();
             return a;

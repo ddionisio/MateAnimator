@@ -117,7 +117,7 @@ namespace M8.Animator {
 
             if(!mIsAutoKill) {
                 if(take.numLoop < 0 && take.loopBackToFrame > 0) {
-                    (target as AnimatorData).PlayAtFrame(take.name, take.loopBackToFrame);
+                    (target as Animate).PlayAtFrame(take.name, take.loopBackToFrame);
                     return;
                 }
             }

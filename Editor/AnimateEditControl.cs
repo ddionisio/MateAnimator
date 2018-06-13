@@ -21,7 +21,7 @@ namespace M8.Animator.Edit {
                 else if(eData.currentTakeInd >= _t.Count)
                     eData.currentTakeInd = _t.Count - 1;
 
-                _t[eData.currentTakeInd].drawGizmos(eData.target, AnimatorTimeline.e_gizmoSize, Application.isPlaying);
+                _t[eData.currentTakeInd].drawGizmos(eData.target, AnimateTimeline.e_gizmoSize, Application.isPlaying);
             }
         }
 

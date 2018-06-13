@@ -89,16 +89,16 @@ namespace M8.Animator {
         // Make sure to add [System.Serializable] to every class
         // Set track class properties
         // Override getTrackType in track class
-        // Add track type to showObjectFieldFor in AMTimeline
-        // Create an addXTrack method here, and put it in AMTimeline
+        // Add track type to showObjectFieldFor in TimelineWindow
+        // Create an addXTrack method here, and put it in TimelineWindow
         // Create track key class, make sure to override CreateClone 
         // Create AMXAction class for track class that overrides execute and implements ToString # TO DO #
         // Override updateCache in track class
-        // Create addKey method in track class, and put it in addKey in AMTimeline
-        // Add track to timeline action in AMTimeline
-        // Add inspector properties to showInspectorPropertiesFor in AMTimeline
+        // Create addKey method in track class, and put it in addKey in TimelineWindow
+        // Add track to timeline action in TimelineWindow
+        // Add inspector properties to showInspectorPropertiesFor in TimelineWindow
         // Override previewFrame method in track class
-        // Add track object to timelineSelectObjectFor in AMTimeline (optional)
+        // Add track object to timelineSelectObjectFor in TimelineWindow (optional)
         // Override getDependencies and updateDependencies in track class
         // Add details to Code View # TO DO #
 

@@ -129,7 +129,7 @@ namespace M8.Animator {
                     else {
                         if(targetsAreEqual(propType, endKey)) return;
 
-                        tween = DOTween.To(AMPluginFactory.CreateVector4(), () => matInst.GetVector(propId), (x) => matInst.SetVector(propId, x), endKey.vector, getTime(frameRate));
+                        tween = DOTween.To(TweenPluginFactory.CreateVector4(), () => matInst.GetVector(propId), (x) => matInst.SetVector(propId, x), endKey.vector, getTime(frameRate));
                     }
                     break;
                 case MaterialTrack.ValueType.Color:
@@ -142,7 +142,7 @@ namespace M8.Animator {
                     else {
                         if(targetsAreEqual(propType, endKey)) return;
 
-                        tween = DOTween.To(AMPluginFactory.CreateColor(), () => matInst.GetColor(propId), (x) => matInst.SetColor(propId, x), endKey.color, getTime(frameRate));
+                        tween = DOTween.To(TweenPluginFactory.CreateColor(), () => matInst.GetColor(propId), (x) => matInst.SetColor(propId, x), endKey.color, getTime(frameRate));
                     }
                     break;
                 case MaterialTrack.ValueType.TexOfs:
@@ -155,7 +155,7 @@ namespace M8.Animator {
                     else {
                         if(targetsAreEqual(propType, endKey)) return;
 
-                        tween = DOTween.To(AMPluginFactory.CreateVector2(), () => matInst.GetTextureOffset(prop), (x) => matInst.SetTextureOffset(prop, x), endKey.texOfs, getTime(frameRate));
+                        tween = DOTween.To(TweenPluginFactory.CreateVector2(), () => matInst.GetTextureOffset(prop), (x) => matInst.SetTextureOffset(prop, x), endKey.texOfs, getTime(frameRate));
                     }
                     break;
                 case MaterialTrack.ValueType.TexScale:
@@ -168,7 +168,7 @@ namespace M8.Animator {
                     else {
                         if(targetsAreEqual(propType, endKey)) return;
 
-                        tween = DOTween.To(AMPluginFactory.CreateVector2(), () => matInst.GetTextureScale(prop), (x) => matInst.SetTextureScale(prop, x), endKey.texScale, getTime(frameRate));
+                        tween = DOTween.To(TweenPluginFactory.CreateVector2(), () => matInst.GetTextureScale(prop), (x) => matInst.SetTextureScale(prop, x), endKey.texScale, getTime(frameRate));
                     }
                     break;
                 case MaterialTrack.ValueType.TexEnv:

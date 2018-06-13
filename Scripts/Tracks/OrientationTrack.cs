@@ -187,9 +187,9 @@ namespace M8.Animator {
             else return false;
         }
 
-        public override AnimatorTimeline.JSONInit getJSONInit(ITarget target) {
+        public override AnimateTimeline.JSONInit getJSONInit(ITarget target) {
             if(!obj || keys.Count <= 0) return null;
-            AnimatorTimeline.JSONInit init = new AnimatorTimeline.JSONInit();
+            AnimateTimeline.JSONInit init = new AnimateTimeline.JSONInit();
             init.type = "orientation";
             init.go = obj.gameObject.name;
             Transform _target = getInitialTarget(target);
@@ -198,7 +198,7 @@ namespace M8.Animator {
             //if(start_frame > 0) _translation_track = parentTake.getTranslationTrackForTransform(_target);
             Vector3 _lookv3 = _target.transform.position;
             if(_translation_track != null) _lookv3 = (_translation_track as TranslationTrack).getPositionAtFrame((_translation_track as TranslationTrack).GetTarget(target) as Transform, start_frame, 0, true);
-            AnimatorTimeline.JSONVector3 v = new AnimatorTimeline.JSONVector3();
+            AnimateTimeline.JSONVector3 v = new AnimateTimeline.JSONVector3();
             v.setValue(_lookv3);
             init.position = v;
             return init;

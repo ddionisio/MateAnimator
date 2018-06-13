@@ -185,7 +185,7 @@ namespace M8.Animator {
             return (ulong)((44100 / frequency) * frequency * time);
         }
 
-        public override AnimatorTimeline.JSONInit getJSONInit(ITarget target) {
+        public override AnimateTimeline.JSONInit getJSONInit(ITarget target) {
             // no initial values to set
             return null;
         }

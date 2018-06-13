@@ -85,7 +85,7 @@ namespace M8.Animator {
             return getNumberOfFrames(frameRate) / (float)frameRate;
         }
 
-        public virtual AnimatorTimeline.JSONAction getJSONAction(int frameRate) {
+        public virtual AnimateTimeline.JSONAction getJSONAction(int frameRate) {
             return null;
         }
 
