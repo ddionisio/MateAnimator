@@ -24,35 +24,42 @@ namespace M8.Animator {
             Boolean = 13,
             Enum = 14,
 
+            //special case for storing paths
+            GameObject=100,
+            Component=101,
+
             Invalid = -1
         }
 
         public string paramName;
 
-        public int valueType;
+        public ValueType valueType;
 
         public int val_int;
         public string val_string;
         public Vector4 val_vect4;
         public UnityEngine.Object val_obj;
 
-        public static int GetValueType(Type t) {
-            int valueType = -1;
-            if(t == typeof(bool)) valueType = (int)ValueType.Boolean;
-            else if(t == typeof(string)) valueType = (int)ValueType.String;
-            else if(t == typeof(char)) valueType = (int)ValueType.Char;
-            else if(t == typeof(int)) valueType = (int)ValueType.Integer;
-            else if(t == typeof(long)) valueType = (int)ValueType.Long;
-            else if(t == typeof(float)) valueType = (int)ValueType.Float;
-            else if(t == typeof(double)) valueType = (int)ValueType.Double;
-            else if(t == typeof(Vector2)) valueType = (int)ValueType.Vector2;
-            else if(t == typeof(Vector3)) valueType = (int)ValueType.Vector3;
-            else if(t == typeof(Vector4)) valueType = (int)ValueType.Vector4;
-            else if(t == typeof(Color)) valueType = (int)ValueType.Color;
-            else if(t == typeof(Rect)) valueType = (int)ValueType.Rect;
-            else if(t.IsArray) valueType = (int)ValueType.Array;
-            else if(t.IsEnum) valueType = (int)ValueType.Enum;
-            else if(t == typeof(UnityEngine.Object) || (t.BaseType != null && (t.BaseType == typeof(UnityEngine.Object) || t.BaseType == typeof(UnityEngine.Behaviour) || t.BaseType == typeof(UnityEngine.MonoBehaviour) || t.BaseType == typeof(UnityEngine.Component)))) valueType = (int)ValueType.Object;
+        public static ValueType GetValueType(Type t) {
+            ValueType valueType = ValueType.Invalid;
+            if(t == typeof(bool)) valueType = ValueType.Boolean;
+            else if(t == typeof(string)) valueType = ValueType.String;
+            else if(t == typeof(char)) valueType = ValueType.Char;
+            else if(t == typeof(int)) valueType = ValueType.Integer;
+            else if(t == typeof(long)) valueType = ValueType.Long;
+            else if(t == typeof(float)) valueType = ValueType.Float;
+            else if(t == typeof(double)) valueType = ValueType.Double;
+            else if(t == typeof(Vector2)) valueType = ValueType.Vector2;
+            else if(t == typeof(Vector3)) valueType = ValueType.Vector3;
+            else if(t == typeof(Vector4)) valueType = ValueType.Vector4;
+            else if(t == typeof(Color)) valueType = ValueType.Color;
+            else if(t == typeof(Rect)) valueType = ValueType.Rect;
+            else if(t.IsArray) valueType = ValueType.Array;
+            else if(t.IsEnum) valueType = ValueType.Enum;
+            else if(t == typeof(GameObject)) valueType = ValueType.GameObject;
+            else if(Utility.IsDerivedFromAny(t, typeof(Behaviour), typeof(MonoBehaviour), typeof(Component))) valueType = ValueType.Component;
+            else if(Utility.IsDerivedFrom(t, typeof(UnityEngine.Object))) valueType = ValueType.Object;
+
             return valueType;
         }
 
@@ -69,35 +76,76 @@ namespace M8.Animator {
 
         public virtual void setValueType(Type t) {
             valueType = GetValueType(t);
-            if(valueType == (int)ValueType.Object || valueType == (int)ValueType.Enum)
+            if(valueType == ValueType.Object || valueType == ValueType.Enum || valueType == ValueType.Component)
                 val_string = t.ToString();
         }
 
-        public virtual object toObject() {
-            if(valueType == (int)ValueType.Boolean) return (val_bool/* as object*/);
-            if(valueType == (int)ValueType.String) return (val_string/* as object*/);
-            if(valueType == (int)ValueType.Char) {
+        /// <summary>
+        /// target is used for specialized types, e.g. GameObject and Component (to grab ref. via path for meta)
+        /// </summary>
+        public virtual object toObject(ITarget target) {
+            if(valueType == ValueType.GameObject) {
+                if(val_obj)
+                    return val_obj;
+
+                if(string.IsNullOrEmpty(val_string))
+                    return null;
+
+                Transform t = target.GetCache(val_string);
+                if(!t) {
+                    t = Utility.GetTarget(target.root, val_string);
+                    target.SetCache(val_string, t);
+                }
+
+                return t ? t.gameObject : null;
+            }
+            if(valueType == ValueType.Component) {
+                if(val_obj)
+                    return val_obj;
+
+                if(string.IsNullOrEmpty(val_string))
+                    return null;
+
+                var pathParms = val_string.Split(':');
+
+                if(pathParms.Length > 1) {
+                    Transform t = target.GetCache(pathParms[1]);
+                    if(!t) {
+                        t = Utility.GetTarget(target.root, pathParms[1]);
+                        target.SetCache(pathParms[1], t);
+                    }
+
+                    var compType = GetTypeFrom(pathParms[0]);
+
+                    return t ? t.GetComponent(compType) : null;
+                }
+
+                return null;
+            }
+            if(valueType == ValueType.Boolean) return (val_bool/* as object*/);
+            if(valueType == ValueType.String) return (val_string/* as object*/);
+            if(valueType == ValueType.Char) {
                 if(val_string == null || val_string.Length <= 0) return '\0';
                 return (val_string[0]/* as object*/);
             }
-            if(valueType == (int)ValueType.Integer) return (val_int/* as object*/);
-            if(valueType == (int)ValueType.Long) return (val_long/* as object*/);
-            if(valueType == (int)ValueType.Float) return (val_float/* as object*/);
-            if(valueType == (int)ValueType.Double) return (val_double/* as object*/);
-            if(valueType == (int)ValueType.Vector2) return (val_vect2/* as object*/);
-            if(valueType == (int)ValueType.Vector3) return (val_vect3/* as object*/);
-            if(valueType == (int)ValueType.Vector4) return (val_vect4/* as object*/);
-            if(valueType == (int)ValueType.Color) return (val_color/* as object*/);
-            if(valueType == (int)ValueType.Rect) return (val_rect/* as object*/);
-            if(valueType == (int)ValueType.Object) return (val_obj ? val_obj : null/* as object*/);
-            if(valueType == (int)ValueType.Enum) return val_enum;
-            if(valueType == (int)ValueType.Array) return null;
+            if(valueType == ValueType.Integer) return (val_int/* as object*/);
+            if(valueType == ValueType.Long) return (val_long/* as object*/);
+            if(valueType == ValueType.Float) return (val_float/* as object*/);
+            if(valueType == ValueType.Double) return (val_double/* as object*/);
+            if(valueType == ValueType.Vector2) return (val_vect2/* as object*/);
+            if(valueType == ValueType.Vector3) return (val_vect3/* as object*/);
+            if(valueType == ValueType.Vector4) return (val_vect4/* as object*/);
+            if(valueType == ValueType.Color) return (val_color/* as object*/);
+            if(valueType == ValueType.Rect) return (val_rect/* as object*/);
+            if(valueType == ValueType.Object) return (val_obj ? val_obj : null/* as object*/);
+            if(valueType == ValueType.Enum) return val_enum;            
+            if(valueType == ValueType.Array) return null;
 
             Debug.LogError("Animator: Type not found for Event Parameter.");
             return null;
         }
 
-        Type GetTypeFrom(string TypeName) {
+        static Type GetTypeFrom(string TypeName) {
 
             // Try Type.GetType() first. This will work with types defined
             // by the Mono runtime, etc.
@@ -113,9 +161,9 @@ namespace M8.Animator {
             if(endInd == -1) {
                 try {
                     //no assembly?
-                    return System.Type.GetType(TypeName);
+                    return Type.GetType(TypeName);
                 }
-                catch(System.TypeInitializationException e) {
+                catch(TypeInitializationException e) {
                     Debug.LogWarning(e.ToString());
                     return null;
                 }
@@ -138,19 +186,31 @@ namespace M8.Animator {
         public virtual Type getParamType() {
             Type ret;
 
-            if(valueType == (int)ValueType.Boolean) ret = typeof(bool);
-            else if(valueType == (int)ValueType.Integer) ret = typeof(int);
-            else if(valueType == (int)ValueType.Long) ret = typeof(long);
-            else if(valueType == (int)ValueType.Float) ret = typeof(float);
-            else if(valueType == (int)ValueType.Double) ret = typeof(double);
-            else if(valueType == (int)ValueType.Vector2) ret = typeof(Vector2);
-            else if(valueType == (int)ValueType.Vector3) ret = typeof(Vector3);
-            else if(valueType == (int)ValueType.Vector4) ret = typeof(Vector4);
-            else if(valueType == (int)ValueType.Color) ret = typeof(Color);
-            else if(valueType == (int)ValueType.Rect) ret = typeof(Rect);
-            else if(valueType == (int)ValueType.String) ret = typeof(string);
-            else if(valueType == (int)ValueType.Char) ret = typeof(char);
-            else if(valueType == (int)ValueType.Object || valueType == (int)ValueType.Enum) {
+            if(valueType == ValueType.Boolean) ret = typeof(bool);
+            else if(valueType == ValueType.Integer) ret = typeof(int);
+            else if(valueType == ValueType.Long) ret = typeof(long);
+            else if(valueType == ValueType.Float) ret = typeof(float);
+            else if(valueType == ValueType.Double) ret = typeof(double);
+            else if(valueType == ValueType.Vector2) ret = typeof(Vector2);
+            else if(valueType == ValueType.Vector3) ret = typeof(Vector3);
+            else if(valueType == ValueType.Vector4) ret = typeof(Vector4);
+            else if(valueType == ValueType.Color) ret = typeof(Color);
+            else if(valueType == ValueType.Rect) ret = typeof(Rect);
+            else if(valueType == ValueType.String) ret = typeof(string);
+            else if(valueType == ValueType.Char) ret = typeof(char);
+            else if(valueType == ValueType.GameObject) ret = typeof(GameObject);
+            else if(valueType == ValueType.Component) {
+                if(!string.IsNullOrEmpty(val_string)) {
+                    var pathParms = val_string.Split(':');
+                    if(pathParms.Length > 0)
+                        ret = GetTypeFrom(pathParms[0]);
+                    else
+                        ret = null;
+                }
+                else
+                    ret = null;
+            }
+            else if(valueType == ValueType.Object || valueType == ValueType.Enum) {
                 ret = GetTypeFrom(val_string);
                 if(ret == null) {
                     try {
@@ -171,8 +231,8 @@ namespace M8.Animator {
             return ret;
         }
 
-        public virtual void fromObject(object dat) {
-            switch((ValueType)valueType) {
+        public virtual void fromObject(ITarget target, object dat) {
+            switch(valueType) {
                 case ValueType.Integer:
                     val_int = Convert.ToInt32(dat);
                     break;
@@ -216,46 +276,102 @@ namespace M8.Animator {
                 case ValueType.Enum:
                     val_enum = dat as Enum;
                     break;
+                case ValueType.GameObject:
+
+                    break;
             }
         }
 
-        public virtual AnimatorTimeline.JSONEventParameter toJSON() {
-            AnimatorTimeline.JSONEventParameter e = new AnimatorTimeline.JSONEventParameter();
+        /// <summary>
+        /// Only use this for meta, and if go is on the scene
+        /// </summary>
+        public void SetAsGameObject(ITarget target, GameObject go, bool isAsset) {
+            valueType = ValueType.GameObject;
+
+            if(isAsset || go == null) {
+                val_string = "";
+                val_obj = go;
+            }
+            else {
+                val_string = Utility.GetPath(target.root, go);
+                val_obj = target.meta ? null : go;
+            }
+        }
+
+        /// <summary>
+        /// Only use this for meta, and if go is on the scene
+        /// </summary>
+        public void SetAsComponent(ITarget target, Component comp, bool isAsset) {
+            valueType = ValueType.Component;
+
+            if(comp == null) {
+                val_string = "";
+                val_obj = null;
+            }
+            else if(isAsset || comp == null) {
+                val_string = comp ? comp.GetType().ToString() : "";
+                val_obj = comp;
+            }
+            else {
+                string typeName = comp.GetType().ToString();
+                string path = Utility.GetPath(target.root, comp.gameObject);
+
+                //separate with ':'
+                var sb = new System.Text.StringBuilder();
+                sb.Append(typeName).Append(':').Append(path);
+
+                val_string = sb.ToString();
+
+                val_obj = target.meta ? null : comp;
+            }
+        }
+
+        public virtual void CopyTo(EventData other) {
+            other.paramName = paramName;
+            other.valueType = valueType;
+            other.val_int = val_int;
+            other.val_string = val_string;
+            other.val_vect4 = val_vect4;
+            other.val_obj = val_obj;
+        }
+
+        public virtual AnimateTimeline.JSONEventParameter toJSON() {
+            AnimateTimeline.JSONEventParameter e = new AnimateTimeline.JSONEventParameter();
             e.valueType = valueType;
-            if(valueType == (int)ValueType.Boolean) e.val_bool = val_bool;
-            if(valueType == (int)ValueType.String) e.val_string = (val_string/* as object*/);
-            if(valueType == (int)ValueType.Char) {
+            if(valueType == ValueType.Boolean) e.val_bool = val_bool;
+            if(valueType == ValueType.String) e.val_string = (val_string/* as object*/);
+            if(valueType == ValueType.Char) {
                 if(val_string == null || val_string.Length <= 0) e.val_string = "\0";
                 e.val_string = "" + val_string[0];
             }
-            if(valueType == (int)ValueType.Integer || valueType == (int)ValueType.Long) e.val_int = (val_int/* as object*/);
-            if(valueType == (int)ValueType.Float || valueType == (int)ValueType.Double) e.val_float = (val_float/* as object*/);
-            if(valueType == (int)ValueType.Vector2) {
-                AnimatorTimeline.JSONVector2 v2 = new AnimatorTimeline.JSONVector2();
+            if(valueType == ValueType.Integer || valueType == ValueType.Long) e.val_int = (val_int/* as object*/);
+            if(valueType == ValueType.Float || valueType == ValueType.Double) e.val_float = (val_float/* as object*/);
+            if(valueType == ValueType.Vector2) {
+                AnimateTimeline.JSONVector2 v2 = new AnimateTimeline.JSONVector2();
                 v2.setValue(val_vect2);
                 e.val_vect2 = v2;
             }
-            if(valueType == (int)ValueType.Vector3) {
-                AnimatorTimeline.JSONVector3 v3 = new AnimatorTimeline.JSONVector3();
+            if(valueType == ValueType.Vector3) {
+                AnimateTimeline.JSONVector3 v3 = new AnimateTimeline.JSONVector3();
                 v3.setValue(val_vect3);
                 e.val_vect3 = v3;
             }
-            if(valueType == (int)ValueType.Vector4) {
-                AnimatorTimeline.JSONVector4 v4 = new AnimatorTimeline.JSONVector4();
+            if(valueType == ValueType.Vector4) {
+                AnimateTimeline.JSONVector4 v4 = new AnimateTimeline.JSONVector4();
                 v4.setValue(val_vect4);
                 e.val_vect4 = v4;
             }
-            if(valueType == (int)ValueType.Color) {
-                AnimatorTimeline.JSONColor c = new AnimatorTimeline.JSONColor();
+            if(valueType == ValueType.Color) {
+                AnimateTimeline.JSONColor c = new AnimateTimeline.JSONColor();
                 c.setValue(val_color);
                 e.val_color = c;
             }
-            if(valueType == (int)ValueType.Rect) {
-                AnimatorTimeline.JSONRect r = new AnimatorTimeline.JSONRect();
+            if(valueType == ValueType.Rect) {
+                AnimateTimeline.JSONRect r = new AnimateTimeline.JSONRect();
                 r.setValue(val_rect);
                 e.val_rect = r;
             }
-            if(valueType == (int)ValueType.Object) {
+            if(valueType == ValueType.Object) {
                 if(val_obj.GetType() != typeof(GameObject)) {
                     // component
                     e.val_obj_extra = val_obj.name;
@@ -285,9 +401,9 @@ namespace M8.Animator {
         }
 
         public bool checkArrayIntegrity() {
-            if(valueType == (int)ValueType.Array) {
+            if(valueType == ValueType.Array) {
                 if(lsArray != null && lsArray.Count > 0) {
-                    int valElem = lsArray[0].valueType;
+                    ValueType valElem = lsArray[0].valueType;
                     foreach(EventData elem in lsArray) {
                         if(elem.valueType != valElem)
                             return false;
@@ -303,26 +419,26 @@ namespace M8.Animator {
             mCachedType = null;
         }
 
-        public override object toObject() {
-            if(valueType == (int)ValueType.Array) {
+        public override object toObject(ITarget target) {
+            if(valueType == ValueType.Array) {
                 System.Array array = lsArray.Count > 0 ? System.Array.CreateInstance(lsArray[0].getParamType(), lsArray.Count) : System.Array.CreateInstance(typeof(object), 0);
                 for(int i = 0; i < lsArray.Count; i++) {
-                    array.SetValue(lsArray[i].toObject(), i);
+                    array.SetValue(lsArray[i].toObject(target), i);
                 }
                 return array;
             }
 
-            return base.toObject();
+            return base.toObject(target);
         }
 
         public override Type getParamType() {
             if(mCachedType != null)
                 return mCachedType;
 
-            if(valueType == (int)ValueType.Array) {
+            if(valueType == ValueType.Array) {
                 if(lsArray.Count <= 0) mCachedType = typeof(object[]);
                 else {
-                    switch((ValueType)lsArray[0].valueType) {
+                    switch(lsArray[0].valueType) {
                         case ValueType.Integer:
                             mCachedType = typeof(int[]); break;
                         case ValueType.Long:
@@ -363,8 +479,8 @@ namespace M8.Animator {
             return mCachedType;
         }
 
-        public override void fromObject(object dat) {
-            if(valueType == (int)ValueType.Array) {
+        public override void fromObject(ITarget target, object dat) {
+            if(valueType == ValueType.Array) {
                 System.Array arr = (System.Array)dat;
                 lsArray = new List<EventData>(arr.Length);
                 System.Type t = arr.GetType().GetElementType();
@@ -373,43 +489,86 @@ namespace M8.Animator {
 
                     EventData a = new EventData();
                     a.setValueType(arrElem != null ? arrElem.GetType() : t);
-                    a.fromObject(arrElem);
+                    a.fromObject(target, arrElem);
                     lsArray.Add(a);
                 }
             }
             else
-                base.fromObject(dat);
+                base.fromObject(target, dat);
         }
 
         public string getStringValue() {
-            if(valueType == (int)ValueType.Boolean) return val_bool.ToString().ToLower();
-            if(valueType == (int)ValueType.String) return "\"" + val_string + "\"";
-            if(valueType == (int)ValueType.Char) {
+            if(valueType == ValueType.Boolean) return val_bool.ToString().ToLower();
+            if(valueType == ValueType.String) return "\"" + val_string + "\"";
+            if(valueType == ValueType.Char) {
                 if(val_string == null || val_string.Length <= 0) return "''";
                 else return "'" + val_string[0] + "'";
             }
-            if(valueType == (int)ValueType.Integer || valueType == (int)ValueType.Long) return val_int.ToString();
-            if(valueType == (int)ValueType.Float || valueType == (int)ValueType.Double) return val_float.ToString();
-            if(valueType == (int)ValueType.Vector2) return val_vect2.ToString();
-            if(valueType == (int)ValueType.Vector3) return val_vect3.ToString();
-            if(valueType == (int)ValueType.Vector4) return val_vect4.ToString();
-            if(valueType == (int)ValueType.Color) return val_color.ToString();
-            if(valueType == (int)ValueType.Rect) return val_rect.ToString();
-            if(valueType == (int)ValueType.Object)
+            if(valueType == ValueType.Integer || valueType == ValueType.Long) return val_int.ToString();
+            if(valueType == ValueType.Float || valueType == ValueType.Double) return val_float.ToString();
+            if(valueType == ValueType.Vector2) return val_vect2.ToString();
+            if(valueType == ValueType.Vector3) return val_vect3.ToString();
+            if(valueType == ValueType.Vector4) return val_vect4.ToString();
+            if(valueType == ValueType.Color) return val_color.ToString();
+            if(valueType == ValueType.Rect) return val_rect.ToString();
+            if(valueType == ValueType.GameObject) {
+                if(val_obj)
+                    return val_obj.name;
+
+                return !string.IsNullOrEmpty(val_string) ? val_string : "None";
+            }
+            if(valueType == ValueType.Component) {
+                if(val_obj)
+                    return val_obj.name;
+
+                if(!string.IsNullOrEmpty(val_string)) {
+                    var parms = val_string.Split(':');
+                    if(parms.Length == 1)
+                        return parms[0]; //show Component type
+                    else if(parms.Length > 1)
+                        return parms[1]; //show path
+                }
+
+                return "None";
+            }
+            if(valueType == ValueType.Object) {
                 if(!val_obj) return "None";
                 else return val_obj.name;
+            }
 
-            if(valueType == (int)ValueType.Array) return "Array";
-            if(valueType == (int)ValueType.Enum) return val_enum != null ? val_enum.ToString() : "";
+            if(valueType == ValueType.Array) return "Array";
+            if(valueType == ValueType.Enum) return val_enum != null ? val_enum.ToString() : "";
             Debug.LogError("Animator: Type not found for Event Parameter.");
             return "object";
         }
 
-        public override AnimatorTimeline.JSONEventParameter toJSON() {
-            if(valueType == (int)ValueType.Array && lsArray.Count > 0) {
-                AnimatorTimeline.JSONEventParameter e = new AnimatorTimeline.JSONEventParameter();
+        public override void CopyTo(EventData other) {
+            if(valueType == ValueType.Array) {
+                var otherParam = other as EventParameter;
+                if(otherParam != null) {
+                    otherParam.valueType = valueType;
+                    otherParam.mCachedType = mCachedType;
+
+                    otherParam.lsArray = new List<EventData>(lsArray.Count);
+                    for(int i = 0; i < lsArray.Count; i++) {
+                        if(lsArray[i] == null)
+                            continue;
+
+                        otherParam.lsArray[i] = (EventData)Activator.CreateInstance(lsArray[i].GetType());
+                        lsArray[i].CopyTo(otherParam.lsArray[i]);
+                    }
+                }
+            }
+            else {
+                base.CopyTo(other);
+            }
+        }
+
+        public override AnimateTimeline.JSONEventParameter toJSON() {
+            if(valueType == ValueType.Array && lsArray.Count > 0) {
+                AnimateTimeline.JSONEventParameter e = new AnimateTimeline.JSONEventParameter();
                 e.valueType = valueType;
-                AnimatorTimeline.JSONEventParameter[] arr = new AnimatorTimeline.JSONEventParameter[lsArray.Count];
+                AnimateTimeline.JSONEventParameter[] arr = new AnimateTimeline.JSONEventParameter[lsArray.Count];
                 for(int i = 0; i < lsArray.Count; i++) {
                     //arrObj[i] = lsArray[i].val_bool;
                     arr[i] = lsArray[i].toJSON();
@@ -418,7 +577,7 @@ namespace M8.Animator {
                 /*
                 if(lsArray[0].valueType == (int) ValueType.Boolean) {
                     //bool[] arrObj = new bool[lsArray.Count];
-    //				AnimatorTimeline.JSONEventParameter[] arr = new AnimatorTimeline.JSONEventParameter[lsArray.Count];
+    //				AnimateTimeline.JSONEventParameter[] arr = new AnimateTimeline.JSONEventParameter[lsArray.Count];
     //				for(int i=0;i<lsArray.Count;i++){
     //					//arrObj[i] = lsArray[i].val_bool;
     //					arr[i] = lsArray[i].toJSON();
@@ -501,10 +660,10 @@ namespace M8.Animator {
             return base.toJSON();
         }
 
-        public object[] toArray() {
+        public object[] toArray(ITarget target) {
             object[] arr = new object[lsArray.Count];
             for(int i = 0; i < lsArray.Count; i++)
-                arr[i] = lsArray[i].toObject();
+                arr[i] = lsArray[i].toObject(target);
 
             return arr;
         }
@@ -528,14 +687,14 @@ namespace M8.Animator {
 
         public List<GameObject> getDependencies() {
             List<GameObject> ls = new List<GameObject>();
-            if(valueType == (int)ValueType.Object && val_obj) {
+            if(valueType == ValueType.Object && val_obj) {
                 if(val_obj is GameObject) ls.Add((GameObject)val_obj);
                 else {
                     ls.Add((val_obj as Component).gameObject);
                 }
             }
-            else if(valueType == (int)ValueType.Array) {
-                if(lsArray.Count > 0 && lsArray[0].valueType == (int)ValueType.Object) {
+            else if(valueType == ValueType.Array) {
+                if(lsArray.Count > 0 && lsArray[0].valueType == ValueType.Object) {
                     foreach(EventParameter param in lsArray) {
                         if(param.val_obj) {
                             if(param.val_obj is GameObject)
@@ -552,7 +711,7 @@ namespace M8.Animator {
 
         public bool updateDependencies(List<GameObject> newReferences, List<GameObject> oldReferences) {
             bool didUpdateParameter = false;
-            if(valueType == (int)ValueType.Object && val_obj) {
+            if(valueType == ValueType.Object && val_obj) {
                 for(int i = 0; i < oldReferences.Count; i++) {
                     if(val_obj is GameObject) {
                         if(oldReferences[i] == val_obj) {
@@ -570,8 +729,8 @@ namespace M8.Animator {
                     }
                 }
             }
-            else if(valueType == (int)ValueType.Array) {
-                if(lsArray.Count > 0 && lsArray[0].valueType == (int)ValueType.Object) {
+            else if(valueType == ValueType.Array) {
+                if(lsArray.Count > 0 && lsArray[0].valueType == ValueType.Object) {
                     for(int i = 0; i < oldReferences.Count; i++) {
                         foreach(EventParameter param in lsArray) {
                             if(!param.val_obj) continue;

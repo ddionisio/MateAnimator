@@ -56,6 +56,7 @@ namespace M8.Animator {
         }
 
         protected override void DoCopy(Track track) {
+            ((TriggerTrack)track).signal = signal;
         }
     }
 }

@@ -11,11 +11,6 @@ namespace M8.Animator {
     public class EventKey : Key {
         public override SerializeType serializeType { get { return SerializeType.Event; } }
 
-        private struct ParamKeep {
-            public System.Type type;
-            public object val;
-        }
-
         public bool useSendMessage = true;
         public List<EventParameter> parameters = new List<EventParameter>();
         public string methodName;
@@ -24,7 +19,7 @@ namespace M8.Animator {
         public bool isMatch(ParameterInfo[] cachedParameterInfos) {
             if(cachedParameterInfos != null && parameters != null && cachedParameterInfos.Length == parameters.Count) {
                 for(int i = 0; i < cachedParameterInfos.Length; i++) {
-                    if(parameters[i].valueType == (int)EventData.ValueType.Array) {
+                    if(parameters[i].valueType == EventData.ValueType.Array) {
                         if(!parameters[i].checkArrayIntegrity() || cachedParameterInfos[i].ParameterType != parameters[i].getParamType())
                             return false;
                     }
@@ -60,8 +55,8 @@ namespace M8.Animator {
         }
 
         //set target to a valid ref. for meta
-        public bool setMethodInfo(Object target, MethodInfo methodInfo, ParameterInfo[] cachedParameterInfos, bool restoreValues, System.Action<EventKey> onPreChange) {
-            MethodInfo _methodInfo = getMethodInfo(target);
+        public bool setMethodInfo(Object methodObj, MethodInfo methodInfo, ParameterInfo[] cachedParameterInfos, bool restoreValues, System.Action<EventKey> onPreChange) {
+            MethodInfo _methodInfo = getMethodInfo(methodObj);
 
             // if different component or methodinfo
             if((_methodInfo != methodInfo) || !isMatch(cachedParameterInfos)) {
@@ -72,21 +67,16 @@ namespace M8.Animator {
                 cachedMethodInfo = methodInfo;
                 //this.parameters = new object[numParameters];
 
-                Dictionary<string, ParamKeep> oldParams = null;
+                Dictionary<string, EventParameter> oldParams = null;
                 if(restoreValues && parameters != null && parameters.Count > 0) {
-                    Debug.Log("Parameters have been changed, from code? Attempting to restore data.");
-                    oldParams = new Dictionary<string, ParamKeep>(parameters.Count);
+                    Debug.Log("Parameters have been changed. Attempting to restore data.");
+                    oldParams = new Dictionary<string, EventParameter>(parameters.Count);
                     for(int i = 0; i < parameters.Count; i++) {
-                        if(!string.IsNullOrEmpty(parameters[i].paramName) && (parameters[i].valueType != (int)EventData.ValueType.Array || parameters[i].checkArrayIntegrity())) {
-                            try {
-                                object valObj = parameters[i].toObject();
+                        if(parameters[i] == null)
+                            continue;
 
-                                oldParams.Add(parameters[i].paramName, new ParamKeep() { type = parameters[i].getParamType(), val = valObj });
-                            }
-                            catch {
-                                continue;
-                            }
-                        }
+                        if(!string.IsNullOrEmpty(parameters[i].paramName) && (parameters[i].valueType != EventData.ValueType.Array || parameters[i].checkArrayIntegrity()))
+                            oldParams.Add(parameters[i].paramName, parameters[i].CreateClone());
                     }
                 }
 
@@ -94,18 +84,16 @@ namespace M8.Animator {
 
                 // add parameters
                 for(int i = 0; i < cachedParameterInfos.Length; i++) {
-                    EventParameter a = new EventParameter();
-                    a.paramName = cachedParameterInfos[i].Name;
-                    a.setValueType(cachedParameterInfos[i].ParameterType);
-
-                    //see if we can restore value from previous
-                    if(oldParams != null && oldParams.ContainsKey(a.paramName)) {
-                        ParamKeep keep = oldParams[a.paramName];
-                        if(keep.type == cachedParameterInfos[i].ParameterType)
-                            a.fromObject(keep.val);
+                    EventParameter oldParam;
+                    if(oldParams != null && oldParams.TryGetValue(cachedParameterInfos[i].Name, out oldParam)) {
+                        this.parameters.Add(oldParam);
                     }
-
-                    this.parameters.Add(a);
+                    else {
+                        EventParameter a = new EventParameter();
+                        a.paramName = cachedParameterInfos[i].Name;
+                        a.setValueType(cachedParameterInfos[i].ParameterType);
+                        this.parameters.Add(a);
+                    }
                 }
 
                 return true;
@@ -169,86 +157,86 @@ namespace M8.Animator {
         }
 
         #region action
-        public void setObjectInArray(ref object obj, List<EventData> lsArray) {
+        public void setObjectInArray(ITarget target, ref object obj, List<EventData> lsArray) {
             if(lsArray.Count <= 0) return;
-            int valueType = lsArray[0].valueType;
-            if(valueType == (int)EventData.ValueType.String) {
+            EventData.ValueType valueType = lsArray[0].valueType;
+            if(valueType == EventData.ValueType.String) {
                 string[] arrString = new string[lsArray.Count];
-                for(int i = 0; i < lsArray.Count; i++) arrString[i] = (string)lsArray[i].toObject();
+                for(int i = 0; i < lsArray.Count; i++) arrString[i] = (string)lsArray[i].toObject(target);
                 obj = arrString;
                 return;
             }
-            if(valueType == (int)EventData.ValueType.Char) {
+            if(valueType == EventData.ValueType.Char) {
                 char[] arrChar = new char[lsArray.Count];
-                for(int i = 0; i < lsArray.Count; i++) arrChar[i] = (char)lsArray[i].toObject();
+                for(int i = 0; i < lsArray.Count; i++) arrChar[i] = (char)lsArray[i].toObject(target);
                 obj = arrChar;
                 return;
             }
-            if(valueType == (int)EventData.ValueType.Integer || valueType == (int)EventData.ValueType.Long) {
+            if(valueType == EventData.ValueType.Integer || valueType == EventData.ValueType.Long) {
                 int[] arrInt = new int[lsArray.Count];
-                for(int i = 0; i < lsArray.Count; i++) arrInt[i] = (int)lsArray[i].toObject();
+                for(int i = 0; i < lsArray.Count; i++) arrInt[i] = (int)lsArray[i].toObject(target);
                 obj = arrInt;
                 return;
             }
-            if(valueType == (int)EventData.ValueType.Float || valueType == (int)EventData.ValueType.Double) {
+            if(valueType == EventData.ValueType.Float || valueType == EventData.ValueType.Double) {
                 float[] arrFloat = new float[lsArray.Count];
-                for(int i = 0; i < lsArray.Count; i++) arrFloat[i] = (float)lsArray[i].toObject();
+                for(int i = 0; i < lsArray.Count; i++) arrFloat[i] = (float)lsArray[i].toObject(target);
                 obj = arrFloat;
                 return;
             }
-            if(valueType == (int)EventData.ValueType.Vector2) {
+            if(valueType == EventData.ValueType.Vector2) {
                 Vector2[] arrVect2 = new Vector2[lsArray.Count];
                 for(int i = 0; i < lsArray.Count; i++) arrVect2[i] = new Vector2(lsArray[i].val_vect2.x, lsArray[i].val_vect2.y);
                 obj = arrVect2;
                 return;
             }
-            if(valueType == (int)EventData.ValueType.Vector3) {
+            if(valueType == EventData.ValueType.Vector3) {
                 Vector3[] arrVect3 = new Vector3[lsArray.Count];
                 for(int i = 0; i < lsArray.Count; i++) arrVect3[i] = new Vector3(lsArray[i].val_vect3.x, lsArray[i].val_vect3.y, lsArray[i].val_vect3.z);
                 obj = arrVect3;
                 return;
             }
-            if(valueType == (int)EventData.ValueType.Vector4) {
+            if(valueType == EventData.ValueType.Vector4) {
                 Vector4[] arrVect4 = new Vector4[lsArray.Count];
                 for(int i = 0; i < lsArray.Count; i++) arrVect4[i] = new Vector4(lsArray[i].val_vect4.x, lsArray[i].val_vect4.y, lsArray[i].val_vect4.z, lsArray[i].val_vect4.w);
                 obj = arrVect4;
                 return;
             }
-            if(valueType == (int)EventData.ValueType.Color) {
+            if(valueType == EventData.ValueType.Color) {
                 Color[] arrColor = new Color[lsArray.Count];
                 for(int i = 0; i < lsArray.Count; i++) arrColor[i] = new Color(lsArray[i].val_color.r, lsArray[i].val_color.g, lsArray[i].val_color.b, lsArray[i].val_color.a);
                 obj = arrColor;
                 return;
             }
-            if(valueType == (int)EventData.ValueType.Rect) {
+            if(valueType == EventData.ValueType.Rect) {
                 Rect[] arrRect = new Rect[lsArray.Count];
                 for(int i = 0; i < lsArray.Count; i++) arrRect[i] = new Rect(lsArray[i].val_rect.x, lsArray[i].val_rect.y, lsArray[i].val_rect.width, lsArray[i].val_rect.height);
                 obj = arrRect;
                 return;
             }
-            if(valueType == (int)EventData.ValueType.Object) {
+            if(valueType == EventData.ValueType.Object || valueType == EventData.ValueType.GameObject || valueType == EventData.ValueType.Component) {
                 UnityEngine.Object[] arrObject = new UnityEngine.Object[lsArray.Count];
-                for(int i = 0; i < lsArray.Count; i++) arrObject[i] = (UnityEngine.Object)lsArray[i].toObject();
+                for(int i = 0; i < lsArray.Count; i++) arrObject[i] = (UnityEngine.Object)lsArray[i].toObject(target);
                 obj = arrObject;
                 return;
             }
-            if(valueType == (int)EventData.ValueType.Array) {
+            if(valueType == EventData.ValueType.Array) {
                 //TODO: array of array not supported...
             }
             obj = null;
         }
 
-        object[] buildParams() {
+        object[] buildParams(ITarget target) {
             if(parameters == null)
                 return new object[0];
 
             object[] arrParams = new object[parameters.Count];
             for(int i = 0; i < parameters.Count; i++) {
                 if(parameters[i].isArray()) {
-                    setObjectInArray(ref arrParams[i], parameters[i].lsArray);
+                    setObjectInArray(target, ref arrParams[i], parameters[i].lsArray);
                 }
                 else {
-                    arrParams[i] = parameters[i].toObject();
+                    arrParams[i] = parameters[i].toObject(target);
                 }
             }
             return arrParams;
@@ -272,7 +260,7 @@ namespace M8.Animator {
                     seq.Insert(this, tween);
                 }
                 else {
-                    var tween = DOTween.To(new TweenPlugValueSetElapsed(), () => 0, (x) => compSendMsg.SendMessage(methodName, parameters[0].toObject(), SendMessageOptions.DontRequireReceiver), 0, duration);
+                    var tween = DOTween.To(new TweenPlugValueSetElapsed(), () => 0, (x) => compSendMsg.SendMessage(methodName, parameters[0].toObject(seq.target), SendMessageOptions.DontRequireReceiver), 0, duration);
                     tween.plugOptions.SetSequence(seq);
                     seq.Insert(this, tween);
                 }
@@ -280,7 +268,7 @@ namespace M8.Animator {
             else {
                 var method = cachedMethodInfo != null ? cachedMethodInfo : target.GetType().GetMethod(methodName, GetParamTypes());
 
-                object[] parms = buildParams();
+                object[] parms = buildParams(seq.target);
 
                 var tween = DOTween.To(new TweenPlugValueSetElapsed(), () => 0, (x) => method.Invoke(target, parms), 0, duration);
                 tween.plugOptions.SetSequence(seq);

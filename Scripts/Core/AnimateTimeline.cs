@@ -176,25 +176,8 @@ namespace M8.Animator {
         }
 
         public class JSONEventParameter {
-
-            public enum ValueType {
-                Integer = 0,
-                Long = 1,
-                Float = 2,
-                Double = 3,
-                Vector2 = 4,
-                Vector3 = 5,
-                Vector4 = 6,
-                Color = 7,
-                Rect = 8,
-                String = 9,
-                Char = 10,
-                Object = 11,
-                Array = 12,
-                Boolean = 13
-            }
-
-            public int valueType;
+            
+            public EventData.ValueType valueType;
             public bool val_bool;
             public int val_int;
             public float val_float;
@@ -210,99 +193,99 @@ namespace M8.Animator {
             public JSONEventParameter[] array;
 
             public object toObject() {
-                if(valueType == (int)ValueType.Boolean) return (val_bool/* as object*/);
-                if(valueType == (int)ValueType.String) return (val_string/* as object*/);
-                if(valueType == (int)ValueType.Char) {
+                if(valueType == EventData.ValueType.Boolean) return (val_bool/* as object*/);
+                if(valueType == EventData.ValueType.String) return (val_string/* as object*/);
+                if(valueType == EventData.ValueType.Char) {
                     if(val_string == null || val_string.Length <= 0) return '\0';
                     return (val_string[0]/* as object*/);
                 }
-                if(valueType == (int)ValueType.Integer || valueType == (int)ValueType.Long) return (val_int/* as object*/);
-                if(valueType == (int)ValueType.Float || valueType == (int)ValueType.Double) return (val_float/* as object*/);
-                if(valueType == (int)ValueType.Vector2) return (val_vect2/* as object*/);
-                if(valueType == (int)ValueType.Vector3) return (val_vect3/* as object*/);
-                if(valueType == (int)ValueType.Vector4) return (val_vect4/* as object*/);
-                if(valueType == (int)ValueType.Color) return (val_color/* as object*/);
-                if(valueType == (int)ValueType.Rect) return (val_rect/* as object*/);
-                if(valueType == (int)ValueType.Object) {
+                if(valueType == EventData.ValueType.Integer || valueType == EventData.ValueType.Long) return (val_int/* as object*/);
+                if(valueType == EventData.ValueType.Float || valueType == EventData.ValueType.Double) return (val_float/* as object*/);
+                if(valueType == EventData.ValueType.Vector2) return (val_vect2/* as object*/);
+                if(valueType == EventData.ValueType.Vector3) return (val_vect3/* as object*/);
+                if(valueType == EventData.ValueType.Vector4) return (val_vect4/* as object*/);
+                if(valueType == EventData.ValueType.Color) return (val_color/* as object*/);
+                if(valueType == EventData.ValueType.Rect) return (val_rect/* as object*/);
+                if(valueType == EventData.ValueType.Object) {
                     if(val_obj_extra == null) return (UnityEngine.Object)getGO(val_obj);
                     else return (UnityEngine.Object)getCMP(val_obj_extra, val_obj);
                 }
-                if(valueType == (int)ValueType.Array) {
+                if(valueType == EventData.ValueType.Array) {
                     if(array == null || array.Length <= 0) {
                         Debug.LogError("Animator: Expected array parameters in JSON");
                         return null;
                     }
-                    if(array[0].valueType == (int)ValueType.Boolean) {
+                    if(array[0].valueType == EventData.ValueType.Boolean) {
                         bool[] arrObj = new bool[array.Length];
                         for(int i = 0; i < array.Length; i++) {
                             arrObj[i] = array[i].val_bool;
                         }
                         return arrObj;
                     }
-                    if(array[0].valueType == (int)ValueType.String) {
+                    if(array[0].valueType == EventData.ValueType.String) {
                         string[] arrObj = new string[array.Length];
                         for(int i = 0; i < array.Length; i++) {
                             arrObj[i] = array[i].val_string;
                         }
                         return arrObj;
                     }
-                    if(array[0].valueType == (int)ValueType.Char) {
+                    if(array[0].valueType == EventData.ValueType.Char) {
                         char[] arrObj = new char[array.Length];
                         for(int i = 0; i < array.Length; i++) {
                             arrObj[i] = array[i].val_string[0];
                         }
                         return arrObj;
                     }
-                    if(array[0].valueType == (int)ValueType.Integer || array[0].valueType == (int)ValueType.Long) {
+                    if(array[0].valueType == EventData.ValueType.Integer || array[0].valueType == EventData.ValueType.Long) {
                         int[] arrObj = new int[array.Length];
                         for(int i = 0; i < array.Length; i++) {
                             arrObj[i] = array[i].val_int;
                         }
                         return arrObj;
                     }
-                    if(array[0].valueType == (int)ValueType.Float || array[0].valueType == (int)ValueType.Double) {
+                    if(array[0].valueType == EventData.ValueType.Float || array[0].valueType == EventData.ValueType.Double) {
                         float[] arrObj = new float[array.Length];
                         for(int i = 0; i < array.Length; i++) {
                             arrObj[i] = array[i].val_float;
                         }
                         return arrObj;
                     }
-                    if(array[0].valueType == (int)ValueType.Vector2) {
+                    if(array[0].valueType == EventData.ValueType.Vector2) {
                         Vector2[] arrObj = new Vector2[array.Length];
                         for(int i = 0; i < array.Length; i++) {
                             arrObj[i] = array[i].val_vect2.toVector2();
                         }
                         return arrObj;
                     }
-                    if(array[0].valueType == (int)ValueType.Vector3) {
+                    if(array[0].valueType == EventData.ValueType.Vector3) {
                         Vector3[] arrObj = new Vector3[array.Length];
                         for(int i = 0; i < array.Length; i++) {
                             arrObj[i] = array[i].val_vect3.toVector3();
                         }
                         return arrObj;
                     }
-                    if(array[0].valueType == (int)ValueType.Vector4) {
+                    if(array[0].valueType == EventData.ValueType.Vector4) {
                         Vector4[] arrObj = new Vector4[array.Length];
                         for(int i = 0; i < array.Length; i++) {
                             arrObj[i] = array[i].val_vect4.toVector4();
                         }
                         return arrObj;
                     }
-                    if(array[0].valueType == (int)ValueType.Color) {
+                    if(array[0].valueType == EventData.ValueType.Color) {
                         Color[] arrObj = new Color[array.Length];
                         for(int i = 0; i < array.Length; i++) {
                             arrObj[i] = array[i].val_color.toColor();
                         }
                         return arrObj;
                     }
-                    if(array[0].valueType == (int)ValueType.Rect) {
+                    if(array[0].valueType == EventData.ValueType.Rect) {
                         Rect[] arrObj = new Rect[array.Length];
                         for(int i = 0; i < array.Length; i++) {
                             arrObj[i] = array[i].val_rect.toRect();
                         }
                         return arrObj;
                     }
-                    if(array[0].valueType == (int)ValueType.Object) {
+                    if(array[0].valueType == EventData.ValueType.Object) {
                         UnityEngine.Object[] arrObj = new UnityEngine.Object[array.Length];
                         for(int i = 0; i < array.Length; i++) {
                             arrObj[i] = (UnityEngine.Object)getGO(array[i].val_obj);

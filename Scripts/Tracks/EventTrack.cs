@@ -184,7 +184,10 @@ namespace M8.Animator {
         }
 
         protected override void DoCopy(Track track) {
-            (track as EventTrack).obj = obj;
+            EventTrack nTrack = (EventTrack)track;
+
+            nTrack.obj = obj;
+            nTrack.componentName = componentName;
         }
     }
 }

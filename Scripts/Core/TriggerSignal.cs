@@ -8,7 +8,7 @@ namespace M8.Animator {
         public event System.Action<string, int, float> callback;
 
         public void Invoke(string valString, int valInt, float valFloat) {
-            Debug.Log(string.Format("Invoke: {0} {1} {2}", valString, valInt, valFloat));
+            //Debug.Log(string.Format("Invoke: {0} {1} {2}", valString, valInt, valFloat));
 
             if(callback != null)
                 callback(valString, valInt, valFloat);

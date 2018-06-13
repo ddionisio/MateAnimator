@@ -268,7 +268,27 @@ namespace M8.Animator {
 			}
 		}
 
-	    public static float EaseCustom(float startValue, float changeValue, float time, AnimationCurve curve) {
+        public static bool IsDerivedFrom(System.Type type, System.Type rootType) {
+            for(System.Type baseType = type; baseType != null; baseType = baseType.BaseType) {
+                if(baseType == rootType)
+                    return true;
+            }
+
+            return false;
+        }
+
+        public static bool IsDerivedFromAny(System.Type type, params System.Type[] rootTypes) {
+            for(System.Type baseType = type; baseType != null; baseType = baseType.BaseType) {
+                for(int i = 0; i < rootTypes.Length; i++) {
+                    if(baseType == rootTypes[i])
+                        return true;
+                }
+            }
+
+            return false;
+        }
+
+        public static float EaseCustom(float startValue, float changeValue, float time, AnimationCurve curve) {
 	        return startValue + changeValue * curve.Evaluate(time);
 	    }
 
