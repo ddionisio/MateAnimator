@@ -38,7 +38,8 @@ namespace M8.Animator {
             }
             OrientationKey a = new OrientationKey();
             a.frame = _frame;
-            a.SetTarget(itarget, target);
+            if(target)
+                a.SetTarget(itarget, target);
             // set default ease type to linear
             a.easeType = Ease.Linear;// AMTween.EaseType.linear;
                                           // add a new key

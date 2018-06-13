@@ -16,9 +16,9 @@ namespace M8.Animator {
         public override SerializeType serializeType { get { return SerializeType.Orientation; } }
 
         [SerializeField]
-        Transform target;
+        Transform target = null;
         [SerializeField]
-        string targetPath;
+        string targetPath = "";
 
         public int endFrame;
 
