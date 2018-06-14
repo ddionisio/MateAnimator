@@ -124,7 +124,7 @@ namespace M8.Animator {
             updateCache(itarget);
         }
         public bool hasSameEventsAs(ITarget target, EventTrack _track) {
-            if(_track.GetTarget(target) == GetTarget(target))
+            if(_track != null && _track.GetTarget(target) == GetTarget(target))
                 return true;
             return false;
         }

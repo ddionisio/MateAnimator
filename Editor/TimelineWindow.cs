@@ -417,7 +417,7 @@ namespace M8.Animator.Edit {
             EditDataCleanUp();
 
             LoadEditorTextures();
-            titleContent = new GUIContent("Cutscene Editor");
+            titleContent = new GUIContent("Mate Animator");
             minSize = new Vector2(width_track + width_playback_controls + width_inspector_open + 70f, 190f);
             wantsMouseMove = true;
             window = this;
@@ -1052,30 +1052,30 @@ namespace M8.Animator.Edit {
                 else if(e.type == EventType.ValidateCommand) {
                     if(e.commandName == "Copy") {
                         //are there keys?
-                        if(TakeEditCurrent().contextSelectionTracks.Count > 1 || TakeEditCurrent().contextSelectionHasKeys(aData.currentTake)) {
+                        if(TakeEditCurrent().contextSelectionTrackIds.Count > 1 || TakeEditCurrent().contextSelectionHasKeys(aData.currentTake)) {
                             contextCopyFrames();
                             done = true;
                         }
                     }
                     else if(e.commandName == "Paste") {
-                        if(canPaste()) {
+                        if(contextSelectionKeysBuffer.Count > 0) {
                             contextMenuFrame = TakeEditCurrent().selectedFrame;
-                            contextPasteKeys();
+                            contextPasteKeys(false);
                             done = true;
                         }
                     }
                     else if(e.commandName == "Cut") {
-                        if(TakeEditCurrent().contextSelectionTracks.Count > 1 || TakeEditCurrent().contextSelectionHasKeys(aData.currentTake)) {
+                        if(TakeEditCurrent().contextSelectionTrackIds.Count > 1 || TakeEditCurrent().contextSelectionHasKeys(aData.currentTake)) {
                             contextCutKeys();
                             done = true;
                         }
                     }
                     else if(e.commandName == "Duplicate") {
                         TakeEditControl takeEdit = TakeEditCurrent();
-                        if(takeEdit.contextSelectionTracks.Count > 1 || takeEdit.contextSelectionHasKeys(aData.currentTake)) {
+                        if(takeEdit.contextSelectionTrackIds.Count > 1 || takeEdit.contextSelectionHasKeys(aData.currentTake)) {
                             contextCopyFrames();
                             contextMenuFrame = takeEdit.contextSelection.Count > 0 ? takeEdit.contextSelection[takeEdit.contextSelection.Count - 1] + 1 : takeEdit.selectedFrame;
-                            contextPasteKeys();
+                            contextPasteKeys(true);
                             timelineSelectFrame(takeEdit.selectedTrack, contextMenuFrame);
                             done = true;
                         }
@@ -1451,20 +1451,20 @@ namespace M8.Animator.Edit {
             Rect rectDeleteElement = new Rect(rectNewGroup.x + rectNewGroup.width + 5f + 1f, height_indicator_footer / 2f - 11f / 2f, 11f, 11f);
             Rect rectBtnDeleteElement = new Rect(rectDeleteElement.x, 0f, rectDeleteElement.width, height_indicator_footer);
             if(TakeEditCurrent().selectedGroup >= 0) GUI.enabled = false;
-            if(TakeEditCurrent().selectedGroup >= 0 && (trackCount <= 0 || (TakeEditCurrent().contextSelectionTracks != null && TakeEditCurrent().contextSelectionTracks.Count <= 0))) GUI.enabled = false;
+            if(TakeEditCurrent().selectedGroup >= 0 && (trackCount <= 0 || (TakeEditCurrent().contextSelectionTrackIds != null && TakeEditCurrent().contextSelectionTrackIds.Count <= 0))) GUI.enabled = false;
             else GUI.enabled = !isPlaying;
             if(!GUI.enabled) GUI.color = new Color(GUI.color.r, GUI.color.g, GUI.color.b, 0.25f);
             GUIContent gcDeleteButton;
-            string strTitleDeleteTrack = (TakeEditCurrent().contextSelectionTracks != null && TakeEditCurrent().contextSelectionTracks.Count > 1 ? "Tracks" : "Track");
+            string strTitleDeleteTrack = (TakeEditCurrent().contextSelectionTrackIds != null && TakeEditCurrent().contextSelectionTrackIds.Count > 1 ? "Tracks" : "Track");
             if(!GUI.enabled) gcDeleteButton = new GUIContent("");
-            else gcDeleteButton = new GUIContent("", "Delete " + (TakeEditCurrent().contextSelectionTracks != null && TakeEditCurrent().contextSelectionTracks.Count > 0 ? strTitleDeleteTrack : "Group"));
+            else gcDeleteButton = new GUIContent("", "Delete " + (TakeEditCurrent().contextSelectionTrackIds != null && TakeEditCurrent().contextSelectionTrackIds.Count > 0 ? strTitleDeleteTrack : "Group"));
             if(GUI.Button(rectBtnDeleteElement, gcDeleteButton, "label")) {
                 cancelTextEditting();
-                if(TakeEditCurrent().contextSelectionTracks.Count > 0) {
+                if(TakeEditCurrent().contextSelectionTrackIds.Count > 0) {
                     Take curTake = aData.currentTake;
                     Track track = TakeEdit(curTake).getSelectedTrack(curTake);
                     if(track != null) {
-                        string strMsgDeleteTrack = (TakeEdit(curTake).contextSelectionTracks.Count > 1 ? "multiple tracks" : "track '" + track.name + "'");
+                        string strMsgDeleteTrack = (TakeEdit(curTake).contextSelectionTrackIds.Count > 1 ? "multiple tracks" : "track '" + track.name + "'");
                         if((UnityEditor.EditorUtility.DisplayDialog("Delete " + strTitleDeleteTrack, "Are you sure you want to delete " + strMsgDeleteTrack + "?", "Delete", "Cancel"))) {
                             isRenamingTrack = -1;
 
@@ -1475,11 +1475,11 @@ namespace M8.Animator.Edit {
                                 CameraFade.destroyImmediateInstance();
                             }
 
-                            foreach(int track_id in TakeEdit(curTake).contextSelectionTracks) {
+                            foreach(int track_id in TakeEdit(curTake).contextSelectionTrackIds) {
                                 curTake.deleteTrack(track_id, true);
                             }
 
-                            TakeEdit(curTake).contextSelectionTracks = new List<int>();
+                            TakeEdit(curTake).contextSelectionTrackIds = new List<int>();
 
                             // deselect track
                             TakeEdit(curTake).selectedTrack = -1;
@@ -1900,8 +1900,8 @@ namespace M8.Animator.Edit {
             #endregion
             #region click window
             if(GUI.Button(new Rect(0f, 0f, position.width, position.height), "", "label") && dragType != (int)DragType.TimelineScrub && dragType != (int)DragType.ResizeAction) {
-                if(TakeEditCurrent().contextSelectionTracks != null && TakeEditCurrent().contextSelectionTracks.Count > 0)
-                    TakeEditCurrent().contextSelectionTracks = new List<int>();
+                if(TakeEditCurrent().contextSelectionTrackIds != null && TakeEditCurrent().contextSelectionTrackIds.Count > 0)
+                    TakeEditCurrent().contextSelectionTrackIds = new List<int>();
                 if(TakeEditCurrent().contextSelection != null && TakeEditCurrent().contextSelection.Count > 0)
                     TakeEditCurrent().contextSelection = new List<int>();
                 if(TakeEditCurrent().ghostSelection != null && TakeEditCurrent().ghostSelection.Count > 0)
@@ -2172,7 +2172,7 @@ namespace M8.Animator.Edit {
                     }
                     string strStyle;
                     int numTracks = 0;
-                    if(((grp.foldout && TakeEditCurrent().contextSelectionTracks.Count > 1) || (!grp.foldout && TakeEditCurrent().contextSelectionTracks.Count > 0)) && TakeEditCurrent().isGroupSelected(aData.currentTake, id, ref numTracks) && numTracks > 0) {
+                    if(((grp.foldout && TakeEditCurrent().contextSelectionTrackIds.Count > 1) || (!grp.foldout && TakeEditCurrent().contextSelectionTrackIds.Count > 0)) && TakeEditCurrent().isGroupSelected(aData.currentTake, id, ref numTracks) && numTracks > 0) {
                         if(isGroupSelected) strStyle = "GroupElementSelectedActive";
                         else strStyle = "GroupElementSelected";
                     }
@@ -2270,11 +2270,11 @@ namespace M8.Animator.Edit {
             float track_x = width_subtrack_space * group_level;
             bool inGroup = group_level > 0;
             bool isTrackSelected = TakeEditCurrent().selectedTrack == t;
-            bool isTrackContextSelected = TakeEditCurrent().contextSelectionTracks.Contains(t);
+            bool isTrackContextSelected = TakeEditCurrent().contextSelectionTrackIds.Contains(t);
             Rect rectTrack;
             string strStyle;
             if(isTrackSelected) {
-                if(TakeEditCurrent().contextSelectionTracks.Count <= 1)
+                if(TakeEditCurrent().contextSelectionTrackIds.Count <= 1)
                     strStyle = "GroupElementActive";
                 else
                     strStyle = "GroupElementSelectedActive";
@@ -2482,7 +2482,7 @@ namespace M8.Animator.Edit {
             // draw frames
             bool selected;
             bool ghost = isDragging && TakeEditCurrent().hasGhostSelection();
-            bool isTrackSelected = t == selectedTrack || TakeEditCurrent().contextSelectionTracks.Contains(t);
+            bool isTrackSelected = t == selectedTrack || TakeEditCurrent().contextSelectionTrackIds.Contains(t);
             Rect rectFramesBirdsEye = new Rect(0f, 0f, rectFrames.width, _current_height_frame);
             float width_birdseye = current_height_frame * 0.5f;
             if(birdseye) {
@@ -4330,7 +4330,7 @@ namespace M8.Animator.Edit {
                 // if dragged from frame
                 else if(mouseOverFrame != 0) {
                     // change track if necessary
-                    if(!TakeEditCurrent().contextSelectionTracks.Contains(mouseOverTrack) && TakeEditCurrent().selectedTrack != mouseOverTrack) timelineSelectTrack(mouseOverTrack);
+                    if(!TakeEditCurrent().contextSelectionTrackIds.Contains(mouseOverTrack) && TakeEditCurrent().selectedTrack != mouseOverTrack) timelineSelectTrack(mouseOverTrack);
 
                     // if dragged from selected frame, move
                     if(mouseOverSelectedFrame) {
@@ -5728,7 +5728,7 @@ namespace M8.Animator.Edit {
             var takeEditCurrent = TakeEditCurrent();
             bool shouldClearFrames = true;
             if(showWarning) {
-                if(takeEditCurrent.contextSelectionTracks.Count > 1) {
+                if(takeEditCurrent.contextSelectionTrackIds.Count > 1) {
                     if(!UnityEditor.EditorUtility.DisplayDialog("Clear From Multiple Tracks?", "Are you sure you want to clear the selected frames from all of the selected tracks?", "Clear Frames", "Cancel")) {
                         shouldClearFrames = false;
                     }
@@ -5737,7 +5737,7 @@ namespace M8.Animator.Edit {
             if(shouldClearFrames) {
                 aData.RegisterTakesUndo("Clear Frame", false);
 
-                foreach(int track_id in takeEditCurrent.contextSelectionTracks) {
+                foreach(int track_id in takeEditCurrent.contextSelectionTrackIds) {
                     int trackInd = aData.currentTake.getTrackIndex(track_id);
                     if(trackInd == -1) continue;
 
@@ -5870,52 +5870,43 @@ namespace M8.Animator.Edit {
             }
             return true;
         }
-        bool canPaste() {
-            bool canPaste = false;
-            bool singleTrack = contextSelectionKeysBuffer.Count == 1;
-            Track selectedTrack = TakeEditCurrent().getSelectedTrack(aData.currentTake);
-            if(contextSelectionKeysBuffer.Count > 0) {
-                if(singleTrack) {
-                    // if origin is property track
-                    if(selectedTrack is PropertyTrack) {
-                        // if pasting into property track
-                        if(contextSelectionTracksBuffer[0] is PropertyTrack) // if property tracks have the same property
-                            canPaste = (selectedTrack as PropertyTrack).hasSamePropertyAs(aData.target, (contextSelectionTracksBuffer[0] as PropertyTrack));
+        bool IsTrackMatch(Track track1, Track track2) {
+            bool isMatch = false;
+
+            if(track1 is PropertyTrack) {
+                // if pasting into property track
+                if(track2 is PropertyTrack) // if property tracks have the same property
+                    isMatch = (track1 as PropertyTrack).hasSamePropertyAs(aData.target, (track2 as PropertyTrack));
+            }
+            else if(track1 is EventTrack) { // if origin is event track
+                                                   // if pasting into event track
+                if(track2 is EventTrack) {
+                    // if event tracks are compaitable
+                    if((track1 as EventTrack).hasSameEventsAs(aData.target, (track2 as EventTrack))) {
+                        isMatch = true;
                     }
-                    else if(selectedTrack is EventTrack) { // if origin is event track
-                                                             // if pasting into event track
-                        if(contextSelectionTracksBuffer[0] is EventTrack) {
-                            // if event tracks are compaitable
-                            if((selectedTrack as EventTrack).hasSameEventsAs(aData.target, (contextSelectionTracksBuffer[0] as EventTrack))) {
-                                canPaste = true;
-                            }
-                        }
-                    }
-                    // if origin is material track
-                    else if(selectedTrack is MaterialTrack) {
-                        // if pasting into property track
-                        if(contextSelectionTracksBuffer[0] is MaterialTrack) //has the same material and property
-                            canPaste = (selectedTrack as MaterialTrack).hasSamePropertyAs(aData.target, (contextSelectionTracksBuffer[0] as MaterialTrack));
-                    }
-                    else if(selectedTrack != null) {
-                        if(selectedTrack.getTrackType() == contextSelectionTracksBuffer[0].getTrackType()) {
-                            canPaste = true;
-                        }
-                    }
-                }
-                else {
-                    // to do
-                    if(contextSelectionTracksBuffer.Contains(selectedTrack)) canPaste = true;
                 }
             }
-            return canPaste;
+            // if origin is material track
+            else if(track1 is MaterialTrack) {
+                // if pasting into property track
+                if(track2 is MaterialTrack) //has the same material and property
+                    isMatch = (track1 as MaterialTrack).hasSamePropertyAs(aData.target, (track2 as MaterialTrack));
+            }
+            else if(track1 != null && track2 != null) {
+                if(track1.getTrackType() == track2.getTrackType()) {
+                    isMatch = true;
+                }
+            }
+
+            return isMatch;
         }
         void buildContextMenu(int frame) {
             TakeEditControl takeEdit = TakeEditCurrent();
             contextMenuFrame = frame;
             contextMenu = new GenericMenu();
-            bool selectionHasKeys = takeEdit.contextSelectionTracks.Count > 1 || takeEdit.contextSelectionHasKeys(aData.currentTake);
-            bool _canPaste = canPaste();
+            bool selectionHasKeys = takeEdit.contextSelectionTrackIds.Count > 1 || takeEdit.contextSelectionHasKeys(aData.currentTake);
+            bool _canPaste = contextSelectionKeysBuffer.Count > 0;
 
             contextMenu.AddItem(new GUIContent("Insert Keyframe"), false, invokeContextMenuItem, 0);
             contextMenu.AddSeparator("");
@@ -5948,7 +5939,7 @@ namespace M8.Animator.Edit {
             }
             else if(index == 1) contextCutKeys();
             else if(index == 2) contextCopyFrames();
-            else if(index == 3) contextPasteKeys();
+            else if(index == 3) contextPasteKeys(false);
             else if(index == 4) deleteSelectedKeys(true);
             else if(index == 5) contextSelectAllFrames();
             else if(index == 6) contextReverseKeys();
@@ -5958,7 +5949,7 @@ namespace M8.Animator.Edit {
 
             TakeEditControl takeEdit = TakeEditCurrent();
             Take take = aData.currentTake;
-            foreach(int track_id in takeEdit.contextSelectionTracks) {
+            foreach(int track_id in takeEdit.contextSelectionTrackIds) {
                 Track track = take.getTrack(track_id);
 
                 Key[] keys = takeEdit.getContextSelectionKeysForTrack(take.getTrack(track_id));
@@ -5981,38 +5972,97 @@ namespace M8.Animator.Edit {
             contextCopyFrames();
             deleteSelectedKeys(false);
         }
-        void contextPasteKeys() {
+        void contextPasteKeys(bool applyOffsetKeys) {
             if(contextSelectionKeysBuffer == null || contextSelectionKeysBuffer.Count == 0) return;
+            
+            bool isUndoRegistered = false;
 
-            bool singleTrack = contextSelectionKeysBuffer.Count == 1;
             int offset = (int)contextSelectionRange.y - (int)contextSelectionRange.x + 1;
 
-            aData.RegisterTakesUndo("Paste Frames", false);
+            if(contextSelectionKeysBuffer.Count == 1) {
+                var trackBuffer = contextSelectionTracksBuffer[0]; //this ought to be the same count
+                var keyBuffer = contextSelectionKeysBuffer[0];
 
-            if(singleTrack) {
-                var track = TakeEditCurrent().getSelectedTrack(aData.currentTake);
+                //paste to all matching selected tracks                
+                var takeEditCur = TakeEditCurrent();
+                var trackSelects = takeEditCur.GetContextSelectionTracks(aData.currentTake);
 
-                var newKeys = new List<Key>(contextSelectionKeysBuffer[0].Count);
-                foreach(var a in contextSelectionKeysBuffer[0]) {
-                    if(a != null) {
-                        var newKey = (Key)Activator.CreateInstance(a.GetType());
-                        a.CopyTo(newKey);
-                        newKey.frame += (contextMenuFrame - (int)contextSelectionRange.x);
-                        newKeys.Add(newKey);
+                for(int i = 0; i < trackSelects.Count; i++) {
+                    var track = trackSelects[i];
+                    if(IsTrackMatch(track, trackBuffer)) {
+                        var newKeys = new List<Key>(keyBuffer.Count);
+
+                        //copy keys
+                        foreach(var a in keyBuffer) {
+                            if(a != null) {
+                                var newKey = (Key)Activator.CreateInstance(a.GetType());
+                                a.CopyTo(newKey);
+                                newKey.frame += (contextMenuFrame - (int)contextSelectionRange.x);
+                                newKeys.Add(newKey);
+                            }
+                        }
+
+                        if(newKeys.Count > 0) {
+                            //record undo
+                            if(!isUndoRegistered) {
+                                aData.RegisterTakesUndo("Paste Frames", false);
+                                isUndoRegistered = true;
+                            }
+
+                            if(applyOffsetKeys) {
+                                track.offsetKeysFromBy(aData.target, contextMenuFrame, offset);
+                            }
+                            else {
+                                //override keys with the same frame
+                                for(int newKeyInd = newKeys.Count - 1; newKeyInd >= 0; newKeyInd--) {
+                                    var newKey = newKeys[newKeyInd];
+
+                                    foreach(var key in track.keys) {
+                                        if(key.frame == newKey.frame) {
+                                            newKey.CopyTo(key);
+                                            newKeys.RemoveAt(newKeyInd);
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+
+                            track.keys.AddRange(newKeys);
+
+                            track.updateCache(aData.target);
+                        }
                     }
                 }
-
-                track.offsetKeysFromBy(aData.target, contextMenuFrame, offset);
-
-                track.keys.AddRange(newKeys);
             }
             else {
-                var newKeys = new List<Key>();
+                var takeEditCur = TakeEditCurrent();
+                var trackSelects = takeEditCur.GetContextSelectionTracks(aData.currentTake);
 
-                for(int i = 0; i < contextSelectionTracksBuffer.Count; i++) {
-                    Track track = contextSelectionTracksBuffer[i];
-                    
-                    foreach(var a in contextSelectionKeysBuffer[i]) {
+                //match buffered tracks to selected tracks
+                for(int trackBuffInd = 0; trackBuffInd < contextSelectionTracksBuffer.Count; trackBuffInd++) {
+                    var trackBuffer = contextSelectionTracksBuffer[trackBuffInd];
+                    var keyBuffer = contextSelectionKeysBuffer[trackBuffInd]; //assume this is aligned to track buffer order
+
+                    //grab the matching track, remove from trackSelect to avoid multiple copying
+                    Track trackMatch = null;
+                    for(int trackSelectInd = 0; trackSelectInd < trackSelects.Count; trackSelectInd++) {
+                        var trackSelect = trackSelects[trackSelectInd];
+                        if(IsTrackMatch(trackSelect, trackBuffer)) {
+                            trackMatch = trackSelect;
+                            trackSelects.RemoveAt(trackSelectInd);
+                            break;
+                        }
+                    }
+
+                    //no match
+                    if(trackMatch == null)
+                        continue;
+
+                    //copy keys
+                    var newKeys = new List<Key>(keyBuffer.Count);
+
+                    //copy keys
+                    foreach(var a in keyBuffer) {
                         if(a != null) {
                             var newKey = (Key)Activator.CreateInstance(a.GetType());
                             a.CopyTo(newKey);
@@ -6021,24 +6071,38 @@ namespace M8.Animator.Edit {
                         }
                     }
 
-                    // offset all keys beyond paste
-                    track.offsetKeysFromBy(aData.target, contextMenuFrame, offset);
+                    if(newKeys.Count > 0) {
+                        //record undo
+                        if(!isUndoRegistered) {
+                            aData.RegisterTakesUndo("Paste Frames", false);
+                            isUndoRegistered = true;
+                        }
 
-                    track.keys.AddRange(newKeys);
+                        if(applyOffsetKeys) {
+                            trackMatch.offsetKeysFromBy(aData.target, contextMenuFrame, offset);
+                        }
+                        else {
+                            //override keys with the same frame
+                            for(int newKeyInd = newKeys.Count - 1; newKeyInd >= 0; newKeyInd--) {
+                                var newKey = newKeys[newKeyInd];
 
-                    newKeys.Clear();
+                                foreach(var key in trackMatch.keys) {
+                                    if(key.frame == newKey.frame) {
+                                        newKey.CopyTo(key);
+                                        newKeys.RemoveAt(newKeyInd);
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+
+                        trackMatch.keys.AddRange(newKeys);
+
+                        trackMatch.updateCache(aData.target);
+                    }
                 }
             }
-
-            // update cache
-            if(singleTrack) {
-                TakeEditCurrent().getSelectedTrack(aData.currentTake).updateCache(aData.target);
-            }
-            else {
-                for(int i = 0; i < contextSelectionTracksBuffer.Count; i++) {
-                    contextSelectionTracksBuffer[i].updateCache(aData.target);
-                }
-            }
+            
             // clear buffer
             ClearKeysBuffer();
             contextSelectionTracksBuffer.Clear();
@@ -6057,20 +6121,25 @@ namespace M8.Animator.Edit {
             contextCopyFrames();
         }
         void contextSaveKeysToBuffer() {
-            if(TakeEditCurrent().contextSelection.Count <= 0) return;
-            // sort
-            TakeEditCurrent().contextSelection.Sort();
-            // set selection range
-            contextSelectionRange.x = TakeEditCurrent().contextSelection[0];
-            contextSelectionRange.y = TakeEditCurrent().contextSelection[TakeEditCurrent().contextSelection.Count - 1];
+            if(TakeEditCurrent().contextSelection.Count <= 0) {
+                contextSelectionRange.x = TakeEditCurrent().selectedFrame;
+                contextSelectionRange.y = TakeEditCurrent().selectedFrame;
+            }
+            else {
+                // sort
+                TakeEditCurrent().contextSelection.Sort();
+                // set selection range
+                contextSelectionRange.x = TakeEditCurrent().contextSelection[0];
+                contextSelectionRange.y = TakeEditCurrent().contextSelection[TakeEditCurrent().contextSelection.Count - 1];
+            }
             // set selection track
             //contextSelectionTrack = aData.getCurrentTake().selectedTrack;
 
             ClearKeysBuffer();
-            TakeEditCurrent().contextSelectionTracks.Sort();
+            TakeEditCurrent().contextSelectionTrackIds.Sort();
             contextSelectionTracksBuffer.Clear();
 
-            foreach(int track_id in TakeEditCurrent().contextSelectionTracks) {
+            foreach(int track_id in TakeEditCurrent().contextSelectionTrackIds) {
                 contextSelectionTracksBuffer.Add(aData.currentTake.getTrack(track_id));
             }
             foreach(var track in contextSelectionTracksBuffer) {

@@ -523,7 +523,7 @@ namespace M8.Animator {
             return false;
         }
         public bool hasSamePropertyAs(ITarget target, PropertyTrack _track) {
-            if(_track.getTrackType() == getTrackType())
+            if(_track != null && _track.getTrackType() == getTrackType())
                 return true;
             return false;
         }

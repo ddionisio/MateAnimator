@@ -159,7 +159,7 @@ namespace M8.Animator {
         }
 
         public bool hasSamePropertyAs(ITarget target, MaterialTrack _track) {
-            if(_track.GetTarget(target) == GetTarget(target) && _track.GetMaterial(target) == GetMaterial(target) && _track.getTrackType() == getTrackType())
+            if(_track != null && _track.GetTarget(target) == GetTarget(target) && _track.GetMaterial(target) == GetMaterial(target) && _track.getTrackType() == getTrackType())
                 return true;
             return false;
         }

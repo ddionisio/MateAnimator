@@ -16,12 +16,12 @@ namespace M8.Animator.Edit {
 
         public List<int> contextSelection = new List<int>();    // list of all frames included in the context selection
         public List<int> ghostSelection = new List<int>();      // list of all frames included in the ghost selection
-        public List<int> contextSelectionTracks = new List<int>();
+        public List<int> contextSelectionTrackIds = new List<int>();
 
         public void Reset() {
             contextSelection.Clear();
             ghostSelection.Clear();
-            contextSelectionTracks.Clear();
+            contextSelectionTrackIds.Clear();
 
             selectedTrack = -1;
             selectedFrame = 1;
@@ -34,29 +34,29 @@ namespace M8.Animator.Edit {
 
         // select a track by index
         public void selectTrack(Take take, int index, bool isShiftDown, bool isControlDown) {
-            bool isInContextSelection = contextSelectionTracks.Contains(index);
+            bool isInContextSelection = contextSelectionTrackIds.Contains(index);
             if(!isShiftDown && !isControlDown) {
                 if(selectedTrack != index) {
                     selectedTrack = index;
                     if(!isInContextSelection) {
                         // clear context selection
                         contextSelection = new List<int>();
-                        contextSelectionTracks = new List<int>();
+                        contextSelectionTrackIds = new List<int>();
                     }
                 }
                 if(index > -1) selectGroup(take, take.getTrackGroup(index), false, false, true);
             }
 
             if(!isInContextSelection)
-                contextSelectionTracks.Add(index);
+                contextSelectionTrackIds.Add(index);
             else if(isControlDown && selectedTrack != index && !isShiftDown) {
-                contextSelectionTracks.Remove(index);
+                contextSelectionTrackIds.Remove(index);
             }
             // select range
             if((selectedTrack != -1 || selectedGroup != 0) && isShiftDown) {
                 List<int> range = take.getTrackIDsForRange((selectedTrack != -1 ? selectedTrack : selectedGroup), index);
                 foreach(int track_id in range) {
-                    if(!contextSelectionTracks.Contains(track_id)) contextSelectionTracks.Add(track_id);
+                    if(!contextSelectionTrackIds.Contains(track_id)) contextSelectionTrackIds.Add(track_id);
                 }
             }
         }
@@ -69,8 +69,8 @@ namespace M8.Animator.Edit {
 
         public int getTotalSelectedFrames(Take take) {
             int total = 0;
-            for(int i = 0; i < contextSelectionTracks.Count; i++) {
-                int trackId = contextSelectionTracks[i];
+            for(int i = 0; i < contextSelectionTrackIds.Count; i++) {
+                int trackId = contextSelectionTrackIds[i];
                 Track track = null;
                 for(int j = 0; j < take.trackValues.Count; j++) {
                     if(take.trackValues[j].id == trackId) {
@@ -86,6 +86,27 @@ namespace M8.Animator.Edit {
             }
 
             return total;
+        }
+
+        public List<Track> GetContextSelectionTracks(Take take) {
+            var retTracks = new List<Track>();
+
+            for(int i = 0; i < take.trackValues.Count; i++) {
+                var track = take.trackValues[i];
+
+                for(int j = 0; j < contextSelectionTrackIds.Count; j++) {
+                    if(track.id == contextSelectionTrackIds[j]) {
+                        retTracks.Add(track);
+                        break;
+                    }
+                }
+
+                //all tracks accounted for, NOTE: track.id should be unique per track
+                if(retTracks.Count == contextSelectionTrackIds.Count)
+                    break;
+            }
+
+            return retTracks;
         }
 
         public void addGroup(Take take) {
@@ -107,12 +128,12 @@ namespace M8.Animator.Edit {
                 if((selectedTrack != -1 || selectedGroup != 0) && isShiftDown) {
                     List<int> range = take.getTrackIDsForRange((selectedTrack != -1 ? selectedTrack : selectedGroup), group_id);
                     foreach(int track_id in range) {
-                        if(!contextSelectionTracks.Contains(track_id)) contextSelectionTracks.Add(track_id);
+                        if(!contextSelectionTrackIds.Contains(track_id)) contextSelectionTrackIds.Add(track_id);
                     }
                 }
             }
             else if(!softSelect) {
-                if(contextSelectionTracks.Count == 1) contextSelectionTracks = new List<int>();
+                if(contextSelectionTrackIds.Count == 1) contextSelectionTrackIds = new List<int>();
             }
             selectedGroup = group_id;
         }
@@ -141,12 +162,12 @@ namespace M8.Animator.Edit {
             for(int i = 0; i < grp.elements.Count; i++) {
                 // select track
                 if(grp.elements[i] > 0) {
-                    bool isSelected = contextSelectionTracks.Contains(grp.elements[i]);
+                    bool isSelected = contextSelectionTrackIds.Contains(grp.elements[i]);
                     if(deselect) {
-                        if(isSelected) contextSelectionTracks.Remove(grp.elements[i]);
+                        if(isSelected) contextSelectionTrackIds.Remove(grp.elements[i]);
                     }
                     else {
-                        if(!isSelected) contextSelectionTracks.Add(grp.elements[i]);
+                        if(!isSelected) contextSelectionTrackIds.Add(grp.elements[i]);
                     }
                 }
                 else {
@@ -160,7 +181,7 @@ namespace M8.Animator.Edit {
             for(int i = 0; i < grp.elements.Count; i++) {
                 // select track
                 if(grp.elements[i] > 0) {
-                    if(!contextSelectionTracks.Contains(grp.elements[i])) return false;
+                    if(!contextSelectionTrackIds.Contains(grp.elements[i])) return false;
                     numTracks++;
                 }
                 else {
@@ -357,13 +378,25 @@ namespace M8.Animator.Edit {
 
         public Key[] getContextSelectionKeysForTrack(Track track) {
             List<Key> keys = new List<Key>();
-            foreach(Key key in track.keys) {
-                for(int i = 0; i < contextSelection.Count; i += 2) {
-                    // if selection start frame > frame, break out of sorted list
-                    if(contextSelection[i] > key.frame) break;
-                    if(contextSelection[i] <= key.frame && contextSelection[i + 1] >= key.frame) keys.Add(key);
+
+            if(contextSelection.Count > 0) {
+                foreach(Key key in track.keys) {
+                    for(int i = 0; i < contextSelection.Count; i += 2) {
+                        // if selection start frame > frame, break out of sorted list
+                        if(contextSelection[i] > key.frame) break;
+                        if(contextSelection[i] <= key.frame && contextSelection[i + 1] >= key.frame) keys.Add(key);
+                    }
                 }
             }
+            else {
+                foreach(Key key in track.keys) {
+                    if(key.frame == this.selectedFrame) {
+                        keys.Add(key);
+                        break;
+                    }
+                }
+            }
+
             return keys.ToArray();
         }
 
@@ -388,7 +421,7 @@ namespace M8.Animator.Edit {
             List<Key> rkeys = new List<Key>();
             List<Key> keysToDelete = new List<Key>();
 
-            foreach(int track_id in contextSelectionTracks) {
+            foreach(int track_id in contextSelectionTrackIds) {
                 bool shouldUpdateCache = false;
                 Track _track = take.getTrack(track_id);
                 foreach(Key key in _track.keys) {
