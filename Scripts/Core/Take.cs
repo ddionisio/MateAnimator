@@ -570,48 +570,70 @@ namespace M8.Animator {
             }
         }
 
-        int TrackGetGroupElementIndexRecursive(Group grp, int id) {
-            int grpElemInd = grp.getItemIndex(id);
-            if(grpElemInd != -1)
-                return grpElemInd;
+        private struct TrackIndex {
+            public List<int> groupIndices;
+            public int index;
 
-            const int ofsInc = 10000;
-            int indexOfs = ofsInc;
+            public static TrackIndex Create() { return new TrackIndex() { groupIndices=new List<int>(), index=0 }; }
+        }
+
+        void TrackGetGroupElementIndexRecursive(Group grp, int id, ref TrackIndex trackIndexOutput) {
+            int grpElemInd = grp.getItemIndex(id);
+            if(grpElemInd != -1) {
+                trackIndexOutput.index = grpElemInd;
+                return;
+            }
 
             //grab through sub groups
-            for(int i = 0; i < grp.elements.Count; i++) {
-                int grpElemId = grp.elements[i];
+            for(int grpInd = 0; grpInd < grp.elements.Count; grpInd++) {
+                int grpElemId = grp.elements[grpInd];
                 if(grpElemId < 0) { //is group?
                     Group subGrp = null;
-                    for(int grpI = 0; grpI < groupValues.Count; grpI++) {
-                        if(groupValues[grpI].group_id == grpElemId) {
-                            subGrp = groupValues[grpI];
+                    for(int i = 0; i < groupValues.Count; i++) {
+                        if(groupValues[i].group_id == grpElemId) {
+                            subGrp = groupValues[i];
                             break;
                         }
                     }
 
                     if(subGrp != null) {
-                        grpElemInd = TrackGetGroupElementIndexRecursive(subGrp, id);
-                        if(grpElemInd != -1)
+                        TrackGetGroupElementIndexRecursive(subGrp, id, ref trackIndexOutput);
+                        if(trackIndexOutput.index != -1) {
+                            trackIndexOutput.groupIndices.Add(grpInd);
                             break;
+                        }
                     }
                 }
+            }
+        }
 
-                indexOfs += ofsInc;
+        int TrackIdGroupOrderCompare(int t1, int t2) {
+            TrackIndex t1Ind = TrackIndex.Create(), t2Ind = TrackIndex.Create();
+
+            TrackGetGroupElementIndexRecursive(rootGroup, t1, ref t1Ind);
+            TrackGetGroupElementIndexRecursive(rootGroup, t2, ref t2Ind);
+
+            if(t1Ind.groupIndices.Count == t2Ind.groupIndices.Count) {
+                return t1Ind.index - t2Ind.index;
+            }
+            else if(t1Ind.groupIndices.Count < t2Ind.groupIndices.Count) {
+                int t2GroupIndex = t1Ind.groupIndices.Count;
+                return t1Ind.index - t2Ind.groupIndices[t2GroupIndex];
+            }
+            else if(t1Ind.groupIndices.Count > t2Ind.groupIndices.Count) {
+                int t1GroupIndex = t2Ind.groupIndices.Count;
+                return t1Ind.groupIndices[t1GroupIndex] - t2Ind.index;
             }
 
-            return indexOfs + grpElemInd;
+            return 0;
         }
 
         /// <summary>
         /// Sort given tracks based on their order in the groups. This assumes tracks are coming from this take.
         /// </summary>
         public void SortTracksByGroupOrder(List<Track> tracks) {
-            tracks.Sort(delegate(Track t1, Track t2) {
-                int t1GroupElemInd = TrackGetGroupElementIndexRecursive(rootGroup, t1.id);
-                int t2GroupElemInd = TrackGetGroupElementIndexRecursive(rootGroup, t2.id);
-
-                return t1GroupElemInd - t2GroupElemInd;
+            tracks.Sort(delegate (Track t1, Track t2) {
+                return TrackIdGroupOrderCompare(t1.id, t2.id);
             });
         }
 
@@ -620,10 +642,7 @@ namespace M8.Animator {
         /// </summary>
         public void SortTrackIdsByGroupOrder(List<int> trackIds) {
             trackIds.Sort(delegate (int t1, int t2) {
-                int t1GroupElemInd = TrackGetGroupElementIndexRecursive(rootGroup, t1);
-                int t2GroupElemInd = TrackGetGroupElementIndexRecursive(rootGroup, t2);
-
-                return t1GroupElemInd - t2GroupElemInd;
+                return TrackIdGroupOrderCompare(t1, t2);
             });
         }
 
