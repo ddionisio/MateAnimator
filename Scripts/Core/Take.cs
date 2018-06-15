@@ -570,6 +570,63 @@ namespace M8.Animator {
             }
         }
 
+        int TrackGetGroupElementIndexRecursive(Group grp, int id) {
+            int grpElemInd = grp.getItemIndex(id);
+            if(grpElemInd != -1)
+                return grpElemInd;
+
+            const int ofsInc = 10000;
+            int indexOfs = ofsInc;
+
+            //grab through sub groups
+            for(int i = 0; i < grp.elements.Count; i++) {
+                int grpElemId = grp.elements[i];
+                if(grpElemId < 0) { //is group?
+                    Group subGrp = null;
+                    for(int grpI = 0; grpI < groupValues.Count; grpI++) {
+                        if(groupValues[grpI].group_id == grpElemId) {
+                            subGrp = groupValues[grpI];
+                            break;
+                        }
+                    }
+
+                    if(subGrp != null) {
+                        grpElemInd = TrackGetGroupElementIndexRecursive(subGrp, id);
+                        if(grpElemInd != -1)
+                            break;
+                    }
+                }
+
+                indexOfs += ofsInc;
+            }
+
+            return indexOfs + grpElemInd;
+        }
+
+        /// <summary>
+        /// Sort given tracks based on their order in the groups. This assumes tracks are coming from this take.
+        /// </summary>
+        public void SortTracksByGroupOrder(List<Track> tracks) {
+            tracks.Sort(delegate(Track t1, Track t2) {
+                int t1GroupElemInd = TrackGetGroupElementIndexRecursive(rootGroup, t1.id);
+                int t2GroupElemInd = TrackGetGroupElementIndexRecursive(rootGroup, t2.id);
+
+                return t1GroupElemInd - t2GroupElemInd;
+            });
+        }
+
+        /// <summary>
+        /// Sort given tracks based on their order in the groups. This assumes tracks are coming from this take.
+        /// </summary>
+        public void SortTrackIdsByGroupOrder(List<int> trackIds) {
+            trackIds.Sort(delegate (int t1, int t2) {
+                int t1GroupElemInd = TrackGetGroupElementIndexRecursive(rootGroup, t1);
+                int t2GroupElemInd = TrackGetGroupElementIndexRecursive(rootGroup, t2);
+
+                return t1GroupElemInd - t2GroupElemInd;
+            });
+        }
+
         // preview a frame
         public void previewFrame(ITarget itarget, float _frame, bool orientationOnly = false, bool renderStill = true, bool play = false, float playSpeed = 1.0f) {
             // render camera switcher still texture if necessary

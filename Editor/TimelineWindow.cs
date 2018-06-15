@@ -5979,6 +5979,7 @@ namespace M8.Animator.Edit {
 
             int offset = (int)contextSelectionRange.y - (int)contextSelectionRange.x + 1;
 
+            //single track copy/paste, allow paste on multiple selected tracks
             if(contextSelectionKeysBuffer.Count == 1) {
                 var trackBuffer = contextSelectionTracksBuffer[0]; //this ought to be the same count
                 var keyBuffer = contextSelectionKeysBuffer[0];
@@ -6034,9 +6035,11 @@ namespace M8.Animator.Edit {
                     }
                 }
             }
+            //multi track copy/paste, match copied track types to selected track types
             else {
                 var takeEditCur = TakeEditCurrent();
                 var trackSelects = takeEditCur.GetContextSelectionTracks(aData.currentTake);
+                aData.currentTake.SortTracksByGroupOrder(trackSelects);
 
                 //match buffered tracks to selected tracks
                 for(int trackBuffInd = 0; trackBuffInd < contextSelectionTracksBuffer.Count; trackBuffInd++) {
@@ -6102,49 +6105,35 @@ namespace M8.Animator.Edit {
                     }
                 }
             }
-            
-            // clear buffer
-            ClearKeysBuffer();
-            contextSelectionTracksBuffer.Clear();
-            // update selection
-            //   retrieve cached context selection 
-            TakeEditCurrent().contextSelection = new List<int>();
-            foreach(int frame in cachedContextSelection) {
-                TakeEditCurrent().contextSelection.Add(frame);
-            }
-            // offset selection
-            for(int i = 0; i < TakeEditCurrent().contextSelection.Count; i++) {
-                TakeEditCurrent().contextSelection[i] += (contextMenuFrame - (int)contextSelectionRange.x);
-
-            }
-            // copy again for multiple pastes
-            contextCopyFrames();
         }
         void contextSaveKeysToBuffer() {
-            if(TakeEditCurrent().contextSelection.Count <= 0) {
-                contextSelectionRange.x = TakeEditCurrent().selectedFrame;
-                contextSelectionRange.y = TakeEditCurrent().selectedFrame;
+            var curTake = aData.currentTake;
+            var curTakeEdit = TakeEditCurrent();
+
+            if(curTakeEdit.contextSelection.Count <= 0) {
+                contextSelectionRange.x = curTakeEdit.selectedFrame;
+                contextSelectionRange.y = curTakeEdit.selectedFrame;
             }
             else {
                 // sort
-                TakeEditCurrent().contextSelection.Sort();
+                curTakeEdit.contextSelection.Sort();
                 // set selection range
-                contextSelectionRange.x = TakeEditCurrent().contextSelection[0];
-                contextSelectionRange.y = TakeEditCurrent().contextSelection[TakeEditCurrent().contextSelection.Count - 1];
+                contextSelectionRange.x = curTakeEdit.contextSelection[0];
+                contextSelectionRange.y = curTakeEdit.contextSelection[curTakeEdit.contextSelection.Count - 1];
             }
             // set selection track
             //contextSelectionTrack = aData.getCurrentTake().selectedTrack;
 
             ClearKeysBuffer();
-            TakeEditCurrent().contextSelectionTrackIds.Sort();
+            curTake.SortTrackIdsByGroupOrder(curTakeEdit.contextSelectionTrackIds);
             contextSelectionTracksBuffer.Clear();
 
-            foreach(int track_id in TakeEditCurrent().contextSelectionTrackIds) {
+            foreach(int track_id in curTakeEdit.contextSelectionTrackIds) {
                 contextSelectionTracksBuffer.Add(aData.currentTake.getTrack(track_id));
             }
             foreach(var track in contextSelectionTracksBuffer) {
                 contextSelectionKeysBuffer.Add(new List<Key>());
-                foreach(var key in TakeEditCurrent().getContextSelectionKeysForTrack(track)) {
+                foreach(var key in curTakeEdit.getContextSelectionKeysForTrack(track)) {
                     var nkey = (Key)Activator.CreateInstance(key.GetType());
                     key.CopyTo(nkey);
                     contextSelectionKeysBuffer[contextSelectionKeysBuffer.Count - 1].Add(nkey);
