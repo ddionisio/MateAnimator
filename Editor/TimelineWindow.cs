@@ -5979,14 +5979,16 @@ namespace M8.Animator.Edit {
 
             int offset = (int)contextSelectionRange.y - (int)contextSelectionRange.x + 1;
 
+            var takeEditCur = TakeEditCurrent();
+            var curTake = aData.currentTake;
+
             //single track copy/paste, allow paste on multiple selected tracks
             if(contextSelectionKeysBuffer.Count == 1) {
                 var trackBuffer = contextSelectionTracksBuffer[0]; //this ought to be the same count
                 var keyBuffer = contextSelectionKeysBuffer[0];
 
-                //paste to all matching selected tracks                
-                var takeEditCur = TakeEditCurrent();
-                var trackSelects = takeEditCur.GetContextSelectionTracks(aData.currentTake);
+                //paste to all matching selected tracks
+                var trackSelects = takeEditCur.GetContextSelectionTracks(curTake);
 
                 for(int i = 0; i < trackSelects.Count; i++) {
                     var track = trackSelects[i];
@@ -6037,9 +6039,11 @@ namespace M8.Animator.Edit {
             }
             //multi track copy/paste, match copied track types to selected track types
             else {
-                var takeEditCur = TakeEditCurrent();
-                var trackSelects = takeEditCur.GetContextSelectionTracks(aData.currentTake);
-                aData.currentTake.SortTracksByGroupOrder(trackSelects);
+                //sort out takes for buffer and selection based on their order in groups
+                curTake.SortTracksByGroupOrder(contextSelectionTracksBuffer);
+
+                var trackSelects = takeEditCur.GetContextSelectionTracks(curTake);
+                curTake.SortTracksByGroupOrder(trackSelects);
 
                 //match buffered tracks to selected tracks
                 for(int trackBuffInd = 0; trackBuffInd < contextSelectionTracksBuffer.Count; trackBuffInd++) {
@@ -6125,7 +6129,6 @@ namespace M8.Animator.Edit {
             //contextSelectionTrack = aData.getCurrentTake().selectedTrack;
 
             ClearKeysBuffer();
-            curTake.SortTrackIdsByGroupOrder(curTakeEdit.contextSelectionTrackIds);
             contextSelectionTracksBuffer.Clear();
 
             foreach(int track_id in curTakeEdit.contextSelectionTrackIds) {
