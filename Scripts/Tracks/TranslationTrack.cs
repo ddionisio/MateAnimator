@@ -131,14 +131,15 @@ namespace M8.Animator {
             for(int i = 0; i < keyCount; i++) {
                 TranslationKey key = keys[i] as TranslationKey;
 
+                if(key.path == null)
+                    continue;
+                                
                 if(iFrame >= key.endFrame && i < keyCount - 1) continue;
 
-                if(!key.canTween || key.path.Length == 1) {
+                if((!key.canTween || key.path.Length <= 1)) {
                     SetPosition(t, key.position);
                     return;
                 }
-                else if(key.path.Length == 0)
-                    continue;
 
                 float fNumFrames = (float)key.getNumberOfFrames(frameRate);
 
@@ -290,7 +291,8 @@ namespace M8.Animator {
                         path = PathData.GenerateLinear(keys, i);
                         break;
                     default:
-                        path = PathData.GenerateSingle(keys[i], i);
+                        int singleEndFrame = i < keys.Count - 1 ? keys[i + 1].frame : keys[i].frame;
+                        path = PathData.GenerateSingle(keys[i], i, singleEndFrame);
                         break;
                 }
 

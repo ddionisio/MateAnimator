@@ -126,7 +126,7 @@ namespace M8.Animator {
         }
         public float totalTime {
             get {
-                Take take = mCurrentPlayingTake;
+                Take take = currentPlayingTake;
                 if(take == null) return 0f;
                 else return (take.totalFrames + take.endFramePadding) / (float)take.frameRate;
             }
@@ -135,7 +135,7 @@ namespace M8.Animator {
         [HideInInspector]
         public int codeLanguage = 0;    // 0 = C#, 1 = Javascript
                 
-        private SequenceControl[] mSequences;
+        private SequenceControl[] mSequenceCtrls;
 
         private int mNowPlayingTakeIndex = -1;
         private int mLastPlayingTakeIndex = -1;
@@ -148,11 +148,26 @@ namespace M8.Animator {
 
         private Dictionary<string, Transform> mCache;
 
-        private Take mCurrentPlayingTake { get { return mNowPlayingTakeIndex == -1 ? null : mSequences[mNowPlayingTakeIndex].take; } }
+        private SequenceControl[] sequenceCtrls {
+            get {
+                if(mSequenceCtrls == null) {
+                    List<Take> _t = _takes;
+                    int count = _t.Count;
 
-        public string currentPlayingTakeName { get { return mNowPlayingTakeIndex == -1 ? "" : mCurrentPlayingTake.name; } }
+                    mSequenceCtrls = new SequenceControl[count];
+                    for(int i = 0; i < count; i++)
+                        mSequenceCtrls[i] = new SequenceControl(this, i, _t[i]);
+                }
+
+                return mSequenceCtrls;
+            }
+        }
+
+        private Take currentPlayingTake { get { return mNowPlayingTakeIndex == -1 ? null : sequenceCtrls[mNowPlayingTakeIndex].take; } }
+
+        public string currentPlayingTakeName { get { return mNowPlayingTakeIndex == -1 ? "" : currentPlayingTake.name; } }
         public int currentPlayingTakeIndex { get { return mNowPlayingTakeIndex; } }
-        public Sequence currentPlayingSequence { get { return mNowPlayingTakeIndex == -1 ? null : mSequences[mNowPlayingTakeIndex].sequence; } }
+        public Sequence currentPlayingSequence { get { return mNowPlayingTakeIndex == -1 ? null : sequenceCtrls[mNowPlayingTakeIndex].sequence; } }
 
         public int lastPlayingTakeIndex { get { return mLastPlayingTakeIndex; } }
         public string lastPlayingTakeName { get { return mLastPlayingTakeIndex == -1 ? "" : _takes[mLastPlayingTakeIndex].name; } }
@@ -164,7 +179,7 @@ namespace M8.Animator {
                     mAnimScale = value;
 
                     SequenceControl amSeq;
-                    if(mNowPlayingTakeIndex != -1 && (amSeq = mSequences[mNowPlayingTakeIndex]) != null) {
+                    if(mNowPlayingTakeIndex != -1 && (amSeq = sequenceCtrls[mNowPlayingTakeIndex]) != null) {
                         if(amSeq.sequence != null)
                             amSeq.sequence.timeScale = mAnimScale;
                         if(amSeq.take != null)
@@ -215,11 +230,11 @@ namespace M8.Animator {
         public void PlayAtFrame(string takeName, float frame, bool loop = false) {
             int ind = GetTakeIndex(takeName);
             if(ind == -1) { Debug.LogError("Take not found: " + takeName); return; }
-            PlayAtTime(ind, frame / mSequences[ind].take.frameRate, loop);
+            PlayAtTime(ind, frame / sequenceCtrls[ind].take.frameRate, loop);
         }
 
         public void PlayAtFrame(int takeIndex, float frame, bool loop = false) {
-            PlayAtTime(takeIndex, frame / mSequences[takeIndex].take.frameRate, loop);
+            PlayAtTime(takeIndex, frame / sequenceCtrls[takeIndex].take.frameRate, loop);
         }
 
         public void PlayAtTime(string takeName, float time, bool loop = false) {
@@ -237,9 +252,9 @@ namespace M8.Animator {
             Pause();
 
             if(mLastPlayingTakeIndex != -1)
-                mSequences[mLastPlayingTakeIndex].take.PlaySwitch(this); //notify take that we are switching
+                sequenceCtrls[mLastPlayingTakeIndex].take.PlaySwitch(this); //notify take that we are switching
 
-            SequenceControl amSeq = mSequences[index];
+            SequenceControl amSeq = sequenceCtrls[index];
 
             Take newPlayTake = amSeq.take;
 
@@ -282,7 +297,7 @@ namespace M8.Animator {
         }
 
         public void ResetTake(int take) {
-            mSequences[take].take.Reset(this);
+            sequenceCtrls[take].take.Reset(this);
         }
 
         public void ResetTake(string takeName) {
@@ -292,7 +307,7 @@ namespace M8.Animator {
         }
 
         public void Pause() {
-            Take take = mCurrentPlayingTake;
+            Take take = currentPlayingTake;
             if(take == null) return;
             take.Pause(this);
 
@@ -302,7 +317,7 @@ namespace M8.Animator {
         }
 
         public void Resume() {
-            Take take = mCurrentPlayingTake;
+            Take take = currentPlayingTake;
             if(take == null) return;
             take.Resume(this);
 
@@ -312,7 +327,7 @@ namespace M8.Animator {
         }
 
         public void Stop() {
-            Take take = mCurrentPlayingTake;
+            Take take = currentPlayingTake;
             if(take == null) return;
             take.Stop(this);
 
@@ -322,14 +337,14 @@ namespace M8.Animator {
                 cf.playParam = null;
             }
 
-            mSequences[mNowPlayingTakeIndex].Reset();
+            sequenceCtrls[mNowPlayingTakeIndex].Reset();
 
             mLastPlayingTakeIndex = mNowPlayingTakeIndex;
             mNowPlayingTakeIndex = -1;
         }
 
         public void GotoFrame(float frame) {
-            Take take = mCurrentPlayingTake;
+            Take take = currentPlayingTake;
             Sequence seq = currentPlayingSequence;
             if(take != null && seq != null) {
                 float t = frame / take.frameRate;
@@ -352,7 +367,7 @@ namespace M8.Animator {
         }
 
         public void PreviewFrame(int takeIndex, float frame) {
-            Take curTake = mSequences[takeIndex].take;
+            Take curTake = sequenceCtrls[takeIndex].take;
             curTake.previewFrame(this, frame);
         }
 
@@ -362,15 +377,14 @@ namespace M8.Animator {
         }
 
         public void PreviewTime(int takeIndex, float time) {
-            Take curTake = mSequences[takeIndex].take;
+            Take curTake = sequenceCtrls[takeIndex].take;
             curTake.previewFrame(this, time * curTake.frameRate);
         }
 
         void OnDestroy() {
-            if(mSequences != null) {
-                for(int i = 0; i < mSequences.Length; i++)
-                    mSequences[i].Destroy();
-                mSequences = null;
+            if(mSequenceCtrls != null) {
+                for(int i = 0; i < mSequenceCtrls.Length; i++)
+                    mSequenceCtrls[i].Destroy();
             }
 
             takeCompleteCallback = null;
@@ -410,25 +424,15 @@ namespace M8.Animator {
             mAnimScale = 1.0f;
         }
 
-        void Awake() {
-            if(!Application.isPlaying)
-                return;
-            
-            List<Take> _t = _takes;
-            mSequences = new SequenceControl[_t.Count];
-            for(int i = 0; i < mSequences.Length; i++)
-                mSequences[i] = new SequenceControl(this, i, _t[i]);
-        }
-
         void Start() {
             if(!Application.isPlaying)
                 return;
 
             mStarted = true;
-            if(sequenceLoadAll && mSequences != null) {
-                for(int i = 0; i < mSequences.Length; i++) {
-                    if(mSequences[i].sequence == null)
-                        mSequences[i].Build(sequenceKillWhenDone, updateType, updateTimeIndependent);
+            if(sequenceLoadAll && sequenceCtrls != null) {
+                for(int i = 0; i < sequenceCtrls.Length; i++) {
+                    if(sequenceCtrls[i].sequence == null)
+                        sequenceCtrls[i].Build(sequenceKillWhenDone, updateType, updateTimeIndependent);
                 }
             }
 

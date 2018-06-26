@@ -26,7 +26,7 @@ namespace M8.Animator {
 
         public bool isConstSpeed = true;
 
-        public bool isClosed { get { return path[0] == path[path.Length - 1]; } }
+        public bool isClosed { get { return path.Length > 1 && path[0] == path[path.Length - 1]; } }
 
         private PathDataPreview mPathPreview;
 
@@ -114,7 +114,7 @@ namespace M8.Animator {
                 //TODO: world position
                 Vector3 pos = pixelSnap ? new Vector3(Mathf.Round(position.x * ppu) / ppu, Mathf.Round(position.y * ppu) / ppu, Mathf.Round(position.z * ppu) / ppu) : position;
 
-                var tweener = DOTween.To(new TweenPlugValueSet<Vector3>(), () => pos, (x) => trans.localPosition = x, pos, getTime(frameRate));
+                var tweener = DOTween.To(new TweenPlugValueSet<Vector3>(), () => pos, (x) => trans.localPosition = x, pos, 1.0f/frameRate); //getTime(frameRate)
                 tweener.plugOptions.SetSequence(seq);
 
                 seq.Insert(this, tweener);

@@ -62,13 +62,13 @@ namespace M8.Animator {
             return newPath;
         }
 
-        public static PathData GenerateSingle(Key key, int _startIndex) {
+        public static PathData GenerateSingle(Key key, int _startIndex, int endFrame) {
             PathData newPath = new PathData();
 
             // sort the keys by frame
             newPath.startIndex = _startIndex;
             newPath.endIndex = _startIndex;
-            newPath.endFrame = key.frame;
+            newPath.endFrame = endFrame;
             newPath.path = new Vector3[] { (key as TranslationKey).position };
             newPath.interp = Key.Interpolation.None;
 
