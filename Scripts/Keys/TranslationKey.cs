@@ -89,21 +89,7 @@ namespace M8.Animator {
         }
 
         #region action
-
-        //for pixel-snapping
-        public class PlugVector3PathSnap : PathPlugin {
-            public float unitConv;
-
-            public PlugVector3PathSnap(float aUnitConv) { unitConv = aUnitConv; }
-
-            public override void EvaluateAndApply(PathOptions options, Tween t, bool isRelative, DOGetter<Vector3> getter, DOSetter<Vector3> setter, float elapsed, Path startValue, Path changeValue, float duration, bool usingInversePosition, UpdateNotice updateNotice) {
-                base.EvaluateAndApply(options, t, isRelative,
-                    () => getter(),
-                    (x) => setter(new Vector3(Mathf.Round(x.x * unitConv) / unitConv, Mathf.Round(x.y * unitConv) / unitConv, Mathf.Round(x.z * unitConv) / unitConv)),
-                    elapsed, startValue, changeValue, duration, usingInversePosition, updateNotice);
-            }
-        }
-
+        
         public override int getNumberOfFrames(int frameRate) {
             if(!canTween && (endFrame == -1 || endFrame == frame))
                 return 1;
@@ -144,14 +130,14 @@ namespace M8.Animator {
                 PathType pathType = path.Length == 2 ? PathType.Linear : PathType.CatmullRom;
 
                 if(pixelSnap)
-                    ret = DOTween.To(new PlugVector3PathSnap(ppu), () => trans.localPosition, x => trans.localPosition = x, new Path(pathType, path, pathResolution), getTime(frameRate)).SetRelative(isRelative).SetOptions(isClosed);
+                    ret = DOTween.To(PathPlugin.Get(), () => path[0], x => trans.position = new Vector3(Mathf.Round(x.x * ppu) / ppu, Mathf.Round(x.y * ppu) / ppu, Mathf.Round(x.z * ppu) / ppu), new Path(pathType, path, pathResolution), getTime(frameRate)).SetTarget(trans).SetRelative(isRelative).SetOptions(isClosed);
                 else
-                    ret = trans.DOLocalPath(path, getTime(frameRate), pathType, PathMode.Full3D, pathResolution, null).SetRelative(isRelative).SetOptions(isClosed);
+                    ret = DOTween.To(PathPlugin.Get(), () => path[0], x => trans.position = x, new Path(pathType, path, pathResolution), getTime(frameRate)).SetTarget(trans).SetRelative(isRelative).SetOptions(isClosed);
 
                 if(hasCustomEase())
                     ret.SetEase(easeCurve);
                 else
-                    ret.SetEase((Ease)easeType, amplitude, period);
+                    ret.SetEase(easeType, amplitude, period);
 
                 seq.Insert(this, ret);
             }
