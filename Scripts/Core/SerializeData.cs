@@ -328,6 +328,9 @@ namespace M8.Animator {
 
             _scaleTracks = scaleTrackList.ToArray();
             _scaleKeys = scaleKeyList.ToArray();
+
+            _unityAnimationTracks = unityAnimationTrackList.ToArray();
+            _unityAnimationKeys = unityAnimationKeyList.ToArray();
             
             _trackLookups = trackLookupList.ToArray();
         }
