@@ -12,5 +12,6 @@ namespace M8.Animator {
         RotationEuler,
         Rotation,
         Translation,
+        Scale,
     }
 }

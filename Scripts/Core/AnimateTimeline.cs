@@ -129,6 +129,7 @@ namespace M8.Animator {
             public string go;
             public JSONVector3 position;
             public JSONQuaternion rotation;
+            public JSONVector3 scale;
             public float[] floats;
             public string[] strings;
             public string[] stringsExtra;

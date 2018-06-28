@@ -40,53 +40,76 @@ namespace M8.Animator {
             if(track.keys.Count == 1)
                 interp = Interpolation.None;
 
+            var rotTrack = (RotationEulerTrack)track;
+            var axis = rotTrack.axis;
+
             if(!canTween) {
-                switch((track as RotationEulerTrack).axis) {
-                    case RotationEulerTrack.Axis.X:
-                        float _x = rotation.x;
-                        var tweenX = DOTween.To(new TweenPlugValueSet<float>(), () => _x, (x) => { var a = target.localEulerAngles; a.x = x; target.localEulerAngles = a; }, _x, getTime(frameRate));
-                        tweenX.plugOptions.SetSequence(seq);
-                        seq.Insert(this, tweenX);
-                        break;
-                    case RotationEulerTrack.Axis.Y:
-                        float _y = rotation.y;
-                        var tweenY = DOTween.To(new TweenPlugValueSet<float>(), () => _y, (y) => { var a = target.localEulerAngles; a.y = y; target.localEulerAngles = a; }, _y, getTime(frameRate));
-                        tweenY.plugOptions.SetSequence(seq);
-                        seq.Insert(this, tweenY);
-                        break;
-                    case RotationEulerTrack.Axis.Z:
-                        float _z = rotation.z;
-                        var tweenZ = DOTween.To(new TweenPlugValueSet<float>(), () => _z, (z) => { var a = target.localEulerAngles; a.z = z; target.localEulerAngles = a; }, _z, getTime(frameRate));
-                        tweenZ.plugOptions.SetSequence(seq);
-                        seq.Insert(this, tweenZ);
-                        break;
-                    default:
-                        var tweenV = DOTween.To(new TweenPlugValueSet<Vector3>(), () => rotation, (r) => { target.localEulerAngles = r; }, rotation, getTime(frameRate));
-                        tweenV.plugOptions.SetSequence(seq);
-                        seq.Insert(this, tweenV);
-                        break;
+                float timeLength = 1.0f / frameRate;
+
+                if(axis == AxisFlags.X) {
+                    float _x = rotation.x;
+                    var tweenX = DOTween.To(new TweenPlugValueSet<float>(), () => _x, (x) => { var a = target.localEulerAngles; a.x = x; target.localEulerAngles = a; }, _x, timeLength);
+                    tweenX.plugOptions.SetSequence(seq);
+                    seq.Insert(this, tweenX);
+                }
+                else if(axis == AxisFlags.Y) {
+                    float _y = rotation.y;
+                    var tweenY = DOTween.To(new TweenPlugValueSet<float>(), () => _y, (y) => { var a = target.localEulerAngles; a.y = y; target.localEulerAngles = a; }, _y, timeLength);
+                    tweenY.plugOptions.SetSequence(seq);
+                    seq.Insert(this, tweenY);
+                }
+                else if(axis == AxisFlags.Z) {
+                    float _z = rotation.z;
+                    var tweenZ = DOTween.To(new TweenPlugValueSet<float>(), () => _z, (z) => { var a = target.localEulerAngles; a.z = z; target.localEulerAngles = a; }, _z, timeLength);
+                    tweenZ.plugOptions.SetSequence(seq);
+                    seq.Insert(this, tweenZ);
+                }
+                else if(axis == AxisFlags.All) {
+                    var tweenV = DOTween.To(new TweenPlugValueSet<Vector3>(), () => rotation, (r) => { target.localEulerAngles = r; }, rotation, timeLength);
+                    tweenV.plugOptions.SetSequence(seq);
+                    seq.Insert(this, tweenV);
+                }
+                else {
+                    var tweenV = DOTween.To(new TweenPlugValueSet<Vector3>(), () => rotation, (r) => {
+                        var rot = target.localEulerAngles;
+                        if((axis & AxisFlags.X) != AxisFlags.None)
+                            rot.x = r.x;
+                        if((axis & AxisFlags.Y) != AxisFlags.None)
+                            rot.y = r.y;
+                        if((axis & AxisFlags.Z) != AxisFlags.None)
+                            rot.z = r.z;
+                        target.localEulerAngles = rot;
+                    }, rotation, timeLength);
+                    tweenV.plugOptions.SetSequence(seq);
+                    seq.Insert(this, tweenV);
                 }
             }
             else if(endFrame == -1) return;
             else {
+                float timeLength = getTime(frameRate);
                 Vector3 endRotation = (track.keys[index + 1] as RotationEulerKey).rotation;
 
                 Tweener tween;
 
-                switch((track as RotationEulerTrack).axis) {
-                    case RotationEulerTrack.Axis.X:
-                        tween = DOTween.To(new FloatPlugin(), () => target.localEulerAngles.x, (x) => { var a = target.localEulerAngles; a.x = x; target.localEulerAngles = a; }, endRotation.x, getTime(frameRate));
-                        break;
-                    case RotationEulerTrack.Axis.Y:
-                        tween = DOTween.To(new FloatPlugin(), () => target.localEulerAngles.y, (y) => { var a = target.localEulerAngles; a.y = y; target.localEulerAngles = a; }, endRotation.y, getTime(frameRate));
-                        break;
-                    case RotationEulerTrack.Axis.Z:
-                        tween = DOTween.To(new FloatPlugin(), () => target.localEulerAngles.z, (z) => { var a = target.localEulerAngles; a.z = z; target.localEulerAngles = a; }, endRotation.z, getTime(frameRate));
-                        break;
-                    default:
-                        tween = DOTween.To(TweenPluginFactory.CreateVector3(), () => target.localEulerAngles, (x) => target.localEulerAngles = x, endRotation, getTime(frameRate));
-                        break;
-                }
+                if(axis == AxisFlags.X)
+                    tween = DOTween.To(new FloatPlugin(), () => target.localEulerAngles.x, (x) => { var a = target.localEulerAngles; a.x = x; target.localEulerAngles = a; }, endRotation.x, timeLength);
+                else if(axis == AxisFlags.Y)
+                    tween = DOTween.To(new FloatPlugin(), () => target.localEulerAngles.y, (y) => { var a = target.localEulerAngles; a.y = y; target.localEulerAngles = a; }, endRotation.y, timeLength);
+                else if(axis == AxisFlags.Z)
+                    tween = DOTween.To(new FloatPlugin(), () => target.localEulerAngles.z, (z) => { var a = target.localEulerAngles; a.z = z; target.localEulerAngles = a; }, endRotation.z, timeLength);
+                else if(axis == AxisFlags.All)
+                    tween = DOTween.To(TweenPluginFactory.CreateVector3(), () => target.localEulerAngles, (r) => target.localEulerAngles = r, endRotation, timeLength);
+                else
+                    tween = DOTween.To(TweenPluginFactory.CreateVector3(), () => target.localEulerAngles, (r) => {
+                        var rot = target.localEulerAngles;
+                        if((axis & AxisFlags.X) != AxisFlags.None)
+                            rot.x = r.x;
+                        if((axis & AxisFlags.Y) != AxisFlags.None)
+                            rot.y = r.y;
+                        if((axis & AxisFlags.Z) != AxisFlags.None)
+                            rot.z = r.z;
+                        target.localEulerAngles = rot;
+                    }, endRotation, timeLength);
 
                 if(hasCustomEase())
                     tween.SetEase(easeCurve);

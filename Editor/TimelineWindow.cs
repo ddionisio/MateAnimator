@@ -246,9 +246,11 @@ namespace M8.Animator.Edit {
         private Texture texBoxPink;
         private Texture texBoxYellow;
         private Texture texBoxOrange;
+        private Texture texBoxLightPurple;
         private Texture texBoxPurple;
         private Texture texIconTranslation;
         private Texture texIconRotation;
+        private Texture texIconScale;
         private Texture texIconAnimation;
         private Texture texIconAudio;
         private Texture texIconProperty;
@@ -535,8 +537,10 @@ namespace M8.Animator.Edit {
                 texBoxPink = EditorResource.LoadEditorTexture("am_box_pink");
                 texBoxYellow = EditorResource.LoadEditorTexture("am_box_yellow");
                 texBoxOrange = EditorResource.LoadEditorTexture("am_box_orange");
+                texBoxLightPurple = EditorResource.LoadEditorTexture("am_box_lightpurple");
                 texBoxPurple = EditorResource.LoadEditorTexture("am_box_purple");
                 texIconTranslation = EditorResource.LoadEditorTexture("am_icon_translation");
+                texIconScale = EditorResource.LoadEditorTexture("am_icon_scale");
                 texIconRotation = EditorResource.LoadEditorTexture("am_icon_rotation");
                 texIconAnimation = EditorResource.LoadEditorTexture("am_icon_animation");
                 texIconAudio = EditorResource.LoadEditorTexture("am_icon_audio");
@@ -2376,11 +2380,19 @@ namespace M8.Animator.Edit {
                         GUI.enabled = !isPlaying;
                     }
                     else if(_track is RotationEulerTrack) { //show axis selection
-                        RotationEulerTrack rTrack = _track as RotationEulerTrack;
-                        var nAxis = (RotationEulerTrack.Axis)EditorGUI.EnumPopup(new Rect(width_track - 48f - width_subtrack_space * group_level - 4f, height_track - 38f, 48f, 15f), rTrack.axis);
+                        var rTrack = (RotationEulerTrack)_track;
+                        var nAxis = (AxisFlags)EditorGUI.EnumFlagsField(new Rect(width_track - 48f - width_subtrack_space * group_level - 4f, height_track - 38f, 48f, 15f), rTrack.axis);
                         if(rTrack.axis != nAxis) {
                             aData.RegisterTakesUndo("Change Rotation Euler Axis", false);
                             rTrack.axis = nAxis;
+                        }
+                    }
+                    else if(_track is ScaleTrack) { //show axis selection
+                        var sTrack = (ScaleTrack)_track;
+                        var nAxis = (AxisFlags)EditorGUI.EnumFlagsField(new Rect(width_track - 48f - width_subtrack_space * group_level - 4f, height_track - 38f, 48f, 15f), sTrack.axis);
+                        if(sTrack.axis != nAxis) {
+                            aData.RegisterTakesUndo("Change Scale Axis", false);
+                            sTrack.axis = nAxis;
                         }
                     }
                     // track object
@@ -2766,6 +2778,8 @@ namespace M8.Animator.Edit {
                                             texBox = texBoxOrange;
                                         else if(_track is CameraSwitcherTrack)
                                             texBox = texBoxPurple;
+                                        else if(_track is ScaleTrack)
+                                            texBox = texBoxLightPurple;
                                     }
 
                                     drawBox(cached_action_startFrame, cached_action_endFrame, _startFrame, _endFrame, rectTimelineActions, rectFramesBirdsEye.width, texBox);
@@ -2877,6 +2891,7 @@ namespace M8.Animator.Edit {
                     else if(_track is EventTrack) texBox = texBoxDarkBlue;
                     else if(_track is GOSetActiveTrack) texBox = texBoxDarkBlue;
                     else if(_track is CameraSwitcherTrack) texBox = texBoxPurple;
+                    else if(_track is ScaleTrack) texBox = texBoxLightPurple;
                     else texBox = texBoxBorder;
                     if(drawEachAction) {
                         GUI.DrawTextureWithTexCoords(rectBox, texBox, new Rect(0, 0, rectBox.width / 32f, rectBox.height / 64f));
@@ -3174,10 +3189,32 @@ namespace M8.Animator.Edit {
                     _dirtyTrackUpdate(ctake, sTrack);
                 }
                 // if not last key, show ease
-                if(key.canTween && rKey != (sTrack as RotationEulerTrack).keys[(sTrack as RotationEulerTrack).keys.Count - 1]) {
+                if(key.canTween && rKey != ((RotationEulerTrack)sTrack).keys[((RotationEulerTrack)sTrack).keys.Count - 1]) {
                     Rect recEasePicker = new Rect(0f, rectQuaternion.y + rectQuaternion.height + height_inspector_space, width_inspector - margin, 0f);
-                    if((sTrack as RotationEulerTrack).getKeyIndexForFrame(_frame) > -1) {
+                    if(sTrack.getKeyIndexForFrame(_frame) > -1) {
                         showEasePicker(sTrack, rKey, aData, recEasePicker.x, recEasePicker.y, recEasePicker.width);
+                    }
+                }
+                return;
+            }
+            #endregion
+            #region scale inspector
+            if(sTrack is ScaleTrack) {
+                var sKey = (ScaleKey)key;
+                Rect rectScale = new Rect(0f, start_y, width_inspector - margin, 40f);
+                // euler
+                var nscale = EditorGUI.Vector3Field(rectScale, "Scale", sKey.scale);
+                if(sKey.scale != nscale) {
+                    aData.RegisterTakesUndo("Change Scale", false);
+                    sKey.scale = nscale;
+
+                    _dirtyTrackUpdate(ctake, sTrack);
+                }
+                // if not last key, show ease
+                if(key.canTween && sKey != ((ScaleTrack)sTrack).keys[((ScaleTrack)sTrack).keys.Count - 1]) {
+                    Rect recEasePicker = new Rect(0f, rectScale.y + rectScale.height + height_inspector_space, width_inspector - margin, 0f);
+                    if(sTrack.getKeyIndexForFrame(_frame) > -1) {
+                        showEasePicker(sTrack, sKey, aData, recEasePicker.x, recEasePicker.y, recEasePicker.width);
                     }
                 }
                 return;
@@ -3952,7 +3989,7 @@ namespace M8.Animator.Edit {
             EditorUtility.ResetDisplayControls();
             // add objectfield for every track type
             // translation/rotation
-            if(amTrack is TranslationTrack || amTrack is RotationTrack || amTrack is RotationEulerTrack) {
+            if(amTrack is TranslationTrack || amTrack is RotationTrack || amTrack is RotationEulerTrack || amTrack is ScaleTrack) {
                 Transform nt = (Transform)EditorGUI.ObjectField(rect, amTrack.GetTarget(aData.target), typeof(Transform), true/*,GUILayout.Width (width_track-padding_track*2)*/);
                 if(!amTrack.isTargetEqual(aData.target, nt)) {
                     aData.RegisterTakesUndo("Set Transform", false);
@@ -5037,7 +5074,7 @@ namespace M8.Animator.Edit {
         }
         void timelineSelectObjectFor(Track track) {
             // translation/rot/anim/property obj
-            if(track.GetType() == typeof(TranslationTrack) || track.GetType() == typeof(RotationTrack) || track.GetType() == typeof(RotationEulerTrack)
+            if(track.GetType() == typeof(TranslationTrack) || track.GetType() == typeof(RotationTrack) || track.GetType() == typeof(RotationEulerTrack) || track.GetType() == typeof(ScaleTrack)
                 || track.GetType() == typeof(UnityAnimationTrack) || track.GetType() == typeof(PropertyTrack)
                 || track.GetType() == typeof(MaterialTrack))
                 Selection.activeObject = track.GetTarget(aData.target);
@@ -5118,7 +5155,7 @@ namespace M8.Animator.Edit {
 
             // get text for track type
             #region translation/rotation
-            if(_key is TranslationKey || _key is RotationKey || _key is RotationEulerKey) {
+            if(_key is TranslationKey || _key is RotationKey || _key is RotationEulerKey || _key is ScaleKey) {
                 if(!_key.canTween) { return ""; }
                 return easeTypeNames[easeTypeNameInd];
             }
@@ -5126,7 +5163,7 @@ namespace M8.Animator.Edit {
             #region animation
             else if(_key is UnityAnimationKey) {
                 if(!(_key as UnityAnimationKey).amClip) return "Not Set";
-                return (_key as UnityAnimationKey).amClip.name + "\n" + ((WrapMode)(_key as UnityAnimationKey).wrapMode).ToString();
+                return (_key as UnityAnimationKey).amClip.name + "\n" + ((_key as UnityAnimationKey).wrapMode).ToString();
             }
             #endregion
             #region audio
@@ -5264,6 +5301,7 @@ namespace M8.Animator.Edit {
             else if(_track is GOSetActiveTrack) return texIconProperty;
             else if(_track is CameraSwitcherTrack) return texIconCameraSwitcher;
             else if(_track is MaterialTrack) return texIconMaterial;
+            else if(_track is RotationTrack || _track is ScaleTrack) return texIconScale;
 
             Debug.LogWarning("Animator: Icon texture not found for track " + _track.getTrackType());
             return null;
@@ -5354,6 +5392,9 @@ namespace M8.Animator.Edit {
                     break;
                 case SerializeType.RotationEuler:
                     _addTrack<RotationEulerTrack>(object_window);
+                    break;
+                case SerializeType.Scale:
+                    _addTrack<ScaleTrack>(object_window);
                     break;
                 case SerializeType.Orientation:
                     _addTrack<OrientationTrack>(object_window);
@@ -5559,6 +5600,17 @@ namespace M8.Animator.Edit {
                 // add key to rotation track
                 (amTrack as RotationEulerTrack).addKey(aData.target, _frame, t.localEulerAngles);
             }
+            else if(amTrack is ScaleTrack) {
+                // scale
+                Transform t = amTrack.GetTarget(aData.target) as Transform;
+                // if missing object, return
+                if(!t) {
+                    showAlertMissingObjectType("Transform");
+                    return;
+                }
+                // add key to rotation track
+                (amTrack as ScaleTrack).addKey(aData.target, _frame, t.localScale);
+            }
             else if(amTrack is OrientationTrack) {
                 // orientation
 
@@ -5719,6 +5771,7 @@ namespace M8.Animator.Edit {
             menu.AddItem(new GUIContent("Translation"), false, addTrackFromMenu, (int)SerializeType.Translation);
             menu.AddItem(new GUIContent("Rotation/Quaternion"), false, addTrackFromMenu, (int)SerializeType.Rotation);
             menu.AddItem(new GUIContent("Rotation/Euler"), false, addTrackFromMenu, (int)SerializeType.RotationEuler);
+            menu.AddItem(new GUIContent("Scale"), false, addTrackFromMenu, (int)SerializeType.Scale);
             menu.AddItem(new GUIContent("Orientation"), false, addTrackFromMenu, (int)SerializeType.Orientation);
             menu.AddItem(new GUIContent("Animation"), false, addTrackFromMenu, (int)SerializeType.UnityAnimation);
             menu.AddItem(new GUIContent("Audio"), false, addTrackFromMenu, (int)SerializeType.Audio);
@@ -5762,12 +5815,14 @@ namespace M8.Animator.Edit {
                 menu_drag.AddItem(new GUIContent("Translation"), false, addTrackFromMenuLate, (int)SerializeType.Translation);
                 menu_drag.AddItem(new GUIContent("Rotation/Quaternion"), false, addTrackFromMenuLate, (int)SerializeType.Rotation);
                 menu_drag.AddItem(new GUIContent("Rotation/Euler"), false, addTrackFromMenuLate, (int)SerializeType.RotationEuler);
+                menu_drag.AddItem(new GUIContent("Scale"), false, addTrackFromMenuLate, (int)SerializeType.Scale);
                 menu_drag.AddItem(new GUIContent("Orientation"), false, addTrackFromMenuLate, (int)SerializeType.Orientation);
             }
             else {
                 menu_drag.AddDisabledItem(new GUIContent("Translation"));
                 menu_drag.AddDisabledItem(new GUIContent("Rotation/Quaterion"));
                 menu_drag.AddDisabledItem(new GUIContent("Rotation/Euler"));
+                menu_drag.AddDisabledItem(new GUIContent("Scale"));
                 menu_drag.AddDisabledItem(new GUIContent("Orientation"));
             }
             // Animation
@@ -5808,7 +5863,7 @@ namespace M8.Animator.Edit {
         }
         bool canQuickAddCombo(List<int> combo, bool hasTransform, bool hasAnimation, bool hasAudioSource, bool hasCamera, bool hasAnimate, bool hasRenderer) {
             foreach(int _track in combo) {
-                if(!hasTransform && (_track == (int)SerializeType.Translation || _track == (int)SerializeType.Rotation || _track == (int)SerializeType.RotationEuler || _track == (int)SerializeType.Orientation))
+                if(!hasTransform && (_track == (int)SerializeType.Translation || _track == (int)SerializeType.Rotation || _track == (int)SerializeType.RotationEuler || _track == (int)SerializeType.Scale || _track == (int)SerializeType.Orientation))
                     return false;
                 else if(!hasAnimation && _track == (int)SerializeType.UnityAnimation)
                     return false;

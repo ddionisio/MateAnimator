@@ -6,8 +6,8 @@ using DG.Tweening;
 
 namespace M8.Animator {
     [System.Serializable]
-    public class RotationEulerTrack : Track {
-        public override SerializeType serializeType { get { return SerializeType.RotationEuler; } }
+    public class ScaleTrack : Track {
+        public override SerializeType serializeType { get { return SerializeType.Scale; } }
 
         public AxisFlags axis = AxisFlags.All;
 
@@ -24,30 +24,30 @@ namespace M8.Animator {
 
         public new void SetTarget(ITarget target, Transform item) {
             base.SetTarget(target, item);
-            if(item != null && keys.Count <= 0) cachedInitialRotation = item.localEulerAngles;
+            if(item != null && keys.Count <= 0) cachedInitialScale = item.localScale;
         }
 
         public override int version { get { return 1; } }
 
-        Vector3 cachedInitialRotation;
+        Vector3 cachedInitialScale;
 
         public override string getTrackType() {
-            return "Rotation Axis";
+            return "Local Scale";
         }
         // add a new key
-        public void addKey(ITarget target, int _frame, Vector3 _rotation) {
-            foreach(RotationEulerKey key in keys) {
+        public void addKey(ITarget target, int _frame, Vector3 _scale) {
+            foreach(ScaleKey key in keys) {
                 // if key exists on frame, update key
                 if(key.frame == _frame) {
-                    key.rotation = _rotation;
+                    key.scale = _scale;
                     // update cache
                     updateCache(target);
                     return;
                 }
             }
-            var a = new RotationEulerKey();
+            var a = new ScaleKey();
             a.frame = _frame;
-            a.rotation = _rotation;
+            a.scale = _scale;
             // set default ease type to linear
             a.easeType = Ease.Linear;
 
@@ -62,7 +62,7 @@ namespace M8.Animator {
             base.updateCache(target);
 
             for(int i = 0; i < keys.Count; i++) {
-                RotationEulerKey key = keys[i] as RotationEulerKey;
+                var key = keys[i] as ScaleKey;
 
                 key.version = version;
 
@@ -83,21 +83,21 @@ namespace M8.Animator {
             if(keys == null || keys.Count <= 0) return;
 
             // if before or equal to first frame, or is the only frame
-            RotationEulerKey firstKey = keys[0] as RotationEulerKey;
+            var firstKey = keys[0] as ScaleKey;
             if(firstKey.endFrame == -1 || (frame <= firstKey.frame && !firstKey.canTween)) {
-                ApplyRot(t, firstKey.rotation);
+                ApplyScale(t, firstKey.scale);
                 return;
             }
 
-            // if lies on rotation action
+            // if lies on scale action
             for(int i = 0; i < keys.Count; i++) {
-                RotationEulerKey key = keys[i] as RotationEulerKey;
-                RotationEulerKey keyNext = i + 1 < keys.Count ? keys[i + 1] as RotationEulerKey : null;
+                var key = keys[i] as ScaleKey;
+                var keyNext = i + 1 < keys.Count ? keys[i + 1] as ScaleKey : null;
 
                 if(frame >= (float)key.endFrame && keyNext != null && (!keyNext.canTween || keyNext.endFrame != -1)) continue;
                 // if no ease
                 if(!key.canTween || keyNext == null) {
-                    ApplyRot(t, key.rotation);
+                    ApplyScale(t, key.scale);
                     return;
                 }
                 // else easing function
@@ -106,15 +106,15 @@ namespace M8.Animator {
 
                 float framePositionInAction = Mathf.Clamp(frame - key.frame, 0f, numFrames);
 
-                Vector3 qStart = key.rotation;
-                Vector3 qEnd = keyNext.rotation;
+                Vector3 qStart = key.scale;
+                Vector3 qEnd = keyNext.scale;
 
                 if(key.hasCustomEase()) {
-                    ApplyRot(t, Vector3.Lerp(qStart, qEnd, Utility.EaseCustom(0.0f, 1.0f, framePositionInAction / numFrames, key.easeCurve)));
+                    ApplyScale(t, Vector3.Lerp(qStart, qEnd, Utility.EaseCustom(0.0f, 1.0f, framePositionInAction / numFrames, key.easeCurve)));
                 }
                 else {
                     var ease = Utility.GetEasingFunction(key.easeType);
-                    ApplyRot(t, Vector3.Lerp(qStart, qEnd, ease(framePositionInAction, numFrames, key.amplitude, key.period)));
+                    ApplyScale(t, Vector3.Lerp(qStart, qEnd, ease(framePositionInAction, numFrames, key.amplitude, key.period)));
                 }
 
                 return;
@@ -124,53 +124,53 @@ namespace M8.Animator {
         public bool autoKey(ITarget itarget, Transform aObj, int frame, int frameRate) {
             Transform t = GetTarget(itarget) as Transform;
             if(!t || t != aObj) { return false; }
-            Vector3 r = t.localEulerAngles;
+            Vector3 s = t.localScale;
             if(keys.Count <= 0) {
-                if(r != cachedInitialRotation) {
+                if(s != cachedInitialScale) {
                     // if updated position, addkey
-                    addKey(itarget, frame, r);
+                    addKey(itarget, frame, s);
                     return true;
                 }
 
                 return false;
             }
-            Vector3 oldRot = getRotationAtFrame(frame, frameRate);
-            if(r != oldRot) {
+            Vector3 oldScale = getScaleAtFrame(frame, frameRate);
+            if(s != oldScale) {
                 // if updated position, addkey
-                addKey(itarget, frame, r);
+                addKey(itarget, frame, s);
                 return true;
             }
 
             return false;
         }
-        void ApplyRot(Transform t, Vector3 toRot) {
-            Vector3 rot = t.localEulerAngles;
+        void ApplyScale(Transform t, Vector3 toScale) {
+            Vector3 s = t.localScale;
 
             if((axis & AxisFlags.X) != AxisFlags.None)
-                rot.x = toRot.x;
+                s.x = toScale.x;
             if((axis & AxisFlags.Y) != AxisFlags.None)
-                rot.y = toRot.y;
+                s.y = toScale.y;
             if((axis & AxisFlags.Z) != AxisFlags.None)
-                rot.z = toRot.z;
+                s.z = toScale.z;
 
-            t.localEulerAngles = rot;
+            t.localScale = s;
         }
-        Vector3 getRotationAtFrame(int frame, int frameRate) {
+        Vector3 getScaleAtFrame(int frame, int frameRate) {
             // if before or equal to first frame, or is the only frame
-            RotationEulerKey firstKey = keys[0] as RotationEulerKey;
+            var firstKey = keys[0] as ScaleKey;
             if(firstKey.endFrame == -1 || (frame <= (float)firstKey.frame && !firstKey.canTween)) {
-                return firstKey.rotation;
+                return firstKey.scale;
             }
 
-            // if lies on rotation action
+            // if lies on scale action
             for(int i = 0; i < keys.Count; i++) {
-                RotationEulerKey key = keys[i] as RotationEulerKey;
-                RotationEulerKey keyNext = i + 1 < keys.Count ? keys[i + 1] as RotationEulerKey : null;
+                var key = keys[i] as ScaleKey;
+                var keyNext = i + 1 < keys.Count ? keys[i + 1] as ScaleKey : null;
 
                 if(frame >= (float)key.endFrame && keyNext != null && (!keyNext.canTween || keyNext.endFrame != -1)) continue;
                 // if no ease
                 if(!key.canTween || keyNext == null) {
-                    return key.rotation;
+                    return key.scale;
                 }
                 // else easing function
 
@@ -178,33 +178,33 @@ namespace M8.Animator {
 
                 float framePositionInAction = Mathf.Clamp(frame - (float)key.frame, 0f, numFrames);
 
-                Vector3 qStart = key.rotation;
-                Vector3 qEnd = keyNext.rotation;
+                var sStart = key.scale;
+                var sEnd = keyNext.scale;
 
                 if(key.hasCustomEase()) {
-                    return Vector3.Lerp(qStart, qEnd, Utility.EaseCustom(0.0f, 1.0f, framePositionInAction / numFrames, key.easeCurve));
+                    return Vector3.Lerp(sStart, sEnd, Utility.EaseCustom(0.0f, 1.0f, framePositionInAction / numFrames, key.easeCurve));
                 }
                 else {
                     var ease = Utility.GetEasingFunction(key.easeType);
-                    return Vector3.Lerp(qStart, qEnd, ease(framePositionInAction, numFrames, key.amplitude, key.period));
+                    return Vector3.Lerp(sStart, sEnd, ease(framePositionInAction, numFrames, key.amplitude, key.period));
                 }
             }
 
-            Debug.LogError("Animator: Could not get rotation at frame '" + frame + "'");
+            Debug.LogError("Animator: Could not get scale at frame '" + frame + "'");
             return Vector3.zero;
         }
-        public Vector3 getInitialRotation() {
-            return (keys[0] as RotationEulerKey).rotation;
+        public Vector3 getInitialScale() {
+            return ((ScaleKey)keys[0]).scale;
         }
 
         public override AnimateTimeline.JSONInit getJSONInit(ITarget target) {
             if(!_obj || keys.Count <= 0) return null;
-            AnimateTimeline.JSONInit init = new AnimateTimeline.JSONInit();
-            init.type = "rotation";
+            var init = new AnimateTimeline.JSONInit();
+            init.type = "scale";
             init.go = _obj.gameObject.name;
-            AnimateTimeline.JSONQuaternion q = new AnimateTimeline.JSONQuaternion();
-            q.setValue(getInitialRotation());
-            init.rotation = q;
+            var s = new AnimateTimeline.JSONVector3();
+            s.setValue(getInitialScale());
+            init.scale = s;
             return init;
         }
 
@@ -227,9 +227,9 @@ namespace M8.Animator {
         }
 
         protected override void DoCopy(Track track) {
-            var ntrack = track as RotationEulerTrack;
+            var ntrack = (ScaleTrack)track;
             ntrack._obj = _obj;
-            ntrack.cachedInitialRotation = cachedInitialRotation;
+            ntrack.cachedInitialScale = cachedInitialScale;
         }
     }
 }

@@ -874,6 +874,11 @@ namespace M8.Animator {
                         if(!didKey) didKey = true;
                     }
                 }
+                else if(track is ScaleTrack) {
+                    if((track as ScaleTrack).autoKey(itarget, obj, frame, frameRate)) {
+                        if(!didKey) didKey = true;
+                    }
+                }
             }
             return didKey;
         }
