@@ -26,12 +26,10 @@ namespace M8.Animator {
         List<Take> takeData = new List<Take>();
 
         [SerializeField]
-        int playOnStartIndex = -1;
+        string _defaultTakeName = "";
 
         [SerializeField]
         AnimateMeta _meta; //
-        [SerializeField]
-        string playOnStartMeta; //used for playing a take from AnimatorMeta
 
         public bool sequenceLoadAll = true;
         public bool sequenceKillWhenDone = false;
@@ -53,35 +51,44 @@ namespace M8.Animator {
         public event OnTakeTrigger takeTriggerCallback;
 
         public string defaultTakeName {
-            get {
-                if(_meta)
-                    return playOnStartMeta;
-                else
-                    return playOnStartIndex == -1 ? "" : takeData[playOnStartIndex].name;
-            }
+            get { return _defaultTakeName; }
             set {
-                if(_meta) {
-                    playOnStartMeta = value;
-                    playOnStartIndex = -1;
-                }
-                else {
-                    playOnStartMeta = "";
-                    playOnStartIndex = -1;
-                    if(!string.IsNullOrEmpty(value)) {
-                        List<Take> _ts = _takes;
-                        for(int i = 0; i < _ts.Count; i++) {
-                            if(_ts[i].name == value) {
-                                playOnStartIndex = i;
-                                break;
-                            }
-                        }
-                    }
-                    //
-                }
+                _defaultTakeName = value;
+                mDefaultTakeInd = -1;
             }
         }
 
-        public int defaultTakeIndex { get { return playOnStartIndex; } }
+        public int defaultTakeIndex {
+            get {
+                if(mDefaultTakeInd == -1 && !string.IsNullOrEmpty(_defaultTakeName)) {
+                    var _t = _takes;
+                    for(int i = 0; i < _t.Count; i++) {
+                        if(_t[i].name == _defaultTakeName) {
+                            mDefaultTakeInd = i;
+                            break;
+                        }
+                    }
+                }
+
+                return mDefaultTakeInd;
+            }
+
+            set {
+                if(mDefaultTakeInd != value) {
+                    mDefaultTakeInd = value;
+
+                    //refresh _defaultTakeName
+                    var _t = _takes;
+                    if(mDefaultTakeInd >= 0 && mDefaultTakeInd < _t.Count) {
+                        _defaultTakeName = _t[mDefaultTakeInd].name;
+                    }
+                    else { //invalid
+                        mDefaultTakeInd = -1;
+                        _defaultTakeName = "";
+                    }
+                }
+            }
+        }
 
         public bool isPlaying {
             get {
@@ -132,9 +139,6 @@ namespace M8.Animator {
             }
         }
 
-        [HideInInspector]
-        public int codeLanguage = 0;    // 0 = C#, 1 = Javascript
-                
         private SequenceControl[] mSequenceCtrls;
 
         private int mNowPlayingTakeIndex = -1;
@@ -147,6 +151,8 @@ namespace M8.Animator {
         private float mAnimScale = 1.0f; //NOTE: this is reset during disable
 
         private Dictionary<string, Transform> mCache;
+
+        private int mDefaultTakeInd = -1;
 
         private SequenceControl[] sequenceCtrls {
             get {
@@ -211,8 +217,9 @@ namespace M8.Animator {
         }
 
         public void PlayDefault(bool loop = false) {
-            if(!string.IsNullOrEmpty(defaultTakeName)) {
-                Play(defaultTakeName, loop);
+            int takeInd = defaultTakeIndex;
+            if(takeInd != -1) {
+                Play(defaultTakeIndex, loop);
             }
         }
 
@@ -394,8 +401,8 @@ namespace M8.Animator {
         void OnEnable() {
             if(mStarted) {
                 if(playOnEnable) {
-                    if(mNowPlayingTakeIndex == -1 && !string.IsNullOrEmpty(defaultTakeName))
-                        Play(defaultTakeName, false);
+                    if(mNowPlayingTakeIndex == -1 && defaultTakeIndex != -1)
+                        Play(defaultTakeIndex, false);
                     else
                         Resume();
                 }
@@ -436,8 +443,8 @@ namespace M8.Animator {
                 }
             }
 
-            if(!isPlaying && !string.IsNullOrEmpty(defaultTakeName)) {
-                Play(defaultTakeName, false);
+            if(!isPlaying && defaultTakeIndex != -1) {
+                Play(defaultTakeIndex, false);
             }
         }
 
@@ -449,10 +456,14 @@ namespace M8.Animator {
         AnimateMeta ITarget.meta {
             get { return _meta; }
             set {
-                _meta = value;
+                if(_meta != value) {
+                    _meta = value;
 
-                if(_meta)
-                    takeData.Clear();
+                    if(_meta)
+                        takeData.Clear();
+
+                    mDefaultTakeInd = -1;
+                }
             }
         }
 

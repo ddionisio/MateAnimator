@@ -94,7 +94,6 @@ namespace M8.Animator.Edit {
         public ITarget target { get { return mDataTarget; } }
         public List<Take> takes { get { return mDataTarget.takes; } }
         public bool isGlobal { get { return mData.isGlobal; } set { mData.isGlobal = value; } }
-        public int codeLanguage { get { return mData.codeLanguage; } }
 
         public bool isValid { get { return mData != null; } }
 
@@ -396,14 +395,7 @@ namespace M8.Animator.Edit {
             names[names.Length - 1] = "Duplicate current...";
             return names;
         }
-
-        public bool SetCodeLanguage(int codeLanguage) {
-            if(mData.codeLanguage != codeLanguage) {
-                mData.codeLanguage = codeLanguage;
-                return true;
-            }
-            return false;
-        }
+        
         /*public bool setShowWarningForLostReferences(bool showWarningForLostReferences) {
 	        if(this.showWarningForLostReferences != showWarningForLostReferences) {
 	            this.showWarningForLostReferences = showWarningForLostReferences;
