@@ -36,8 +36,6 @@ namespace M8.Animator {
                     return new RotationTrack();
                 case SerializeType.Translation:
                     return new TranslationTrack();
-                case SerializeType.Trigger:
-                    return new TriggerTrack();
             }
 
             return null;
@@ -67,8 +65,6 @@ namespace M8.Animator {
                     return new RotationKey();
                 case SerializeType.Translation:
                     return new TranslationKey();
-                case SerializeType.Trigger:
-                    return new TriggerKey();
             }
 
             return null;
@@ -105,10 +101,7 @@ namespace M8.Animator {
 
         [SerializeField] TranslationTrack[] _translationTracks;
         [SerializeField] TranslationKey[] _translationKeys;
-
-        [SerializeField] TriggerTrack[] _triggerTracks;
-        [SerializeField] TriggerKey[] _triggerKeys;
-
+        
         [SerializeField] UnityAnimationTrack[] _unityAnimationTracks;
         [SerializeField] UnityAnimationKey[] _unityAnimationKeys;
 
@@ -148,10 +141,7 @@ namespace M8.Animator {
 
             var translationTrackList = new List<TranslationTrack>();
             var translationKeyList = new List<TranslationKey>();
-
-            var triggerTrackList = new List<TriggerTrack>();
-            var triggerKeyList = new List<TriggerKey>();
-
+            
             var unityAnimationTrackList = new List<UnityAnimationTrack>();
             var unityAnimationKeyList = new List<UnityAnimationKey>();
 
@@ -219,10 +209,6 @@ namespace M8.Animator {
                             trackLookupIndex = translationTrackList.Count;
                             translationTrackList.Add((TranslationTrack)track);
                             break;
-                        case SerializeType.Trigger:
-                            trackLookupIndex = triggerTrackList.Count;
-                            triggerTrackList.Add((TriggerTrack)track);
-                            break;
                     }
                     //
                     
@@ -280,10 +266,6 @@ namespace M8.Animator {
                                 keyLookupIndex = translationKeyList.Count;
                                 translationKeyList.Add((TranslationKey)key);
                                 break;
-                            case SerializeType.Trigger:
-                                keyLookupIndex = triggerKeyList.Count;
-                                triggerKeyList.Add((TriggerKey)key);
-                                break;
                         }
                         //
 
@@ -325,10 +307,7 @@ namespace M8.Animator {
 
             _translationTracks = translationTrackList.ToArray();
             _translationKeys = translationKeyList.ToArray();
-
-            _triggerTracks = triggerTrackList.ToArray();
-            _triggerKeys = triggerKeyList.ToArray();
-
+            
             _trackLookups = trackLookupList.ToArray();
         }
 
@@ -387,9 +366,6 @@ namespace M8.Animator {
                         case SerializeType.Translation:
                             track = _translationTracks[trackLookup.index];
                             break;
-                        case SerializeType.Trigger:
-                            track = _triggerTracks[trackLookup.index];
-                            break;
                         default:
                             Debug.LogWarning("Unsupported Type: " + trackType);
                             break;
@@ -438,9 +414,6 @@ namespace M8.Animator {
                                     break;
                                 case SerializeType.Translation:
                                     key = _translationKeys[keyLookupIndex];
-                                    break;
-                                case SerializeType.Trigger:
-                                    key = _triggerKeys[keyLookupIndex];
                                     break;
                             }
 

@@ -103,10 +103,6 @@ namespace M8.Animator {
             take = null;
         }
 
-        public void Trigger(Key key, TriggerData data) {
-            target.SequenceTrigger(this, key, data);
-        }
-
         void OnSequenceComplete() {
             if(completeCallback != null)
                 completeCallback();

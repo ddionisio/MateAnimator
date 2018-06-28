@@ -15,7 +15,6 @@ namespace M8.Animator {
         Transform GetCache(string path);
         void SetCache(string path, Transform obj);
         void SequenceComplete(SequenceControl seq);
-        void SequenceTrigger(SequenceControl seq, Key key, TriggerData trigDat);
 
         string[] GetMissingTargets();
         void MaintainTargetCache(Track track);

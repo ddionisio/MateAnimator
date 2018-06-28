@@ -2667,7 +2667,7 @@ namespace M8.Animator.Edit {
                 Rect rectTimelineActions = new Rect(0f, _current_height_frame, 0f, height_track - current_height_frame);    // used to group textures into one draw call
                 if(!drawEachAction) {
                     if(_track.keys.Count > 0) {
-                        if(_track is EventTrack || _track is TriggerTrack) {
+                        if(_track is EventTrack) {
                             texBox = texBoxDarkBlue;
 
                             for(int i = 0; i < _track.keys.Count; i++) {
@@ -2814,7 +2814,7 @@ namespace M8.Animator.Edit {
                         didClampBackwards = true;
                         clamped = -1;
                     }
-                    else if(_track is UnityAnimationTrack || _track is AudioTrack || _track is PropertyTrack || _track is MaterialTrack || _track is EventTrack || _track is GOSetActiveTrack || _track is CameraSwitcherTrack || _track is TriggerTrack) {
+                    else if(_track is UnityAnimationTrack || _track is AudioTrack || _track is PropertyTrack || _track is MaterialTrack || _track is EventTrack || _track is GOSetActiveTrack || _track is CameraSwitcherTrack) {
                         // single frame tracks (clamp box to last frame) (if audio track not set, clamp)
                         action_startFrame = _track.keys[i].getStartFrame();
                         if(i < _track.keys.Count - 1) {
@@ -2877,7 +2877,6 @@ namespace M8.Animator.Edit {
                     else if(_track is EventTrack) texBox = texBoxDarkBlue;
                     else if(_track is GOSetActiveTrack) texBox = texBoxDarkBlue;
                     else if(_track is CameraSwitcherTrack) texBox = texBoxPurple;
-                    else if(_track is TriggerTrack) texBox = texBoxDarkBlue;
                     else texBox = texBoxBorder;
                     if(drawEachAction) {
                         GUI.DrawTextureWithTexCoords(rectBox, texBox, new Rect(0, 0, rectBox.width / 32f, rectBox.height / 64f));
@@ -2921,7 +2920,7 @@ namespace M8.Animator.Edit {
                     styleTxtInfo.normal.textColor = Color.white;
                     styleTxtInfo.alignment = (hideTxtInfo ? TextAnchor.MiddleLeft : TextAnchor.MiddleCenter);
                     bool isLastAction;
-                    if(_track is PropertyTrack || _track is MaterialTrack || _track is EventTrack || _track is GOSetActiveTrack || _track is CameraSwitcherTrack || _track is TriggerTrack) isLastAction = (i == _track.keys.Count - 1);
+                    if(_track is PropertyTrack || _track is MaterialTrack || _track is EventTrack || _track is GOSetActiveTrack || _track is CameraSwitcherTrack) isLastAction = (i == _track.keys.Count - 1);
                     else if(_track is AudioTrack || _track is UnityAnimationTrack) isLastAction = false;
                     else isLastAction = (i == _track.keys.Count - 2);
                     if(rectBox.width > 5f) EditorGUI.DropShadowLabel(new Rect(rectBox.x, rectBox.y, rectBox.width - (!isLastAction ? current_width_frame : 0f), rectBox.height), txtInfo, styleTxtInfo);
@@ -3637,33 +3636,7 @@ namespace M8.Animator.Edit {
                 GUI.EndScrollView();
                 return;
             }
-            #endregion
-            #region trigger inspector
-            if(sTrack is TriggerTrack) {
-                EditorGUIUtility.labelWidth = 55.0f;
-                TriggerKey tKey = (TriggerKey)key;
-                Rect rectString = new Rect(0f, start_y, width_inspector - margin, 20f);
-                string str = EditorGUI.TextField(rectString, "String", tKey.valueString);
-                if(tKey.valueString != str) {
-                    aData.RegisterTakesUndo("Trigger Set Value String", false);
-                    tKey.valueString = str;
-                }
-                Rect rectInt = new Rect(0f, rectString.y + rectString.height + height_inspector_space, width_inspector - margin, 20f);
-                int i = EditorGUI.IntField(rectInt, "Integer", tKey.valueInt);
-                if(tKey.valueInt != i) {
-                    aData.RegisterTakesUndo("Trigger Set Value Int", false);
-                    tKey.valueInt = i;
-                }
-                Rect rectFloat = new Rect(0f, rectInt.y + rectInt.height + height_inspector_space, width_inspector - margin, 20f);
-                float f = EditorGUI.FloatField(rectFloat, "Float", tKey.valueFloat);
-                if(tKey.valueFloat != f) {
-                    aData.RegisterTakesUndo("Trigger Set Value Float", false);
-                    tKey.valueFloat = f;
-                }
-                EditorGUIUtility.labelWidth = 0.0f;
-                return;
-            }
-            #endregion
+            #endregion            
             #region material inspector
             if(sTrack is MaterialTrack) {
                 MaterialTrack aTrack = sTrack as MaterialTrack;
@@ -4100,14 +4073,6 @@ namespace M8.Animator.Edit {
                 if(!amTrack.isTargetEqual(aData.target, render)) {
                     aData.RegisterTakesUndo("Set Renderer", false);
                     amTrack.SetTarget(aData.target, render ? render.transform : null);
-                }
-            }
-            //Trigger
-            else if(amTrack is TriggerTrack) {
-                TriggerSignal signal = (TriggerSignal)EditorGUI.ObjectField(rect, amTrack.GetTarget(aData.target), typeof(TriggerSignal), false);
-                if(!amTrack.isTargetEqual(aData.target, signal)) {
-                    aData.RegisterTakesUndo("Set Trigger Signal", false);
-                    ((TriggerTrack)amTrack).SetSignal(signal);
                 }
             }
 
@@ -5250,12 +5215,6 @@ namespace M8.Animator.Edit {
                 return "";
             }
             #endregion
-            #region trigger
-            else if(_key is TriggerKey) {
-                TriggerKey tkey = _key as TriggerKey;
-                return string.Format("\"{0}\", {1}, {2}", tkey.valueString, tkey.valueInt, tkey.valueFloat);
-            }
-            #endregion
             #region material
             else if(_key is MaterialKey) {
                 int keyInd = _track.getKeyIndex(_key);
@@ -5304,7 +5263,6 @@ namespace M8.Animator.Edit {
             else if(_track is OrientationTrack) return texIconOrientation;
             else if(_track is GOSetActiveTrack) return texIconProperty;
             else if(_track is CameraSwitcherTrack) return texIconCameraSwitcher;
-            else if(_track is TriggerTrack) return texIconEvent;
             else if(_track is MaterialTrack) return texIconMaterial;
 
             Debug.LogWarning("Animator: Icon texture not found for track " + _track.getTrackType());
@@ -5426,9 +5384,6 @@ namespace M8.Animator.Edit {
                     break;
                 case SerializeType.GOSetActive:
                     _addTrack<GOSetActiveTrack>(object_window);
-                    break;
-                case SerializeType.Trigger:
-                    _addTrack<TriggerTrack>(object_window);
                     break;
                 case SerializeType.Material:
                     _addTrack<MaterialTrack>(object_window);
@@ -5693,9 +5648,6 @@ namespace M8.Animator.Edit {
                 // add key to go active track
                 (amTrack as GOSetActiveTrack).addKey(aData.target, _frame);
             }
-            else if(amTrack is TriggerTrack) {
-                (amTrack as TriggerTrack).addKey(aData.target, _frame);
-            }
             else if(amTrack is MaterialTrack) {
                 Renderer render = amTrack.GetTarget(aData.target) as Renderer;
                 if(!render) {
@@ -5775,7 +5727,6 @@ namespace M8.Animator.Edit {
             menu.AddItem(new GUIContent("Event"), false, addTrackFromMenu, (int)SerializeType.Event);
             menu.AddItem(new GUIContent("GO Active"), false, addTrackFromMenu, (int)SerializeType.GOSetActive);
             menu.AddItem(new GUIContent("Camera Switcher"), false, addTrackFromMenu, (int)SerializeType.CameraSwitcher);
-            menu.AddItem(new GUIContent("Trigger"), false, addTrackFromMenu, (int)SerializeType.Trigger);
         }
         void buildAddTrackMenu_Drag() {
             bool hasTransform = true;
