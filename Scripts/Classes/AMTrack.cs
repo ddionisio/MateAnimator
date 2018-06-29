@@ -60,7 +60,7 @@ namespace M8.Animator {
 		public UnityEngine.Object GetTarget(AMITarget target) {
 			UnityEngine.Object ret = null;
 
-			if(target.isMeta) {
+			if(target != null && target.isMeta) {
 				Transform tgt = target.GetCache(_targetPath);
 	            if(tgt)
 	                ret = GetSerializeObject(tgt.gameObject);

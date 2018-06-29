@@ -51,8 +51,11 @@ namespace M8.Animator {
 
 	    public int endFrame;
 
-	    public Camera getCamera(AMITarget itarget) {
-	        if(itarget.isMeta) {
+        public string cameraTargetPath { get { return _cameraPath; } }
+        public string cameraEndTargetPath { get { return _cameraEndPath; } }
+
+        public Camera getCamera(AMITarget itarget) {
+	        if(itarget != null && itarget.isMeta) {
 	            if(!string.IsNullOrEmpty(_cameraPath)) {
 	                Transform t = itarget.GetCache(_cameraPath);
 	                if(t)
@@ -100,7 +103,7 @@ namespace M8.Animator {
 	    }
 
 	    public Camera getCameraEnd(AMITarget itarget) {
-	        if(itarget.isMeta) {
+	        if(itarget != null && itarget.isMeta) {
 	            if(!string.IsNullOrEmpty(_cameraEndPath)) {
 	                Transform t = itarget.GetCache(_cameraEndPath);
 	                if(t)

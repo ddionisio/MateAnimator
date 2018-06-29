@@ -41,7 +41,13 @@ namespace M8.Animator {
 
 	    public override int version { get { return 2; } }
 
-	    private FieldInfo cachedFieldInfo;
+        public bool isField {
+            get {
+                return !string.IsNullOrEmpty(fieldName);
+            }
+        }
+
+        private FieldInfo cachedFieldInfo;
 	    private PropertyInfo cachedPropertyInfo;
 	    private bool isCached;
 
@@ -59,7 +65,7 @@ namespace M8.Animator {
 
 	    Component GetTargetComp(AMITarget target) {
 	        Component comp;
-	        if(target.isMeta) {
+	        if(target != null && target.isMeta) {
 	            component = null;
 	            GameObject go = GetTarget(target) as GameObject;
 	            comp = go ? go.GetComponent(componentName) : null;
@@ -69,9 +75,9 @@ namespace M8.Animator {
 	        }
 	        return comp;
 	    }
-
+                
 	    public Component GetTargetComp(GameObject targetGO) {
-	        return component ? component : targetGO.GetComponent(componentName);
+	        return component || targetGO == null ? component : targetGO.GetComponent(componentName);
 	    }
 
 	    public void RefreshData(Component comp) {

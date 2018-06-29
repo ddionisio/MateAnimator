@@ -25,6 +25,7 @@ namespace M8.Animator {
         public string methodName;
         private MethodInfo cachedMethodInfo;
 
+        public Component getComponentRef() { return component; }
         public string getComponentName() { return componentName; }
 
         public bool isMatch(ParameterInfo[] cachedParameterInfos) {

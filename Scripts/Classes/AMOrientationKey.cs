@@ -34,7 +34,7 @@ namespace M8.Animator {
 		}
 		public Transform GetTarget(AMITarget itarget) {
 			Transform ret = null;
-			if(itarget.isMeta) {
+			if(itarget != null && itarget.isMeta) {
 				if(!string.IsNullOrEmpty(targetPath)) {
 					ret = itarget.GetCache(targetPath);
 					if(ret == null) {
@@ -47,6 +47,9 @@ namespace M8.Animator {
 				ret = target;
 			return ret;
 		}
+        public string GetTargetPath() {
+            return targetPath;
+        }
 
 		public override void maintainKey(AMITarget itarget, UnityEngine.Object targetObj) {
 			if(itarget.isMeta) {
