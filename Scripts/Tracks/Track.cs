@@ -60,7 +60,7 @@ namespace M8.Animator {
         public UnityEngine.Object GetTarget(ITarget target) {
             UnityEngine.Object ret = null;
 
-            if(target.meta && !string.IsNullOrEmpty(_targetPath)) { //if targetPath is empty, it must be from the project, so grab it directly
+            if(target != null && target.meta && !string.IsNullOrEmpty(_targetPath)) { //if targetPath is empty, it must be from the project, so grab it directly
                 Transform tgt = target.GetCache(_targetPath);
                 if(tgt)
                     ret = GetSerializeObject(tgt.gameObject);
@@ -108,15 +108,29 @@ namespace M8.Animator {
         }
 
         public virtual void SetTarget(ITarget target, Transform item) {
+            string path;
+            UnityEngine.Object obj;
+
             if(target.meta && item) {
-                _targetPath = Utility.GetPath(target.root, item);
-                target.SetCache(_targetPath, item);
-                SetSerializeObject(GetSerializeObject(item.gameObject));
+                path = Utility.GetPath(target.root, item);
+                target.SetCache(path, item);
+
+                obj = GetSerializeObject(item.gameObject);
             }
             else {
-                _targetPath = "";
-                SetSerializeObject(item ? GetSerializeObject(item.gameObject) : null);
+                path = "";
+                obj = item ? GetSerializeObject(item.gameObject) : null;
             }
+
+            SetTargetDirect(obj, path);
+        }
+
+        /// <summary>
+        /// Set Target directly with given obj and path, path is based on Transform hierarchy.
+        /// </summary>
+        public void SetTargetDirect(UnityEngine.Object obj, string path) {
+            _targetPath = path;
+            SetSerializeObject(obj);            
         }
                 
         public virtual bool isTargetEqual(ITarget target, UnityEngine.Object obj) {
