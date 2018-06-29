@@ -46,7 +46,7 @@ namespace M8.Animator {
                 // if key exists on frame, update key
                 if(key.frame == _frame) {
                     if(camera != null) {
-                        key.setCamera(itarget, camera);
+                        key.SetCamera(itarget, camera);
                         key.type = 0;
                         updateCache(itarget);
                     }
@@ -64,7 +64,7 @@ namespace M8.Animator {
             }
             a.frame = _frame;
             if(camera != null) {
-                a.setCamera(itarget, camera);
+                a.SetCamera(itarget, camera);
                 a.type = 0;
             }
             // add a new key
@@ -85,7 +85,7 @@ namespace M8.Animator {
                     CameraSwitcherKey nextKey = keys[i + 1] as CameraSwitcherKey;
                     key.endFrame = nextKey.frame;
                     key.typeEnd = nextKey.type;
-                    if(key.typeEnd == 0) key.setCameraEnd(nextKey);
+                    if(key.typeEnd == 0) key.SetCameraEnd(nextKey);
                     else key.colorEnd = nextKey.color;
                 }
                 else
@@ -107,7 +107,7 @@ namespace M8.Animator {
                 if(!firstKey.hasStartTarget(itarget)) return;
 
                 if(firstKey.type == 0)
-                    Utility.SetTopCamera(firstKey.getCamera(itarget), GetCachedCameras(itarget));
+                    Utility.SetTopCamera(firstKey.GetCamera(itarget), GetCachedCameras(itarget));
                 else
                     showColor(firstKey.color);
                 return;
@@ -124,7 +124,7 @@ namespace M8.Animator {
                     if(!key.hasStartTarget(itarget)) return;
 
                     if(key.type == 0)
-                        Utility.SetTopCamera(key.getCamera(itarget), GetCachedCameras(itarget));
+                        Utility.SetTopCamera(key.GetCamera(itarget), GetCachedCameras(itarget));
                     else
                         showColor(key.color);
                     return;
@@ -136,7 +136,7 @@ namespace M8.Animator {
                 if(key.targetsAreEqual(itarget)) {
                     CameraFade.reset();
                     if(key.type == 0)
-                        Utility.SetTopCamera(key.getCamera(itarget), GetCachedCameras(itarget));
+                        Utility.SetTopCamera(key.GetCamera(itarget), GetCachedCameras(itarget));
                     else
                         showColor(key.color);
                 }
@@ -152,7 +152,7 @@ namespace M8.Animator {
         public Camera[] getAllCameras(ITarget itarget) {
             List<Camera> lsCameras = new List<Camera>();
             foreach(CameraSwitcherKey key in keys) {
-                Camera cam = key.getCamera(itarget);
+                Camera cam = key.GetCamera(itarget);
                 if(key.type == 0 && cam) {
                     if(lsCameras.IndexOf(cam) == -1) {
                         lsCameras.Add(cam);
@@ -168,7 +168,7 @@ namespace M8.Animator {
                 // reset camera fade if visible
                 // camera
                 if(action.typeEnd == 0) {
-                    Camera endCam = action.getCameraEnd(itarget);
+                    Camera endCam = action.GetCameraEnd(itarget);
                     if(endCam) Utility.SetTopCamera(endCam, GetCachedCameras(itarget));
                     CameraFade.reset();
                 }
@@ -238,8 +238,8 @@ namespace M8.Animator {
             CameraSwitcherKey action) {
 
 
-            Camera firstCamera = (isReversed ? action.getCameraEnd(itarget) : action.getCamera(itarget));
-            Camera secondCamera = (isReversed ? action.getCamera(itarget) : action.getCameraEnd(itarget));
+            Camera firstCamera = (isReversed ? action.GetCameraEnd(itarget) : action.GetCamera(itarget));
+            Camera secondCamera = (isReversed ? action.GetCamera(itarget) : action.GetCameraEnd(itarget));
 
             if(isReversed && frame == action.frame) {
                 if(firstTargetType == 0) Utility.SetTopCamera(firstCamera, GetCachedCameras(itarget));
@@ -304,8 +304,8 @@ namespace M8.Animator {
                     if(!key.still || key.cameraFadeType == (int)CameraSwitcherKey.Fade.None || key.targetsAreEqual(itarget)) break;
                     bool isReversed = key.isReversed();
 
-                    if(isReversed) return new cfTuple(key.endFrame, key.typeEnd, key.type, key.getCameraEnd(itarget), key.getCamera(itarget), isReversed);
-                    else return new cfTuple(key.frame, key.type, key.typeEnd, key.getCamera(itarget), key.getCameraEnd(itarget), isReversed);
+                    if(isReversed) return new cfTuple(key.endFrame, key.typeEnd, key.type, key.GetCameraEnd(itarget), key.GetCamera(itarget), isReversed);
+                    else return new cfTuple(key.frame, key.type, key.typeEnd, key.GetCamera(itarget), key.GetCameraEnd(itarget), isReversed);
                     //return new cfTuple((isReversed ? (cache[i] as AMCameraSwitcherAction).endFrame : (cache[i] as AMCameraSwitcherAction).startFrame),(cache[i] as AMCameraSwitcherAction).startCamera,(cache[i] as AMCameraSwitcherAction).endCamera,isReversed);
                 }
             }
@@ -344,7 +344,7 @@ namespace M8.Animator {
         public override List<GameObject> getDependencies(ITarget itarget) {
             List<GameObject> ls = new List<GameObject>();
             foreach(CameraSwitcherKey key in keys) {
-                Camera cam = key.getCamera(itarget);
+                Camera cam = key.GetCamera(itarget);
                 if(key.type == 0 && cam) ls.Add(cam.gameObject);
             }
             return ls;
@@ -354,7 +354,7 @@ namespace M8.Animator {
             List<GameObject> lsFlagToKeep = new List<GameObject>();
             for(int i = 0; i < oldReferences.Count; i++) {
                 foreach(CameraSwitcherKey key in keys) {
-                    Camera keyCamera = key.getCamera(itarget);
+                    Camera keyCamera = key.GetCamera(itarget);
                     if(key.type == 0 && keyCamera && oldReferences[i] == keyCamera.gameObject) {
                         Camera _camera = (Camera)newReferences[i].GetComponent(typeof(Camera));
                         // missing camera
@@ -363,7 +363,7 @@ namespace M8.Animator {
                             lsFlagToKeep.Add(oldReferences[i]);
                             continue;
                         }
-                        key.setCamera(itarget, _camera);
+                        key.SetCamera(itarget, _camera);
                     }
                 }
             }

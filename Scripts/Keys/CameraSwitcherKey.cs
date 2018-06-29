@@ -48,8 +48,11 @@ namespace M8.Animator {
 
         public int endFrame;
 
-        public Camera getCamera(ITarget itarget) {
-            if(itarget.meta) {
+        public string cameraTargetPath { get { return _cameraPath; } }
+        public string cameraEndTargetPath { get { return _cameraEndPath; } }
+
+        public Camera GetCamera(ITarget itarget) {
+            if(itarget != null && itarget.meta) {
                 if(!string.IsNullOrEmpty(_cameraPath)) {
                     Transform t = itarget.GetCache(_cameraPath);
                     if(t)
@@ -68,12 +71,12 @@ namespace M8.Animator {
                 return _camera;
         }
 
-        public bool cameraMatch(ITarget itarget, Camera camera) {
-            return getCamera(itarget) == camera;
+        public bool CameraMatch(ITarget itarget, Camera camera) {
+            return GetCamera(itarget) == camera;
         }
 
-        public bool setCamera(ITarget itarget, Camera camera) {
-            if(getCamera(itarget) != camera) {
+        public bool SetCamera(ITarget itarget, Camera camera) {
+            if(GetCamera(itarget) != camera) {
                 if(camera) {
                     if(itarget.meta) {
                         _camera = null;
@@ -96,8 +99,16 @@ namespace M8.Animator {
             return false;
         }
 
-        public Camera getCameraEnd(ITarget itarget) {
-            if(itarget.meta) {
+        /// <summary>
+        /// Used by Editor to directly set the camera target
+        /// </summary>
+        public void SetCameraDirect(Camera camera, string cameraTargetPath) {
+            _camera = camera;
+            _cameraPath = cameraTargetPath;
+        }
+
+        public Camera GetCameraEnd(ITarget itarget) {
+            if(itarget != null && itarget.meta) {
                 if(!string.IsNullOrEmpty(_cameraEndPath)) {
                     Transform t = itarget.GetCache(_cameraEndPath);
                     if(t)
@@ -116,9 +127,17 @@ namespace M8.Animator {
                 return _cameraEnd;
         }
 
-        public void setCameraEnd(CameraSwitcherKey nextKey) {
+        public void SetCameraEnd(CameraSwitcherKey nextKey) {
             _cameraEnd = nextKey._camera;
             _cameraEndPath = nextKey._cameraPath;
+        }
+
+        /// <summary>
+        /// Used by Editor to directly set the camera target
+        /// </summary>
+        public void SetCameraEndDirect(Camera camera, string cameraTargetPath) {
+            _cameraEnd = camera;
+            _cameraEndPath = cameraTargetPath;
         }
 
         public override void maintainKey(ITarget itarget, UnityEngine.Object targetObj) {
@@ -189,24 +208,24 @@ namespace M8.Animator {
             return false;
         }
         public bool hasStartTarget(ITarget itarget) {
-            if(type == 0 && !getCamera(itarget)) return false;
+            if(type == 0 && !GetCamera(itarget)) return false;
             //else if(!startColor) return false;
             return true;
         }
         public bool hasEndTarget(ITarget itarget) {
-            if(endFrame == -1 || (typeEnd == 0 && !getCameraEnd(itarget))) return false;
+            if(endFrame == -1 || (typeEnd == 0 && !GetCameraEnd(itarget))) return false;
             //else if(!endColor) return false;
             return true;
         }
         public bool targetsAreEqual(ITarget itarget) {
             if(type != typeEnd) return false;
-            if(type == 0 && getCamera(itarget) != getCameraEnd(itarget)) return false;
+            if(type == 0 && GetCamera(itarget) != GetCameraEnd(itarget)) return false;
             else if(type == 1 && color != colorEnd) return false;
             return true;
         }
         public string getStartTargetName(ITarget itarget) {
             if(type == 0) {
-                Camera cam = getCamera(itarget);
+                Camera cam = GetCamera(itarget);
                 if(cam) return cam.name;
                 else return "None";
             }
@@ -215,7 +234,7 @@ namespace M8.Animator {
         }
         public string getEndTargetName(ITarget itarget) {
             if(typeEnd == 0) {
-                Camera cam = getCameraEnd(itarget);
+                Camera cam = GetCameraEnd(itarget);
                 if(cam) return cam.name;
                 else return "None";
             }
@@ -393,8 +412,8 @@ namespace M8.Animator {
 
                     float[] fadeParams = mCamSwitcher.cameraFadeParameters.ToArray();
                     mIsReversed = Utility.isTransitionReversed(mCamSwitcher.type, fadeParams);
-                    mCam = mCamSwitcher.getCamera(itarget);
-                    mCamEnd = mCamSwitcher.getCameraEnd(itarget);
+                    mCam = mCamSwitcher.GetCamera(itarget);
+                    mCamEnd = mCamSwitcher.GetCameraEnd(itarget);
                     mAllCams = allCameras;
 
                     if(mCamSwitcher.cameraFadeType == (int)Fade.None) {

@@ -3630,10 +3630,10 @@ namespace M8.Animator.Edit {
                 GUI.Label(rectLabelCameraColor, (cKey.type == 0 ? "Camera" : "Color"));
                 Rect rectCameraColor = new Rect(rectLabelCameraColor.x + rectLabelCameraColor.width + margin, rectLabelCameraColor.y + 3f, rectView.width - rectLabelCameraColor.width - margin, 16f);
                 if(cKey.type == 0) {
-                    Camera newCam = (Camera)EditorGUI.ObjectField(rectCameraColor, cKey.getCamera(aData.target), typeof(Camera), true);
-                    if(cKey.getCamera(aData.target) != newCam) {
+                    Camera newCam = (Camera)EditorGUI.ObjectField(rectCameraColor, cKey.GetCamera(aData.target), typeof(Camera), true);
+                    if(cKey.GetCamera(aData.target) != newCam) {
                         aData.RegisterTakesUndo("Set Camera Track Camera", false);
-                        cKey.setCamera(aData.target, newCam);
+                        cKey.SetCamera(aData.target, newCam);
 
                         _dirtyTrackUpdate(ctake, sTrack);
                     }

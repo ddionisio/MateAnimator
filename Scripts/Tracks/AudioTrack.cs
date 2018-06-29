@@ -12,9 +12,9 @@ namespace M8.Animator {
         [SerializeField]
         AudioSource audioSource;
 
-        bool paused;
-        bool pausedLoop;
-        int lastSampleKeyIndex = -1;
+        private bool mIsPaused;
+        private bool mIsPausedLoop;
+        private int mLastSampleKeyIndex = -1;
 
         protected override void SetSerializeObject(UnityEngine.Object obj) {
             audioSource = obj as AudioSource;
@@ -69,7 +69,7 @@ namespace M8.Animator {
 
                             src.Play();
                         }
-                        lastSampleKeyIndex = i;
+                        mLastSampleKeyIndex = i;
                         break;
                     }
                 }
@@ -103,7 +103,7 @@ namespace M8.Animator {
             if(play) {
                 int iFrame = Mathf.RoundToInt(frame);
                 for(int i = keys.Count - 1; i >= 0; i--) {
-                    if(keys[i].frame <= iFrame && lastSampleKeyIndex != i) {
+                    if(keys[i].frame <= iFrame && mLastSampleKeyIndex != i) {
                         AudioKey key = keys[i] as AudioKey;
 
                         src.pitch = target.animScale * playSpeed;
@@ -120,14 +120,14 @@ namespace M8.Animator {
 
                             src.Play();
                         }
-                        lastSampleKeyIndex = i;
+                        mLastSampleKeyIndex = i;
                         break;
                     }
                 }
             }
             else {
                 src.loop = false;
-                lastSampleKeyIndex = -1;
+                mLastSampleKeyIndex = -1;
             }
         }
 
@@ -140,39 +140,39 @@ namespace M8.Animator {
                     src.loop = false;
             }
 
-            paused = false;
-            pausedLoop = false;
-            lastSampleKeyIndex = -1;
+            mIsPaused = false;
+            mIsPausedLoop = false;
+            mLastSampleKeyIndex = -1;
         }
 
         public override void Stop(ITarget itarget) {
             AudioSource src = GetTarget(itarget) as AudioSource;
             if(src) src.Stop();
-            paused = false;
-            pausedLoop = false;
-            lastSampleKeyIndex = -1;
+            mIsPaused = false;
+            mIsPausedLoop = false;
+            mLastSampleKeyIndex = -1;
         }
 
         public override void Pause(ITarget itarget) {
             AudioSource src = GetTarget(itarget) as AudioSource;
             if(src && src.isPlaying) {
-                pausedLoop = src.loop && src.clip && src.clip.length - src.time < 1f; //only end loop if it's short enough to do so
-                if(pausedLoop)
+                mIsPausedLoop = src.loop && src.clip && src.clip.length - src.time < 1f; //only end loop if it's short enough to do so
+                if(mIsPausedLoop)
                     src.loop = false;
                 else
                     src.Pause();
-                paused = true;
+                mIsPaused = true;
             }
         }
 
         public override void Resume(ITarget itarget) {
             AudioSource src = GetTarget(itarget) as AudioSource;
-            if(src && paused) {
-                if(pausedLoop)
+            if(src && mIsPaused) {
+                if(mIsPausedLoop)
                     src.loop = true;
                 src.Play();
-                paused = false;
-                pausedLoop = false;
+                mIsPaused = false;
+                mIsPausedLoop = false;
             }
         }
 
