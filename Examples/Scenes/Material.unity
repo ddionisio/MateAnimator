@@ -13,7 +13,7 @@ OcclusionCullingSettings:
 --- !u!104 &2
 RenderSettings:
   m_ObjectHideFlags: 0
-  serializedVersion: 8
+  serializedVersion: 9
   m_Fog: 0
   m_FogColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
   m_FogMode: 3
@@ -39,6 +39,7 @@ RenderSettings:
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 0}
   m_IndirectSpecularColor: {r: 0, g: 0, b: 0, a: 1}
+  m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
   m_ObjectHideFlags: 0
@@ -54,11 +55,10 @@ LightmapSettings:
     m_EnableBakedLightmaps: 1
     m_EnableRealtimeLightmaps: 1
   m_LightmapEditorSettings:
-    serializedVersion: 9
+    serializedVersion: 10
     m_Resolution: 2
     m_BakeResolution: 40
-    m_TextureWidth: 1024
-    m_TextureHeight: 1024
+    m_AtlasSize: 1024
     m_AO: 0
     m_AOMaxDistance: 1
     m_CompAOExponent: 0
@@ -88,6 +88,7 @@ LightmapSettings:
     m_PVRFilteringAtrousPositionSigmaDirect: 0.5
     m_PVRFilteringAtrousPositionSigmaIndirect: 2
     m_PVRFilteringAtrousPositionSigmaAO: 1
+    m_ShowResolutionOverlay: 1
   m_LightingDataAsset: {fileID: 0}
   m_UseShadowmask: 0
 --- !u!196 &4
@@ -139,7 +140,6 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children:
   - {fileID: 2071101590}
-  - {fileID: 1397494499}
   m_Father: {fileID: 0}
   m_RootOrder: 2
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -151,31 +151,26 @@ MonoBehaviour:
   m_GameObject: {fileID: 1809262}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0add95f4e765a2646af0183e66b9a2a2, type: 3}
+  m_Script: {fileID: 11500000, guid: 189a50e0ddb1421498ef25dcd885c95b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   takeData:
   - name: Take1
     frameRate: 24
-    numFrames: 100
-    startFrame: 1
-    endFrame: 76
+    endFramePadding: 0
     numLoop: 3
     loopMode: 1
     loopBackToFrame: -1
-    trackValues:
-    - {fileID: 1397494498}
-    track_count: 2
-    group_count: 0
+    trackCounter: 2
+    groupCounter: 0
     rootGroup:
       group_name: Group0
       group_id: 0
       elements: 02000000
       foldout: 1
     groupValues: []
-  playOnStartIndex: 0
-  meta: {fileID: 0}
-  playOnStartMeta: 
+  _defaultTakeName: Take1
+  _meta: {fileID: 0}
   sequenceLoadAll: 1
   sequenceKillWhenDone: 0
   playOnEnable: 0
@@ -183,8 +178,117 @@ MonoBehaviour:
   onDisableAction: 1
   updateType: 0
   updateTimeIndependent: 0
-  codeLanguage: 0
-  _dataHolder: {fileID: 1397494495}
+  serializeData:
+    _audioTracks: []
+    _audioKeys: []
+    _cameraSwitcherTracks: []
+    _cameraSwitcherKeys: []
+    _eventTracks: []
+    _eventKeys: []
+    _goSetActiveTracks: []
+    _goSetActiveKeys: []
+    _materialTracks:
+    - id: 2
+      name: Track1
+      foldout: 1
+      _targetPath: 
+      obj: {fileID: 2071101589}
+      _matOverride: {fileID: 0}
+      _matInd: 0
+      _property: _Color
+      _propertyType: 0
+    _materialKeys:
+    - version: 1
+      interp: 1
+      frame: 5
+      easeType: 37
+      amplitude: 0
+      period: 0
+      customEase:
+      - 0
+      - 0
+      - 3.3930547
+      - 3.3930547
+      - 0.5
+      - 1
+      - 0
+      - 0
+      - 1
+      - 0
+      - -3.4252822
+      - -3.4252822
+      endFrame: 25
+      texture: {fileID: 0}
+      _val4: {x: 1, y: 1, z: 1, w: 1}
+    - version: 1
+      interp: 1
+      frame: 25
+      easeType: 12
+      amplitude: 0
+      period: 0
+      customEase: []
+      endFrame: 40
+      texture: {fileID: 0}
+      _val4: {x: 0.89759034, y: 0.14058645, z: 0.14058645, w: 1}
+    - version: 1
+      interp: 2
+      frame: 40
+      easeType: 1
+      amplitude: 0
+      period: 0
+      customEase: []
+      endFrame: 60
+      texture: {fileID: 0}
+      _val4: {x: 0, y: 0.27710867, z: 1, w: 1}
+    - version: 1
+      interp: 2
+      frame: 60
+      easeType: 1
+      amplitude: 0
+      period: 0
+      customEase: []
+      endFrame: 80
+      texture: {fileID: 0}
+      _val4: {x: 0.13913484, y: 0.82953167, z: 0.85542166, w: 1}
+    - version: 1
+      interp: 2
+      frame: 80
+      easeType: 1
+      amplitude: 0
+      period: 0
+      customEase: []
+      endFrame: 90
+      texture: {fileID: 0}
+      _val4: {x: 0.97590363, y: 0.8644872, z: 0.13521557, w: 1}
+    - version: 1
+      interp: 2
+      frame: 90
+      easeType: 1
+      amplitude: 0
+      period: 0
+      customEase: []
+      endFrame: -1
+      texture: {fileID: 0}
+      _val4: {x: 0.97590363, y: 0.8644872, z: 0.13521557, w: 1}
+    _orientationTracks: []
+    _orientationKeys: []
+    _propertyTracks: []
+    _propertyKeys: []
+    _rotationEulerTracks: []
+    _rotationEulerKeys: []
+    _rotationTracks: []
+    _rotationKeys: []
+    _translationTracks: []
+    _translationKeys: []
+    _unityAnimationTracks: []
+    _unityAnimationKeys: []
+    _scaleTracks: []
+    _scaleKeys: []
+    _trackLookups:
+    - type: 5
+      index: 0
+      keyIndices: 000000000100000002000000030000000400000005000000
+    _takeTrackCounts: 01000000
 --- !u!1 &349066521
 GameObject:
   m_ObjectHideFlags: 0
@@ -256,6 +360,7 @@ Camera:
   m_TargetEye: 3
   m_HDR: 0
   m_AllowMSAA: 1
+  m_AllowDynamicResolution: 0
   m_ForceIntoRT: 0
   m_OcclusionCulling: 1
   m_StereoConvergence: 10
@@ -273,206 +378,6 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1397494495
-GameObject:
-  m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  serializedVersion: 5
-  m_Component:
-  - component: {fileID: 1397494499}
-  - component: {fileID: 1397494498}
-  - component: {fileID: 1397494497}
-  - component: {fileID: 1397494496}
-  - component: {fileID: 1397494502}
-  - component: {fileID: 1397494501}
-  - component: {fileID: 1397494500}
-  - component: {fileID: 1397494503}
-  m_Layer: 0
-  m_Name: _animdata
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &1397494496
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  m_GameObject: {fileID: 1397494495}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e528e9e0ca450ab49bfaf7d07f69b34d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  version: 1
-  interp: 1
-  frame: 25
-  easeType: 12
-  amplitude: 0
-  period: 0
-  customEase: []
-  endFrame: 40
-  texture: {fileID: 0}
-  _val4: {x: 0.89759034, y: 0.14058645, z: 0.14058645, w: 1}
---- !u!114 &1397494497
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  m_GameObject: {fileID: 1397494495}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e528e9e0ca450ab49bfaf7d07f69b34d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  version: 1
-  interp: 1
-  frame: 5
-  easeType: 37
-  amplitude: 0
-  period: 0
-  customEase:
-  - 0
-  - 0
-  - 3.3930547
-  - 3.3930547
-  - 0.5
-  - 1
-  - 0
-  - 0
-  - 1
-  - 0
-  - -3.4252822
-  - -3.4252822
-  endFrame: 25
-  texture: {fileID: 0}
-  _val4: {x: 1, y: 1, z: 1, w: 1}
---- !u!114 &1397494498
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  m_GameObject: {fileID: 1397494495}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: cbd7542cd7e47e845b09043819b4d60b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  id: 2
-  name: Track1
-  keys:
-  - {fileID: 1397494497}
-  - {fileID: 1397494496}
-  - {fileID: 1397494502}
-  - {fileID: 1397494501}
-  - {fileID: 1397494500}
-  - {fileID: 1397494503}
-  foldout: 1
-  _targetPath: 
-  obj: {fileID: 2071101589}
-  _matOverride: {fileID: 0}
-  _matInd: 0
-  _property: _Color
-  _propertyType: 0
---- !u!4 &1397494499
-Transform:
-  m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  m_GameObject: {fileID: 1397494495}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_Children: []
-  m_Father: {fileID: 1809263}
-  m_RootOrder: 1
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1397494500
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  m_GameObject: {fileID: 1397494495}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e528e9e0ca450ab49bfaf7d07f69b34d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  version: 1
-  interp: 2
-  frame: 80
-  easeType: 1
-  amplitude: 0
-  period: 0
-  customEase: []
-  endFrame: 90
-  texture: {fileID: 0}
-  _val4: {x: 0.97590363, y: 0.8644872, z: 0.13521557, w: 1}
---- !u!114 &1397494501
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  m_GameObject: {fileID: 1397494495}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e528e9e0ca450ab49bfaf7d07f69b34d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  version: 1
-  interp: 2
-  frame: 60
-  easeType: 1
-  amplitude: 0
-  period: 0
-  customEase: []
-  endFrame: 80
-  texture: {fileID: 0}
-  _val4: {x: 0.13913484, y: 0.82953167, z: 0.85542166, w: 1}
---- !u!114 &1397494502
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  m_GameObject: {fileID: 1397494495}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e528e9e0ca450ab49bfaf7d07f69b34d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  version: 1
-  interp: 2
-  frame: 40
-  easeType: 1
-  amplitude: 0
-  period: 0
-  customEase: []
-  endFrame: 60
-  texture: {fileID: 0}
-  _val4: {x: 0, y: 0.27710867, z: 1, w: 1}
---- !u!114 &1397494503
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  m_GameObject: {fileID: 1397494495}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e528e9e0ca450ab49bfaf7d07f69b34d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  version: 1
-  interp: 2
-  frame: 90
-  easeType: 1
-  amplitude: 0
-  period: 0
-  customEase: []
-  endFrame: -1
-  texture: {fileID: 0}
-  _val4: {x: 0.97590363, y: 0.8644872, z: 0.13521557, w: 1}
 --- !u!1 &1872922114
 GameObject:
   m_ObjectHideFlags: 0
@@ -569,6 +474,7 @@ MeshRenderer:
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
+  m_RenderingLayerMask: 4294967295
   m_Materials:
   - {fileID: 10303, guid: 0000000000000000f000000000000000, type: 0}
   m_StaticBatchInfo:

@@ -130,9 +130,9 @@ namespace M8.Animator {
                 PathType pathType = path.Length == 2 ? PathType.Linear : PathType.CatmullRom;
 
                 if(pixelSnap)
-                    ret = DOTween.To(PathPlugin.Get(), () => path[0], x => trans.position = new Vector3(Mathf.Round(x.x * ppu) / ppu, Mathf.Round(x.y * ppu) / ppu, Mathf.Round(x.z * ppu) / ppu), new Path(pathType, path, pathResolution), getTime(frameRate)).SetTarget(trans).SetRelative(isRelative).SetOptions(isClosed);
+                    ret = DOTween.To(PathPlugin.Get(), () => path[0], x => trans.localPosition = new Vector3(Mathf.Round(x.x * ppu) / ppu, Mathf.Round(x.y * ppu) / ppu, Mathf.Round(x.z * ppu) / ppu), new Path(pathType, path, pathResolution), getTime(frameRate)).SetTarget(trans).SetRelative(isRelative).SetOptions(isClosed);
                 else
-                    ret = DOTween.To(PathPlugin.Get(), () => path[0], x => trans.position = x, new Path(pathType, path, pathResolution), getTime(frameRate)).SetTarget(trans).SetRelative(isRelative).SetOptions(isClosed);
+                    ret = DOTween.To(PathPlugin.Get(), () => path[0], x => trans.localPosition = x, new Path(pathType, path, pathResolution), getTime(frameRate)).SetTarget(trans).SetRelative(isRelative).SetOptions(isClosed);
 
                 if(hasCustomEase())
                     ret.SetEase(easeCurve);
