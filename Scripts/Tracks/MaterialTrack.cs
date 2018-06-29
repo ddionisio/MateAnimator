@@ -36,12 +36,12 @@ namespace M8.Animator {
         [SerializeField]
         ValueType _propertyType = ValueType.None;
 
-        Material mMat;//material cache
-        Material[] mMats; //material list cache
-        
-        MaterialController mMatCtrl;
-        int mPropId;
-        bool mIsInit;
+        private Material mMat;//material cache
+        private Material[] mMats; //material list cache
+
+        private MaterialController mMatCtrl;
+        private int mPropId;
+        private bool mIsInit;
 
         public override int version { get { return 1; } }
 

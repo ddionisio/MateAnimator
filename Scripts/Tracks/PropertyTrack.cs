@@ -12,6 +12,8 @@ namespace M8.Animator {
         public override SerializeType serializeType { get { return SerializeType.Property; } }
 
         public enum ValueType {
+            Invalid = -1,
+
             Integer = 0,
             Long = 1,
             Float = 2,
@@ -28,7 +30,7 @@ namespace M8.Animator {
             Sprite = 13,
             Enum = 14,
         }
-        public int valueType;
+        public ValueType valueType;
 
         [SerializeField]
         GameObject obj;
@@ -128,13 +130,13 @@ namespace M8.Animator {
         }
         void setComponentValueFromCachedInfo(Component comp, object val) {
             if(cachedFieldInfo != null) {
-                if(valueType == (int)ValueType.Enum)
+                if(valueType == ValueType.Enum)
                     cachedFieldInfo.SetValue(comp, System.Enum.ToObject(cachedFieldInfo.FieldType, val));
                 else
                     cachedFieldInfo.SetValue(comp, val);
             }
             else if(cachedPropertyInfo != null) {
-                if(valueType == (int)ValueType.Enum)
+                if(valueType == ValueType.Enum)
                     cachedPropertyInfo.SetValue(comp, System.Enum.ToObject(cachedPropertyInfo.PropertyType, val), null);
                 else
                     cachedPropertyInfo.SetValue(comp, val, null);
@@ -222,25 +224,25 @@ namespace M8.Animator {
 
             if(isValueTypeNumeric(valueType))
                 k.val = Convert.ToDouble(getCachedInfoValue(target));
-            else if(valueType == (int)ValueType.Bool)
+            else if(valueType == ValueType.Bool)
                 k.valb = Convert.ToBoolean(getCachedInfoValue(target));
-            else if(valueType == (int)ValueType.String)
+            else if(valueType == ValueType.String)
                 k.valString = Convert.ToString(getCachedInfoValue(target));
-            else if(valueType == (int)ValueType.Vector2)
+            else if(valueType == ValueType.Vector2)
                 k.vect2 = (Vector2)getCachedInfoValue(target);
-            else if(valueType == (int)ValueType.Vector3)
+            else if(valueType == ValueType.Vector3)
                 k.vect3 = (Vector3)getCachedInfoValue(target);
-            else if(valueType == (int)ValueType.Color)
+            else if(valueType == ValueType.Color)
                 k.color = (Color)getCachedInfoValue(target);
-            else if(valueType == (int)ValueType.Rect)
+            else if(valueType == ValueType.Rect)
                 k.rect = (Rect)getCachedInfoValue(target);
-            else if(valueType == (int)ValueType.Vector4)
+            else if(valueType == ValueType.Vector4)
                 k.vect4 = (Vector4)getCachedInfoValue(target);
-            else if(valueType == (int)ValueType.Quaternion)
+            else if(valueType == ValueType.Quaternion)
                 k.quat = (Quaternion)getCachedInfoValue(target);
-            else if(valueType == (int)ValueType.Sprite)
+            else if(valueType == ValueType.Sprite)
                 k.valObj = (UnityEngine.Object)getCachedInfoValue(target);
-            else if(valueType == (int)ValueType.Enum)
+            else if(valueType == ValueType.Enum)
                 k.val = Convert.ToDouble(getCachedInfoValue(target));
             else {
                 Debug.LogError("Animator: Invalid ValueType " + valueType.ToString());
@@ -249,6 +251,23 @@ namespace M8.Animator {
             // update cache
             updateCache(target);
             return k;
+        }
+
+        /// <summary>
+        /// Editor purpose to set component directly. If isField=false, fieldName is a Property method
+        /// </summary>
+        public void SetTargetCompDirect(Component comp, string compTypeName, bool isField, string fieldName) {
+            component = comp;
+            componentName = compTypeName;
+
+            if(isField) {
+                this.fieldName = fieldName;
+                propertyName = "";
+            }
+            else {
+                this.fieldName = "";
+                propertyName = fieldName;
+            }
         }
 
         public bool setComponent(ITarget target, Component component) {
@@ -360,41 +379,38 @@ namespace M8.Animator {
                 return true;
             return false;
         }
-        public void setValueType(int type) {
-            valueType = type;
-        }
         public void setValueType(Type t) {
 
             if(t == typeof(int))
-                valueType = (int)ValueType.Integer;
+                valueType = ValueType.Integer;
             else if(t == typeof(long))
-                valueType = (int)ValueType.Long;
+                valueType = ValueType.Long;
             else if(t == typeof(float))
-                valueType = (int)ValueType.Float;
+                valueType = ValueType.Float;
             else if(t == typeof(double))
-                valueType = (int)ValueType.Double;
+                valueType = ValueType.Double;
             else if(t == typeof(Vector2))
-                valueType = (int)ValueType.Vector2;
+                valueType = ValueType.Vector2;
             else if(t == typeof(Vector3))
-                valueType = (int)ValueType.Vector3;
+                valueType = ValueType.Vector3;
             else if(t == typeof(Color))
-                valueType = (int)ValueType.Color;
+                valueType = ValueType.Color;
             else if(t == typeof(Rect))
-                valueType = (int)ValueType.Rect;
+                valueType = ValueType.Rect;
             else if(t == typeof(Vector4))
-                valueType = (int)ValueType.Vector4;
+                valueType = ValueType.Vector4;
             else if(t == typeof(Quaternion))
-                valueType = (int)ValueType.Quaternion;
+                valueType = ValueType.Quaternion;
             else if(t == typeof(bool))
-                valueType = (int)ValueType.Bool;
+                valueType = ValueType.Bool;
             else if(t == typeof(string))
-                valueType = (int)ValueType.String;
+                valueType = ValueType.String;
             else if(t == typeof(Sprite))
-                valueType = (int)ValueType.Sprite;
+                valueType = ValueType.Sprite;
             else if(t.BaseType == typeof(System.Enum))
-                valueType = (int)ValueType.Enum;
+                valueType = ValueType.Enum;
             else {
-                valueType = -1;
+                valueType = ValueType.Invalid;
                 Debug.LogWarning("Animator: Value type " + t.ToString() + " is unsupported.");
             }
 
@@ -446,7 +462,7 @@ namespace M8.Animator {
                     t = Utility.EaseCustom(0.0f, 1.0f, framePositionInAction / key.getNumberOfFrames(frameRate), key.easeCurve);
                 }
                 else {
-                    var ease = Utility.GetEasingFunction((Ease)key.easeType);
+                    var ease = Utility.GetEasingFunction(key.easeType);
                     t = ease(framePositionInAction, key.getNumberOfFrames(frameRate), key.amplitude, key.period);
                 }
 
@@ -515,11 +531,11 @@ namespace M8.Animator {
             Debug.LogError("need implement");
             return s;
         }
-        public static bool isValueTypeNumeric(int valueType) {
-            if(valueType == (int)ValueType.Integer) return true;
-            if(valueType == (int)ValueType.Long) return true;
-            if(valueType == (int)ValueType.Float) return true;
-            if(valueType == (int)ValueType.Double) return true;
+        public static bool isValueTypeNumeric(ValueType valueType) {
+            if(valueType == ValueType.Integer) return true;
+            if(valueType == ValueType.Long) return true;
+            if(valueType == ValueType.Float) return true;
+            if(valueType == ValueType.Double) return true;
             return false;
         }
         public bool hasSamePropertyAs(ITarget target, PropertyTrack _track) {

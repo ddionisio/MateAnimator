@@ -33,6 +33,10 @@ namespace M8.Animator {
                 targetPath = "";
             }
         }
+        public void SetTargetDirect(Transform t, string path) {
+            target = t;
+            targetPath = path;
+        }
         public Transform GetTarget(ITarget itarget) {
             Transform ret = null;
             if(itarget.meta) {

@@ -44,13 +44,14 @@ namespace M8.Animator {
                 _targetPath = Utility.GetPath(target.root, item);
                 target.SetCache(_targetPath, item.transform);
 
-                SetSerializeObject(item);
-                this.obj = null;
+                obj = null;
             }
             else {
                 _targetPath = "";
-                SetSerializeObject(item);
+                obj = item;
             }
+
+            componentName = "";
         }
 
         /// <summary>
@@ -65,13 +66,24 @@ namespace M8.Animator {
                 else
                     _targetPath = "";
 
-                SetSerializeObject(comp);
-                this.obj = null;
+                obj = null;
             }
             else {
                 _targetPath = "";
-                SetSerializeObject(comp);
+
+                obj = comp;
             }
+
+            componentName = comp.GetType().Name;
+        }
+
+        /// <summary>
+        /// Editor purpose for setting target data directly.
+        /// </summary>
+        public void SetTargetAsComponentDirect(string targetPath, Component comp, string compTypeName) {
+            _targetPath = targetPath;
+            obj = comp;
+            componentName = compTypeName;
         }
 
         /// <summary>

@@ -176,7 +176,7 @@ namespace M8.Animator {
 
             if(endFrame == -1 && canTween && propTrack.canTween) return;
 
-            int valueType = propTrack.valueType;
+            PropertyTrack.ValueType valueType = propTrack.valueType;
 
             //get component and fill the cached method info
             Component comp = propTrack.GetTargetComp(target as GameObject);
@@ -204,7 +204,7 @@ namespace M8.Animator {
 
                     PropertyInfo propInfo = propTrack.GetCachedPropertyInfo();
                     if(propInfo != null) {
-                        switch((PropertyTrack.ValueType)valueType) {
+                        switch(valueType) {
                             case PropertyTrack.ValueType.Integer:
                                 tween = DOTween.To(new IntPlugin(), () => System.Convert.ToInt32(propInfo.GetValue(comp, null)), (x) => propInfo.SetValue(comp, x, null), System.Convert.ToInt32(endKey.val), getTime(frameRate)); break;
                             case PropertyTrack.ValueType.Float:
@@ -230,7 +230,7 @@ namespace M8.Animator {
                     else {
                         FieldInfo fieldInfo = propTrack.GetCachedFieldInfo();
                         if(fieldInfo != null) {
-                            switch((PropertyTrack.ValueType)valueType) {
+                            switch(valueType) {
                                 case PropertyTrack.ValueType.Integer:
                                     tween = DOTween.To(new IntPlugin(), () => System.Convert.ToInt32(fieldInfo.GetValue(comp)), (x) => fieldInfo.SetValue(comp, x), System.Convert.ToInt32(endKey.val), getTime(frameRate)); break;
                                 case PropertyTrack.ValueType.Float:
@@ -284,7 +284,7 @@ namespace M8.Animator {
             else s += "]";
             return s;
         }
-        public string getValueString(System.Type type, int valueType, PropertyKey nextKey, bool brief) {
+        public string getValueString(System.Type type, PropertyTrack.ValueType valueType, PropertyKey nextKey, bool brief) {
             System.Text.StringBuilder s = new System.Text.StringBuilder();
 
             if(PropertyTrack.isValueTypeNumeric(valueType)) {
@@ -293,42 +293,42 @@ namespace M8.Animator {
                 if(!brief && nextKey != null) { s.Append(" -> "); s.Append(formatNumeric(nextKey.val)); }
                 //if(!brief && endFrame != -1) s += " -> "+end_val.ToString();
             }
-            else if(valueType == (int)PropertyTrack.ValueType.Bool) {
+            else if(valueType == PropertyTrack.ValueType.Bool) {
                 s.Append(val > 0.0 ? "(true)" : "(false)");
             }
-            else if(valueType == (int)PropertyTrack.ValueType.String) {
+            else if(valueType == PropertyTrack.ValueType.String) {
                 s.AppendFormat("\"{0}\"", valString);
             }
-            else if(valueType == (int)PropertyTrack.ValueType.Vector2) {
+            else if(valueType == PropertyTrack.ValueType.Vector2) {
                 s.Append(vect2.ToString());
                 if(!brief && nextKey != null) { s.Append(" -> "); s.Append(nextKey.vect2.ToString()); }
             }
-            else if(valueType == (int)PropertyTrack.ValueType.Vector3) {
+            else if(valueType == PropertyTrack.ValueType.Vector3) {
                 s.Append(vect3.ToString());
                 if(!brief && nextKey != null) { s.Append(" -> "); s.Append(nextKey.vect3.ToString()); }
             }
-            else if(valueType == (int)PropertyTrack.ValueType.Color) {
+            else if(valueType == PropertyTrack.ValueType.Color) {
                 //return null; 
                 s.Append(color.ToString());
                 if(!brief && nextKey != null) { s.Append(" -> "); s.Append(nextKey.color.ToString()); }
             }
-            else if(valueType == (int)PropertyTrack.ValueType.Rect) {
+            else if(valueType == PropertyTrack.ValueType.Rect) {
                 //return null; 
                 s.Append(rect.ToString());
                 if(!brief && nextKey != null) { s.Append(" -> "); s.Append(nextKey.rect.ToString()); }
             }
-            else if(valueType == (int)PropertyTrack.ValueType.Vector4) {
+            else if(valueType == PropertyTrack.ValueType.Vector4) {
                 s.Append(vect4.ToString());
                 if(!brief && nextKey != null) { s.Append(" -> "); s.Append(nextKey.vect4.ToString()); }
             }
-            else if(valueType == (int)PropertyTrack.ValueType.Quaternion) {
+            else if(valueType == PropertyTrack.ValueType.Quaternion) {
                 s.Append(quat.ToString());
                 if(!brief && nextKey != null) { s.Append(" -> "); s.Append(nextKey.quat.ToString()); }
             }
-            else if(valueType == (int)PropertyTrack.ValueType.Sprite) {
+            else if(valueType == PropertyTrack.ValueType.Sprite) {
                 s.AppendFormat("\"{0}\"", valObj ? valObj.name : "none");
             }
-            else if(valueType == (int)PropertyTrack.ValueType.Enum) {
+            else if(valueType == PropertyTrack.ValueType.Enum) {
                 s.Append(System.Enum.ToObject(type, (int)val).ToString());
             }
             return s.ToString();
@@ -358,35 +358,35 @@ namespace M8.Animator {
             return input.ToString("N2");
         }
 
-        public bool targetsAreEqual(int valueType, PropertyKey nextKey) {
+        public bool targetsAreEqual(PropertyTrack.ValueType valueType, PropertyKey nextKey) {
             if(nextKey != null) {
-                if(valueType == (int)PropertyTrack.ValueType.Integer || valueType == (int)PropertyTrack.ValueType.Long || valueType == (int)PropertyTrack.ValueType.Float || valueType == (int)PropertyTrack.ValueType.Double)
+                if(valueType == PropertyTrack.ValueType.Integer || valueType == PropertyTrack.ValueType.Long || valueType == PropertyTrack.ValueType.Float || valueType == PropertyTrack.ValueType.Double)
                     return val == nextKey.val;
-                if(valueType == (int)PropertyTrack.ValueType.Vector2) return (vect2 == nextKey.vect2);
-                if(valueType == (int)PropertyTrack.ValueType.Vector3) return (vect3 == nextKey.vect3);
-                if(valueType == (int)PropertyTrack.ValueType.Color) return (color == nextKey.color); //return start_color.ToString()+" -> "+end_color.ToString();
-                if(valueType == (int)PropertyTrack.ValueType.Rect) return (rect == nextKey.rect); //return start_rect.ToString()+" -> "+end_rect.ToString();
-                if(valueType == (int)PropertyTrack.ValueType.Vector4) return (vect4 == nextKey.vect4);
-                if(valueType == (int)PropertyTrack.ValueType.Quaternion) return (quat == nextKey.quat);
+                if(valueType == PropertyTrack.ValueType.Vector2) return (vect2 == nextKey.vect2);
+                if(valueType == PropertyTrack.ValueType.Vector3) return (vect3 == nextKey.vect3);
+                if(valueType == PropertyTrack.ValueType.Color) return (color == nextKey.color); //return start_color.ToString()+" -> "+end_color.ToString();
+                if(valueType == PropertyTrack.ValueType.Rect) return (rect == nextKey.rect); //return start_rect.ToString()+" -> "+end_rect.ToString();
+                if(valueType == PropertyTrack.ValueType.Vector4) return (vect4 == nextKey.vect4);
+                if(valueType == PropertyTrack.ValueType.Quaternion) return (quat == nextKey.quat);
             }
             return false;
         }
 
-        public object getValue(int valueType) {
-            if(valueType == (int)PropertyTrack.ValueType.Integer) return System.Convert.ToInt32(val);
-            if(valueType == (int)PropertyTrack.ValueType.Long) return System.Convert.ToInt64(val);
-            if(valueType == (int)PropertyTrack.ValueType.Float) return System.Convert.ToSingle(val);
-            if(valueType == (int)PropertyTrack.ValueType.Double) return val;
-            if(valueType == (int)PropertyTrack.ValueType.Vector2) return vect2;
-            if(valueType == (int)PropertyTrack.ValueType.Vector3) return vect3;
-            if(valueType == (int)PropertyTrack.ValueType.Color) return color; //return start_color.ToString()+" -> "+end_color.ToString();
-            if(valueType == (int)PropertyTrack.ValueType.Rect) return rect; //return start_rect.ToString()+" -> "+end_rect.ToString();
-            if(valueType == (int)PropertyTrack.ValueType.Vector4) return vect4;
-            if(valueType == (int)PropertyTrack.ValueType.Quaternion) return quat;
-            if(valueType == (int)PropertyTrack.ValueType.Bool) return val > 0.0;
-            if(valueType == (int)PropertyTrack.ValueType.String) return valString;
-            if(valueType == (int)PropertyTrack.ValueType.Sprite) return (valObj ? valObj : null);
-            if(valueType == (int)PropertyTrack.ValueType.Enum) return System.Convert.ToInt32(val);
+        public object getValue(PropertyTrack.ValueType valueType) {
+            if(valueType == PropertyTrack.ValueType.Integer) return System.Convert.ToInt32(val);
+            if(valueType == PropertyTrack.ValueType.Long) return System.Convert.ToInt64(val);
+            if(valueType == PropertyTrack.ValueType.Float) return System.Convert.ToSingle(val);
+            if(valueType == PropertyTrack.ValueType.Double) return val;
+            if(valueType == PropertyTrack.ValueType.Vector2) return vect2;
+            if(valueType == PropertyTrack.ValueType.Vector3) return vect3;
+            if(valueType == PropertyTrack.ValueType.Color) return color; //return start_color.ToString()+" -> "+end_color.ToString();
+            if(valueType == PropertyTrack.ValueType.Rect) return rect; //return start_rect.ToString()+" -> "+end_rect.ToString();
+            if(valueType == PropertyTrack.ValueType.Vector4) return vect4;
+            if(valueType == PropertyTrack.ValueType.Quaternion) return quat;
+            if(valueType == PropertyTrack.ValueType.Bool) return val > 0.0;
+            if(valueType == PropertyTrack.ValueType.String) return valString;
+            if(valueType == PropertyTrack.ValueType.Sprite) return (valObj ? valObj : null);
+            if(valueType == PropertyTrack.ValueType.Enum) return System.Convert.ToInt32(val);
             return "Unknown";
         }
         #endregion

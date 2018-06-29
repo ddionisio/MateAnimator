@@ -3346,7 +3346,7 @@ namespace M8.Animator.Edit {
                 string propertyLabel = pTrack.getTrackType();
                 Rect rectField = new Rect(0f, start_y, width_inspector - margin, 22f);
                 bool isUpdated = false;
-                if((pTrack.valueType == (int)PropertyTrack.ValueType.Integer) || (pTrack.valueType == (int)PropertyTrack.ValueType.Long)) {
+                if((pTrack.valueType == PropertyTrack.ValueType.Integer) || (pTrack.valueType == PropertyTrack.ValueType.Long)) {
                     int val = Convert.ToInt32(pKey.val);
                     int nval = EditorGUI.IntField(rectField, propertyLabel, val);
                     if(val != nval) {
@@ -3355,7 +3355,7 @@ namespace M8.Animator.Edit {
                         isUpdated = true;
                     }
                 }
-                else if((pTrack.valueType == (int)PropertyTrack.ValueType.Float) || (pTrack.valueType == (int)PropertyTrack.ValueType.Double)) {
+                else if((pTrack.valueType == PropertyTrack.ValueType.Float) || (pTrack.valueType == PropertyTrack.ValueType.Double)) {
                     float val = (float)pKey.val;
                     float nval = EditorGUI.FloatField(rectField, propertyLabel, val);
                     if(val != nval) {
@@ -3364,7 +3364,7 @@ namespace M8.Animator.Edit {
                         isUpdated = true;
                     }
                 }
-                else if(pTrack.valueType == (int)PropertyTrack.ValueType.Bool) {
+                else if(pTrack.valueType == PropertyTrack.ValueType.Bool) {
                     bool val = pKey.val > 0.0;
                     bool nval = EditorGUI.Toggle(rectField, propertyLabel, val);
                     if(val != nval) {
@@ -3373,7 +3373,7 @@ namespace M8.Animator.Edit {
                         isUpdated = true;
                     }
                 }
-                else if(pTrack.valueType == (int)PropertyTrack.ValueType.String) {
+                else if(pTrack.valueType == PropertyTrack.ValueType.String) {
                     string val = pKey.valString;
                     string nval = EditorGUI.TextField(rectField, propertyLabel, val);
                     if(val != nval) {
@@ -3382,7 +3382,7 @@ namespace M8.Animator.Edit {
                         isUpdated = true;
                     }
                 }
-                else if(pTrack.valueType == (int)PropertyTrack.ValueType.Vector2) {
+                else if(pTrack.valueType == PropertyTrack.ValueType.Vector2) {
                     rectField.height = 40f;
                     Vector2 nval = EditorGUI.Vector2Field(rectField, propertyLabel, pKey.vect2);
                     if(pKey.vect2 != nval) {
@@ -3391,7 +3391,7 @@ namespace M8.Animator.Edit {
                         isUpdated = true;
                     }
                 }
-                else if(pTrack.valueType == (int)PropertyTrack.ValueType.Vector3) {
+                else if(pTrack.valueType == PropertyTrack.ValueType.Vector3) {
                     rectField.height = 40f;
                     Vector3 nval = EditorGUI.Vector3Field(rectField, propertyLabel, pKey.vect3);
                     if(pKey.vect3 != nval) {
@@ -3400,7 +3400,7 @@ namespace M8.Animator.Edit {
                         isUpdated = true;
                     }
                 }
-                else if(pTrack.valueType == (int)PropertyTrack.ValueType.Color) {
+                else if(pTrack.valueType == PropertyTrack.ValueType.Color) {
                     rectField.height = 22f;
                     Color nclr = EditorGUI.ColorField(rectField, propertyLabel, pKey.color);
                     if(pKey.color != nclr) {
@@ -3409,7 +3409,7 @@ namespace M8.Animator.Edit {
                         isUpdated = true;
                     }
                 }
-                else if(pTrack.valueType == (int)PropertyTrack.ValueType.Rect) {
+                else if(pTrack.valueType == PropertyTrack.ValueType.Rect) {
                     rectField.height = 60f;
                     Rect nrect = EditorGUI.RectField(rectField, propertyLabel, pKey.rect);
                     if(pKey.rect != nrect) {
@@ -3418,8 +3418,8 @@ namespace M8.Animator.Edit {
                         isUpdated = true;
                     }
                 }
-                else if(pTrack.valueType == (int)PropertyTrack.ValueType.Vector4
-                    || pTrack.valueType == (int)PropertyTrack.ValueType.Quaternion) {
+                else if(pTrack.valueType == PropertyTrack.ValueType.Vector4
+                    || pTrack.valueType == PropertyTrack.ValueType.Quaternion) {
                     rectField.height = 40f;
                     Vector4 nvec = EditorGUI.Vector4Field(rectField, propertyLabel, pKey.vect4);
                     if(pKey.vect4 != nvec) {
@@ -3428,7 +3428,7 @@ namespace M8.Animator.Edit {
                         isUpdated = true;
                     }
                 }
-                else if(pTrack.valueType == (int)PropertyTrack.ValueType.Sprite) {
+                else if(pTrack.valueType == PropertyTrack.ValueType.Sprite) {
                     UnityEngine.Object val = pKey.valObj;
                     GUI.skin = null; EditorUtility.ResetDisplayControls();
                     rectField.height = 16.0f;
@@ -3440,7 +3440,7 @@ namespace M8.Animator.Edit {
                         isUpdated = true;
                     }
                 }
-                else if(pTrack.valueType == (int)PropertyTrack.ValueType.Enum) {
+                else if(pTrack.valueType == PropertyTrack.ValueType.Enum) {
                     rectField.height = 20.0f;
                     GUI.Label(rectField, propertyLabel);
                     rectField.y += rectField.height + 4.0f;
@@ -3720,8 +3720,11 @@ namespace M8.Animator.Edit {
                     }
                 }
                 else if(aTrack.propertyType == MaterialTrack.ValueType.Color) {
+                    GUI.skin = null; EditorUtility.ResetDisplayControls();
                     rectField.height = 22f;
                     Color nclr = EditorGUI.ColorField(rectField, propertyLabel, aKey.color);
+                    GUI.skin = skin; EditorUtility.ResetDisplayControls();
+
                     if(aKey.color != nclr) {
                         aData.RegisterTakesUndo("Change Material Property Value", false);
                         aKey.color = nclr;
