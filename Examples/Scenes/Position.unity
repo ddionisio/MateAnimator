@@ -13,7 +13,7 @@ OcclusionCullingSettings:
 --- !u!104 &2
 RenderSettings:
   m_ObjectHideFlags: 0
-  serializedVersion: 8
+  serializedVersion: 9
   m_Fog: 0
   m_FogColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
   m_FogMode: 3
@@ -38,7 +38,8 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 0}
-  m_IndirectSpecularColor: {r: 0, g: 0, b: 0, a: 1}
+  m_IndirectSpecularColor: {r: 0.44657898, g: 0.4964133, b: 0.5748178, a: 1}
+  m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
   m_ObjectHideFlags: 0
@@ -54,11 +55,10 @@ LightmapSettings:
     m_EnableBakedLightmaps: 1
     m_EnableRealtimeLightmaps: 1
   m_LightmapEditorSettings:
-    serializedVersion: 9
+    serializedVersion: 10
     m_Resolution: 2
     m_BakeResolution: 40
-    m_TextureWidth: 1024
-    m_TextureHeight: 1024
+    m_AtlasSize: 1024
     m_AO: 0
     m_AOMaxDistance: 1
     m_CompAOExponent: 0
@@ -88,6 +88,7 @@ LightmapSettings:
     m_PVRFilteringAtrousPositionSigmaDirect: 0.5
     m_PVRFilteringAtrousPositionSigmaIndirect: 2
     m_PVRFilteringAtrousPositionSigmaAO: 1
+    m_ShowResolutionOverlay: 1
   m_LightingDataAsset: {fileID: 0}
   m_UseShadowmask: 0
 --- !u!196 &4
@@ -177,167 +178,6 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 1
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &289621585
-GameObject:
-  m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  serializedVersion: 5
-  m_Component:
-  - component: {fileID: 289621586}
-  - component: {fileID: 289621587}
-  - component: {fileID: 289621591}
-  - component: {fileID: 289621588}
-  - component: {fileID: 289621590}
-  - component: {fileID: 289621589}
-  m_Layer: 0
-  m_Name: _animdata
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &289621586
-Transform:
-  m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  m_GameObject: {fileID: 289621585}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_Children: []
-  m_Father: {fileID: 1484846360}
-  m_RootOrder: 0
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &289621587
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  m_GameObject: {fileID: 289621585}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4be2276d774e534448fa2cdca6cb7371, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  id: 5
-  name: Track2
-  keys:
-  - {fileID: 289621591}
-  - {fileID: 289621590}
-  - {fileID: 289621589}
-  - {fileID: 289621588}
-  foldout: 1
-  _targetPath: 
-  _obj: {fileID: 639089300}
-  pixelSnap: 0
-  pixelPerUnit: 100
---- !u!114 &289621588
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  m_GameObject: {fileID: 289621585}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f6a8c18f408b25b43bca84fe586dcb6b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  version: 2
-  interp: 0
-  frame: 30
-  easeType: 33
-  amplitude: 0
-  period: 0
-  customEase: []
-  position: {x: 7, y: 0, z: 0}
-  endFrame: 30
-  path:
-  - {x: 7, y: 0, z: 0}
-  isConstSpeed: 1
---- !u!114 &289621589
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  m_GameObject: {fileID: 289621585}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f6a8c18f408b25b43bca84fe586dcb6b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  version: 2
-  interp: 0
-  frame: 20
-  easeType: 5
-  amplitude: 0
-  period: 0
-  customEase: []
-  position: {x: -3, y: 1, z: 1}
-  endFrame: 20
-  path: []
-  isConstSpeed: 1
---- !u!114 &289621590
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  m_GameObject: {fileID: 289621585}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f6a8c18f408b25b43bca84fe586dcb6b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  version: 2
-  interp: 0
-  frame: 10
-  easeType: 5
-  amplitude: 0
-  period: 0
-  customEase: []
-  position: {x: -6, y: 0, z: -1}
-  endFrame: 10
-  path: []
-  isConstSpeed: 1
---- !u!114 &289621591
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  m_GameObject: {fileID: 289621585}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f6a8c18f408b25b43bca84fe586dcb6b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  version: 2
-  interp: 0
-  frame: 1
-  easeType: 5
-  amplitude: 0
-  period: 0
-  customEase:
-  - 0
-  - -0.005277045
-  - 4.9452505
-  - 4.9452505
-  - 0.5
-  - 0.9999
-  - 0.0052770376
-  - 0.0052770376
-  - 1
-  - 0
-  - -5.4210906
-  - -5.4210906
-  position: {x: 7, y: 0, z: 0}
-  endFrame: 30
-  path:
-  - {x: 7, y: 0, z: 0}
-  - {x: -6, y: 0, z: -1}
-  - {x: -3, y: 1, z: 1}
-  - {x: 7, y: 0, z: 0}
-  isConstSpeed: 1
 --- !u!1 &526333795
 GameObject:
   m_ObjectHideFlags: 0
@@ -347,7 +187,6 @@ GameObject:
   m_Component:
   - component: {fileID: 526333796}
   - component: {fileID: 526333798}
-  - component: {fileID: 526333797}
   m_Layer: 0
   m_Name: Custom
   m_TagString: Untagged
@@ -365,23 +204,10 @@ Transform:
   m_LocalPosition: {x: 0, y: 2, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children:
-  - {fileID: 2036793490}
   - {fileID: 1105664990}
   m_Father: {fileID: 0}
   m_RootOrder: 3
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &526333797
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  m_GameObject: {fileID: 526333795}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d9558930a1e846b42aae33cc720b8b7a, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  quat: {x: 0, y: 0, z: 0, w: 0}
 --- !u!114 &526333798
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -390,31 +216,26 @@ MonoBehaviour:
   m_GameObject: {fileID: 526333795}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0add95f4e765a2646af0183e66b9a2a2, type: 3}
+  m_Script: {fileID: 11500000, guid: 189a50e0ddb1421498ef25dcd885c95b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   takeData:
   - name: Take1
     frameRate: 10
-    numFrames: 100
-    startFrame: 1
-    endFrame: 68
+    endFramePadding: 0
     numLoop: 3
     loopMode: 0
     loopBackToFrame: -1
-    trackValues:
-    - {fileID: 2036793489}
-    track_count: 5
-    group_count: 0
+    trackCounter: 5
+    groupCounter: 0
     rootGroup:
       group_name: Group0
       group_id: 0
       elements: 05000000
       foldout: 1
     groupValues: []
-  playOnStartIndex: 0
-  meta: {fileID: 0}
-  playOnStartMeta: 
+  _defaultTakeName: Take1
+  _meta: {fileID: 0}
   sequenceLoadAll: 1
   sequenceKillWhenDone: 0
   playOnEnable: 1
@@ -422,8 +243,79 @@ MonoBehaviour:
   onDisableAction: 1
   updateType: 0
   updateTimeIndependent: 1
-  codeLanguage: 0
-  _dataHolder: {fileID: 2036793486}
+  serializeData:
+    _audioTracks: []
+    _audioKeys: []
+    _cameraSwitcherTracks: []
+    _cameraSwitcherKeys: []
+    _eventTracks: []
+    _eventKeys: []
+    _goSetActiveTracks: []
+    _goSetActiveKeys: []
+    _materialTracks: []
+    _materialKeys: []
+    _orientationTracks: []
+    _orientationKeys: []
+    _propertyTracks: []
+    _propertyKeys: []
+    _rotationEulerTracks: []
+    _rotationEulerKeys: []
+    _rotationTracks: []
+    _rotationKeys: []
+    _translationTracks:
+    - id: 5
+      name: Track2
+      foldout: 1
+      _targetPath: 
+      _obj: {fileID: 1105664990}
+      pixelSnap: 0
+      pixelPerUnit: 100
+    _translationKeys:
+    - version: 2
+      interp: 0
+      frame: 1
+      easeType: 37
+      amplitude: 0
+      period: 0
+      customEase:
+      - 0
+      - -0.005277045
+      - 4.9452505
+      - 4.9452505
+      - 0.5
+      - 0.9999
+      - 0.0052770376
+      - 0.0052770376
+      - 1
+      - 0
+      - -5.4210906
+      - -5.4210906
+      position: {x: 7, y: 0, z: 0}
+      endFrame: 30
+      path:
+      - {x: 7, y: 0, z: 0}
+      - {x: -7, y: 0, z: 0}
+      isConstSpeed: 1
+    - version: 2
+      interp: 0
+      frame: 30
+      easeType: 37
+      amplitude: 0
+      period: 0
+      customEase: []
+      position: {x: -7, y: 0, z: 0}
+      endFrame: 30
+      path: []
+      isConstSpeed: 1
+    _unityAnimationTracks: []
+    _unityAnimationKeys: []
+    _scaleTracks: []
+    _scaleKeys: []
+    _trackLookups:
+    - type: 10
+      index: 0
+      keyIndices: 0000000001000000
+    _takeTrackCounts: 01000000
 --- !u!1 &531283302
 GameObject:
   m_ObjectHideFlags: 0
@@ -433,7 +325,6 @@ GameObject:
   m_Component:
   - component: {fileID: 531283304}
   - component: {fileID: 531283305}
-  - component: {fileID: 531283303}
   m_Layer: 0
   m_Name: Linear
   m_TagString: Untagged
@@ -441,18 +332,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &531283303
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  m_GameObject: {fileID: 531283302}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d9558930a1e846b42aae33cc720b8b7a, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  quat: {x: 0, y: 0, z: 0, w: 0}
 --- !u!4 &531283304
 Transform:
   m_ObjectHideFlags: 0
@@ -463,7 +342,6 @@ Transform:
   m_LocalPosition: {x: 0, y: 5, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children:
-  - {fileID: 1457362122}
   - {fileID: 1223990547}
   m_Father: {fileID: 0}
   m_RootOrder: 2
@@ -476,31 +354,26 @@ MonoBehaviour:
   m_GameObject: {fileID: 531283302}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0add95f4e765a2646af0183e66b9a2a2, type: 3}
+  m_Script: {fileID: 11500000, guid: 189a50e0ddb1421498ef25dcd885c95b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   takeData:
   - name: Take1
     frameRate: 10
-    numFrames: 100
-    startFrame: 1
-    endFrame: 68
+    endFramePadding: 0
     numLoop: 3
     loopMode: 0
     loopBackToFrame: -1
-    trackValues:
-    - {fileID: 1457362125}
-    track_count: 5
-    group_count: 0
+    trackCounter: 5
+    groupCounter: 0
     rootGroup:
       group_name: Group0
       group_id: 0
       elements: 05000000
       foldout: 1
     groupValues: []
-  playOnStartIndex: 0
-  meta: {fileID: 0}
-  playOnStartMeta: 
+  _defaultTakeName: Take1
+  _meta: {fileID: 0}
   sequenceLoadAll: 1
   sequenceKillWhenDone: 0
   playOnEnable: 1
@@ -508,8 +381,101 @@ MonoBehaviour:
   onDisableAction: 1
   updateType: 0
   updateTimeIndependent: 0
-  codeLanguage: 0
-  _dataHolder: {fileID: 1457362117}
+  serializeData:
+    _audioTracks: []
+    _audioKeys: []
+    _cameraSwitcherTracks: []
+    _cameraSwitcherKeys: []
+    _eventTracks: []
+    _eventKeys: []
+    _goSetActiveTracks: []
+    _goSetActiveKeys: []
+    _materialTracks: []
+    _materialKeys: []
+    _orientationTracks: []
+    _orientationKeys: []
+    _propertyTracks: []
+    _propertyKeys: []
+    _rotationEulerTracks: []
+    _rotationEulerKeys: []
+    _rotationTracks: []
+    _rotationKeys: []
+    _translationTracks:
+    - id: 5
+      name: Track2
+      foldout: 1
+      _targetPath: 
+      _obj: {fileID: 1223990547}
+      pixelSnap: 0
+      pixelPerUnit: 100
+    _translationKeys:
+    - version: 2
+      interp: 0
+      frame: 1
+      easeType: 1
+      amplitude: 0
+      period: 0
+      customEase:
+      - 0
+      - 0
+      - 1
+      - 1
+      - 1
+      - 1
+      - 1
+      - 1
+      position: {x: 7, y: 0, z: 0}
+      endFrame: 12
+      path:
+      - {x: 7, y: 0, z: 0}
+      - {x: -7, y: 0, z: 0}
+      isConstSpeed: 1
+    - version: 2
+      interp: 1
+      frame: 12
+      easeType: 1
+      amplitude: 0
+      period: 0
+      customEase: []
+      position: {x: -7, y: 0, z: 0}
+      endFrame: 22
+      path:
+      - {x: -7, y: 0, z: 0}
+      - {x: 0, y: 5, z: 0}
+      isConstSpeed: 1
+    - version: 2
+      interp: 1
+      frame: 22
+      easeType: 1
+      amplitude: 0
+      period: 0
+      customEase: []
+      position: {x: 0, y: 5, z: 0}
+      endFrame: 30
+      path:
+      - {x: 0, y: 5, z: 0}
+      - {x: 7, y: 0, z: 0}
+      isConstSpeed: 1
+    - version: 2
+      interp: 1
+      frame: 30
+      easeType: 1
+      amplitude: 0
+      period: 0
+      customEase: []
+      position: {x: 7, y: 0, z: 0}
+      endFrame: 30
+      path: []
+      isConstSpeed: 1
+    _unityAnimationTracks: []
+    _unityAnimationKeys: []
+    _scaleTracks: []
+    _scaleKeys: []
+    _trackLookups:
+    - type: 10
+      index: 0
+      keyIndices: 00000000010000000200000003000000
+    _takeTrackCounts: 01000000
 --- !u!1 &639089296
 GameObject:
   m_ObjectHideFlags: 0
@@ -541,6 +507,7 @@ MeshRenderer:
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
+  m_RenderingLayerMask: 4294967295
   m_Materials:
   - {fileID: 10303, guid: 0000000000000000f000000000000000, type: 0}
   m_StaticBatchInfo:
@@ -592,7 +559,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 1484846360}
-  m_RootOrder: 1
+  m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &736889471
 GameObject:
@@ -665,6 +632,7 @@ Camera:
   m_TargetEye: 3
   m_HDR: 0
   m_AllowMSAA: 1
+  m_AllowDynamicResolution: 0
   m_ForceIntoRT: 0
   m_OcclusionCulling: 1
   m_StereoConvergence: 10
@@ -691,7 +659,6 @@ GameObject:
   m_Component:
   - component: {fileID: 770107263}
   - component: {fileID: 770107265}
-  - component: {fileID: 770107264}
   m_Layer: 0
   m_Name: NoEase
   m_TagString: Untagged
@@ -709,23 +676,10 @@ Transform:
   m_LocalPosition: {x: 0, y: -7, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children:
-  - {fileID: 1018522786}
   - {fileID: 1140229494}
   m_Father: {fileID: 0}
   m_RootOrder: 6
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &770107264
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  m_GameObject: {fileID: 770107262}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d9558930a1e846b42aae33cc720b8b7a, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  quat: {x: 0, y: 0, z: 0, w: 0}
 --- !u!114 &770107265
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -734,31 +688,26 @@ MonoBehaviour:
   m_GameObject: {fileID: 770107262}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0add95f4e765a2646af0183e66b9a2a2, type: 3}
+  m_Script: {fileID: 11500000, guid: 189a50e0ddb1421498ef25dcd885c95b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   takeData:
   - name: Take1
     frameRate: 10
-    numFrames: 100
-    startFrame: 1
-    endFrame: 68
+    endFramePadding: 0
     numLoop: 3
     loopMode: 1
     loopBackToFrame: -1
-    trackValues:
-    - {fileID: 1018522787}
-    track_count: 5
-    group_count: 0
+    trackCounter: 5
+    groupCounter: 0
     rootGroup:
       group_name: Group0
       group_id: 0
       elements: 05000000
       foldout: 1
     groupValues: []
-  playOnStartIndex: 0
-  meta: {fileID: 0}
-  playOnStartMeta: 
+  _defaultTakeName: Take1
+  _meta: {fileID: 0}
   sequenceLoadAll: 1
   sequenceKillWhenDone: 0
   playOnEnable: 1
@@ -766,166 +715,101 @@ MonoBehaviour:
   onDisableAction: 1
   updateType: 0
   updateTimeIndependent: 1
-  codeLanguage: 0
-  _dataHolder: {fileID: 1018522785}
---- !u!1 &1018522785
-GameObject:
-  m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  serializedVersion: 5
-  m_Component:
-  - component: {fileID: 1018522786}
-  - component: {fileID: 1018522787}
-  - component: {fileID: 1018522791}
-  - component: {fileID: 1018522790}
-  - component: {fileID: 1018522789}
-  - component: {fileID: 1018522788}
-  m_Layer: 0
-  m_Name: _animdata
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &1018522786
-Transform:
-  m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  m_GameObject: {fileID: 1018522785}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_Children: []
-  m_Father: {fileID: 770107263}
-  m_RootOrder: 0
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1018522787
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  m_GameObject: {fileID: 1018522785}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4be2276d774e534448fa2cdca6cb7371, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  id: 5
-  name: Track2
-  keys:
-  - {fileID: 1018522791}
-  - {fileID: 1018522790}
-  - {fileID: 1018522789}
-  - {fileID: 1018522788}
-  foldout: 1
-  _targetPath: 
-  _obj: {fileID: 1140229494}
-  pixelSnap: 0
-  pixelPerUnit: 32
---- !u!114 &1018522788
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  m_GameObject: {fileID: 1018522785}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f6a8c18f408b25b43bca84fe586dcb6b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  version: 2
-  interp: 2
-  frame: 30
-  easeType: 1
-  amplitude: 0
-  period: 0
-  customEase: []
-  position: {x: -2, y: 0, z: 0}
-  endFrame: 30
-  path: []
-  isConstSpeed: 1
---- !u!114 &1018522789
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  m_GameObject: {fileID: 1018522785}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f6a8c18f408b25b43bca84fe586dcb6b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  version: 2
-  interp: 2
-  frame: 20
-  easeType: 1
-  amplitude: 0
-  period: 0
-  customEase: []
-  position: {x: 1, y: 0, z: 0}
-  endFrame: 30
-  path: []
-  isConstSpeed: 1
---- !u!114 &1018522790
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  m_GameObject: {fileID: 1018522785}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f6a8c18f408b25b43bca84fe586dcb6b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  version: 2
-  interp: 2
-  frame: 10
-  easeType: 33
-  amplitude: 0
-  period: 0
-  customEase: []
-  position: {x: 4, y: 0, z: 0}
-  endFrame: 20
-  path: []
-  isConstSpeed: 1
---- !u!114 &1018522791
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  m_GameObject: {fileID: 1018522785}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f6a8c18f408b25b43bca84fe586dcb6b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  version: 2
-  interp: 2
-  frame: 1
-  easeType: 34
-  amplitude: 10
-  period: 0
-  customEase:
-  - 0
-  - -0.005277045
-  - 4.9452505
-  - 4.9452505
-  - 0.5
-  - 0.9999
-  - 0.0052770376
-  - 0.0052770376
-  - 1
-  - 0
-  - -5.4210906
-  - -5.4210906
-  position: {x: 7, y: 0, z: 0}
-  endFrame: 10
-  path:
-  - {x: 7, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  isConstSpeed: 1
+  serializeData:
+    _audioTracks: []
+    _audioKeys: []
+    _cameraSwitcherTracks: []
+    _cameraSwitcherKeys: []
+    _eventTracks: []
+    _eventKeys: []
+    _goSetActiveTracks: []
+    _goSetActiveKeys: []
+    _materialTracks: []
+    _materialKeys: []
+    _orientationTracks: []
+    _orientationKeys: []
+    _propertyTracks: []
+    _propertyKeys: []
+    _rotationEulerTracks: []
+    _rotationEulerKeys: []
+    _rotationTracks: []
+    _rotationKeys: []
+    _translationTracks:
+    - id: 5
+      name: Track2
+      foldout: 1
+      _targetPath: 
+      _obj: {fileID: 1140229494}
+      pixelSnap: 0
+      pixelPerUnit: 32
+    _translationKeys:
+    - version: 2
+      interp: 2
+      frame: 1
+      easeType: 34
+      amplitude: 10
+      period: 0
+      customEase:
+      - 0
+      - -0.005277045
+      - 4.9452505
+      - 4.9452505
+      - 0.5
+      - 0.9999
+      - 0.0052770376
+      - 0.0052770376
+      - 1
+      - 0
+      - -5.4210906
+      - -5.4210906
+      position: {x: 7, y: 0, z: 0}
+      endFrame: 10
+      path:
+      - {x: 7, y: 0, z: 0}
+      - {x: 0, y: 0, z: 0}
+      isConstSpeed: 1
+    - version: 2
+      interp: 2
+      frame: 10
+      easeType: 33
+      amplitude: 0
+      period: 0
+      customEase: []
+      position: {x: 4, y: 0, z: 0}
+      endFrame: 20
+      path: []
+      isConstSpeed: 1
+    - version: 2
+      interp: 2
+      frame: 20
+      easeType: 1
+      amplitude: 0
+      period: 0
+      customEase: []
+      position: {x: 1, y: 0, z: 0}
+      endFrame: 30
+      path: []
+      isConstSpeed: 1
+    - version: 2
+      interp: 2
+      frame: 30
+      easeType: 1
+      amplitude: 0
+      period: 0
+      customEase: []
+      position: {x: -2, y: 0, z: 0}
+      endFrame: 30
+      path: []
+      isConstSpeed: 1
+    _unityAnimationTracks: []
+    _unityAnimationKeys: []
+    _scaleTracks: []
+    _scaleKeys: []
+    _trackLookups:
+    - type: 10
+      index: 0
+      keyIndices: 00000000010000000200000003000000
+    _takeTrackCounts: 01000000
 --- !u!1 &1018893151
 GameObject:
   m_ObjectHideFlags: 0
@@ -955,7 +839,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 1399762194}
-  m_RootOrder: 1
+  m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!23 &1018893153
 MeshRenderer:
@@ -970,6 +854,7 @@ MeshRenderer:
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
+  m_RenderingLayerMask: 4294967295
   m_Materials:
   - {fileID: 10303, guid: 0000000000000000f000000000000000, type: 0}
   m_StaticBatchInfo:
@@ -1039,7 +924,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 526333796}
-  m_RootOrder: 1
+  m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!23 &1105664991
 MeshRenderer:
@@ -1054,6 +939,7 @@ MeshRenderer:
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
+  m_RenderingLayerMask: 4294967295
   m_Materials:
   - {fileID: 10303, guid: 0000000000000000f000000000000000, type: 0}
   m_StaticBatchInfo:
@@ -1125,6 +1011,7 @@ MeshRenderer:
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
+  m_RenderingLayerMask: 4294967295
   m_Materials:
   - {fileID: 10303, guid: 0000000000000000f000000000000000, type: 0}
   m_StaticBatchInfo:
@@ -1176,117 +1063,6 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 770107263}
-  m_RootOrder: 1
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1212954839
-GameObject:
-  m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  serializedVersion: 5
-  m_Component:
-  - component: {fileID: 1212954843}
-  - component: {fileID: 1212954840}
-  - component: {fileID: 1212954842}
-  - component: {fileID: 1212954841}
-  m_Layer: 0
-  m_Name: _animdata
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &1212954840
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  m_GameObject: {fileID: 1212954839}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4be2276d774e534448fa2cdca6cb7371, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  id: 5
-  name: Track2
-  keys:
-  - {fileID: 1212954842}
-  - {fileID: 1212954841}
-  foldout: 1
-  _targetPath: 
-  _obj: {fileID: 1018893152}
-  pixelSnap: 0
-  pixelPerUnit: 32
---- !u!114 &1212954841
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  m_GameObject: {fileID: 1212954839}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f6a8c18f408b25b43bca84fe586dcb6b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  version: 2
-  interp: 0
-  frame: 30
-  easeType: 33
-  amplitude: 0
-  period: 0
-  customEase: []
-  position: {x: 0, y: 0, z: 0}
-  endFrame: 30
-  path:
-  - {x: 0, y: 0, z: 0}
-  isConstSpeed: 1
---- !u!114 &1212954842
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  m_GameObject: {fileID: 1212954839}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f6a8c18f408b25b43bca84fe586dcb6b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  version: 2
-  interp: 0
-  frame: 1
-  easeType: 34
-  amplitude: 10
-  period: 0
-  customEase:
-  - 0
-  - -0.005277045
-  - 4.9452505
-  - 4.9452505
-  - 0.5
-  - 0.9999
-  - 0.0052770376
-  - 0.0052770376
-  - 1
-  - 0
-  - -5.4210906
-  - -5.4210906
-  position: {x: 7, y: 0, z: 0}
-  endFrame: 30
-  path:
-  - {x: 7, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  isConstSpeed: 1
---- !u!4 &1212954843
-Transform:
-  m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  m_GameObject: {fileID: 1212954839}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_Children: []
-  m_Father: {fileID: 1399762194}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1223990546
@@ -1318,7 +1094,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 531283304}
-  m_RootOrder: 1
+  m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!23 &1223990548
 MeshRenderer:
@@ -1333,6 +1109,7 @@ MeshRenderer:
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
+  m_RenderingLayerMask: 4294967295
   m_Materials:
   - {fileID: 10303, guid: 0000000000000000f000000000000000, type: 0}
   m_StaticBatchInfo:
@@ -1382,7 +1159,6 @@ GameObject:
   m_Component:
   - component: {fileID: 1399762194}
   - component: {fileID: 1399762193}
-  - component: {fileID: 1399762192}
   m_Layer: 0
   m_Name: Flash
   m_TagString: Untagged
@@ -1390,18 +1166,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &1399762192
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  m_GameObject: {fileID: 1399762191}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d9558930a1e846b42aae33cc720b8b7a, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  quat: {x: 0, y: 0, z: 0, w: 0}
 --- !u!114 &1399762193
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1410,31 +1174,26 @@ MonoBehaviour:
   m_GameObject: {fileID: 1399762191}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0add95f4e765a2646af0183e66b9a2a2, type: 3}
+  m_Script: {fileID: 11500000, guid: 189a50e0ddb1421498ef25dcd885c95b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   takeData:
   - name: Take1
     frameRate: 10
-    numFrames: 100
-    startFrame: 1
-    endFrame: 68
+    endFramePadding: 0
     numLoop: 1
     loopMode: 0
     loopBackToFrame: -1
-    trackValues:
-    - {fileID: 1212954840}
-    track_count: 5
-    group_count: 0
+    trackCounter: 5
+    groupCounter: 0
     rootGroup:
       group_name: Group0
       group_id: 0
       elements: 05000000
       foldout: 1
     groupValues: []
-  playOnStartIndex: 0
-  meta: {fileID: 0}
-  playOnStartMeta: 
+  _defaultTakeName: Take1
+  _meta: {fileID: 0}
   sequenceLoadAll: 1
   sequenceKillWhenDone: 0
   playOnEnable: 1
@@ -1442,8 +1201,79 @@ MonoBehaviour:
   onDisableAction: 1
   updateType: 0
   updateTimeIndependent: 1
-  codeLanguage: 0
-  _dataHolder: {fileID: 1212954839}
+  serializeData:
+    _audioTracks: []
+    _audioKeys: []
+    _cameraSwitcherTracks: []
+    _cameraSwitcherKeys: []
+    _eventTracks: []
+    _eventKeys: []
+    _goSetActiveTracks: []
+    _goSetActiveKeys: []
+    _materialTracks: []
+    _materialKeys: []
+    _orientationTracks: []
+    _orientationKeys: []
+    _propertyTracks: []
+    _propertyKeys: []
+    _rotationEulerTracks: []
+    _rotationEulerKeys: []
+    _rotationTracks: []
+    _rotationKeys: []
+    _translationTracks:
+    - id: 5
+      name: Track2
+      foldout: 1
+      _targetPath: 
+      _obj: {fileID: 1018893152}
+      pixelSnap: 0
+      pixelPerUnit: 32
+    _translationKeys:
+    - version: 2
+      interp: 0
+      frame: 1
+      easeType: 34
+      amplitude: 10
+      period: 0
+      customEase:
+      - 0
+      - -0.005277045
+      - 4.9452505
+      - 4.9452505
+      - 0.5
+      - 0.9999
+      - 0.0052770376
+      - 0.0052770376
+      - 1
+      - 0
+      - -5.4210906
+      - -5.4210906
+      position: {x: 7, y: 0, z: 0}
+      endFrame: 30
+      path:
+      - {x: 7, y: 0, z: 0}
+      - {x: 0, y: 0, z: 0}
+      isConstSpeed: 1
+    - version: 2
+      interp: 0
+      frame: 30
+      easeType: 34
+      amplitude: 0
+      period: 0
+      customEase: []
+      position: {x: 0, y: 0, z: 0}
+      endFrame: 30
+      path: []
+      isConstSpeed: 1
+    _unityAnimationTracks: []
+    _unityAnimationKeys: []
+    _scaleTracks: []
+    _scaleKeys: []
+    _trackLookups:
+    - type: 10
+      index: 0
+      keyIndices: 0000000001000000
+    _takeTrackCounts: 01000000
 --- !u!4 &1399762194
 Transform:
   m_ObjectHideFlags: 0
@@ -1454,170 +1284,10 @@ Transform:
   m_LocalPosition: {x: 0, y: -4, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children:
-  - {fileID: 1212954843}
   - {fileID: 1018893152}
   m_Father: {fileID: 0}
   m_RootOrder: 5
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1457362117
-GameObject:
-  m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  serializedVersion: 5
-  m_Component:
-  - component: {fileID: 1457362122}
-  - component: {fileID: 1457362125}
-  - component: {fileID: 1457362124}
-  - component: {fileID: 1457362123}
-  - component: {fileID: 1457362119}
-  - component: {fileID: 1457362118}
-  m_Layer: 0
-  m_Name: _animdata
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &1457362118
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  m_GameObject: {fileID: 1457362117}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f6a8c18f408b25b43bca84fe586dcb6b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  version: 2
-  interp: 1
-  frame: 22
-  easeType: 1
-  amplitude: 0
-  period: 0
-  customEase: []
-  position: {x: 0, y: 5, z: 0}
-  endFrame: 30
-  path:
-  - {x: 0, y: 5, z: 0}
-  - {x: 7, y: 0, z: 0}
-  isConstSpeed: 1
---- !u!114 &1457362119
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  m_GameObject: {fileID: 1457362117}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f6a8c18f408b25b43bca84fe586dcb6b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  version: 2
-  interp: 1
-  frame: 12
-  easeType: 1
-  amplitude: 0
-  period: 0
-  customEase: []
-  position: {x: -7, y: 0, z: 0}
-  endFrame: 22
-  path:
-  - {x: -7, y: 0, z: 0}
-  - {x: 0, y: 5, z: 0}
-  isConstSpeed: 1
---- !u!4 &1457362122
-Transform:
-  m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  m_GameObject: {fileID: 1457362117}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_Children: []
-  m_Father: {fileID: 531283304}
-  m_RootOrder: 0
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1457362123
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  m_GameObject: {fileID: 1457362117}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f6a8c18f408b25b43bca84fe586dcb6b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  version: 2
-  interp: 1
-  frame: 30
-  easeType: 1
-  amplitude: 0
-  period: 0
-  customEase: []
-  position: {x: 7, y: 0, z: 0}
-  endFrame: 30
-  path:
-  - {x: 7, y: 0, z: 0}
-  isConstSpeed: 1
---- !u!114 &1457362124
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  m_GameObject: {fileID: 1457362117}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f6a8c18f408b25b43bca84fe586dcb6b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  version: 2
-  interp: 0
-  frame: 1
-  easeType: 1
-  amplitude: 0
-  period: 0
-  customEase:
-  - 0
-  - 0
-  - 1
-  - 1
-  - 1
-  - 1
-  - 1
-  - 1
-  position: {x: 7, y: 0, z: 0}
-  endFrame: 12
-  path:
-  - {x: 7, y: 0, z: 0}
-  - {x: -7, y: 0, z: 0}
-  isConstSpeed: 1
---- !u!114 &1457362125
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  m_GameObject: {fileID: 1457362117}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4be2276d774e534448fa2cdca6cb7371, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  id: 5
-  name: Track2
-  keys:
-  - {fileID: 1457362124}
-  - {fileID: 1457362119}
-  - {fileID: 1457362118}
-  - {fileID: 1457362123}
-  foldout: 1
-  _targetPath: 
-  _obj: {fileID: 1223990547}
-  pixelSnap: 0
-  pixelPerUnit: 100
 --- !u!1 &1484846359
 GameObject:
   m_ObjectHideFlags: 0
@@ -1627,7 +1297,6 @@ GameObject:
   m_Component:
   - component: {fileID: 1484846360}
   - component: {fileID: 1484846362}
-  - component: {fileID: 1484846361}
   m_Layer: 0
   m_Name: Curve
   m_TagString: Untagged
@@ -1645,23 +1314,10 @@ Transform:
   m_LocalPosition: {x: 0, y: -1, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children:
-  - {fileID: 289621586}
   - {fileID: 639089300}
   m_Father: {fileID: 0}
   m_RootOrder: 4
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1484846361
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  m_GameObject: {fileID: 1484846359}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d9558930a1e846b42aae33cc720b8b7a, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  quat: {x: 0, y: 0, z: 0, w: 0}
 --- !u!114 &1484846362
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1670,31 +1326,26 @@ MonoBehaviour:
   m_GameObject: {fileID: 1484846359}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0add95f4e765a2646af0183e66b9a2a2, type: 3}
+  m_Script: {fileID: 11500000, guid: 189a50e0ddb1421498ef25dcd885c95b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   takeData:
   - name: Take1
     frameRate: 10
-    numFrames: 100
-    startFrame: 1
-    endFrame: 65
+    endFramePadding: 0
     numLoop: 3
     loopMode: 0
     loopBackToFrame: -1
-    trackValues:
-    - {fileID: 289621587}
-    track_count: 5
-    group_count: 0
+    trackCounter: 5
+    groupCounter: 0
     rootGroup:
       group_name: Group0
       group_id: 0
       elements: 05000000
       foldout: 1
     groupValues: []
-  playOnStartIndex: 0
-  meta: {fileID: 0}
-  playOnStartMeta: 
+  _defaultTakeName: Take1
+  _meta: {fileID: 0}
   sequenceLoadAll: 1
   sequenceKillWhenDone: 0
   playOnEnable: 1
@@ -1702,116 +1353,100 @@ MonoBehaviour:
   onDisableAction: 1
   updateType: 0
   updateTimeIndependent: 1
-  codeLanguage: 0
-  _dataHolder: {fileID: 289621585}
---- !u!1 &2036793486
-GameObject:
-  m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  serializedVersion: 5
-  m_Component:
-  - component: {fileID: 2036793490}
-  - component: {fileID: 2036793489}
-  - component: {fileID: 2036793488}
-  - component: {fileID: 2036793487}
-  m_Layer: 0
-  m_Name: _animdata
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &2036793487
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  m_GameObject: {fileID: 2036793486}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f6a8c18f408b25b43bca84fe586dcb6b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  version: 2
-  interp: 0
-  frame: 30
-  easeType: 33
-  amplitude: 0
-  period: 0
-  customEase: []
-  position: {x: -7, y: 0, z: 0}
-  endFrame: 30
-  path:
-  - {x: -7, y: 0, z: 0}
-  isConstSpeed: 1
---- !u!114 &2036793488
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  m_GameObject: {fileID: 2036793486}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f6a8c18f408b25b43bca84fe586dcb6b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  version: 2
-  interp: 0
-  frame: 1
-  easeType: 37
-  amplitude: 0
-  period: 0
-  customEase:
-  - 0
-  - -0.005277045
-  - 4.9452505
-  - 4.9452505
-  - 0.5
-  - 0.9999
-  - 0.0052770376
-  - 0.0052770376
-  - 1
-  - 0
-  - -5.4210906
-  - -5.4210906
-  position: {x: 7, y: 0, z: 0}
-  endFrame: 30
-  path:
-  - {x: 7, y: 0, z: 0}
-  - {x: -7, y: 0, z: 0}
-  isConstSpeed: 1
---- !u!114 &2036793489
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  m_GameObject: {fileID: 2036793486}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4be2276d774e534448fa2cdca6cb7371, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  id: 5
-  name: Track2
-  keys:
-  - {fileID: 2036793488}
-  - {fileID: 2036793487}
-  foldout: 1
-  _targetPath: 
-  _obj: {fileID: 1105664990}
-  pixelSnap: 0
-  pixelPerUnit: 100
---- !u!4 &2036793490
-Transform:
-  m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  m_GameObject: {fileID: 2036793486}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_Children: []
-  m_Father: {fileID: 526333796}
-  m_RootOrder: 0
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  serializeData:
+    _audioTracks: []
+    _audioKeys: []
+    _cameraSwitcherTracks: []
+    _cameraSwitcherKeys: []
+    _eventTracks: []
+    _eventKeys: []
+    _goSetActiveTracks: []
+    _goSetActiveKeys: []
+    _materialTracks: []
+    _materialKeys: []
+    _orientationTracks: []
+    _orientationKeys: []
+    _propertyTracks: []
+    _propertyKeys: []
+    _rotationEulerTracks: []
+    _rotationEulerKeys: []
+    _rotationTracks: []
+    _rotationKeys: []
+    _translationTracks:
+    - id: 5
+      name: Track2
+      foldout: 1
+      _targetPath: 
+      _obj: {fileID: 639089300}
+      pixelSnap: 0
+      pixelPerUnit: 100
+    _translationKeys:
+    - version: 2
+      interp: 0
+      frame: 1
+      easeType: 5
+      amplitude: 0
+      period: 0
+      customEase:
+      - 0
+      - -0.005277045
+      - 4.9452505
+      - 4.9452505
+      - 0.5
+      - 0.9999
+      - 0.0052770376
+      - 0.0052770376
+      - 1
+      - 0
+      - -5.4210906
+      - -5.4210906
+      position: {x: 7, y: 0, z: 0}
+      endFrame: 30
+      path:
+      - {x: 7, y: 0, z: 0}
+      - {x: -6, y: 0, z: -1}
+      - {x: -3, y: 1, z: 1}
+      - {x: 7, y: 0, z: 0}
+      isConstSpeed: 1
+    - version: 2
+      interp: 0
+      frame: 10
+      easeType: 5
+      amplitude: 0
+      period: 0
+      customEase: []
+      position: {x: -6, y: 0, z: -1}
+      endFrame: 10
+      path: []
+      isConstSpeed: 1
+    - version: 2
+      interp: 0
+      frame: 20
+      easeType: 5
+      amplitude: 0
+      period: 0
+      customEase: []
+      position: {x: -3, y: 1, z: 1}
+      endFrame: 20
+      path: []
+      isConstSpeed: 1
+    - version: 2
+      interp: 0
+      frame: 30
+      easeType: 5
+      amplitude: 0
+      period: 0
+      customEase: []
+      position: {x: 7, y: 0, z: 0}
+      endFrame: 30
+      path: []
+      isConstSpeed: 1
+    _unityAnimationTracks: []
+    _unityAnimationKeys: []
+    _scaleTracks: []
+    _scaleKeys: []
+    _trackLookups:
+    - type: 10
+      index: 0
+      keyIndices: 00000000010000000200000003000000
+    _takeTrackCounts: 01000000

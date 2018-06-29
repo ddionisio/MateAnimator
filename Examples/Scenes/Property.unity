@@ -13,7 +13,7 @@ OcclusionCullingSettings:
 --- !u!104 &2
 RenderSettings:
   m_ObjectHideFlags: 0
-  serializedVersion: 8
+  serializedVersion: 9
   m_Fog: 0
   m_FogColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
   m_FogMode: 3
@@ -39,6 +39,7 @@ RenderSettings:
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 0}
   m_IndirectSpecularColor: {r: 0, g: 0, b: 0, a: 1}
+  m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
   m_ObjectHideFlags: 0
@@ -54,11 +55,10 @@ LightmapSettings:
     m_EnableBakedLightmaps: 1
     m_EnableRealtimeLightmaps: 1
   m_LightmapEditorSettings:
-    serializedVersion: 9
+    serializedVersion: 10
     m_Resolution: 2
     m_BakeResolution: 40
-    m_TextureWidth: 1024
-    m_TextureHeight: 1024
+    m_AtlasSize: 1024
     m_AO: 0
     m_AOMaxDistance: 1
     m_CompAOExponent: 0
@@ -88,6 +88,7 @@ LightmapSettings:
     m_PVRFilteringAtrousPositionSigmaDirect: 0.5
     m_PVRFilteringAtrousPositionSigmaIndirect: 2
     m_PVRFilteringAtrousPositionSigmaAO: 1
+    m_ShowResolutionOverlay: 1
   m_LightingDataAsset: {fileID: 0}
   m_UseShadowmask: 0
 --- !u!196 &4
@@ -163,7 +164,7 @@ RectTransform:
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 72846638}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -107.99984, y: 96.00014, z: 0}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 1129605984}
@@ -251,6 +252,7 @@ Camera:
   m_TargetEye: 3
   m_HDR: 0
   m_AllowMSAA: 1
+  m_AllowDynamicResolution: 0
   m_ForceIntoRT: 0
   m_OcclusionCulling: 1
   m_StereoConvergence: 10
@@ -333,292 +335,6 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 1
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &638497338
-GameObject:
-  m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  serializedVersion: 5
-  m_Component:
-  - component: {fileID: 638497342}
-  - component: {fileID: 638497341}
-  - component: {fileID: 638497340}
-  - component: {fileID: 638497339}
-  - component: {fileID: 638497345}
-  - component: {fileID: 638497344}
-  - component: {fileID: 638497343}
-  - component: {fileID: 638497346}
-  - component: {fileID: 638497347}
-  - component: {fileID: 638497349}
-  - component: {fileID: 638497348}
-  m_Layer: 0
-  m_Name: _animdata
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &638497339
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  m_GameObject: {fileID: 638497338}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: be6f8f8dd738d0044bc1eb7cd04ed167, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  version: 2
-  interp: 1
-  frame: 30
-  easeType: 1
-  amplitude: 0
-  period: 0
-  customEase: []
-  endFrame: 40
-  val: 0
-  valString: 
-  valObj: {fileID: 0}
-  vect4: {x: 0.8455882, y: 0.26113755, z: 0.26113755, w: 1}
---- !u!114 &638497340
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  m_GameObject: {fileID: 638497338}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: be6f8f8dd738d0044bc1eb7cd04ed167, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  version: 2
-  interp: 1
-  frame: 10
-  easeType: 37
-  amplitude: 0
-  period: 0
-  customEase:
-  - 0
-  - 0
-  - 3.3930547
-  - 3.3930547
-  - 0.5
-  - 1
-  - 0
-  - 0
-  - 1
-  - 0
-  - -3.4252822
-  - -3.4252822
-  endFrame: 30
-  val: 0
-  valString: 
-  valObj: {fileID: 0}
-  vect4: {x: 1, y: 1, z: 1, w: 1}
---- !u!114 &638497341
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  m_GameObject: {fileID: 638497338}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 36a5a2e9f5a3d834a821062a65a74c1f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  id: 2
-  name: Track1
-  keys:
-  - {fileID: 638497340}
-  - {fileID: 638497339}
-  - {fileID: 638497345}
-  - {fileID: 638497344}
-  - {fileID: 638497343}
-  - {fileID: 638497346}
-  foldout: 1
-  _targetPath: 
-  valueType: 6
-  obj: {fileID: 72846638}
-  component: {fileID: 72846639}
-  componentName: Image
-  fieldName: 
-  propertyName: color
---- !u!4 &638497342
-Transform:
-  m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  m_GameObject: {fileID: 638497338}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_Children: []
-  m_Father: {fileID: 1421240841}
-  m_RootOrder: 0
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &638497343
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  m_GameObject: {fileID: 638497338}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: be6f8f8dd738d0044bc1eb7cd04ed167, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  version: 2
-  interp: 2
-  frame: 60
-  easeType: 1
-  amplitude: 0
-  period: 0
-  customEase: []
-  endFrame: 65
-  val: 0
-  valString: 
-  valObj: {fileID: 0}
-  vect4: {x: 0.90981346, y: 0.94578314, z: 0.19941212, w: 1}
---- !u!114 &638497344
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  m_GameObject: {fileID: 638497338}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: be6f8f8dd738d0044bc1eb7cd04ed167, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  version: 2
-  interp: 2
-  frame: 50
-  easeType: 1
-  amplitude: 0
-  period: 0
-  customEase: []
-  endFrame: 60
-  val: 0
-  valString: 
-  valObj: {fileID: 0}
-  vect4: {x: 0.537197, y: 0.7891566, z: 0.55237526, w: 1}
---- !u!114 &638497345
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  m_GameObject: {fileID: 638497338}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: be6f8f8dd738d0044bc1eb7cd04ed167, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  version: 2
-  interp: 2
-  frame: 40
-  easeType: 1
-  amplitude: 0
-  period: 0
-  customEase: []
-  endFrame: 50
-  val: 0
-  valString: 
-  valObj: {fileID: 0}
-  vect4: {x: 0.36465934, y: 0.32334155, z: 0.81325305, w: 1}
---- !u!114 &638497346
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  m_GameObject: {fileID: 638497338}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: be6f8f8dd738d0044bc1eb7cd04ed167, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  version: 2
-  interp: 2
-  frame: 65
-  easeType: 1
-  amplitude: 0
-  period: 0
-  customEase: []
-  endFrame: -1
-  val: 0
-  valString: 
-  valObj: {fileID: 0}
-  vect4: {x: 0.90981346, y: 0.94578314, z: 0.19941212, w: 1}
---- !u!114 &638497347
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  m_GameObject: {fileID: 638497338}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 36a5a2e9f5a3d834a821062a65a74c1f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  id: 3
-  name: Track2
-  keys:
-  - {fileID: 638497349}
-  - {fileID: 638497348}
-  foldout: 1
-  _targetPath: 
-  valueType: 4
-  obj: {fileID: 72846638}
-  component: {fileID: 72846640}
-  componentName: RectTransform
-  fieldName: 
-  propertyName: offsetMin
---- !u!114 &638497348
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  m_GameObject: {fileID: 638497338}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: be6f8f8dd738d0044bc1eb7cd04ed167, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  version: 2
-  interp: 1
-  frame: 30
-  easeType: 1
-  amplitude: 0
-  period: 0
-  customEase: []
-  endFrame: -1
-  val: 0
-  valString: 
-  valObj: {fileID: 0}
-  vect4: {x: 190.9, y: 312.01, z: 0, w: 0}
---- !u!114 &638497349
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  m_GameObject: {fileID: 638497338}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: be6f8f8dd738d0044bc1eb7cd04ed167, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  version: 2
-  interp: 1
-  frame: 10
-  easeType: 12
-  amplitude: 0
-  period: 0
-  customEase: []
-  endFrame: 30
-  val: 0
-  valString: 
-  valObj: {fileID: 0}
-  vect4: {x: 66.5, y: 231, z: 0, w: 0}
 --- !u!1 &1129605983
 GameObject:
   m_ObjectHideFlags: 0
@@ -643,19 +359,19 @@ RectTransform:
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 1129605983}
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 0, y: 0, z: 0}
   m_Children:
   - {fileID: 72846640}
   m_Father: {fileID: 1421240841}
-  m_RootOrder: 1
+  m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
-  m_Pivot: {x: 0.5, y: 0.5}
+  m_Pivot: {x: 0, y: 0}
 --- !u!114 &1129605985
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -739,7 +455,6 @@ Transform:
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children:
-  - {fileID: 638497342}
   - {fileID: 1129605984}
   m_Father: {fileID: 0}
   m_RootOrder: 2
@@ -752,32 +467,26 @@ MonoBehaviour:
   m_GameObject: {fileID: 1421240840}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0add95f4e765a2646af0183e66b9a2a2, type: 3}
+  m_Script: {fileID: 11500000, guid: 189a50e0ddb1421498ef25dcd885c95b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   takeData:
   - name: Take1
     frameRate: 24
-    numFrames: 100
-    startFrame: 1
-    endFrame: 68
+    endFramePadding: 0
     numLoop: 3
     loopMode: 1
     loopBackToFrame: -1
-    trackValues:
-    - {fileID: 638497347}
-    - {fileID: 638497341}
-    track_count: 3
-    group_count: 0
+    trackCounter: 3
+    groupCounter: 0
     rootGroup:
       group_name: Group0
       group_id: 0
       elements: 0200000003000000
       foldout: 1
     groupValues: []
-  playOnStartIndex: 0
-  meta: {fileID: 0}
-  playOnStartMeta: 
+  _defaultTakeName: Take1
+  _meta: {fileID: 0}
   sequenceLoadAll: 1
   sequenceKillWhenDone: 0
   playOnEnable: 0
@@ -785,8 +494,167 @@ MonoBehaviour:
   onDisableAction: 1
   updateType: 0
   updateTimeIndependent: 0
-  codeLanguage: 0
-  _dataHolder: {fileID: 638497338}
+  serializeData:
+    _audioTracks: []
+    _audioKeys: []
+    _cameraSwitcherTracks: []
+    _cameraSwitcherKeys: []
+    _eventTracks: []
+    _eventKeys: []
+    _goSetActiveTracks: []
+    _goSetActiveKeys: []
+    _materialTracks: []
+    _materialKeys: []
+    _orientationTracks: []
+    _orientationKeys: []
+    _propertyTracks:
+    - id: 3
+      name: Track2
+      foldout: 1
+      _targetPath: 
+      valueType: 4
+      obj: {fileID: 72846638}
+      component: {fileID: 72846640}
+      componentName: RectTransform
+      fieldName: 
+      propertyName: offsetMin
+    - id: 2
+      name: Track1
+      foldout: 1
+      _targetPath: 
+      valueType: 6
+      obj: {fileID: 72846638}
+      component: {fileID: 72846639}
+      componentName: Image
+      fieldName: 
+      propertyName: color
+    _propertyKeys:
+    - version: 2
+      interp: 1
+      frame: 10
+      easeType: 12
+      amplitude: 0
+      period: 0
+      customEase: []
+      endFrame: 30
+      val: 0
+      valString: 
+      valObj: {fileID: 0}
+      vect4: {x: 66.5, y: 231, z: 0, w: 0}
+    - version: 2
+      interp: 1
+      frame: 30
+      easeType: 1
+      amplitude: 0
+      period: 0
+      customEase: []
+      endFrame: -1
+      val: 0
+      valString: 
+      valObj: {fileID: 0}
+      vect4: {x: 190.9, y: 312.01, z: 0, w: 0}
+    - version: 2
+      interp: 1
+      frame: 10
+      easeType: 37
+      amplitude: 0
+      period: 0
+      customEase:
+      - 0
+      - 0
+      - 3.3930547
+      - 3.3930547
+      - 0.5
+      - 1
+      - 0
+      - 0
+      - 1
+      - 0
+      - -3.4252822
+      - -3.4252822
+      endFrame: 30
+      val: 0
+      valString: 
+      valObj: {fileID: 0}
+      vect4: {x: 1, y: 1, z: 1, w: 1}
+    - version: 2
+      interp: 1
+      frame: 30
+      easeType: 1
+      amplitude: 0
+      period: 0
+      customEase: []
+      endFrame: 40
+      val: 0
+      valString: 
+      valObj: {fileID: 0}
+      vect4: {x: 0.8455882, y: 0.26113755, z: 0.26113755, w: 1}
+    - version: 2
+      interp: 2
+      frame: 40
+      easeType: 1
+      amplitude: 0
+      period: 0
+      customEase: []
+      endFrame: 50
+      val: 0
+      valString: 
+      valObj: {fileID: 0}
+      vect4: {x: 0.36465934, y: 0.32334155, z: 0.81325305, w: 1}
+    - version: 2
+      interp: 2
+      frame: 50
+      easeType: 1
+      amplitude: 0
+      period: 0
+      customEase: []
+      endFrame: 60
+      val: 0
+      valString: 
+      valObj: {fileID: 0}
+      vect4: {x: 0.537197, y: 0.7891566, z: 0.55237526, w: 1}
+    - version: 2
+      interp: 2
+      frame: 60
+      easeType: 1
+      amplitude: 0
+      period: 0
+      customEase: []
+      endFrame: 65
+      val: 0
+      valString: 
+      valObj: {fileID: 0}
+      vect4: {x: 0.90981346, y: 0.94578314, z: 0.19941212, w: 1}
+    - version: 2
+      interp: 2
+      frame: 65
+      easeType: 1
+      amplitude: 0
+      period: 0
+      customEase: []
+      endFrame: -1
+      val: 0
+      valString: 
+      valObj: {fileID: 0}
+      vect4: {x: 0.90981346, y: 0.94578314, z: 0.19941212, w: 1}
+    _rotationEulerTracks: []
+    _rotationEulerKeys: []
+    _rotationTracks: []
+    _rotationKeys: []
+    _translationTracks: []
+    _translationKeys: []
+    _unityAnimationTracks: []
+    _unityAnimationKeys: []
+    _scaleTracks: []
+    _scaleKeys: []
+    _trackLookups:
+    - type: 7
+      index: 0
+      keyIndices: 0000000001000000
+    - type: 7
+      index: 1
+      keyIndices: 020000000300000004000000050000000600000007000000
+    _takeTrackCounts: 02000000
 --- !u!1 &2077401318
 GameObject:
   m_ObjectHideFlags: 0
