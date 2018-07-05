@@ -129,6 +129,12 @@ namespace M8.Animator {
                 return seq != null ? seq.Elapsed() : 0.0f;
             }
         }
+        public float runningFullTime {
+            get {
+                Sequence seq = currentPlayingSequence;
+                return seq != null ? seq.Elapsed(true) : 0.0f;
+            }
+        }
         public float totalTime {
             get {
                 Take take = currentPlayingTake;
