@@ -3401,8 +3401,7 @@ namespace M8.Animator.Edit {
                     }
                 }
                 else if(pTrack.valueType == PropertyTrack.ValueType.Color) {
-                    rectField.height = 22f;
-                    Color nclr = EditorGUI.ColorField(rectField, propertyLabel, pKey.color);
+                    var nclr = RenderColorProperty(rectField, propertyLabel, pKey.color);
                     if(pKey.color != nclr) {
                         aData.RegisterTakesUndo("Change Property Value", false);
                         pKey.color = nclr;
@@ -3720,11 +3719,7 @@ namespace M8.Animator.Edit {
                     }
                 }
                 else if(aTrack.propertyType == MaterialTrack.ValueType.Color) {
-                    GUI.skin = null; EditorUtility.ResetDisplayControls();
-                    rectField.height = 22f;
-                    Color nclr = EditorGUI.ColorField(rectField, propertyLabel, aKey.color);
-                    GUI.skin = skin; EditorUtility.ResetDisplayControls();
-
+                    var nclr = RenderColorProperty(rectField, propertyLabel, aKey.color);
                     if(aKey.color != nclr) {
                         aData.RegisterTakesUndo("Change Material Property Value", false);
                         aKey.color = nclr;
@@ -6336,6 +6331,14 @@ namespace M8.Animator.Edit {
         }
         float maxScrollView() {
             return height_all_tracks;
+        }
+
+        Color RenderColorProperty(Rect rectField, string propertyLabel, Color color) {
+            GUI.skin = null; EditorUtility.ResetDisplayControls();
+            rectField.height = 22f;
+            Color nclr = EditorGUI.ColorField(rectField, propertyLabel, color);
+            GUI.skin = skin; EditorUtility.ResetDisplayControls();
+            return nclr;
         }
 
         #endregion
