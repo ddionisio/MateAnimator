@@ -220,6 +220,18 @@ namespace M8.Animator {
             return _takes[takeIndex].name;
         }
 
+        public float GetTakeTotalTime(string takeName) {
+            int ind = GetTakeIndex(takeName);
+            if(ind == -1) { Debug.LogError("Take not found: " + takeName); return 0f; }
+
+            return GetTakeTotalTime(ind);
+        }
+
+        public float GetTakeTotalTime(int takeIndex) {
+            var take = _takes[takeIndex];
+            return (take.totalFrames + take.endFramePadding) / (float)take.frameRate;
+        }
+
         public void PlayDefault(bool loop = false) {
             int takeInd = defaultTakeIndex;
             if(takeInd != -1) {
@@ -290,6 +302,61 @@ namespace M8.Animator {
 
                 seq.timeScale = mAnimScale;
                 seq.Goto(time, true);
+            }
+        }
+
+        /// <summary>
+        /// Go to a given time without playing.
+        /// </summary>
+        public void Goto(string takeName, float time) {
+            int ind = GetTakeIndex(takeName);
+            if(ind == -1) { Debug.LogError("Take not found: " + takeName); return; }
+
+            Goto(ind, time);
+        }
+
+        /// <summary>
+        /// Go to a given time without playing.
+        /// </summary>
+        public void Goto(int takeIndex, float time) {
+            Sequence seq;
+
+            if(mNowPlayingTakeIndex != takeIndex) {
+                mLastPlayingTakeIndex = mNowPlayingTakeIndex;
+
+                Pause();
+
+                if(mLastPlayingTakeIndex != -1)
+                    sequenceCtrls[mLastPlayingTakeIndex].take.PlaySwitch(this); //notify take that we are switching
+
+                SequenceControl amSeq = sequenceCtrls[takeIndex];
+
+                Take newPlayTake = amSeq.take;
+
+                seq = amSeq.sequence;
+
+                if(seq == null) {
+                    amSeq.Build(sequenceKillWhenDone, updateType, updateTimeIndependent);
+                    seq = amSeq.sequence;
+                }
+
+                mNowPlayingTakeIndex = takeIndex;
+
+                newPlayTake.PlayStart(this, newPlayTake.frameRate * time, 1.0f); //notify take that we are playing
+            }
+            else
+                seq = sequenceCtrls[takeIndex].sequence;
+
+            seq.Goto(time);
+        }
+
+        /// <summary>
+        /// Call this to move current take to given time. Ideally, call Goto(take, time) the first time. This is ideally used to manually move the sequence.
+        /// </summary>
+        public void Goto(float time) {
+            if(mNowPlayingTakeIndex != -1) {
+                var seq = sequenceCtrls[mNowPlayingTakeIndex].sequence;
+                seq.Goto(time);
             }
         }
 
