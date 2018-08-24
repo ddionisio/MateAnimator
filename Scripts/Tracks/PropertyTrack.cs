@@ -86,6 +86,8 @@ namespace M8.Animator {
         }
 
         public void RefreshData(Component comp) {
+            if(!comp) return;
+
             Type t = comp.GetType();
             if(!string.IsNullOrEmpty(propertyName)) {
                 cachedPropertyInfo = t.GetProperty(propertyName);
