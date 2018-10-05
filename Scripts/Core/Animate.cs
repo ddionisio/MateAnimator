@@ -143,6 +143,10 @@ namespace M8.Animator {
             }
         }
 
+        public int takeCount {
+            get { return _takes.Count; }
+        }
+
         private SequenceControl[] mSequenceCtrls;
 
         private int mNowPlayingTakeIndex = -1;
