@@ -243,14 +243,24 @@ namespace M8.Animator {
             }
         }
 
+        public void Play(string takeName) {
+            int ind = GetTakeIndex(takeName);
+            if(ind == -1) { Debug.LogError("Take not found: " + takeName); return; }
+            Play(ind, false);
+        }
+
         // play take by name
-        public void Play(string takeName, bool loop = false) {
+        public void Play(string takeName, bool loop) {
             int ind = GetTakeIndex(takeName);
             if(ind == -1) { Debug.LogError("Take not found: " + takeName); return; }
             Play(ind, loop);
         }
 
-        public void Play(int takeIndex, bool loop = false) {
+        public void Play(int takeIndex) {
+            PlayAtTime(takeIndex, 0f, false);
+        }
+
+        public void Play(int takeIndex, bool loop) {
             PlayAtTime(takeIndex, 0f, loop);
         }
 
