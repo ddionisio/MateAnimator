@@ -11,18 +11,27 @@ namespace M8.Animator {
 	    private Material[] mMaterialsCurrent;
 
 	    private Dictionary<Material, Material>[] mMaterialInstances;
+        private bool mIsInit;
 
 	    public void Revert() {
-	        mRenderer.sharedMaterials = mMaterialsDefault;    
+            if(!mIsInit)
+                return;
+
+            mRenderer.sharedMaterials = mMaterialsDefault;    
 	    }
 
 	    public void Revert(int matInd) {
+            if(!mIsInit)
+                return;
+
 	        mMaterialsCurrent[matInd] = mMaterialsDefault[matInd];
 	        mRenderer.sharedMaterials = mMaterialsCurrent;
 	    }
 
 	    public Material Instance(int matInd, Material mat) {
-	        Material matInst;
+            Init();
+
+            Material matInst;
 	        if(!mMaterialInstances[matInd].TryGetValue(mat, out matInst)) {
 	            mMaterialInstances[matInd].Add(mat, matInst = new Material(mat));
 	        }
@@ -43,28 +52,38 @@ namespace M8.Animator {
 	    }
 
 	    void OnDestroy() {
-	        for(int i = 0; i < mMaterialsCurrent.Length; i++) {
-	            foreach(var pair in mMaterialInstances[i])
-	                Destroy(pair.Value);
-	            mMaterialInstances[i].Clear();
-	        }
+            if(mIsInit) {
+                for(int i = 0; i < mMaterialsCurrent.Length; i++) {
+                    foreach(var pair in mMaterialInstances[i]) {
+                        var mat = pair.Value;
+                        if(mat)
+                            Destroy(mat);
+                    }
+
+                    mMaterialInstances[i].Clear();
+                }
+            }
 	    }
 
-	    void Awake() {
-	        mRenderer = GetComponent<Renderer>();
+	    void Init() {
+            if(!mIsInit) {
+                mIsInit = true;
 
-	        mMaterialsDefault = mRenderer.sharedMaterials;
+                mRenderer = GetComponent<Renderer>();
 
-	        //initialize
-	        int count = mMaterialsDefault.Length;
-	        
-	        mMaterialsCurrent = new Material[count];
-	        mMaterialInstances = new Dictionary<Material, Material>[count];
+                mMaterialsDefault = mRenderer.sharedMaterials;
 
-	        for(int i = 0; i < count; i++) {
-	            mMaterialsCurrent[i] = mMaterialsDefault[i];
-	            mMaterialInstances[i] = new Dictionary<Material, Material>();
-	        }
+                //initialize
+                int count = mMaterialsDefault.Length;
+
+                mMaterialsCurrent = new Material[count];
+                mMaterialInstances = new Dictionary<Material, Material>[count];
+
+                for(int i = 0; i < count; i++) {
+                    mMaterialsCurrent[i] = mMaterialsDefault[i];
+                    mMaterialInstances[i] = new Dictionary<Material, Material>();
+                }
+            }
 	    }
 	}
 }
