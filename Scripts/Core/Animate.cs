@@ -123,6 +123,32 @@ namespace M8.Animator {
             }
         }
 
+        public float runningFrame {
+            get {
+                Sequence seq = currentPlayingSequence;
+                if(seq == null)
+                    return 0f;
+                Take take = currentPlayingTake;
+                if(take == null)
+                    return 0f;
+
+                return seq.Elapsed(false) * take.frameRate;
+            }
+        }
+
+        public float runningFullFrame {
+            get {
+                Sequence seq = currentPlayingSequence;
+                if(seq == null)
+                    return 0f;
+                Take take = currentPlayingTake;
+                if(take == null)
+                    return 0f;
+
+                return seq.Elapsed(true) * take.frameRate;
+            }
+        }
+
         public float runningTime {
             get {
                 Sequence seq = currentPlayingSequence;
@@ -135,11 +161,9 @@ namespace M8.Animator {
                 return seq != null ? seq.Elapsed(true) : 0.0f;
             }
         }
-        public float totalTime {
+        public float runningTotalTime {
             get {
-                Take take = currentPlayingTake;
-                if(take == null) return 0f;
-                else return (take.totalFrames + take.endFramePadding) / (float)take.frameRate;
+                return currentPlayingTakeIndex != -1 ? GetTakeTotalTime(currentPlayingTakeIndex) : 0f;
             }
         }
 
