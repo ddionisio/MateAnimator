@@ -151,8 +151,8 @@ namespace M8.Animator.Edit {
                 aData.RegisterUndo("Set Time Independent", false);
                 anim.updateTimeIndependent = updateTimeIndependent;
             }
-
-            if(!Application.isPlaying && PrefabUtility.GetPrefabType(aData.gameObject) != PrefabType.Prefab) {
+            
+            if(!Application.isPlaying && aData.gameObject.scene.IsValid()) {
                 TimelineWindow timeline = TimelineWindow.window;
 
                 if(timeline != null && timeline.aData != null && aData.target == timeline.aData.target) {

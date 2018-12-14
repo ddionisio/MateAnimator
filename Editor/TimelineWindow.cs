@@ -426,7 +426,7 @@ namespace M8.Animator.Edit {
             // find component
             if(aData == null && !EditorApplication.isPlayingOrWillChangePlaymode) {
                 GameObject go = Selection.activeGameObject;
-                if(go && PrefabUtility.GetPrefabType(go) != PrefabType.Prefab) {
+                if(go && go.scene.IsValid()) {
                     aData = AnimEdit(go.GetComponent<Animate>());
                 }
             }
@@ -743,7 +743,7 @@ namespace M8.Animator.Edit {
         }
         void OnSelectionChange() {
             if(aData == null) {
-                if(Selection.activeGameObject && PrefabUtility.GetPrefabType(Selection.activeGameObject) != PrefabType.Prefab) {
+                if(Selection.activeGameObject && Selection.activeGameObject.scene.IsValid()) { //if scene is not valid, it must be from the asset
                     AnimateEditControl newDat = AnimEdit(Selection.activeGameObject.GetComponent<Animate>());
                     if(newDat != aData) {
                         aData = newDat;
@@ -773,7 +773,7 @@ namespace M8.Animator.Edit {
                 // recheck for component
                 GameObject go = Selection.activeGameObject;
                 if(go) {
-                    if(PrefabUtility.GetPrefabType(go) != PrefabType.Prefab) {
+                    if(go.scene.IsValid()) { //if scene is not valid, it must be from the asset
                         aData = AnimEdit(go.GetComponent<Animate>());
                     }
                     else
@@ -3912,9 +3912,7 @@ namespace M8.Animator.Edit {
                     aData.RegisterTakesUndo("Change Event Key Field", false);
 
                     if(newGO) {
-                        var newGOPrefabType = PrefabUtility.GetPrefabType(newGO);
-
-                        data.SetAsGameObject(iTarget, newGO, newGOPrefabType == PrefabType.ModelPrefab || newGOPrefabType == PrefabType.Prefab);
+                        data.SetAsGameObject(iTarget, newGO, !newGO.scene.IsValid()); //if scene is not valid, it must be from the asset
                     }
                     else
                         data.SetAsGameObject(iTarget, null, false);
@@ -3939,9 +3937,7 @@ namespace M8.Animator.Edit {
 
                     Component newComp = newObj as Component;
                     if(newComp) {
-                        var newGOPrefabType = PrefabUtility.GetPrefabType(newComp);
-
-                        data.SetAsComponent(iTarget, newComp, newGOPrefabType == PrefabType.ModelPrefab || newGOPrefabType == PrefabType.Prefab);
+                        data.SetAsComponent(iTarget, newComp, !newComp.gameObject.scene.IsValid()); //if scene is not valid, it must be from the asset
                     }
                     else
                         data.SetAsComponent(iTarget, null, false);
