@@ -5368,7 +5368,7 @@ namespace M8.Animator.Edit {
         }
 
         T _addTrack<T>(GameObject object_window) where T : Track {
-            T t = Activator.CreateInstance<T>();
+            T t = System.Activator.CreateInstance<T>();
             T track = t;
             aData.currentTake.addTrack(TakeEditCurrent().selectedGroup, aData.target, object_window ? object_window.transform : null, track);
             return track;
@@ -5998,7 +5998,7 @@ namespace M8.Animator.Edit {
                         //copy keys
                         foreach(var a in keyBuffer) {
                             if(a != null) {
-                                var newKey = (Key)Activator.CreateInstance(a.GetType());
+                                var newKey = (Key)System.Activator.CreateInstance(a.GetType());
                                 a.CopyTo(newKey);
                                 newKey.frame += (contextMenuFrame - (int)contextSelectionRange.x);
                                 newKeys.Add(newKey);
@@ -6071,7 +6071,7 @@ namespace M8.Animator.Edit {
                     //copy keys
                     foreach(var a in keyBuffer) {
                         if(a != null) {
-                            var newKey = (Key)Activator.CreateInstance(a.GetType());
+                            var newKey = (Key)System.Activator.CreateInstance(a.GetType());
                             a.CopyTo(newKey);
                             newKey.frame += (contextMenuFrame - (int)contextSelectionRange.x);
                             newKeys.Add(newKey);
@@ -6137,7 +6137,7 @@ namespace M8.Animator.Edit {
             foreach(var track in contextSelectionTracksBuffer) {
                 contextSelectionKeysBuffer.Add(new List<Key>());
                 foreach(var key in curTakeEdit.getContextSelectionKeysForTrack(track)) {
-                    var nkey = (Key)Activator.CreateInstance(key.GetType());
+                    var nkey = (Key)System.Activator.CreateInstance(key.GetType());
                     key.CopyTo(nkey);
                     contextSelectionKeysBuffer[contextSelectionKeysBuffer.Count - 1].Add(nkey);
                 }

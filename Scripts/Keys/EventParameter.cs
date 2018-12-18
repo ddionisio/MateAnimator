@@ -554,7 +554,7 @@ namespace M8.Animator {
                         if(lsArray[i] == null)
                             continue;
 
-                        otherParam.lsArray[i] = (EventData)Activator.CreateInstance(lsArray[i].GetType());
+                        otherParam.lsArray[i] = (EventData)System.Activator.CreateInstance(lsArray[i].GetType());
                         lsArray[i].CopyTo(otherParam.lsArray[i]);
                     }
                 }
