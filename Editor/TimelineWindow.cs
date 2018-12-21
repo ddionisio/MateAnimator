@@ -4054,23 +4054,10 @@ namespace M8.Animator.Edit {
 
                         if(!componentsMatch) {
                             if(amTrack is PropertyTrack) { //remove all keys if required component is missing
-                                                             // delete all keys
                                 if(amTrack.keys.Count > 0) {
                                     amTrack.keys = new List<Key>();
                                     ((PropertyTrack)amTrack).clearInfo();
                                 }
-                            }
-                            else {
-                                //delete keys that require component
-                                List<Key> nkeys = new List<Key>(amTrack.keys.Count);
-                                if(ngo) {
-                                    foreach(Key key in amTrack.keys) {
-                                        if(ngo.GetComponent(key.GetRequiredComponent()) != null)
-                                            nkeys.Add(key);
-                                    }
-                                }
-
-                                amTrack.keys = nkeys;
                             }
                         }
 

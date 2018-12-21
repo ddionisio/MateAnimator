@@ -686,24 +686,11 @@ namespace M8.Animator {
                 foreach(var take in _takes) {
                     foreach(var track in take.trackValues) {
                         Transform t = Utility.GetTarget(transform, track.targetPath);
+                        if(!t)
+                            continue;
 
-                        System.Type compType = track.GetRequiredComponent();
-                        if(compType != null) {
-                            Component comp = t.gameObject.GetComponent(compType);
-                            if(comp == null) {
-                                t.gameObject.AddComponent(compType);
-                            }
-                        }
-
-                        foreach(var key in track.keys) {
-                            compType = key.GetRequiredComponent();
-                            if(compType != null) {
-                                Component comp = t.gameObject.GetComponent(compType);
-                                if(comp == null) {
-                                    t.gameObject.AddComponent(compType);
-                                }
-                            }
-                        }
+                        if(!track.CheckComponent(t.gameObject))
+                            track.AddComponent(t.gameObject);
                     }
                 }
 

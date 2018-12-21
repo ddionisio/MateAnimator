@@ -26,8 +26,12 @@ namespace M8.Animator {
             return targetGO ? targetGO : obj;
         }
 
-        public override System.Type GetRequiredComponent() {
-            return typeof(Animation);
+        public override bool CheckComponent(GameObject go) {
+            return go.GetComponent<Animation>() != null;
+        }
+
+        public override void AddComponent(GameObject go) {
+            go.AddComponent<Animation>();
         }
 
         // add a new key
@@ -57,6 +61,7 @@ namespace M8.Animator {
             if(!go || keys.Count == 0) return;
 
             Animation anim = go.GetComponent<Animation>();
+            if(!anim) return;
 
             if(frame < keys[0].frame) {
                 var amKey = keys[0] as UnityAnimationKey;

@@ -50,8 +50,22 @@ namespace M8.Animator {
         private bool isCached;
 
         protected override void SetSerializeObject(UnityEngine.Object obj) {
-            this.obj = obj as GameObject;
+            this.obj = string.IsNullOrEmpty(_targetPath) ? obj as GameObject : null;
 
+            //verify component, if invalid, reset component
+            if(!string.IsNullOrEmpty(componentName) && obj is GameObject) {
+                var go = (GameObject)obj;
+                if(go.GetComponent(componentName) == null)
+                    componentName = "";
+            }
+
+            //reset property if no component
+            if(string.IsNullOrEmpty(componentName)) {
+                fieldName = "";
+                propertyName = "";
+            }
+
+            //reset cache
             component = null;
             cachedFieldInfo = null;
             cachedPropertyInfo = null;
@@ -170,26 +184,18 @@ namespace M8.Animator {
             else if(!string.IsNullOrEmpty(propertyName)) return propertyName;
             return "Not Set";
         }
-        public override System.Type GetRequiredComponent() {
-            if(string.IsNullOrEmpty(componentName)) return null;
+        public override bool CheckComponent(GameObject go) {
+            if(string.IsNullOrEmpty(componentName)) return true;
 
-            System.Type type = System.Type.GetType(componentName);
-            if(type == null) {
-                int endInd = componentName.IndexOf('.');
-                if(endInd != -1) {
-                    // Get the name of the assembly (Assumption is that we are using
-                    // fully-qualified type names)
-                    var assemblyName = componentName.Substring(0, endInd);
+            return go.GetComponent(componentName) != null;
+        }
+        public override void AddComponent(GameObject go) {
+            if(string.IsNullOrEmpty(componentName))
+                return;
 
-                    // Attempt to load the indicated Assembly
-                    var assembly = System.Reflection.Assembly.Load(assemblyName);
-                    if(assembly != null)
-                        // Ask that assembly to return the proper Type
-                        type = assembly.GetType(componentName);
-                }
-            }
-
-            return type;
+            var type = Type.GetType(componentName);
+            if(type != null)
+                go.AddComponent(type);
         }
         public string getMemberInfoTypeName() {
             if(!string.IsNullOrEmpty(propertyName))

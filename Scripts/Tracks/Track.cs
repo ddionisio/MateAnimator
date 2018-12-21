@@ -77,8 +77,12 @@ namespace M8.Animator {
             return ret;
         }
 
-        public virtual System.Type GetRequiredComponent() {
-            return null;
+        public virtual bool CheckComponent(GameObject go) {
+            return true;
+        }
+
+        public virtual void AddComponent(GameObject go) {
+
         }
 
         /// <summary>
@@ -86,16 +90,9 @@ namespace M8.Animator {
         /// </summary>
         public bool VerifyComponents(GameObject go) {
             if(!go) return false;
-
-            System.Type compType = GetRequiredComponent();
-            if(compType != null && go.GetComponent(compType) == null)
+                        
+            if(!CheckComponent(go))
                 return false;
-
-            foreach(Key key in keys) {
-                compType = key.GetRequiredComponent();
-                if(compType != null && go.GetComponent(compType) == null)
-                    return false;
-            }
 
             return true;
         }

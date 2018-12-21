@@ -99,8 +99,12 @@ namespace M8.Animator {
             return _matInd != -1 && !string.IsNullOrEmpty(_property) && _propertyType != ValueType.None ? _property : "Not Set";
         }
 
-        public override System.Type GetRequiredComponent() {
-            return typeof(Renderer);
+        public override bool CheckComponent(GameObject go) {
+            return go.GetComponent<Renderer>() != null;
+        }
+
+        public override void AddComponent(GameObject go) {
+            go.AddComponent<Renderer>();
         }
 
         public MaterialKey addKey(ITarget target, int _frame) {

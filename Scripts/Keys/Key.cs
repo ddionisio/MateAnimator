@@ -56,11 +56,7 @@ namespace M8.Animator {
             else
                 key.customEase = null;
         }
-
-        public virtual System.Type GetRequiredComponent() {
-            return null;
-        }
-
+        
         /// <summary>
         /// Use sequence to insert callbacks, or some other crap, just don't insert the tweener you are returning!
         /// target is set if required. index = this key's index in the track

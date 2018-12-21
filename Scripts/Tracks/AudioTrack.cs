@@ -30,8 +30,12 @@ namespace M8.Animator {
             return "Audio";
         }
 
-        public override System.Type GetRequiredComponent() {
-            return typeof(AudioSource);
+        public override bool CheckComponent(GameObject go) {
+            return go.GetComponent<AudioSource>() != null;
+        }
+
+        public override void AddComponent(GameObject go) {
+            go.AddComponent<AudioSource>();
         }
 
         public override void updateCache(ITarget target) {
