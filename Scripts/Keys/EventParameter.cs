@@ -212,7 +212,7 @@ namespace M8.Animator {
             }
             else if(valueType == ValueType.Object || valueType == ValueType.Enum) {
                 ret = GetTypeFrom(val_string);
-                if(ret == null) {
+                /*if(ret == null) {
                     try {
                         object obj = System.Activator.CreateInstance("UnityEngine.dll", val_string).Unwrap();
                         ret = obj != null ? obj.GetType() : null;
@@ -222,7 +222,7 @@ namespace M8.Animator {
                         //TODO: find a better way
                         //Debug.LogError(e.ToString());
                     }
-                }
+                }*/
             }
             else {
                 ret = null;
