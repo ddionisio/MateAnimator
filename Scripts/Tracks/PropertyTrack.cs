@@ -255,23 +255,6 @@ namespace M8.Animator {
             return k;
         }
 
-        /// <summary>
-        /// Editor purpose to set component directly. If isField=false, fieldName is a Property method
-        /// </summary>
-        public void SetTargetCompDirect(Component comp, string compTypeName, bool isField, string fieldName) {
-            component = comp;
-            componentName = compTypeName;
-
-            if(isField) {
-                this.fieldName = fieldName;
-                propertyName = "";
-            }
-            else {
-                this.fieldName = "";
-                propertyName = fieldName;
-            }
-        }
-
         public bool setComponent(ITarget target, Component component) {
             if(target.meta) {
                 string cname = component.GetType().Name;

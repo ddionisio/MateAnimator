@@ -3954,8 +3954,25 @@ namespace M8.Animator.Edit {
                 Rect rectObjectField = new Rect(rect.x, rectLabelField.y + rectLabelField.height + margin, rect.width, 16f);
                 GUI.skin = null;
                 EditorUtility.ResetDisplayControls();
-                var val = EditorGUI.ObjectField(rectObjectField, data.val_obj, typeof(UnityEngine.Object), true);
-                if(data.val_obj != val) { aData.RegisterTakesUndo("Change Event Key Field", false); data.val_obj = val; }
+                var curVal = data.toObject(iTarget) as UnityEngine.Object;
+                var newVal = EditorGUI.ObjectField(rectObjectField, curVal, typeof(UnityEngine.Object), true);
+                if(curVal != newVal) {
+                    aData.RegisterTakesUndo("Change Event Key Field", false);
+                    if(newVal is GameObject) { //special case if Object is GameObject (in case it is from scene)
+                        if(newVal)
+                            data.SetAsGameObject(iTarget, (GameObject)newVal, !((GameObject)newVal).scene.IsValid()); //if scene is not valid, it must be from the asset
+                        else
+                            data.SetAsGameObject(iTarget, null, false);
+                    }
+                    else if(newVal is Component) { //special case if Object is Component (in case it is from scene)
+                        if(newVal)
+                            data.SetAsComponent(iTarget, (Component)newVal, !((Component)newVal).gameObject.scene.IsValid()); //if scene is not valid, it must be from the asset
+                        else
+                            data.SetAsComponent(iTarget, null, false);
+                    }
+                    else
+                        data.val_obj = newVal;
+                }
                 GUI.skin = skin;
                 EditorUtility.ResetDisplayControls();
             }

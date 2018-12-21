@@ -23,7 +23,7 @@ namespace M8.Animator {
                         if(!parameters[i].checkArrayIntegrity() || cachedParameterInfos[i].ParameterType != parameters[i].getParamType())
                             return false;
                     }
-                    else if(cachedParameterInfos[i].ParameterType != parameters[i].getParamType())
+                    else if(!Utility.IsDerivedFrom(parameters[i].getParamType(), cachedParameterInfos[i].ParameterType))
                         return false;
                 }
             }
@@ -35,6 +35,19 @@ namespace M8.Animator {
 
         public override void maintainKey(ITarget itarget, UnityEngine.Object targetObj) {            
             cachedMethodInfo = null;
+
+            //clean up parameters for meta
+            if(itarget.meta) {
+                for(int i = 0; i < parameters.Count; i++) {
+                    switch(parameters[i].valueType) {
+                        case EventData.ValueType.Component:
+                        case EventData.ValueType.GameObject:
+                            if(!string.IsNullOrEmpty(parameters[i].val_string)) //check "path" if it's not empty, clean up val_obj
+                                parameters[i].val_obj = null;
+                            break;
+                    }
+                }
+            }
         }
 
         public override int getNumberOfFrames(int frameRate) {

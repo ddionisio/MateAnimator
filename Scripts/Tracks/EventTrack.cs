@@ -20,8 +20,6 @@ namespace M8.Animator {
 
             if(this.obj is Component)
                 componentName = this.obj.GetType().Name;
-            else
-                componentName = "";
         }
 
         protected override UnityEngine.Object GetSerializeObject(GameObject targetGO) {
@@ -91,7 +89,8 @@ namespace M8.Animator {
         /// </summary>
         public void SetTargetAsObject(Object obj) {
             _targetPath = "";
-            SetSerializeObject(obj);
+            componentName = "";
+            this.obj = obj;
         }
 
         public override string getTrackType() {

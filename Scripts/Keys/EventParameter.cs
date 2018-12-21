@@ -40,6 +40,8 @@ namespace M8.Animator {
         public Vector4 val_vect4;
         public UnityEngine.Object val_obj;
 
+        public string val_typeAssembly; //this is used for Objects
+
         public static ValueType GetValueType(Type t) {
             ValueType valueType = ValueType.Invalid;
             if(t == typeof(bool)) valueType = ValueType.Boolean;
@@ -76,8 +78,10 @@ namespace M8.Animator {
 
         public virtual void setValueType(Type t) {
             valueType = GetValueType(t);
-            if(valueType == ValueType.Object || valueType == ValueType.Enum || valueType == ValueType.Component)
+            if(valueType == ValueType.Object || valueType == ValueType.Enum || valueType == ValueType.Component) {
                 val_string = t.ToString();
+                val_typeAssembly = t.Assembly.ToString();
+            }
         }
 
         /// <summary>
@@ -115,7 +119,7 @@ namespace M8.Animator {
                         target.SetCache(pathParms[1], t);
                     }
 
-                    var compType = GetTypeFrom(pathParms[0]);
+                    var compType = GetTypeFrom(val_typeAssembly, pathParms[0]);
 
                     return t ? t.GetComponent(compType) : null;
                 }
@@ -145,41 +149,41 @@ namespace M8.Animator {
             return null;
         }
 
-        static Type GetTypeFrom(string TypeName) {
+        static Type GetTypeFrom(string assemblyName, string typeName) {
+            if(string.IsNullOrEmpty(assemblyName)) {
+                // Try Type.GetType() first. This will work with types defined
+                // by the Mono runtime, etc.
+                var type = Type.GetType(typeName);
 
-            // Try Type.GetType() first. This will work with types defined
-            // by the Mono runtime, etc.
-            var type = Type.GetType(TypeName);
+                // If it worked, then we're done here
+                if(type != null)
+                    return type;
 
-            // If it worked, then we're done here
-            if(type != null)
-                return type;
-
-            // Get the name of the assembly (Assumption is that we are using
-            // fully-qualified type names)
-            int endInd = TypeName.IndexOf('.');
-            if(endInd == -1) {
-                try {
-                    //no assembly?
-                    return Type.GetType(TypeName);
+                // Get the name of the assembly (Assumption is that we are using
+                // fully-qualified type names)
+                int endInd = typeName.IndexOf('.');
+                if(endInd == -1) {
+                    Debug.LogWarning("Unable to get type: " + typeName);
+                    return null;
                 }
-                catch(TypeInitializationException e) {
-                    Debug.LogWarning(e.ToString());
+
+                assemblyName = typeName.Substring(0, endInd);
+
+                try {
+                    // Attempt to load the indicated Assembly
+                    var assembly = System.Reflection.Assembly.Load(assemblyName);
+
+                    // Ask that assembly to return the proper Type
+                    return assembly.GetType(typeName);
+                }
+                catch { // Most likely not found
+                    Debug.LogWarning("Unable to get type: " + typeName);
                     return null;
                 }
             }
-
-            var assemblyName = TypeName.Substring(0, endInd);
-
-            try {
-                // Attempt to load the indicated Assembly
+            else {
                 var assembly = System.Reflection.Assembly.Load(assemblyName);
-
-                // Ask that assembly to return the proper Type
-                return assembly.GetType(TypeName);
-            }
-            catch { // Most likely not found
-                return null;
+                return assembly.GetType(typeName);
             }
         }
 
@@ -203,7 +207,7 @@ namespace M8.Animator {
                 if(!string.IsNullOrEmpty(val_string)) {
                     var pathParms = val_string.Split(':');
                     if(pathParms.Length > 0)
-                        ret = GetTypeFrom(pathParms[0]);
+                        ret = GetTypeFrom(val_typeAssembly, pathParms[0]);
                     else
                         ret = null;
                 }
@@ -211,7 +215,7 @@ namespace M8.Animator {
                     ret = null;
             }
             else if(valueType == ValueType.Object || valueType == ValueType.Enum) {
-                ret = GetTypeFrom(val_string);
+                ret = GetTypeFrom(val_typeAssembly, val_string);
                 /*if(ret == null) {
                     try {
                         object obj = System.Activator.CreateInstance("UnityEngine.dll", val_string).Unwrap();
@@ -232,6 +236,8 @@ namespace M8.Animator {
         }
 
         public virtual void fromObject(ITarget target, object dat) {
+            val_typeAssembly = "";
+
             switch(valueType) {
                 case ValueType.Integer:
                     val_int = Convert.ToInt32(dat);
@@ -268,7 +274,12 @@ namespace M8.Animator {
                     break;
                 case ValueType.Object:
                     val_obj = (UnityEngine.Object)dat;
-                    val_string = val_obj ? val_obj.GetType().Name : "";
+                    if(val_obj) {
+                        val_string = val_obj.GetType().ToString();
+                        val_typeAssembly = val_obj.GetType().Assembly.ToString();
+                    }
+                    else
+                        val_string = "";
                     break;
                 case ValueType.Boolean:
                     val_bool = Convert.ToBoolean(dat);
@@ -290,10 +301,12 @@ namespace M8.Animator {
 
             if(isAsset || go == null) {
                 val_string = "";
+                val_typeAssembly = "";
                 val_obj = go;
             }
             else {
                 val_string = Utility.GetPath(target.root, go);
+                val_typeAssembly = "";
                 val_obj = target.meta ? null : go;
             }
         }
@@ -306,10 +319,12 @@ namespace M8.Animator {
 
             if(comp == null) {
                 val_string = "";
+                val_typeAssembly = "";
                 val_obj = null;
             }
-            else if(isAsset || comp == null) {
-                val_string = comp ? comp.GetType().ToString() : "";
+            else if(isAsset) {
+                val_string = comp.GetType().ToString();
+                val_typeAssembly = comp.GetType().Assembly.ToString();
                 val_obj = comp;
             }
             else {
@@ -321,6 +336,7 @@ namespace M8.Animator {
                 sb.Append(typeName).Append(':').Append(path);
 
                 val_string = sb.ToString();
+                val_typeAssembly = comp.GetType().Assembly.ToString();
 
                 val_obj = target.meta ? null : comp;
             }
@@ -331,6 +347,7 @@ namespace M8.Animator {
             other.valueType = valueType;
             other.val_int = val_int;
             other.val_string = val_string;
+            other.val_typeAssembly = val_typeAssembly;
             other.val_vect4 = val_vect4;
             other.val_obj = val_obj;
         }
@@ -678,6 +695,7 @@ namespace M8.Animator {
             a.val_int = val_int;
             a.val_vect4 = val_vect4;
             a.val_string = val_string;
+            a.val_typeAssembly = val_typeAssembly;
             a.val_obj = val_obj;
             foreach(EventParameter e in lsArray) {
                 a.lsArray.Add(e.CreateClone());
