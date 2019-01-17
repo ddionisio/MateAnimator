@@ -20,5 +20,7 @@ namespace M8.Animator {
         void MaintainTargetCache(Track track);
         void MaintainTakes();
         void GenerateMissingTargets(string[] missingPaths);
+        void Tick();
+        bool IsTick();
     }
 }

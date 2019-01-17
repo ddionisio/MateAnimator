@@ -12,13 +12,19 @@ namespace M8.Animator {
 
         public List<Take> takes { get { return takeData; } }
 
+        public bool isSerializing { get; private set; }
+
         void ISerializationCallbackReceiver.OnBeforeSerialize() {
+            isSerializing = true;
+
             serializeData = new SerializeData();
             serializeData.Serialize(takeData);
         }
 
         void ISerializationCallbackReceiver.OnAfterDeserialize() {
             serializeData.Deserialize(takeData);
+
+            isSerializing = false;
         }
     }
 }

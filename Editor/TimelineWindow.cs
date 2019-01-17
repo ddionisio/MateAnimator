@@ -370,11 +370,7 @@ namespace M8.Animator.Edit {
         private float height_event_parameters = 0f;
 
         private AnimateMeta mMeta = null;
-
-        //used when we need to add track during OnGUI (workaround for things like dragging to window Unity bug)
-        private int mAddTrackTypeIndexLate = -1;
-        private int mAddTrackTypeIndexLateCounter = 0; //this is a cheesy way to allow a new cycle to happen before adding track
-
+        
         private static Dictionary<Take, TakeEditControl> mTakeEdits = new Dictionary<Take, TakeEditControl>();
         public static TakeEditControl TakeEdit(Take take) {
             TakeEditControl ret = null;
@@ -410,7 +406,7 @@ namespace M8.Animator.Edit {
         }
 
         private GameObject mTempHolder;
-
+        
         #endregion
 
         #region Main
@@ -468,6 +464,8 @@ namespace M8.Animator.Edit {
                         aData.currentTake.previewFrame(aData.target, 1f);
                     }
                 }
+
+                aData.WaitDeserializeClear();
 
                 aData = null;
 
@@ -706,20 +704,6 @@ namespace M8.Animator.Edit {
                 }
                 currentTake.previewFrame(aData.target, curFrame, false, true, play, playbackSpeedValue[playbackSpeedIndex]);
             }
-            else if(mAddTrackTypeIndexLate != -1) { //add track delay
-                if(mAddTrackTypeIndexLateCounter < 1) { //TODO: this allows for one cycle to finish, need a better way to do this
-                    mAddTrackTypeIndexLateCounter++;
-                    return;
-                }
-
-                aData.RegisterTakesUndo("New Track", false);
-                addTrack(mAddTrackTypeIndexLate);
-
-                mAddTrackTypeIndexLate = -1;
-                mAddTrackTypeIndexLateCounter = 0;
-
-                this.Repaint();
-            }
             else {
                 // autokey
                 if(!isDragging && aData != null && aData.autoKey) {
@@ -740,6 +724,8 @@ namespace M8.Animator.Edit {
                 // update methodinfo cache if necessary, used for event track inspector
                 processUpdateMethodInfoCache();
             }
+
+            aData.WaitDeserializeExecute();
         }
         void OnSelectionChange() {
             if(aData == null) {
@@ -5761,9 +5747,12 @@ namespace M8.Animator.Edit {
             aData.RegisterTakesUndo("New Track", false);
             addTrack(type);
         }
-        void addTrackFromMenuLate(object type) {
-            mAddTrackTypeIndexLate = (int)type;
-            mAddTrackTypeIndexLateCounter = 0; //reset counter to allow one cycle to happen before adding track
+        void AddTrackFromMenuDrag(object type) {
+            //NOTE: hack to prevent old serializeData from being deserialize after adding track (because of Undo)
+            aData.WaitDeserialize(() => {
+                aData.RegisterTakesUndo("New Track", false);
+                addTrack(type);
+            });
         }
         void buildAddTrackMenu() {
             menu.AddItem(new GUIContent("Translation"), false, addTrackFromMenu, (int)SerializeType.Translation);
@@ -5810,11 +5799,11 @@ namespace M8.Animator.Edit {
 
             // Translation/Rotation/Orientation
             if(hasTransform) {
-                menu_drag.AddItem(new GUIContent("Translation"), false, addTrackFromMenuLate, (int)SerializeType.Translation);
-                menu_drag.AddItem(new GUIContent("Rotation/Quaternion"), false, addTrackFromMenuLate, (int)SerializeType.Rotation);
-                menu_drag.AddItem(new GUIContent("Rotation/Euler"), false, addTrackFromMenuLate, (int)SerializeType.RotationEuler);
-                menu_drag.AddItem(new GUIContent("Scale"), false, addTrackFromMenuLate, (int)SerializeType.Scale);
-                menu_drag.AddItem(new GUIContent("Orientation"), false, addTrackFromMenuLate, (int)SerializeType.Orientation);
+                menu_drag.AddItem(new GUIContent("Translation"), false, AddTrackFromMenuDrag, (int)SerializeType.Translation);
+                menu_drag.AddItem(new GUIContent("Rotation/Quaternion"), false, AddTrackFromMenuDrag, (int)SerializeType.Rotation);
+                menu_drag.AddItem(new GUIContent("Rotation/Euler"), false, AddTrackFromMenuDrag, (int)SerializeType.RotationEuler);
+                menu_drag.AddItem(new GUIContent("Scale"), false, AddTrackFromMenuDrag, (int)SerializeType.Scale);
+                menu_drag.AddItem(new GUIContent("Orientation"), false, AddTrackFromMenuDrag, (int)SerializeType.Orientation);
             }
             else {
                 menu_drag.AddDisabledItem(new GUIContent("Translation"));
@@ -5824,22 +5813,22 @@ namespace M8.Animator.Edit {
                 menu_drag.AddDisabledItem(new GUIContent("Orientation"));
             }
             // Animation
-            if(hasAnimation) menu_drag.AddItem(new GUIContent("Animation"), false, addTrackFromMenuLate, (int)SerializeType.UnityAnimation);
+            if(hasAnimation) menu_drag.AddItem(new GUIContent("Animation"), false, AddTrackFromMenuDrag, (int)SerializeType.UnityAnimation);
             else menu_drag.AddDisabledItem(new GUIContent("Animation"));
             // Audio
-            if(hasAudioSource) menu_drag.AddItem(new GUIContent("Audio"), false, addTrackFromMenuLate, (int)SerializeType.Audio);
+            if(hasAudioSource) menu_drag.AddItem(new GUIContent("Audio"), false, AddTrackFromMenuDrag, (int)SerializeType.Audio);
             else menu_drag.AddDisabledItem(new GUIContent("Audio"));
             // Property
-            menu_drag.AddItem(new GUIContent("Property"), false, addTrackFromMenuLate, (int)SerializeType.Property);
+            menu_drag.AddItem(new GUIContent("Property"), false, AddTrackFromMenuDrag, (int)SerializeType.Property);
             // Material
-            if(hasRenderer) menu_drag.AddItem(new GUIContent("Material"), false, addTrackFromMenuLate, (int)SerializeType.Material);
+            if(hasRenderer) menu_drag.AddItem(new GUIContent("Material"), false, AddTrackFromMenuDrag, (int)SerializeType.Material);
             else menu_drag.AddDisabledItem(new GUIContent("Material"));
             // Event
-            menu_drag.AddItem(new GUIContent("Event"), false, addTrackFromMenuLate, (int)SerializeType.Event);
+            menu_drag.AddItem(new GUIContent("Event"), false, AddTrackFromMenuDrag, (int)SerializeType.Event);
             // GO Active
-            menu_drag.AddItem(new GUIContent("GO Active"), false, addTrackFromMenuLate, (int)SerializeType.GOSetActive);
+            menu_drag.AddItem(new GUIContent("GO Active"), false, AddTrackFromMenuDrag, (int)SerializeType.GOSetActive);
             // Camera Switcher
-            if(hasCamera && aData.currentTake.cameraSwitcher == null) menu_drag.AddItem(new GUIContent("Camera Switcher"), false, addTrackFromMenuLate, (int)SerializeType.CameraSwitcher);
+            if(hasCamera && aData.currentTake.cameraSwitcher == null) menu_drag.AddItem(new GUIContent("Camera Switcher"), false, AddTrackFromMenuDrag, (int)SerializeType.CameraSwitcher);
             else menu_drag.AddDisabledItem(new GUIContent("Camera Switcher"));
 
             if(oData.quickAdd_Combos.Count > 0) {
@@ -5853,7 +5842,7 @@ namespace M8.Animator.Edit {
                         if(i < combo.Count - 1) combo_name += "+ ";
                     }
                     if(canQuickAddCombo(combo, hasTransform, hasAnimation, hasAudioSource, hasCamera, hasAnimate, hasRenderer))
-                        menu_drag.AddItem(new GUIContent(combo_name), false, addTrackFromMenuLate, 100 + oData.quickAdd_Combos.IndexOf(combo));
+                        menu_drag.AddItem(new GUIContent(combo_name), false, addTrackFromMenu, 100 + oData.quickAdd_Combos.IndexOf(combo));
                     else menu_drag.AddDisabledItem(new GUIContent(combo_name));
                 }
             }
