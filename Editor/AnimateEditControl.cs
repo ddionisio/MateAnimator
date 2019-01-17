@@ -98,9 +98,6 @@ namespace M8.Animator.Edit {
         public bool isValid { get { return mData != null; } }
 
         public bool isSerializing { get { return mData != null ? mData.isSerializing : false; } }
-
-        private System.Action mWaitDeserializeCallback;
-        private bool mIsWaitDeserialize;
         
         public AnimateEditControl(Animate aData) {
             SetData(aData);
@@ -446,34 +443,5 @@ namespace M8.Animator.Edit {
             }
             return lsFlagToKeep;
         }
-
-        ////
-        //NOTE: hack to prevent old serializeData from being deserialize after adding track (because of Undo)
-
-        public void WaitDeserialize(System.Action cb) {
-            if(!mIsWaitDeserialize) {
-                UnityEditor.Undo.RecordObject(mData, "_");
-                target.Tick();
-                mIsWaitDeserialize = true;
-            }
-
-            mWaitDeserializeCallback = cb;
-        }
-
-        public void WaitDeserializeExecute() {
-            if(mIsWaitDeserialize && !target.IsTick()) {
-                if(mWaitDeserializeCallback != null) {
-                    mWaitDeserializeCallback();
-                    mWaitDeserializeCallback = null;
-                }
-                mIsWaitDeserialize = false;
-            }
-        }
-
-        public void WaitDeserializeClear() {
-            mWaitDeserializeCallback = null;
-            mIsWaitDeserialize = false;
-        }
-        ////
     }
 }

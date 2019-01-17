@@ -406,6 +406,14 @@ namespace M8.Animator.Edit {
         }
 
         private GameObject mTempHolder;
+
+        private struct LateCallData {
+            public int count;
+            public System.Action callback;
+        }
+
+        private Queue<LateCallData> mLateCallQueue = new Queue<LateCallData>();
+        private int mLateCallCurCount;
         
         #endregion
 
@@ -465,8 +473,6 @@ namespace M8.Animator.Edit {
                     }
                 }
 
-                aData.WaitDeserializeClear();
-
                 aData = null;
 
                 // reset property select track
@@ -479,6 +485,9 @@ namespace M8.Animator.Edit {
             Undo.undoRedoPerformed -= OnUndoRedo;
 
             EditDataCleanUp();
+
+            mLateCallQueue.Clear();
+            mLateCallCurCount = 0;
         }
         void OnUndoRedo() {
             if(aData == null) return;
@@ -724,8 +733,17 @@ namespace M8.Animator.Edit {
                 // update methodinfo cache if necessary, used for event track inspector
                 processUpdateMethodInfoCache();
             }
-
-            aData.WaitDeserializeExecute();
+            
+            if(mLateCallQueue.Count > 0) {
+                var lateCallDat = mLateCallQueue.Peek();
+                if(mLateCallCurCount >= lateCallDat.count) {
+                    lateCallDat.callback();
+                    mLateCallQueue.Dequeue();
+                    mLateCallCurCount = 0;
+                }
+                else
+                    mLateCallCurCount++;
+            }
         }
         void OnSelectionChange() {
             if(aData == null) {
@@ -5749,9 +5767,12 @@ namespace M8.Animator.Edit {
         }
         void AddTrackFromMenuDrag(object type) {
             //NOTE: hack to prevent old serializeData from being deserialize after adding track (because of Undo)
-            aData.WaitDeserialize(() => {
-                aData.RegisterTakesUndo("New Track", false);
-                addTrack(type);
+            mLateCallQueue.Enqueue(new LateCallData {
+                count = 30,
+                callback = () => {
+                    aData.RegisterTakesUndo("New Track", false);
+                    addTrack(type);
+                }
             });
         }
         void buildAddTrackMenu() {

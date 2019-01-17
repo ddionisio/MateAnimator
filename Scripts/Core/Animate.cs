@@ -45,10 +45,7 @@ namespace M8.Animator {
 
         [SerializeField]
         SerializeData serializeData;
-
-        [SerializeField]
-        bool _c;
-
+        
         public event OnTake takeCompleteCallback;
 
         public string defaultTakeName {
@@ -702,17 +699,6 @@ namespace M8.Animator {
                 if(mCache != null)
                     mCache.Clear();
             }
-        }
-
-        /// <summary>
-        /// NOTE: This is a hack, currently can't figure out a way to know if deserialization of a previous serializeData will occur, so just prevent it from happening.
-        /// Use this if for some reason applying changes get reverted (so far this is happening when drag-adding a track)
-        /// </summary>
-        void ITarget.Tick() {
-            _c = true;
-        }
-        bool ITarget.IsTick() {
-            return _c;
         }
         #endregion
 
