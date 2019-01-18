@@ -29,6 +29,8 @@ Import/Export, Code Generator are currently disabled.
 * A bunch of clean ups.
 
 ## Known Issues
+* Prefab Variant - animators inside a variant of a prefab will somehow destroy the tracks. I'm not entirely sure what the reasons are, or how to track it (yet another serialization issue).
+* Event Tracker - if you can't find the function for a component, make sure the target is the said component. Simply drag the component you want to the target. I will revamp this feature sometime in the near feature.
 * CameraSwitcher Track is currently not working. This needs to be completely overhauled.
 
 ## Installation
@@ -38,6 +40,14 @@ Import/Export, Code Generator are currently disabled.
   * Add **DOTWEEN_HYPER_COMPATIBLE** in Scripting Define Symbols
 * Clone this project to your Assets folder (or Plugins if you are scripting in javascript).  If your project is already setup for Git, then clone this project as a submodule.
 * Open your project, you should be able to see "M8/Animator" on the menu, or M8/Animate in the 'Add Component' droplist.
+
+## DOTween Settings
+
+The following needs to be set in the DOTween Preferences - DEFAULTS
+
+* Recycle Tweens = true (This is optional, but helps with memory for pooling tweens in sequences)
+* AutoPlay = None
+* AutoKill = false
 
 ## Upgrade From Previous
 Grab [MateAnimatorUpgrade](https://github.com/ddionisio/MateAnimatorUpgrade) and check its README.md for further instructions.
