@@ -104,7 +104,11 @@ namespace M8.Animator {
             if(track.keys.Count == 1)
                 interp = Interpolation.None;
 
-            Transform trans = obj as Transform;
+            var trans = obj as Transform;
+            var transParent = trans.parent;
+
+            Rigidbody body = trans.GetComponent<Rigidbody>();
+            Rigidbody2D body2D = !body ? trans.GetComponent<Rigidbody2D>() : null;
 
             var tTrack = track as TranslationTrack;
             bool pixelSnap = tTrack.pixelSnap;
@@ -114,7 +118,15 @@ namespace M8.Animator {
                 //TODO: world position
                 Vector3 pos = pixelSnap ? new Vector3(Mathf.Round(position.x * ppu) / ppu, Mathf.Round(position.y * ppu) / ppu, Mathf.Round(position.z * ppu) / ppu) : position;
 
-                var tweener = DOTween.To(new TweenPlugValueSet<Vector3>(), () => pos, (x) => trans.localPosition = x, pos, 1.0f/frameRate); //getTime(frameRate)
+                TweenerCore<Vector3, Vector3, TweenPlugValueSetOptions> tweener;
+                                
+                if(body2D)
+                    tweener = DOTween.To(new TweenPlugValueSet<Vector3>(), () => pos, (x) => body2D.position = transParent.TransformPoint(x), pos, 1.0f / frameRate); //getTime(frameRate)
+                else if(body)
+                    tweener = DOTween.To(new TweenPlugValueSet<Vector3>(), () => pos, (x) => body.position = transParent.TransformPoint(x), pos, 1.0f / frameRate); //getTime(frameRate)
+                else
+                    tweener = DOTween.To(new TweenPlugValueSet<Vector3>(), () => pos, (x) => trans.localPosition = x, pos, 1.0f / frameRate); //getTime(frameRate)
+
                 tweener.plugOptions.SetSequence(seq);
 
                 seq.Insert(this, tweener);
@@ -123,16 +135,35 @@ namespace M8.Animator {
                 if(path.Length <= 1) return;
                 if(getNumberOfFrames(seq.take.frameRate) <= 0) return;
 
-                Tweener ret = null;
+                TweenerCore<Vector3, Path, PathOptions> ret = null;
 
                 bool isRelative = false;
 
                 PathType pathType = path.Length == 2 ? PathType.Linear : PathType.CatmullRom;
 
-                if(pixelSnap)
-                    ret = DOTween.To(PathPlugin.Get(), () => path[0], x => trans.localPosition = new Vector3(Mathf.Round(x.x * ppu) / ppu, Mathf.Round(x.y * ppu) / ppu, Mathf.Round(x.z * ppu) / ppu), new Path(pathType, path, pathResolution), getTime(frameRate)).SetTarget(trans).SetRelative(isRelative).SetOptions(isClosed);
-                else
-                    ret = DOTween.To(PathPlugin.Get(), () => path[0], x => trans.localPosition = x, new Path(pathType, path, pathResolution), getTime(frameRate)).SetTarget(trans).SetRelative(isRelative).SetOptions(isClosed);
+                var pathTween = new Path(pathType, path, pathResolution);
+                var timeTween = getTime(frameRate);
+
+                if(body2D) {
+                    if(pixelSnap)
+                        ret = DOTween.To(PathPlugin.Get(), () => path[0], x => body2D.MovePosition(transParent.TransformPoint(new Vector2(Mathf.Round(x.x * ppu) / ppu, Mathf.Round(x.y * ppu) / ppu))), pathTween, timeTween).SetTarget(body2D);
+                    else
+                        ret = DOTween.To(PathPlugin.Get(), () => path[0], x => body2D.MovePosition(transParent.TransformPoint(x)), pathTween, timeTween).SetTarget(body2D);
+                }
+                else if(body) {
+                    if(pixelSnap)
+                        ret = DOTween.To(PathPlugin.Get(), () => path[0], x => body.MovePosition(transParent.TransformPoint(new Vector3(Mathf.Round(x.x * ppu) / ppu, Mathf.Round(x.y * ppu) / ppu, Mathf.Round(x.z * ppu) / ppu))), pathTween, timeTween).SetTarget(body);
+                    else
+                        ret = DOTween.To(PathPlugin.Get(), () => path[0], x => body.MovePosition(transParent.TransformPoint(x)), pathTween, timeTween).SetTarget(body);
+                }
+                else {
+                    if(pixelSnap)
+                        ret = DOTween.To(PathPlugin.Get(), () => path[0], x => trans.localPosition = new Vector3(Mathf.Round(x.x * ppu) / ppu, Mathf.Round(x.y * ppu) / ppu, Mathf.Round(x.z * ppu) / ppu), pathTween, timeTween).SetTarget(trans);
+                    else
+                        ret = DOTween.To(PathPlugin.Get(), () => path[0], x => trans.localPosition = x, pathTween, timeTween).SetTarget(trans);
+                }
+
+                ret.SetRelative(isRelative).SetOptions(isClosed);
 
                 if(hasCustomEase())
                     ret.SetEase(easeCurve);
