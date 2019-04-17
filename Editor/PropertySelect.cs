@@ -155,7 +155,7 @@ namespace M8.Animator.Edit {
                                     processSelectProperty(myComponent, null, propertyInfo);
                                 }
 
-                                GUILayout.Label(propertyValue.ToString());
+                                GUILayout.Label(propertyValue != null ? propertyValue.ToString() : "null");
                                 GUILayout.EndHorizontal();
                                 numberOfProperties++;
                             }
