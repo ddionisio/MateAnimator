@@ -425,7 +425,8 @@ namespace M8.Animator {
             if(firstKey.endFrame == -1 || (frame <= (float)firstKey.frame && !firstKey.canTween)) {
                 //go.rotation = (cache[0] as AMPropertyAction).getStartQuaternion();
                 setComponentValueFromCachedInfo(comp, firstKey.getValue(valueType));
-                refreshTransform(go);
+                if(comp is Transform)
+                    refreshTransform(go);
                 return;
             }
 
@@ -438,7 +439,8 @@ namespace M8.Animator {
                 // if no ease
                 if(!key.canTween || keyNext == null) {
                     setComponentValueFromCachedInfo(comp, key.getValue(valueType));
-                    refreshTransform(go);
+                    if(comp is Transform)
+                        refreshTransform(go);
                     return;
                 }
                 // else find value using easing function
@@ -504,14 +506,15 @@ namespace M8.Animator {
                         Debug.LogError("Animator: Invalid ValueType " + valueType.ToString());
                         break;
                 }
-                refreshTransform(go);
+                if(comp is Transform)
+                    refreshTransform(go);
                 return;
             }
         }
         public void refreshTransform(GameObject targetGO) {
             if(Application.isPlaying || !targetGO) return;
-            Vector3 p = targetGO.transform.position;
-            targetGO.transform.position = p;
+            Vector3 lp = targetGO.transform.localPosition;
+            targetGO.transform.localPosition = lp;
         }
 
         public string getComponentName() {
