@@ -188,6 +188,8 @@ namespace M8.Animator {
 
         private int mDefaultTakeInd = -1;
 
+        private bool mIsAppQuit = false;
+
         private SequenceControl[] sequenceCtrls {
             get {
                 if(mSequenceCtrls == null) {
@@ -525,10 +527,16 @@ namespace M8.Animator {
             curTake.previewFrame(this, time * curTake.frameRate);
         }
 
+        void OnApplicationQuit() {
+            mIsAppQuit = true;
+        }
+
         void OnDestroy() {
-            if(mSequenceCtrls != null) {
-                for(int i = 0; i < mSequenceCtrls.Length; i++)
-                    mSequenceCtrls[i].Destroy();
+            if(!mIsAppQuit) { //don't bother with destroy when quitting
+                if(mSequenceCtrls != null) {
+                    for(int i = 0; i < mSequenceCtrls.Length; i++)
+                        mSequenceCtrls[i].Destroy();
+                }
             }
 
             takeCompleteCallback = null;
