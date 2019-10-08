@@ -10,7 +10,7 @@ using DG.Tweening;
 
 namespace M8.Animator.Edit {
     public class TimelineWindow : EditorWindow {
-        [MenuItem("M8/Animator")]
+        [MenuItem("M8/Animator/Timeline", false, MenuOrder.timeline)]
         static void Init() {
             EditorWindow.GetWindow(typeof(TimelineWindow), false, "Animator Timeline");
         }
@@ -64,7 +64,6 @@ namespace M8.Animator.Edit {
             }
         }// Animate component, holds all data
 
-        public OptionsFile oData;
         private Vector2 scrollViewValue;            // current value in scrollview (vertical)
         private string[] playbackSpeed = { "x.25", "x.5", "x1", "x2", "x4" };
         private float[] playbackSpeedValue = { .25f, .5f, 1f, 2f, 4f };
@@ -435,7 +434,6 @@ namespace M8.Animator.Edit {
                 }
             }
 
-            oData = OptionsFile.loadFile();
             // set default current dimensions of frames
             //current_width_frame = width_frame;
             //current_height_frame = height_frame;
@@ -467,7 +465,7 @@ namespace M8.Animator.Edit {
                     // stop audio if it's playing
                     aData.currentTake.Stop(aData.target);
 
-                    if(oData.resetTakeOnClose) {
+                    if(OptionsFile.instance.resetTakeOnClose) {
                         // preview first frame
                         aData.currentTake.previewFrame(aData.target, 1f);
                     }
@@ -568,8 +566,8 @@ namespace M8.Animator.Edit {
             mTakeEdits.Remove(take);
         }
         int GetCurTakeNumFrames() {
-            int framesPerPage = oData.framesPerPage;
-            int maxPage = oData.maxPage;
+            int framesPerPage = OptionsFile.instance.framesPerPage;
+            int maxPage = OptionsFile.instance.maxPage;
 
             if(aData == null) return framesPerPage * maxPage;
 
@@ -760,9 +758,7 @@ namespace M8.Animator.Edit {
             /*if(Event.current.type != EventType.Repaint && Event.current.type != EventType.Layout) {
 	            Debug.Log("event type: " + Event.current.type);
 	        }*/
-            if(!oData) {
-                oData = OptionsFile.loadFile();
-            }
+            var oData = OptionsFile.instance;
 
             if(EditorApplication.isPlayingOrWillChangePlaymode) {
                 this.ShowNotification(new GUIContent("Play Mode"));
@@ -1278,7 +1274,7 @@ namespace M8.Animator.Edit {
 
                     if(aData.takes.Count == 1) {                        
                         take = aData.currentTake;
-                        take.RevertToDefault();
+                        take.RevertToDefault(oData.framesPerSecondDefault);
                         TakeEdit(take).Reset();
                     }
                     else {
@@ -2482,7 +2478,7 @@ namespace M8.Animator.Edit {
             TakeEditControl curTakeEdit = TakeEdit(curTake);
             int selectedTrack = curTakeEdit.selectedTrack;
             // frames start
-            if(!_track.foldout && !oData.showFramesForCollapsedTracks) {
+            if(!_track.foldout && !OptionsFile.instance.showFramesForCollapsedTracks) {
                 track_y += height_track_foldin;
                 return;
             }
@@ -2670,7 +2666,7 @@ namespace M8.Animator.Edit {
                 mouseOverSelectedFrame = ((isTrackSelected) && TakeEditCurrent().isFrameSelected(mouseXOverFrame));
             }
             #endregion
-            if(!oData.disableTimelineActions && _track.foldout) {
+            if(!OptionsFile.instance.disableTimelineActions && _track.foldout) {
                 #region timeline actions
                 // draw each action with seperate textures and buttons for these tracks
                 bool drawEachAction = _track is UnityAnimationTrack || _track is AudioTrack;
@@ -3052,7 +3048,7 @@ namespace M8.Animator.Edit {
             GUIStyle styleLabelWordwrap = new GUIStyle(GUI.skin.label);
             styleLabelWordwrap.wordWrap = true;
             string strFrameInfo = track_name;
-            if(oData.time_numbering) strFrameInfo += "Time " + frameToTime(_frame, (float)ctake.frameRate).ToString("N2") + " s";
+            if(OptionsFile.instance.time_numbering) strFrameInfo += "Time " + frameToTime(_frame, (float)ctake.frameRate).ToString("N2") + " s";
             else strFrameInfo += "Frame " + _frame;
             GUI.Label(new Rect(0f, 0f, width_inspector_open - width_inspector_closed - width_button_delete - margin, 20f), strFrameInfo, styleLabelWordwrap);
             Rect rectBtnDeleteKey = new Rect(width_inspector_open - width_inspector_closed - width_button_delete - margin, 0f, width_button_delete, height_button_delete);
@@ -3146,7 +3142,7 @@ namespace M8.Animator.Edit {
 
                     rectPosition = new Rect(5f, rectPosition.y + rectPosition.height + height_inspector_space, width_inspector - margin - 10f, 20.0f);
                     if(GUI.Button(rectPosition, "Pixel/Unit Default"))
-                        nppu = oData.pixelPerUnitDefault;
+                        nppu = OptionsFile.instance.pixelPerUnitDefault;
 
                     if(nppu <= 0.0f) nppu = 0.001f;
                     if(tTrack.pixelPerUnit != nppu) {
@@ -4793,6 +4789,7 @@ namespace M8.Animator.Edit {
             if(window) window.cachedZoom = -1f;
         }
         void calculateNumFramesToRender(bool clickedZoom, Event e) {
+            var oData = OptionsFile.instance;
             if(aData.currentTake == null) return;
             int numFrames = GetCurTakeNumFrames();
             int min = Mathf.FloorToInt((position.width - width_track - 18f - (aData.isInspectorOpen ? width_inspector_open : width_inspector_closed)) / (oData.disableTimelineActions ? height_track / 2f : height_track - height_action_min));
@@ -5383,6 +5380,7 @@ namespace M8.Animator.Edit {
         }
 
         void addTrackWithGameObject(object trackType, GameObject object_window) {
+            var oData = OptionsFile.instance;
             // add track based on index
             switch((SerializeType)trackType) {
                 case SerializeType.Translation:
@@ -5444,6 +5442,7 @@ namespace M8.Animator.Edit {
         }
 
         public bool addSpriteKeysToTrack(UnityEngine.Object[] objs, int trackId, int frame) {
+            var oData = OptionsFile.instance;
             var track = aData.currentTake.getTrack(trackId) as PropertyTrack;
             if(track != null && track.getTrackType() == "sprite") {
                 List<Sprite> sprites = EditorUtility.GetSprites(objs);
@@ -5494,6 +5493,7 @@ namespace M8.Animator.Edit {
         /// Returns true if track added successfully
         /// </summary>
         public bool addSpriteTrackWithKeyObjects(UnityEngine.Object[] objs, int startFrame) {
+            var oData = OptionsFile.instance;
             List<Sprite> sprites = EditorUtility.GetSprites(objs);
             if(sprites.Count > 0) {
                 sprites.Sort(delegate (Sprite obj1, Sprite obj2) { return obj1.name.CompareTo(obj2.name); });
@@ -5790,6 +5790,8 @@ namespace M8.Animator.Edit {
             menu.AddItem(new GUIContent("Camera Switcher"), false, addTrackFromMenu, (int)SerializeType.CameraSwitcher);
         }
         void buildAddTrackMenu_Drag() {
+            var oData = OptionsFile.instance;
+
             bool hasTransform = true;
             bool hasAnimation = true;
             bool hasAudioSource = true;

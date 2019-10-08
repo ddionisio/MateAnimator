@@ -8,8 +8,6 @@ namespace M8.Animator.Edit {
     public class TakeSettings : EditorWindow {
         public static TakeSettings window = null;
 
-        public OptionsFile oData;
-
         private AnimateEditControl __aData;
 
         public AnimateEditControl aData {
@@ -45,7 +43,6 @@ namespace M8.Animator.Edit {
             minSize = new Vector2(280f, 190f);
             //maxSize = this.minSize;
 
-            oData = OptionsFile.loadFile();
             loadAnimatorData();
 
         }

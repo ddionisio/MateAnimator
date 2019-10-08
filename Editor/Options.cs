@@ -8,7 +8,10 @@ namespace M8.Animator.Edit {
     public class Options : EditorWindow {
         public static Options window = null;
 
-        public OptionsFile oData;
+        [MenuItem("M8/Animator/Options", false, MenuOrder.options)]
+        static void Init() {
+            EditorWindow.GetWindow(typeof(Options), false, "Animator Options");
+        }
 
         private AnimateEditControl __aData;
 
@@ -49,11 +52,12 @@ namespace M8.Animator.Edit {
 
             titleContent = new GUIContent("Options");
 
-            minSize = new Vector2(545f, 365f);
-            maxSize = new Vector2(1000f, this.minSize.y);
+            //minSize = new Vector2(545f, 365f);
+            //maxSize = new Vector2(1000f, this.minSize.y);
+            var pos = position;
+            pos.size = new Vector2(545f, 385f);
 
             loadAnimatorData();
-            oData = OptionsFile.loadFile();
 
             //if(aData) exportTakeIndex = aData.GetTakeIndex(TimelineWindow.window.currentTake);
         }
@@ -69,7 +73,9 @@ namespace M8.Animator.Edit {
                 TimelineWindow.MessageBox("Animator requires an AnimatorData component in your scene. Launch Animator to add the component.", TimelineWindow.MessageBoxType.Warning);
                 return;
             }
-            if(!oData) oData = OptionsFile.loadFile();
+
+            var oData = OptionsFile.instance;
+
             GUILayout.BeginHorizontal();
             #region tab selection
             //GUI.DrawTexture(new Rect(0f,0f,120f,position.height),GUI.skin.GetStyle("GroupElementBG")/*GUI.skin.GetStyle("GroupElementBG").onNormal.background*/);
@@ -139,6 +145,19 @@ namespace M8.Animator.Edit {
                 GUILayout.FlexibleSpace();
                 GUILayout.EndVertical();
                 GUILayout.EndHorizontal();
+                // frames per second default
+                GUILayout.BeginHorizontal();
+                GUILayout.Space(width_indent);
+                EditorGUIUtility.labelWidth = 250.0f;
+                var fps = EditorGUILayout.IntField("Frames/Second Default", oData.framesPerSecondDefault);
+                if(fps <= 0) fps = 1;
+                if(oData.framesPerSecondDefault != fps) {
+                    oData.framesPerSecondDefault = fps;
+                    // save
+                    UnityEditor.EditorUtility.SetDirty(oData);
+                }
+                GUILayout.EndHorizontal();
+                GUILayout.Space(4.0f);
                 // pixel/unit default
                 GUILayout.BeginHorizontal();
                 GUILayout.Space(width_indent);

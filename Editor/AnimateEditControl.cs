@@ -186,6 +186,8 @@ namespace M8.Animator.Edit {
             a.name = name;
             MakeTakeNameUnique(a);
 
+            a.frameRate = OptionsFile.instance.framesPerSecondDefault;
+
             takes.Add(a);
 
             return a;

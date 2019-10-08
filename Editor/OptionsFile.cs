@@ -16,6 +16,7 @@ namespace M8.Animator.Edit {
         public bool showFramesForCollapsedTracks = true;
         public bool resetTakeOnClose = true;
         public float gizmo_size = 0.05f;
+        public int framesPerSecondDefault = 30;
         public int framesPerPage = 60;
         public int maxPage = 2;
         public float pixelPerUnitDefault = 100.0f;
@@ -138,22 +139,29 @@ namespace M8.Animator.Edit {
         // load file
         public const string filePath = "Assets/mateAnimatorOptions.asset";
 
-        public static OptionsFile loadFile() {
-            OptionsFile load_file = (OptionsFile)AssetDatabase.LoadAssetAtPath(filePath, typeof(OptionsFile));
-            if(load_file) {
-                AnimateTimeline.e_gizmoSize = load_file.gizmo_size;
-                load_file.unflatten_quickAdd_Combos(true);
-                return load_file;
-            }
+        public static OptionsFile instance {
+            get {
+                if(!mOptionFile) {
+                    mOptionFile = (OptionsFile)AssetDatabase.LoadAssetAtPath(filePath, typeof(OptionsFile));
+                    if(mOptionFile) {
+                        AnimateTimeline.e_gizmoSize = mOptionFile.gizmo_size;
+                        mOptionFile.unflatten_quickAdd_Combos(true);
+                    }
+                    else {
+                        mOptionFile = ScriptableObject.CreateInstance<OptionsFile>();
+                        AssetDatabase.CreateAsset(mOptionFile, filePath);
+                        mOptionFile.quickAdd_Combos.Add(new List<int> { (int)SerializeType.Translation, (int)SerializeType.Orientation });
+                        mOptionFile.quickAdd_Combos.Add(new List<int> { (int)SerializeType.Translation, (int)SerializeType.Rotation, (int)SerializeType.UnityAnimation });
+                        mOptionFile.flatten_quickAdd_Combos();
+                        AssetDatabase.Refresh();
+                    }
+                }
 
-            OptionsFile a = ScriptableObject.CreateInstance<OptionsFile>();
-            AssetDatabase.CreateAsset(a, filePath);
-            a.quickAdd_Combos.Add(new List<int> { (int)SerializeType.Translation, (int)SerializeType.Orientation });
-            a.quickAdd_Combos.Add(new List<int> { (int)SerializeType.Translation, (int)SerializeType.Rotation, (int)SerializeType.UnityAnimation });
-            a.flatten_quickAdd_Combos();
-            AssetDatabase.Refresh();
-            return a;
+                return mOptionFile;
+            }
         }
+
+        private static OptionsFile mOptionFile;
 
         public static void export() {
             string newPath = UnityEditor.EditorUtility.SaveFilePanel("Export Options", Application.dataPath, "am_options_export", "unitypackage");

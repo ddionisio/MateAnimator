@@ -17,7 +17,6 @@ namespace M8.Animator.Edit {
         public static int selectedIndex;
         public static int selectedSpeedIndex = 0;
         public static int category = 0;
-        private OptionsFile oData = null;
         private AnimationCurve curve = new AnimationCurve();
         private AnimationCurve selectedCurve = new AnimationCurve();
         private bool isCustomEase = false;
@@ -63,7 +62,6 @@ namespace M8.Animator.Edit {
             this.minSize = this.maxSize;
             this.wantsMouseMove = true;
             loadAnimatorData();
-            oData = OptionsFile.loadFile();
             setupFilteredCategories();
 
             selectedIndex = getCategoryIndexForEase(TimelineWindow.GetEaseTypeNameIndex(key.easeType));
@@ -136,7 +134,7 @@ namespace M8.Animator.Edit {
 
 
         void OnGUI() {
-            titleContent = new GUIContent("Ease: " + (oData.time_numbering ? TimelineWindow.frameToTime(key.frame, (float)aData.currentTake.frameRate) + " s" : key.frame.ToString()));
+            titleContent = new GUIContent("Ease: " + (OptionsFile.instance.time_numbering ? TimelineWindow.frameToTime(key.frame, (float)aData.currentTake.frameRate) + " s" : key.frame.ToString()));
 
             TimelineWindow.loadSkin(ref skin, ref cachedSkinName, position);
             bool updateEasingCurve = false;

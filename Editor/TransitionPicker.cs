@@ -91,7 +91,6 @@ namespace M8.Animator.Edit {
         private const float y_preview_texture = 48f;
         // other variables
         public AnimateEditControl aData = null;
-        private OptionsFile oData = null;
         public bool isPlaying = true;
         public enum DragType {
             None = -1,
@@ -130,7 +129,6 @@ namespace M8.Animator.Edit {
             setWindowSize();
             this.wantsMouseMove = true;
             loadAnimatorData();
-            oData = OptionsFile.loadFile();
             // set up here
         }
 
@@ -178,7 +176,7 @@ namespace M8.Animator.Edit {
         void OnGUI() {
             setWindowSize();
 
-            titleContent = new GUIContent("Fade: " + (oData.time_numbering ? TimelineWindow.frameToTime(key.frame, (float)aData.currentTake.frameRate) + " s" : key.frame.ToString()));
+            titleContent = new GUIContent("Fade: " + (OptionsFile.instance.time_numbering ? TimelineWindow.frameToTime(key.frame, (float)aData.currentTake.frameRate) + " s" : key.frame.ToString()));
 
             // load skin
             TimelineWindow.loadSkin(ref skin, ref cachedSkinName, position);

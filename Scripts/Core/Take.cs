@@ -10,7 +10,7 @@ namespace M8.Animator {
     public class Take {
         #region Declarations
         public string name;                 // take name
-        public int frameRate = 24;				// frames per second
+        public int frameRate;				// frames per second
         public int endFramePadding = 0;         // last frame + endFramePadding
 
         public int numLoop = 1; //number of times this plays before it is done
@@ -65,14 +65,14 @@ namespace M8.Animator {
         #endregion
 
         //Only used by editor
-        public void RevertToDefault() {
+        public void RevertToDefault(int fps) {
             trackValues.Clear();
             groupValues.Clear();
 
             rootGroup = null;
             initGroups();
             name = "Take 1";
-            frameRate = 24;
+            frameRate = fps;
             endFramePadding = 0;
 
             numLoop = 1;
