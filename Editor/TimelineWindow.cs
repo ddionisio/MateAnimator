@@ -5865,7 +5865,7 @@ namespace M8.Animator.Edit {
                         if(i < combo.Count - 1) combo_name += "+ ";
                     }
                     if(canQuickAddCombo(combo, hasTransform, hasAnimation, hasAudioSource, hasCamera, hasAnimate, hasRenderer))
-                        menu_drag.AddItem(new GUIContent(combo_name), false, addTrackFromMenu, 100 + oData.quickAdd_Combos.IndexOf(combo));
+                        menu_drag.AddItem(new GUIContent(combo_name), false, AddTrackFromMenuDrag, 100 + oData.quickAdd_Combos.IndexOf(combo));
                     else menu_drag.AddDisabledItem(new GUIContent(combo_name));
                 }
             }
