@@ -283,16 +283,31 @@ namespace M8.Animator {
 
             float duration = 1.0f / seq.take.frameRate;
 
+            var tgt = target;
+
             //set target to component
             if(cachedComponent)
-                target = cachedComponent;
-            else if(!string.IsNullOrEmpty(componentType) && target is GameObject)
-                target = cachedComponent = ((GameObject)target).GetComponent(componentType);
+                tgt = cachedComponent;
+            else if(!string.IsNullOrEmpty(componentType) && tgt is GameObject)
+                tgt = cachedComponent = ((GameObject)tgt).GetComponent(componentType);
+
+            if(!tgt) {
+                if(!string.IsNullOrEmpty(componentType)) {
+                    if(target)
+                        Debug.LogWarning(string.Format("Track {0} Key {1}: Component ({2}) missing in {3}.", track.name, index, componentType, target.name));
+                    else
+                        Debug.LogWarning(string.Format("Track {0} Key {1}: Component ({2}) is missing.", track.name, index, componentType));
+                }
+                else
+                    Debug.LogWarning(string.Format("Track {0} Key {1}: Target is missing.", track.name, index));
+
+                return;
+            }
 
             //can't send message if it's not a component
             Component compSendMsg = null;
             if(useSendMessage) {
-                compSendMsg = target as Component;
+                compSendMsg = tgt as Component;
             }
 
             if(compSendMsg) {
@@ -308,11 +323,11 @@ namespace M8.Animator {
                 }
             }
             else {
-                var method = cachedMethodInfo != null ? cachedMethodInfo : target.GetType().GetMethod(methodName, GetParamTypes());
+                var method = cachedMethodInfo != null ? cachedMethodInfo : tgt.GetType().GetMethod(methodName, GetParamTypes());
 
                 object[] parms = buildParams(seq.target);
 
-                var tween = DOTween.To(new TweenPlugValueSetElapsed(), () => 0, (x) => method.Invoke(target, parms), 0, duration);
+                var tween = DOTween.To(new TweenPlugValueSetElapsed(), () => 0, (x) => method.Invoke(tgt, parms), 0, duration);
                 tween.plugOptions.SetSequence(seq);
                 seq.Insert(this, tween);
             }
