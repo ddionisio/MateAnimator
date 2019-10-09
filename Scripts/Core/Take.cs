@@ -916,6 +916,7 @@ namespace M8.Animator {
                             }
 
                             if(key.version != track.version) {
+                                key.version = track.version; //will be set to dirty later
                                 shouldUpdateCache = true;
                                 break;
                             }

@@ -266,12 +266,14 @@ namespace M8.Animator.Edit {
         private int isRenamingGroup = 0;        // the group that the user is renaming, 0 if not renaming a group
                                                 //private int repaintBuffer = 0;
                                                 //private int repaintRefreshRate = 1;		// repaint every x update frames if necessary
-        private static List<MethodInfo> cachedMethodInfo = new List<MethodInfo>();
-        private List<string> cachedMethodNames = new List<string>();
+        private int cachedIndexComponent = -1;
+        private string[] cachedComponentNames = new string[0]; //first index is GameObject
+        private MethodInfo[] cachedMethodInfo = new MethodInfo[0];
+        private string[] cachedMethodNames = new string[0];
         private int updateRateMethodInfoCache = 2;      // update method info cache every x update frames if necessary
-        private int updateMethodInfoCacheBuffer = 0;    // temporary value
-        private static int cachedIndexMethodInfo = -1;
-        private static int indexMethodInfo {
+        private int updateMethodInfoCacheBuffer = 0;    // temporary value        
+        private int cachedIndexMethodInfo = -1;
+        private int indexMethodInfo {
             get { return cachedIndexMethodInfo; }
             set {
                 if(cachedIndexMethodInfo != value) {
@@ -281,8 +283,8 @@ namespace M8.Animator.Edit {
                 cachedIndexMethodInfo = value;
             }
         }
-        private static ParameterInfo[] cachedParameterInfos = new ParameterInfo[] { };
-        private static Dictionary<string, bool> arrayFieldFoldout = new Dictionary<string, bool>(); // used to store the foldout values for arrays in event methods
+        private ParameterInfo[] cachedParameterInfos = new ParameterInfo[] { };
+        private Dictionary<string, bool> arrayFieldFoldout = new Dictionary<string, bool>(); // used to store the foldout values for arrays in event methods
         private Vector2 inspectorScrollView = new Vector2(0f, 0f);
         private GenericMenu menu = new GenericMenu();           // add track menu
         private GenericMenu menu_drag = new GenericMenu();      // add track menu, on drag to window
@@ -2106,17 +2108,14 @@ namespace M8.Animator.Edit {
             Debug.LogWarning("Animator: Skin texture " + name + " not found.");
             return GUI.skin.label.normal;
         }
-        public static void resetIndexMethodInfo() {
-            indexMethodInfo = -1;
-        }
         public static float frameToTime(int frame, float frameRate) {
             return (float)Math.Round((float)frame / frameRate, 2);
         }
         public static int timeToFrame(float time, float frameRate) {
             return Mathf.FloorToInt(time * frameRate);
         }
-        private static void cacheSelectedMethodParameterInfos() {
-            if(cachedMethodInfo == null || indexMethodInfo == -1 || (indexMethodInfo >= cachedMethodInfo.Count)) {
+        private void cacheSelectedMethodParameterInfos() {
+            if(cachedMethodInfo == null || indexMethodInfo == -1 || (indexMethodInfo >= cachedMethodInfo.Length)) {
                 cachedParameterInfos = new ParameterInfo[] { };
                 arrayFieldFoldout = new Dictionary<string, bool>(); // reset array foldout dictionary
                 return;
@@ -3502,10 +3501,44 @@ namespace M8.Animator.Edit {
             #endregion
             #region event inspector
             if(sTrack is EventTrack) {
-                var obj = sTrack.GetTarget(aData.target);
+                var obj = sTrack.GetTarget(aData.target);                
                 EventKey eKey = (EventKey)(sTrack as EventTrack).getKeyOnFrame(_frame);
+                var comp = eKey.getComponentFromTarget(obj);
+                var tgt = comp ? comp : obj;
+
+                //component selection
+                if(obj is GameObject && cachedComponentNames.Length > 1) {
+                    Rect rectCompPopup = new Rect(0f, start_y, width_inspector - margin, 22f);
+                    int curIndexComp = cachedIndexComponent;
+                    cachedIndexComponent = EditorGUI.Popup(rectCompPopup, curIndexComp, cachedComponentNames);
+                    if(cachedIndexComponent != curIndexComp || string.IsNullOrEmpty(eKey.methodName)) {
+                        eKey.SetComponentType(cachedIndexComponent == 0 ? "" : cachedComponentNames[cachedIndexComponent]);
+
+                        // update methodinfo cache
+                        comp = eKey.getComponentFromTarget(obj);
+
+                        tgt = comp ? comp : obj;
+
+                        updateCachedMethodInfoFromObject(tgt);
+
+                        //reset index method to 0
+                        if(cachedMethodInfo.Length <= 0)
+                            indexMethodInfo = -1;
+                        else {
+                            cachedIndexMethodInfo = 0;
+                            cacheSelectedMethodParameterInfos();
+
+                            eKey.setMethodInfo(comp, cachedMethodInfo[indexMethodInfo], cachedParameterInfos, false, null);
+                        }
+                                                
+                        aData.SetTakesDirty(); //don't really want to undo this
+                    }
+
+                    start_y += 26f;
+                }
+
                 // value
-                if(indexMethodInfo == -1 || cachedMethodInfo.Count <= 0) {
+                if(indexMethodInfo == -1 || cachedMethodInfo.Length <= 0) {
                     Rect rectLabel = new Rect(0f, start_y, width_inspector - margin * 2f - 20f, 22f);
                     GUI.Label(rectLabel, "No usable methods found.");
                     Rect rectButton = new Rect(width_inspector - 20f - margin, start_y + 1f, 20f, 20f);
@@ -3518,7 +3551,7 @@ namespace M8.Animator.Edit {
                 bool sendMessageToggleEnabled = true;
                 Rect rectPopup = new Rect(0f, start_y, width_inspector - margin, 22f);
                 int curIndexMethod = indexMethodInfo;
-                indexMethodInfo = EditorGUI.Popup(rectPopup, curIndexMethod, getMethodNames());
+                indexMethodInfo = EditorGUI.Popup(rectPopup, curIndexMethod, cachedMethodNames);
 
                 bool showObjectMessage = false;
                 Type showObjectType = null;
@@ -3545,17 +3578,17 @@ namespace M8.Animator.Edit {
 
                 // changed, if index out of range, if no method and there's only one on the list
                 bool paramMatched = eKey.isMatch(cachedParameterInfos);
-                if((indexMethodInfo != curIndexMethod && indexMethodInfo < cachedMethodInfo.Count) || !paramMatched || (string.IsNullOrEmpty(eKey.methodName) && cachedMethodInfo.Count == 1)) {
+                if((indexMethodInfo != curIndexMethod && indexMethodInfo < cachedMethodInfo.Length) || !paramMatched || string.IsNullOrEmpty(eKey.methodName)) {
                     // process change
                     // update cache when modifying varaibles
-                    if(eKey.setMethodInfo(obj, cachedMethodInfo[indexMethodInfo], cachedParameterInfos, !paramMatched, null)) {
+                    if(eKey.setMethodInfo(tgt, cachedMethodInfo[indexMethodInfo], cachedParameterInfos, !paramMatched, null)) {
                         aData.SetTakesDirty(); //don't really want to undo this
 
                         // deselect fields
                         GUIUtility.keyboardControl = 0;
                     }
                 }
-                if(cachedParameterInfos.Length > 1 || !(obj is Component)) {
+                if(cachedParameterInfos.Length > 1 || !(tgt is Component)) {
                     // if method has more than 1 parameter, set sendmessage to false, and disable toggle
                     if(eKey.setUseSendMessage(false, null))
                         aData.SetTakesDirty(); //don't really want to undo this
@@ -4679,16 +4712,19 @@ namespace M8.Animator.Edit {
                 if(TakeEditCurrent().selectedTrack > -1 && selectedTrack is EventTrack) {
                     // if event track has key on selected frame
                     if(selectedTrack.hasKeyOnFrame(aData.currentTake.selectedFrame)) {
+                        var eKey = (selectedTrack.getKeyOnFrame(aData.currentTake.selectedFrame) as EventKey);
+                        var tgtObj = selectedTrack.GetTarget(aData.target);
+                        // update component index
+                        updateCachedComponentNames(tgtObj as GameObject, eKey.componentType);
                         // update methodinfo cache
-                        updateCachedMethodInfoFromObject(selectedTrack.GetTarget(aData.target));
+                        var comp = eKey.getComponentFromTarget(tgtObj);
+                        updateCachedMethodInfoFromObject(comp ? comp : tgtObj);
                         updateMethodInfoCacheBuffer = updateRateMethodInfoCache;
                         // set index to method info index
-
-                        if(cachedMethodInfo.Count > 0) {
-                            EventKey eKey = (selectedTrack.getKeyOnFrame(aData.currentTake.selectedFrame) as EventKey);
-                            MethodInfo m = eKey.getMethodInfo(selectedTrack.GetTarget(aData.target));
+                        if(cachedMethodInfo.Length > 0) {                            
+                            MethodInfo m = eKey.getMethodInfo(tgtObj);
                             if(m != null) {
-                                for(int i = 0; i < cachedMethodInfo.Count; i++) {
+                                for(int i = 0; i < cachedMethodInfo.Length; i++) {
                                     if(cachedMethodInfo[i] == m) {
                                         indexMethodInfo = i;
                                         return;
@@ -5284,10 +5320,6 @@ namespace M8.Animator.Edit {
             }
             methodString += ")";
             return methodString;
-        }
-        public string[] getMethodNames() {
-            // get all method names from every comonent on GameObject, and update methodinfo cache
-            return cachedMethodNames.ToArray();
         }
         public Texture getTrackIconTexture(Track _track) {
             if(_track is UnityAnimationTrack) return texIconAnimation;
@@ -6246,20 +6278,41 @@ namespace M8.Animator.Edit {
                 return false;
             }
         }
+        public void updateCachedComponentNames(GameObject go, string curComponentName) {
+            if(go) {
+                var comps = go.GetComponents<Component>();
+                cachedComponentNames = new string[comps.Length + 1];
+                cachedComponentNames[0] = "GameObject";
+                cachedIndexComponent = 0;
+                for(int i = 0; i < comps.Length; i++) {
+                    var compName = comps[i].GetType().Name;
+                    cachedComponentNames[i + 1] = compName;
+                    if(compName == curComponentName)
+                        cachedIndexComponent = i + 1;
+                }
+            }
+            else {
+                cachedIndexComponent = -1;
+                cachedComponentNames = new string[0];
+            }
+        }
         public void updateCachedMethodInfoFromObject(UnityEngine.Object obj) {
             if(!obj) return;
-            cachedMethodInfo = new List<MethodInfo>();
-            cachedMethodNames = new List<string>();
+            var _cachedMethodInfo = new List<MethodInfo>();
+            var _cachedMethodNames = new List<string>();
 
             MethodInfo[] methodInfos = obj.GetType().GetMethods(methodFlags);
             foreach(MethodInfo methodInfo in methodInfos) {
                 if((methodInfo.Name == "Start") || (methodInfo.Name == "Update") || (methodInfo.Name == "Main")) continue;
                 string methodSig = getMethodInfoSignature(methodInfo);
                 if(!string.IsNullOrEmpty(methodSig)) {
-                    cachedMethodNames.Add(methodSig);
-                    cachedMethodInfo.Add(methodInfo);
+                    _cachedMethodNames.Add(methodSig);
+                    _cachedMethodInfo.Add(methodInfo);
                 }
             }
+
+            cachedMethodNames = _cachedMethodNames.ToArray();
+            cachedMethodInfo = _cachedMethodInfo.ToArray();            
         }
 
         void resetPreview() {

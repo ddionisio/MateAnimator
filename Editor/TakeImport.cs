@@ -148,7 +148,7 @@ namespace M8.Animator.Edit {
             // update references
             List<GameObject> lsFlagToKeep = aData.UpdateDependencies(keepReferences, replaceReferences);
             // reset event track method info
-            TimelineWindow.resetIndexMethodInfo();
+            //TimelineWindow.resetIndexMethodInfo(); //TODO: if ever we actually fix importing, check if this is needed
             TimelineWindow.shouldCheckDependencies = false;
             //aData.shouldCheckDependencies = false;
             // delete replaced references

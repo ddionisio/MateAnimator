@@ -11,10 +11,13 @@ namespace M8.Animator {
     public class EventKey : Key {
         public override SerializeType serializeType { get { return SerializeType.Event; } }
 
-        public bool useSendMessage = true;
+        public bool useSendMessage = false;
         public List<EventParameter> parameters = new List<EventParameter>();
         public string methodName;
+        public string componentType; //used for GameObjects
+
         private MethodInfo cachedMethodInfo;
+        private Component cachedComponent;
 
         public bool isMatch(ParameterInfo[] cachedParameterInfos) {
             if(cachedParameterInfos != null && parameters != null && cachedParameterInfos.Length == parameters.Count) {
@@ -35,6 +38,7 @@ namespace M8.Animator {
 
         public override void maintainKey(ITarget itarget, UnityEngine.Object targetObj) {            
             cachedMethodInfo = null;
+            cachedComponent = null;
 
             //clean up parameters for meta
             if(itarget.meta) {
@@ -53,9 +57,27 @@ namespace M8.Animator {
         public override int getNumberOfFrames(int frameRate) {
             return 1;
         }
+        public void SetComponentType(string aComponentType) {
+            componentType = aComponentType;
+            cachedComponent = null;
+            methodName = "";
+            cachedMethodInfo = null;
+            parameters = new List<EventParameter>();
+        }
+        public Component getComponentFromTarget(Object target) {
+            if(!cachedComponent && !string.IsNullOrEmpty(componentType) && target is GameObject)
+                cachedComponent = ((GameObject)target).GetComponent(componentType);
 
+            return cachedComponent;
+        }
         //set target to a valid ref. for meta
         public MethodInfo getMethodInfo(Object target) {
+            //use component of target if componentType is not empty
+            if(cachedComponent)
+                target = cachedComponent;
+            else if(!string.IsNullOrEmpty(componentType) && target is GameObject)
+                target = cachedComponent = ((GameObject)target).GetComponent(componentType);
+
             if(target && !string.IsNullOrEmpty(methodName)) {
                 var paramTypes = GetParamTypes();
                 cachedMethodInfo = paramTypes != null ? target.GetType().GetMethod(methodName, paramTypes) : null;
@@ -72,7 +94,7 @@ namespace M8.Animator {
             MethodInfo _methodInfo = getMethodInfo(methodObj);
 
             // if different component or methodinfo
-            if((_methodInfo != methodInfo) || !isMatch(cachedParameterInfos)) {
+            if(_methodInfo != methodInfo || !isMatch(cachedParameterInfos)) {
                 if(onPreChange != null)
                     onPreChange(this);
 
@@ -134,6 +156,7 @@ namespace M8.Animator {
             a.useSendMessage = useSendMessage;
             // parameters
             a.methodName = methodName;
+            a.componentType = componentType;
             a.cachedMethodInfo = cachedMethodInfo;
             foreach(EventParameter e in parameters) {
                 a.parameters.Add(e.CreateClone());
@@ -259,6 +282,12 @@ namespace M8.Animator {
             if(methodName == null) return;
 
             float duration = 1.0f / seq.take.frameRate;
+
+            //set target to component
+            if(cachedComponent)
+                target = cachedComponent;
+            else if(!string.IsNullOrEmpty(componentType) && target is GameObject)
+                target = cachedComponent = ((GameObject)target).GetComponent(componentType);
 
             //can't send message if it's not a component
             Component compSendMsg = null;

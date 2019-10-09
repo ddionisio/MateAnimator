@@ -557,6 +557,9 @@ namespace M8.Animator {
         }
 
         void OnDisable() {
+            if(mIsAppQuit) //no need to do anything when app is quitting
+                return;
+
             switch(onDisableAction) {
                 case DisableAction.Pause:
                     Pause();

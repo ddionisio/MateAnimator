@@ -14,7 +14,7 @@ namespace M8.Animator {
             None = 2
         }
                 
-        public int version = 0; //for upgrading/initializing
+        public int version = 1; //for upgrading/initializing
 
         public Interpolation interp = Interpolation.Curve;     // interpolation
 
