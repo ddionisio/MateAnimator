@@ -15,18 +15,14 @@ Mega Morph has been removed.
 Import/Export, Code Generator are currently disabled. 
 
 ## Dependencies
-* DOTween v1.1.710
+* DOTween v1.2.283
 
 
 ## Updates
-* Refactored to use custom serialization, all tracks and keys are no longer MonoBehaviours. This improved stability significantly, and reduces overhead.
-* Changed how Meta works, improving its stability.
-* Added ScaleTrack
-* Changed EventTrack to allow targets to be any Object. EventKey no longer stores Component. This allows for invoking functions from other objects such as: GameObject and ScriptableObjects.
-* Removed TriggerTrack, use EventTrack instead. You can use TriggerSignal to emulate TriggerTrack.
-* You can now paste keys to multiple tracks of the same type.
-* Various fixes.
-* A bunch of clean ups.
+* Changed EventTrack, you can now select functions from any Component if target is a GameObject.
+* No longer need to setup DOTween Preferences.
+* loop parameter now works for Play functions.
+* You can play/goto takes during runtime, useful for debugging.
 
 ## Known Issues
 * Prefab Variant - animators inside a variant of a prefab will somehow destroy the tracks. I'm not entirely sure what the reasons are, or how to track it (yet another serialization issue).
@@ -38,16 +34,8 @@ Import/Export, Code Generator are currently disabled.
   * If you are using the Hyper Compatible version, make sure to add DOTWEEN_HYPER_COMPATIBLE in the player settings
   * Go to Edit->Project Settings->Player
   * Add **DOTWEEN_HYPER_COMPATIBLE** in Scripting Define Symbols
-* Clone this project to your Assets folder (or Plugins if you are scripting in javascript).  If your project is already setup for Git, then clone this project as a submodule.
+* Clone this project to your Assets folder.  If your project is already setup for Git, then clone this project as a submodule.
 * Open your project, you should be able to see "M8/Animator" on the menu, or M8/Animate in the 'Add Component' droplist.
-
-## DOTween Settings
-
-The following needs to be set in the DOTween Preferences - DEFAULTS
-
-* Recycle Tweens = true (This is optional, but helps with memory for pooling tweens in sequences)
-* AutoPlay = None
-* AutoKill = false
 
 ## Upgrade From Previous
 Grab [MateAnimatorUpgrade](https://github.com/ddionisio/MateAnimatorUpgrade) and check its README.md for further instructions.
@@ -66,9 +54,10 @@ Grab [MateAnimatorUpgrade](https://github.com/ddionisio/MateAnimatorUpgrade) and
 * Camera transition fixes (too glitchy, maybe do something like UE4's director)
 
 ## DEBUG
-Add "MATE\_DEBUG_ANIMATOR" (without quotes) in Player Settings -> Scripting Define Symbols.
-
-For now it only shows a trace message whenever the GameObject "_animdata" is destroyed.
+You can check the serialized data by setting the Inspector mode to Debug:
+* Select 'Debug' via the dropdown menu on the upper right header of the Inspector window.
+* Look for 'Serialize Data' under Animate. Expand it to check all the Track and Key used by takes.
+* Look for 'Take Data' under Animate to look at Take data.
 
 ## License
 MateAnimator is licensed under a Creative Commons Attribution-NonCommercial 3.0 Unported License

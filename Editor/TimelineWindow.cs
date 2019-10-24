@@ -45,13 +45,6 @@ namespace M8.Animator.Edit {
                     if(_aData != null) {
                         _aData.Refresh();
 
-                        //!DEBUG
-#if MATE_DEBUG_ANIMATOR
-	                    Transform holder = _aData.target.holder;
-	                    if(holder.GetComponent<AnimateHolder>() == null)
-	                        holder.gameObject.AddComponent<AnimateHolder>();
-#endif
-
                         indexMethodInfo = -1;   // re-check for methodinfo
 
                         //Debug.Log("new data: " + _aData.name + " hash: " + _aData.GetHashCode());
