@@ -11,16 +11,49 @@ namespace M8.Animator.Edit {
             SaveAs,
             Instantiate
         }
+
+        private enum PlayAtMode {
+            Frame,
+            Time
+        }
+
         private string[] mTakeLabels;
         private bool mMissingsFoldout = true;
 
         private AnimateEditControl aData;
+        private Animate mAnim;
+
+        private int mDebugCurPlayingTakeInd;
+
+        private int mDebugPlayTakeInd;
+
+        private PlayAtMode mDebugPlayAtMode;
+        private int mDebugPlayAtFrame;
+        private float mDebugPlayAtTime;
+        private bool mDebugPlayIsLoop;
+
+        private PlayAtMode mDebugGotoAtMode;
+        private int mDebugGotoFrame;
+        private float mDebugGotoTime;
 
         void OnEnable() {
-            aData = new AnimateEditControl(target as Animate);
+            mAnim = target as Animate;
+            aData = new AnimateEditControl(mAnim);
             GenerateTakeLabels();
 
             mMissingsFoldout = true;
+
+            mDebugCurPlayingTakeInd = -1;
+            mDebugPlayTakeInd = 0;
+
+            mDebugPlayAtMode = PlayAtMode.Frame;
+            mDebugPlayAtFrame = 0;
+            mDebugPlayAtTime = 0f;
+            mDebugPlayIsLoop = false;
+
+            mDebugGotoAtMode = PlayAtMode.Frame;
+            mDebugGotoFrame = 0;
+            mDebugGotoTime = 0f;
         }
 
         void GenerateTakeLabels() {
@@ -246,6 +279,121 @@ namespace M8.Animator.Edit {
                     else
                         TimelineWindow.window.Repaint();
                 }
+            }
+
+            if(Application.isPlaying) {
+                EditorUtility.DrawSeparator();
+
+                var lastEnabled = GUI.enabled;
+                                
+                var curPlayingTakeInd = mAnim.currentPlayingTakeIndex;
+                                
+                if(mDebugCurPlayingTakeInd != curPlayingTakeInd) {
+                    mDebugCurPlayingTakeInd = curPlayingTakeInd;
+                    Repaint();
+                }
+
+                var isCurTakeValid = mDebugCurPlayingTakeInd != -1;
+
+                GUILayout.Label(string.Format("Current Take: {0}", isCurTakeValid ? mAnim.currentPlayingTakeName : "None"));
+
+                mDebugPlayTakeInd = EditorGUILayout.IntPopup(mDebugPlayTakeInd, mTakeLabels, null);
+
+                GUI.enabled = mDebugPlayTakeInd > 0;
+
+                //play control
+                GUILayout.BeginVertical(GUI.skin.box);
+                                
+                GUILayout.BeginHorizontal();
+
+                GUILayout.Label("Start At");
+
+                mDebugPlayAtMode = (PlayAtMode)EditorGUILayout.EnumPopup(mDebugPlayAtMode);
+
+                switch(mDebugPlayAtMode) {
+                    case PlayAtMode.Frame:
+                        mDebugPlayAtFrame = EditorGUILayout.IntField(mDebugPlayAtFrame);
+                        break;
+                    case PlayAtMode.Time:
+                        mDebugPlayAtTime = EditorGUILayout.FloatField(mDebugPlayAtTime);
+                        break;
+                }
+
+                GUILayout.EndHorizontal();
+
+                mDebugPlayIsLoop = EditorGUILayout.Toggle("Loop", mDebugPlayIsLoop);
+
+                if(GUILayout.Button("Play")) {
+                    mAnim.Stop();
+
+                    var takeInd = mDebugPlayTakeInd - 1;
+
+                    switch(mDebugPlayAtMode) {
+                        case PlayAtMode.Frame:
+                            mAnim.PlayAtFrame(takeInd, mDebugPlayAtFrame, mDebugPlayIsLoop);
+                            break;
+                        case PlayAtMode.Time:
+                            mAnim.PlayAtTime(takeInd, mDebugPlayAtTime, mDebugPlayIsLoop);
+                            break;
+                    }
+                }
+
+                GUILayout.EndVertical();
+
+                //Goto control
+                GUILayout.BeginVertical(GUI.skin.box);
+
+                GUILayout.BeginHorizontal();
+
+                mDebugGotoAtMode = (PlayAtMode)EditorGUILayout.EnumPopup(mDebugGotoAtMode);
+
+                switch(mDebugGotoAtMode) {
+                    case PlayAtMode.Frame:
+                        mDebugGotoFrame = EditorGUILayout.IntField(mDebugGotoFrame);
+                        break;
+                    case PlayAtMode.Time:
+                        mDebugGotoTime = EditorGUILayout.FloatField(mDebugGotoTime);
+                        break;
+                }
+
+                GUILayout.EndHorizontal();
+
+                if(GUILayout.Button("Goto")) {
+                    var takeInd = mDebugPlayTakeInd - 1;
+
+                    switch(mDebugGotoAtMode) {
+                        case PlayAtMode.Frame:
+                            mAnim.GotoFrame(takeInd, mDebugGotoFrame);
+                            break;
+                        case PlayAtMode.Time:
+                            mAnim.Goto(takeInd, mDebugGotoTime);
+                            break;
+                    }
+                }
+
+                GUILayout.EndVertical();
+
+                GUI.enabled = isCurTakeValid;
+
+                GUILayout.BeginVertical(GUI.skin.box);
+
+                //resume/pause control
+                if(mAnim.isPlaying) {
+                    if(GUILayout.Button("Pause"))
+                        mAnim.Pause();
+                }
+                else {
+                    if(GUILayout.Button("Resume"))
+                        mAnim.Resume();
+                }
+
+                //stop control
+                if(GUILayout.Button("Stop"))
+                    mAnim.Stop();
+
+                GUILayout.EndVertical();
+
+                GUI.enabled = lastEnabled;
             }
         }
     }

@@ -11,10 +11,27 @@ namespace M8.Animator {
         public Take take { get; private set; }
         public Sequence sequence { get; private set; }
 
+        public bool isForcedLoop {
+            get { return mIsForcedLoop; }
+            set {
+                if(mIsForcedLoop != value) {
+                    mIsForcedLoop = value;
+
+                    //sequence needs to be rebuilt via Animate
+                    if(sequence != null && take.numLoop > 0) {
+                        sequence.Kill();
+                        sequence = null;
+                    }
+                }
+            }
+        }
+
         private bool mIsAutoKill;
 
         public event System.Action completeCallback;
         public event System.Action stepCompleteCallback;
+
+        private bool mIsForcedLoop;
 
         public SequenceControl(ITarget itarget, int id, Take take) {
             target = itarget;
@@ -34,24 +51,42 @@ namespace M8.Animator {
             if(sequence != null)
                 sequence.Kill();
 
+            //don't create sequence if there are no tracks
+            if(take.trackValues == null || take.trackValues.Count == 0)
+                return;
+
             //create sequence
             sequence = DOTween.Sequence();
             sequence.SetUpdate(updateType, updateTimeIndependent);
             sequence.SetAutoKill(mIsAutoKill = autoKill);
+            sequence.Pause(); //don't allow play when dotween default autoplay is on
 
-            if(take.numLoop < 0 && take.loopBackToFrame > 0) {
-                if(take.loopMode == LoopType.Yoyo)
-                    sequence.SetLoops(2, take.loopMode);
+            int LoopCount;
+            int loopBackFrame;
+            var loopType = take.loopMode;
+
+            if(isForcedLoop && take.numLoop > 0) {
+                LoopCount = -1;
+                loopBackFrame = 0;
+            }
+            else {
+                LoopCount = take.numLoop;
+                loopBackFrame = take.loopBackToFrame;
+            }
+
+            if(LoopCount < 0 && loopBackFrame > 0) {
+                if(loopType == LoopType.Yoyo)
+                    sequence.SetLoops(2, loopType);
                 else
-                    sequence.SetLoops(1, take.loopMode); //allow sequence to end so we can loop back to specific frame
+                    sequence.SetLoops(1, loopType); //allow sequence to end so we can loop back to specific frame
             }
             else
-                sequence.SetLoops(take.numLoop, take.loopMode);
+                sequence.SetLoops(LoopCount, loopType);
 
             sequence.OnComplete(OnSequenceComplete);
             sequence.OnStepComplete(OnStepComplete);
 
-            take.maintainCaches(target);
+            //take.maintainCaches(target);
 
             float minWaitTime = float.MaxValue;
 
@@ -79,7 +114,7 @@ namespace M8.Animator {
                 sequence.PrependInterval(minWaitTime);
 
             //append delay at the end
-            if((take.numLoop >= 0 || take.loopBackToFrame <= 0) && take.endFramePadding > 0)
+            if((LoopCount >= 0 || loopBackFrame <= 0) && take.endFramePadding > 0)
                 sequence.AppendInterval(take.endFramePadding / (float)take.frameRate);
         }
 

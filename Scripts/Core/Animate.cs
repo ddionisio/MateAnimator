@@ -321,6 +321,8 @@ namespace M8.Animator {
 
             SequenceControl amSeq = sequenceCtrls[index];
 
+            amSeq.isForcedLoop = loop;
+
             Take newPlayTake = amSeq.take;
 
             Sequence seq = amSeq.sequence;
@@ -329,18 +331,11 @@ namespace M8.Animator {
                 amSeq.Build(sequenceKillWhenDone, updateType, updateTimeIndependent);
                 seq = amSeq.sequence;
             }
-
-            mNowPlayingTakeIndex = index;
-
-            newPlayTake.PlayStart(this, newPlayTake.frameRate * time, 1.0f); //notify take that we are playing
-
+                        
             if(seq != null) {
-                /*if(loop) {
-	                seq.loops = -1;
-	            }
-	            else {
-	                seq.loops = newPlayTake.numLoop;
-	            }*/
+                mNowPlayingTakeIndex = index;
+
+                newPlayTake.PlayStart(this, newPlayTake.frameRate * time, 1.0f); //notify take that we are playing
 
                 seq.timeScale = mAnimScale;
                 seq.Goto(time, true);
@@ -373,6 +368,8 @@ namespace M8.Animator {
 
                 SequenceControl amSeq = sequenceCtrls[takeIndex];
 
+                amSeq.isForcedLoop = false;
+
                 Take newPlayTake = amSeq.take;
 
                 seq = amSeq.sequence;
@@ -389,7 +386,8 @@ namespace M8.Animator {
             else
                 seq = sequenceCtrls[takeIndex].sequence;
 
-            seq.Goto(time);
+            if(seq != null)
+                seq.Goto(time);
         }
 
         /// <summary>
