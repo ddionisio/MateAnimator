@@ -47,6 +47,14 @@ namespace M8.Animator {
             sequence.Insert(atPosition, tween);
         }
 
+        public void InsertCallback(Key key, TweenCallback callback) {
+            sequence.InsertCallback(key.getWaitTime(take.frameRate, 0.0f), callback);
+        }
+
+        public void InsertCallback(float atPosition, TweenCallback callback) {
+            sequence.InsertCallback(atPosition, callback);
+        }
+
         public void Build(bool autoKill, UpdateType updateType, bool updateTimeIndependent) {
             if(sequence != null)
                 sequence.Kill();

@@ -311,25 +311,17 @@ namespace M8.Animator {
             }
 
             if(compSendMsg) {
-                if(parameters == null || parameters.Count <= 0) {
-                    var tween = DOTween.To(new TweenPlugValueSetElapsed(), () => 0, (x) => compSendMsg.SendMessage(methodName, null, SendMessageOptions.DontRequireReceiver), 0, duration);
-                    tween.plugOptions.SetSequence(seq);
-                    seq.Insert(this, tween);
-                }
-                else {
-                    var tween = DOTween.To(new TweenPlugValueSetElapsed(), () => 0, (x) => compSendMsg.SendMessage(methodName, parameters[0].toObject(seq.target), SendMessageOptions.DontRequireReceiver), 0, duration);
-                    tween.plugOptions.SetSequence(seq);
-                    seq.Insert(this, tween);
-                }
+                if(parameters == null || parameters.Count <= 0)
+                    seq.InsertCallback(this, () => compSendMsg.SendMessage(methodName, null, SendMessageOptions.DontRequireReceiver));
+                else
+                    seq.InsertCallback(this, () => compSendMsg.SendMessage(methodName, parameters[0].toObject(seq.target), SendMessageOptions.DontRequireReceiver));
             }
             else {
                 var method = cachedMethodInfo != null ? cachedMethodInfo : tgt.GetType().GetMethod(methodName, GetParamTypes());
 
                 object[] parms = buildParams(seq.target);
 
-                var tween = DOTween.To(new TweenPlugValueSetElapsed(), () => 0, (x) => method.Invoke(tgt, parms), 0, duration);
-                tween.plugOptions.SetSequence(seq);
-                seq.Insert(this, tween);
+                seq.InsertCallback(this, () => method.Invoke(tgt, parms));
             }
         }
 
