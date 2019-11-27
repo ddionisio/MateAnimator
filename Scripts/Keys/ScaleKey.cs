@@ -44,33 +44,40 @@ namespace M8.Animator {
             var axis = scaleTrack.axis;
 
             if(!canTween) {
-                float timeLength = 1.0f / frameRate;
+                float timeLength = getTime(frameRate);
 
                 if(axis == AxisFlags.X) {
                     float _x = scale.x;
-                    var tweenX = DOTween.To(new TweenPlugValueSet<float>(), () => _x, (x) => { var a = target.localScale; a.x = x; target.localScale = a; }, _x, timeLength);
-                    tweenX.plugOptions.SetSequence(seq);
+                    var tweenX = DOTween.To(new TweenPlugValueSet<float>(), () => target.localScale.x, (x) => { var a = target.localScale; a.x = x; target.localScale = a; }, _x, timeLength);
                     seq.Insert(this, tweenX);
                 }
                 else if(axis == AxisFlags.Y) {
                     float _y = scale.y;
-                    var tweenY = DOTween.To(new TweenPlugValueSet<float>(), () => _y, (y) => { var a = target.localScale; a.y = y; target.localScale = a; }, _y, timeLength);
-                    tweenY.plugOptions.SetSequence(seq);
+                    var tweenY = DOTween.To(new TweenPlugValueSet<float>(), () => target.localScale.y, (y) => { var a = target.localScale; a.y = y; target.localScale = a; }, _y, timeLength);
                     seq.Insert(this, tweenY);
                 }
                 else if(axis == AxisFlags.Z) {
                     float _z = scale.z;
-                    var tweenZ = DOTween.To(new TweenPlugValueSet<float>(), () => _z, (z) => { var a = target.localScale; a.z = z; target.localScale = a; }, _z, timeLength);
-                    tweenZ.plugOptions.SetSequence(seq);
+                    var tweenZ = DOTween.To(new TweenPlugValueSet<float>(), () => target.localScale.z, (z) => { var a = target.localScale; a.z = z; target.localScale = a; }, _z, timeLength);
                     seq.Insert(this, tweenZ);
                 }
                 else if(axis == AxisFlags.All) {
-                    var tweenV = DOTween.To(new TweenPlugValueSet<Vector3>(), () => scale, (s) => { target.localScale = s; }, scale, timeLength);
-                    tweenV.plugOptions.SetSequence(seq);
+                    var tweenV = DOTween.To(new TweenPlugValueSet<Vector3>(), () => target.localScale, (s) => { target.localScale = s; }, scale, timeLength);
                     seq.Insert(this, tweenV);
                 }
                 else {
-                    var tweenV = DOTween.To(new TweenPlugValueSet<Vector3>(), () => scale, 
+                    var tweenV = DOTween.To(new TweenPlugValueSet<Vector3>(), 
+                        () => {
+                            var ls = scale;
+                            var curls = target.localScale;
+                            if((axis & AxisFlags.X) != AxisFlags.None)
+                                ls.x = curls.x;
+                            if((axis & AxisFlags.Y) != AxisFlags.None)
+                                ls.y = curls.y;
+                            if((axis & AxisFlags.Z) != AxisFlags.None)
+                                ls.z = curls.z;
+                            return ls;
+                        }, 
                         (s) => {
                             var ls = target.localScale;
                             if((axis & AxisFlags.X) != AxisFlags.None)
@@ -81,7 +88,6 @@ namespace M8.Animator {
                                 ls.z = s.z;
                             target.localScale = ls;
                         }, scale, timeLength);
-                    tweenV.plugOptions.SetSequence(seq);
                     seq.Insert(this, tweenV);
                 }
             }

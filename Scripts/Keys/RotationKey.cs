@@ -48,16 +48,14 @@ namespace M8.Animator {
                 interp = Interpolation.None;
 
             if(!canTween) {
-                TweenerCore<Quaternion, Quaternion, TweenPlugValueSetOptions> tween;
+                TweenerCore<Quaternion, Quaternion, TWeenPlugNoneOptions> tween;
 
                 if(body2D)
-                    tween = DOTween.To(new TweenPlugValueSet<Quaternion>(), () => rotation, (x) => body2D.rotation = (x * transParent.rotation).eulerAngles.z, rotation, getTime(frameRate));
+                    tween = DOTween.To(new TweenPlugValueSet<Quaternion>(), () => trans.localRotation, (x) => body2D.rotation = (x * transParent.rotation).eulerAngles.z, rotation, getTime(frameRate));
                 else if(body)
-                    tween = DOTween.To(new TweenPlugValueSet<Quaternion>(), () => rotation, (x) => body.rotation = x * transParent.rotation, rotation, getTime(frameRate));
+                    tween = DOTween.To(new TweenPlugValueSet<Quaternion>(), () => trans.localRotation, (x) => body.rotation = x * transParent.rotation, rotation, getTime(frameRate));
                 else
-                    tween = DOTween.To(new TweenPlugValueSet<Quaternion>(), () => rotation, (x) => trans.localRotation = x, rotation, getTime(frameRate));
-
-                tween.plugOptions.SetSequence(seq);
+                    tween = DOTween.To(new TweenPlugValueSet<Quaternion>(), () => trans.localRotation, (x) => trans.localRotation = x, rotation, getTime(frameRate));
 
                 seq.Insert(this, tween);
             }

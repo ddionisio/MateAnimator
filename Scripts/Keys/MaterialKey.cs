@@ -110,8 +110,7 @@ namespace M8.Animator {
                 case MaterialTrack.ValueType.Float:
                 case MaterialTrack.ValueType.Range:
                     if(!canTween || keyCount == 1) {//allow one key
-                        var setTween = DOTween.To(new TweenPlugValueSet<float>(), () => val, (x) => matInst.SetFloat(propId, x), val, frameCount / frameRate);
-                        setTween.plugOptions.SetSequence(seq);
+                        var setTween = DOTween.To(new TweenPlugValueSet<float>(), () => matInst.GetFloat(propId), (x) => matInst.SetFloat(propId, x), val, frameCount / frameRate);
                         seq.Insert(this, setTween);
                     }
                     else {
@@ -122,8 +121,7 @@ namespace M8.Animator {
                     break;
                 case MaterialTrack.ValueType.Vector:
                     if(!canTween || keyCount == 1) {//allow one key
-                        var setTween = DOTween.To(new TweenPlugValueSet<Vector4>(), () => vector, (x) => matInst.SetVector(propId, x), vector, frameCount / frameRate);
-                        setTween.plugOptions.SetSequence(seq);
+                        var setTween = DOTween.To(new TweenPlugValueSet<Vector4>(), () => matInst.GetVector(propId), (x) => matInst.SetVector(propId, x), vector, frameCount / frameRate);
                         seq.Insert(this, setTween);
                     }
                     else {
@@ -135,8 +133,7 @@ namespace M8.Animator {
                 case MaterialTrack.ValueType.Color:
                     if(!canTween || keyCount == 1) {//allow one key
                         var val = color;
-                        var setTween = DOTween.To(new TweenPlugValueSet<Color>(), () => val, (x) => matInst.SetColor(propId, x), val, frameCount / frameRate);
-                        setTween.plugOptions.SetSequence(seq);
+                        var setTween = DOTween.To(new TweenPlugValueSet<Color>(), () => matInst.GetColor(propId), (x) => matInst.SetColor(propId, x), val, frameCount / frameRate);
                         seq.Insert(this, setTween);
                     }
                     else {
@@ -148,8 +145,7 @@ namespace M8.Animator {
                 case MaterialTrack.ValueType.TexOfs:
                     if(!canTween || keyCount == 1) {//allow one key
                         var val = texOfs;
-                        var setTween = DOTween.To(new TweenPlugValueSet<Vector2>(), () => val, (x) => matInst.SetTextureOffset(prop, x), val, frameCount / frameRate);
-                        setTween.plugOptions.SetSequence(seq);
+                        var setTween = DOTween.To(new TweenPlugValueSet<Vector2>(), () => matInst.GetTextureOffset(prop), (x) => matInst.SetTextureOffset(prop, x), val, frameCount / frameRate);
                         seq.Insert(this, setTween);
                     }
                     else {
@@ -161,8 +157,7 @@ namespace M8.Animator {
                 case MaterialTrack.ValueType.TexScale:
                     if(!canTween || keyCount == 1) {//allow one key
                         var val = texScale;
-                        var setTween = DOTween.To(new TweenPlugValueSet<Vector2>(), () => val, (x) => matInst.SetTextureScale(prop, x), val, frameCount / frameRate);
-                        setTween.plugOptions.SetSequence(seq);
+                        var setTween = DOTween.To(new TweenPlugValueSet<Vector2>(), () => matInst.GetTextureScale(prop), (x) => matInst.SetTextureScale(prop, x), val, frameCount / frameRate);
                         seq.Insert(this, setTween);
                     }
                     else {
@@ -172,8 +167,7 @@ namespace M8.Animator {
                     }
                     break;
                 case MaterialTrack.ValueType.TexEnv:
-                    var texEnvTween = DOTween.To(new TweenPlugValueSet<Texture>(), () => texture, (x) => matInst.SetTexture(propId, x), texture, frameCount / frameRate);
-                    texEnvTween.plugOptions.SetSequence(seq);
+                    var texEnvTween = DOTween.To(new TweenPlugValueSet<Texture>(), () => matInst.GetTexture(propId), (x) => matInst.SetTexture(propId, x), texture, frameCount / frameRate);
                     seq.Insert(this, texEnvTween);
                     break;
             }

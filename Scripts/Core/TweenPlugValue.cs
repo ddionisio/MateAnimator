@@ -47,39 +47,36 @@ namespace M8.Animator {
         }
     }
 
+    public struct TWeenPlugNoneOptions : IPlugOptions {
+        void IPlugOptions.Reset() { }
+    }
+
     /// <summary>
-    /// Note: Set getter as the value to be passed to setter
+    /// Use to apply a single value within a tween.
+    /// Note: Set getter as the current value to be compaired to the target value. setter is used to apply the target value to current value.
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    public class TweenPlugValueSet<T> : ABSTweenPlugin<T, T, TweenPlugValueSetOptions> {
-        private int mCounter = -1;
-
-        public override T ConvertToStartValue(TweenerCore<T, T, TweenPlugValueSetOptions> t, T value) {
-            return value;
+    public class TweenPlugValueSet<T> : ABSTweenPlugin<T, T, TWeenPlugNoneOptions> {
+        public override T ConvertToStartValue(TweenerCore<T, T, TWeenPlugNoneOptions> t, T value) {
+            return t.endValue; //start value is the same as the end value
         }
 
-        public override void EvaluateAndApply(TweenPlugValueSetOptions options, Tween t, bool isRelative, DOGetter<T> getter, DOSetter<T> setter, float elapsed, T startValue, T changeValue, float duration, bool usingInversePosition, UpdateNotice updateNotice) {
-            if(updateNotice == UpdateNotice.RewindStep)
-                mCounter = -1;
-            else if(options.Refresh(ref mCounter)) {
-                setter(getter());
+        public override void EvaluateAndApply(TWeenPlugNoneOptions options, Tween t, bool isRelative, DOGetter<T> getter, DOSetter<T> setter, float elapsed, T startValue, T changeValue, float duration, bool usingInversePosition, UpdateNotice updateNotice) {            
+            var curVal = getter();
+            if(!curVal.Equals(startValue)) {
+                setter(startValue);
             }
         }
 
-        public override float GetSpeedBasedDuration(TweenPlugValueSetOptions options, float unitsXSecond, T changeValue) {
+        public override float GetSpeedBasedDuration(TWeenPlugNoneOptions options, float unitsXSecond, T changeValue) {
             return 1.0f / unitsXSecond;
         }
 
-        public override void Reset(TweenerCore<T, T, TweenPlugValueSetOptions> t) {
-            mCounter = -1;
-        }
-
-        public override void SetChangeValue(TweenerCore<T, T, TweenPlugValueSetOptions> t) { }
-
-        public override void SetFrom(TweenerCore<T, T, TweenPlugValueSetOptions> t, bool isRelative) { }
-        public override void SetFrom(TweenerCore<T, T, TweenPlugValueSetOptions> t, T fromValue, bool setImmediately) { }
-
-        public override void SetRelativeEndValue(TweenerCore<T, T, TweenPlugValueSetOptions> t) { }
+        public override void Reset(TweenerCore<T, T, TWeenPlugNoneOptions> t) { }
+        public override void SetChangeValue(TweenerCore<T, T, TWeenPlugNoneOptions> t) { }
+        public override void SetFrom(TweenerCore<T, T, TWeenPlugNoneOptions> t, bool isRelative) { }
+        public override void SetFrom(TweenerCore<T, T, TWeenPlugNoneOptions> t, T fromValue, bool setImmediately) { }
+        public override void SetRelativeEndValue(TweenerCore<T, T, TWeenPlugNoneOptions> t) { }
     }
 
     /// <summary>

@@ -37,8 +37,7 @@ namespace M8.Animator {
 
             if(go == null) return;
 
-            var tween = DOTween.To(new TweenPlugValueSet<bool>(), () => setActive, (x) => go.SetActive(x), setActive, getTime(seq.take.frameRate));
-            tween.plugOptions.SetSequence(seq);
+            var tween = DOTween.To(new TweenPlugValueSet<bool>(), () => go.activeSelf, (x) => go.SetActive(x), setActive, getTime(seq.take.frameRate));
             seq.Insert(this, tween);
         }
         #endregion

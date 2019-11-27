@@ -118,16 +118,14 @@ namespace M8.Animator {
                 //TODO: world position
                 Vector3 pos = pixelSnap ? new Vector3(Mathf.Round(position.x * ppu) / ppu, Mathf.Round(position.y * ppu) / ppu, Mathf.Round(position.z * ppu) / ppu) : position;
 
-                TweenerCore<Vector3, Vector3, TweenPlugValueSetOptions> tweener;
+                TweenerCore<Vector3, Vector3, TWeenPlugNoneOptions> tweener;
                                 
                 if(body2D)
-                    tweener = DOTween.To(new TweenPlugValueSet<Vector3>(), () => pos, (x) => body2D.position = transParent.TransformPoint(x), pos, 1.0f / frameRate); //getTime(frameRate)
+                    tweener = DOTween.To(new TweenPlugValueSet<Vector3>(), () => trans.localPosition, (x) => body2D.position = transParent.TransformPoint(x), pos, getTime(frameRate)); //1.0f / frameRate
                 else if(body)
-                    tweener = DOTween.To(new TweenPlugValueSet<Vector3>(), () => pos, (x) => body.position = transParent.TransformPoint(x), pos, 1.0f / frameRate); //getTime(frameRate)
+                    tweener = DOTween.To(new TweenPlugValueSet<Vector3>(), () => trans.localPosition, (x) => body.position = transParent.TransformPoint(x), pos, getTime(frameRate)); //1.0f / frameRate
                 else
-                    tweener = DOTween.To(new TweenPlugValueSet<Vector3>(), () => pos, (x) => trans.localPosition = x, pos, 1.0f / frameRate); //getTime(frameRate)
-
-                tweener.plugOptions.SetSequence(seq);
+                    tweener = DOTween.To(new TweenPlugValueSet<Vector3>(), () => trans.localPosition, (x) => trans.localPosition = x, pos, getTime(frameRate)); //1.0f / frameRate
 
                 seq.Insert(this, tweener);
             }
