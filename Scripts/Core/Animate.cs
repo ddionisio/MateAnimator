@@ -292,14 +292,20 @@ namespace M8.Animator {
             PlayAtTime(takeIndex, 0f, loop);
         }
 
+        /// <summary>
+        /// Goto and play at the beginning of the given frame. Example: frame 1 (t = 0)
+        /// </summary>
         public void PlayAtFrame(string takeName, float frame, bool loop = false) {
             int ind = GetTakeIndex(takeName);
             if(ind == -1) { Debug.LogError("Take not found: " + takeName); return; }
-            PlayAtTime(ind, frame / sequenceCtrls[ind].take.frameRate, loop);
+            PlayAtTime(ind, frame > 0f ? (frame - 1f) / sequenceCtrls[ind].take.frameRate : 0f, loop);
         }
 
+        /// <summary>
+        /// Goto and play at the beginning of the given frame. Example: frame 1 (t = 0)
+        /// </summary>
         public void PlayAtFrame(int takeIndex, float frame, bool loop = false) {
-            PlayAtTime(takeIndex, frame / sequenceCtrls[takeIndex].take.frameRate, loop);
+            PlayAtTime(takeIndex, frame > 0f ? (frame - 1f) / sequenceCtrls[takeIndex].take.frameRate : 0f, loop);
         }
 
         public void PlayAtTime(string takeName, float time, bool loop = false) {
@@ -465,34 +471,35 @@ namespace M8.Animator {
         }
 
         /// <summary>
-        /// Go to a given frame without playing.
+        /// Go to the beginning of the given frame without playing. Example: frame 1 (t = 0)
         /// </summary>
         public void GotoFrame(string takeName, float frame) {
             int ind = GetTakeIndex(takeName);
             if(ind == -1) { Debug.LogError("Take not found: " + takeName); return; }
 
-            float t = frame / _takes[ind].frameRate;
+            float t = frame > 0f ? (frame - 1f) / _takes[ind].frameRate : 0f;
             Goto(ind, t);
         }
 
         /// <summary>
-        /// Go to a given frame without playing.
+        /// Go to the beginning of the given frame without playing. Example: frame 1 (t = 0)
         /// </summary>
         public void GotoFrame(int takeIndex, float frame) {
-            float t = frame / _takes[takeIndex].frameRate;
+            float t = frame > 0f ? (frame - 1f) / _takes[takeIndex].frameRate : 0f;
             Goto(takeIndex, t);
         }
 
         /// <summary>
-        /// Call this to move current take to given frame. Ideally, call GotoFrame(take, frame) the first time. This is ideally used to manually move the sequence.
+        /// Call this to move current take to the beginning of the given frame (ex.: frame 1 is t = 0). Ideally, call GotoFrame(take, frame) the first time. This is ideally used to manually move the sequence.
         /// </summary>
         public void GotoFrame(float frame) {            
             if(mNowPlayingTakeIndex != -1) {
                 Take take = currentPlayingTake;
                 Sequence seq = currentPlayingSequence;
-
-                float t = frame / take.frameRate;
-                seq.Goto(t);
+                if(seq != null) {
+                    float t = frame > 0f ? (frame - 1f) / take.frameRate : 0f;
+                    seq.Goto(t);
+                }
             }
             else {
                 Debug.LogWarning("No take playing...");
