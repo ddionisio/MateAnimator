@@ -453,6 +453,17 @@ namespace M8.Animator {
                 seq.Play();
         }
 
+        public void Restart() {
+            Take take = currentPlayingTake;
+            if(take == null) return;
+
+            take.Reset(this);
+
+            Sequence seq = currentPlayingSequence;
+            if(seq != null)
+                seq.Restart();
+        }
+
         public void Stop() {
             Take take = currentPlayingTake;
             if(take == null) return;

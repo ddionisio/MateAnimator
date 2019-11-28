@@ -133,6 +133,12 @@ namespace M8.Animator {
             }
         }
 
+        public void Restart() {
+            if(sequence != null) {
+                sequence.Restart();
+            }
+        }
+
         /// <summary>
         /// Only call this during OnDestroy
         /// </summary>

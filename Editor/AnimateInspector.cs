@@ -44,7 +44,7 @@ namespace M8.Animator.Edit {
             mMissingsFoldout = true;
 
             mDebugCurPlayingTakeInd = -1;
-            mDebugPlayTakeInd = 0;
+            mDebugPlayTakeInd = mAnim.currentPlayingTakeIndex != -1 ? mAnim.currentPlayingTakeIndex + 1 : 0;
 
             mDebugPlayAtMode = PlayAtMode.Frame;
             mDebugPlayAtFrame = 0;
@@ -54,6 +54,13 @@ namespace M8.Animator.Edit {
             mDebugGotoAtMode = PlayAtMode.Frame;
             mDebugGotoFrame = 0;
             mDebugGotoTime = 0f;
+
+            mAnim.takeCompleteCallback += OnTakeComplete;
+        }
+
+        void OnDisable() {
+            if(mAnim)
+                mAnim.takeCompleteCallback -= OnTakeComplete;
         }
 
         void GenerateTakeLabels() {
@@ -387,14 +394,29 @@ namespace M8.Animator.Edit {
                         mAnim.Resume();
                 }
 
-                //stop control
-                if(GUILayout.Button("Stop"))
-                    mAnim.Stop();
+                if(GUILayout.Button("Restart"))
+                    mAnim.Restart();
+
+                //stop/reset control
+                GUI.enabled = mDebugPlayTakeInd > 0;
+
+                if(isCurTakeValid) {
+                    if(GUILayout.Button("Stop"))
+                        mAnim.Stop();
+                }
+                else {
+                    if(GUILayout.Button("Reset"))
+                        mAnim.ResetTake(mDebugPlayTakeInd - 1);
+                }
 
                 GUILayout.EndVertical();
 
                 GUI.enabled = lastEnabled;
             }
+        }
+
+        void OnTakeComplete(Animate anim, Take take) {
+            Repaint();
         }
     }
 }
