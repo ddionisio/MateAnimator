@@ -53,7 +53,7 @@ namespace M8.Animator.Edit {
                 bool saveNumFrames = true;
 
                 string label = take.name + ": Modify Settings";
-                aData.RegisterTakesUndo(label, false);
+                aData.RegisterTakesUndo(label);
                 take = aData.currentTake;
 
                 if(saveNumFrames) {

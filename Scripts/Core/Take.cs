@@ -17,8 +17,13 @@ namespace M8.Animator {
         public LoopType loopMode = LoopType.Restart;
         public int loopBackToFrame = 0; //set this to loop back at given frame when sequence is complete, make sure numLoop = 1 and loopMode is Restart
 
+#if UNITY_2019_3_OR_NEWER
+        [SerializeReference]
+        public List<Track> trackValues = new List<Track>();
+#else
         public List<Track> trackValues { get { return mTrackValues; } set { mTrackValues = value; } }
         private List<Track> mTrackValues = new List<Track>();
+#endif
 
         public int trackCounter = 1;     // number of tracks created, used to generate unique track ids
         public int groupCounter = 0;     // number of groups created, used to generate unique group ids. negative number to differentiate from positive track ids
@@ -62,7 +67,7 @@ namespace M8.Animator {
             }
         }
 
-        #endregion
+#endregion
 
         //Only used by editor
         public void RevertToDefault(int fps) {
@@ -103,7 +108,7 @@ namespace M8.Animator {
         // Add details to Code View # TO DO #
 
 
-        #region Tracks
+#region Tracks
 
         // add translation track
         public void addTrack(int groupId, ITarget target, Transform obj, Track a) {
@@ -198,8 +203,8 @@ namespace M8.Animator {
             }
         }
 
-        #endregion
-        #region Groups
+#endregion
+#region Groups
 
         public void deleteGroup(int group_id, bool deleteContents) {
             if(group_id >= 0) return;
@@ -544,8 +549,8 @@ namespace M8.Animator {
             }
             if(!found) Debug.LogWarning("Animator: Deleted track " + _id + " not found in groups.");
         }
-        #endregion
-        #region Frames/Keys
+#endregion
+#region Frames/Keys
 
         static int TrackCompare(Track t1, Track t2) {
             if(t1 == t2)
@@ -882,9 +887,9 @@ namespace M8.Animator {
             }
             return didKey;
         }
-        #endregion
+#endregion
 
-        #region Other Fns
+#region Other Fns
 
         public void undoRedoPerformed() {
             foreach(Track track in trackValues)
@@ -1003,7 +1008,7 @@ namespace M8.Animator {
             return getElementsHeight(element_id, 0, height_track, height_track_foldin, height_group, ref found);
 
         }
-        #endregion
+#endregion
 
         public List<GameObject> getDependencies(ITarget itarget) {
             List<GameObject> ls = new List<GameObject>();

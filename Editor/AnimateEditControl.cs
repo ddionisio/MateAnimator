@@ -97,8 +97,6 @@ namespace M8.Animator.Edit {
 
         public bool isValid { get { return mData != null; } }
 
-        public bool isSerializing { get { return mData != null ? mData.isSerializing : false; } }
-        
         public AnimateEditControl(Animate aData) {
             SetData(aData);
         }
@@ -123,20 +121,14 @@ namespace M8.Animator.Edit {
                 Undo.RecordObject(mData, label);
         }
 
-        public void RegisterTakesUndo(string label, bool complete) {
+        public void RegisterTakesUndo(string label) {
             if(meta) {
-                if(complete)
-                    UnityEditor.Undo.RegisterCompleteObjectUndo(meta, label);
-                else
-                    UnityEditor.Undo.RecordObject(meta, label);
+                UnityEditor.Undo.RegisterCompleteObjectUndo(meta, label);
 
                 UnityEditor.EditorUtility.SetDirty(meta);
             }
             else {
-                if(complete)
-                    UnityEditor.Undo.RegisterCompleteObjectUndo(mData, label);
-                else
-                    UnityEditor.Undo.RecordObject(mData, label);
+                UnityEditor.Undo.RegisterCompleteObjectUndo(mData, label);
             }
         }
 
@@ -308,7 +300,7 @@ namespace M8.Animator.Edit {
         /// </summary>
         public void MetaSet(AnimateMeta newMeta, bool copyTakes) {
             if(mDataTarget.meta != newMeta) {
-                RegisterUndo("Meta Set", false);
+                RegisterUndo("Meta Set", true);
 
                 AnimateMeta prevMeta = mDataTarget.meta;
                 List<Take> prevTakes = new List<Take>(takes); //preserve the list of takes from previous
@@ -318,7 +310,7 @@ namespace M8.Animator.Edit {
 
                 if(mDataTarget.meta) {
                     if(copyTakes) { //duplicate takes to the new meta
-                        RegisterTakesUndo("Meta Duplicate Takes", false);
+                        RegisterTakesUndo("Meta Duplicate Takes");
 
                         mDataTarget.meta.takes.Clear();
 
@@ -334,7 +326,7 @@ namespace M8.Animator.Edit {
                 }
 
                 if(takes == null || takes.Count == 0) { //add at least one take
-                    RegisterTakesUndo("Meta Add Empty Take", false);
+                    RegisterTakesUndo("Meta Add Empty Take");
 
                     AddNewTake();
                 }

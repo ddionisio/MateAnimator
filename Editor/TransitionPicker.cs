@@ -448,7 +448,7 @@ namespace M8.Animator.Edit {
             GUILayout.BeginArea(new Rect(0f, position.height - 29f, 322f, 29f));
             GUILayout.BeginHorizontal(stylePadding);
             if(GUILayout.Button("Apply")) {
-                aData.RegisterTakesUndo("Camera Transition Set", false);
+                aData.RegisterTakesUndo("Camera Transition Set");
 
                 key.cameraFadeType = selectedTransition;
                 key.cameraFadeParameters = new List<float>(parameters);

@@ -115,6 +115,18 @@ namespace M8.Animator {
         [SerializeField] TrackData[] _trackLookups;
         [SerializeField] int[] _takeTrackCounts;
 
+        public bool isEmpty {
+            get {
+                int trackCounts = 0;
+                if(_takeTrackCounts != null) {
+                    for(int i = 0; i < _takeTrackCounts.Length; i++)
+                        trackCounts += _takeTrackCounts[i];
+                }
+
+                return trackCounts == 0;
+            }
+        }
+
         public void Serialize(List<Take> takes) {
             if(takes == null)
                 return;

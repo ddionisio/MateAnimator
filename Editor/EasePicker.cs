@@ -197,7 +197,7 @@ namespace M8.Animator.Edit {
                     shouldUpdateCache = true;
                 }
                 if(shouldUpdateCache) {
-                    aData.RegisterTakesUndo("Change Ease", false);
+                    aData.RegisterTakesUndo("Change Ease");
                     key.setEaseType(nease);
                     // update cache when modifying varaibles
                     track.updateCache(aData.target);

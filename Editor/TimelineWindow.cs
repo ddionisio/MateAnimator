@@ -709,7 +709,7 @@ namespace M8.Animator.Edit {
             else {
                 // autokey
                 if(!isDragging && aData != null && aData.autoKey) {
-                    aData.RegisterTakesUndo("Auto Key", false);
+                    aData.RegisterTakesUndo("Auto Key");
 
                     bool autoKeyMade = currentTake.autoKey(aData.target, Selection.activeTransform, currentTake.selectedFrame);
 
@@ -1171,7 +1171,7 @@ namespace M8.Animator.Edit {
             GUIStyle styleLabelMenu = new GUIStyle(EditorStyles.toolbarButton);
             styleLabelMenu.normal.background = null;
             //GUI.color = new Color(190f/255f,190f/255f,190f/255f,1f);
-            GUI.DrawTexture(new Rect(0f, 0f, position.width, height_menu_bar - 2f), EditorStyles.toolbar.normal.background);
+            if(EditorStyles.toolbar.normal.background) GUI.DrawTexture(new Rect(0f, 0f, position.width, height_menu_bar - 2f), EditorStyles.toolbar.normal.background);
             //GUI.color = Color.white;
             #region select name
             Rect rectSelectLabel;
@@ -1251,7 +1251,7 @@ namespace M8.Animator.Edit {
             Rect rectBtnRenameTake = new Rect(rectTakePopup.x + rectTakePopup.width + margin, rectLabelCurrentTake.y, width_button_delete, height_button_delete);
             // button
             if(GUI.Button(rectBtnRenameTake, new GUIContent(texRenameTake, (isRenamingTake ? "Accept" : "Rename Take")),/*GUI.skin.GetStyle("ButtonImage")*/EditorStyles.toolbarButton)) {
-                if(!isRenamingTake) aData.RegisterTakesUndo("Rename Take", false);
+                if(!isRenamingTake) aData.RegisterTakesUndo("Rename Take");
                 GUIUtility.keyboardControl = 0;
                 cancelTextEditting(true);   // toggle isRenamingTake
             }
@@ -1265,7 +1265,7 @@ namespace M8.Animator.Edit {
                 if((UnityEditor.EditorUtility.DisplayDialog("Delete Take", "Are you sure you want to delete take '" + take.name + "'?", "Delete", "Cancel"))) {
                     string label = "Delete Take: " + take.name;
 
-                    aData.RegisterTakesUndo(label, false);
+                    aData.RegisterTakesUndo(label);
 
                     if(aData.takes.Count == 1) {                        
                         take = aData.currentTake;
@@ -1303,7 +1303,7 @@ namespace M8.Animator.Edit {
 
                 string label = "New Take";
 
-                aData.RegisterTakesUndo(label, false);
+                aData.RegisterTakesUndo(label);
 
                 aData.AddNewTake();
 
@@ -1315,7 +1315,7 @@ namespace M8.Animator.Edit {
 
                 string label = "New Duplicate Take";
 
-                aData.RegisterTakesUndo(label, false);
+                aData.RegisterTakesUndo(label);
 
                 if(aData.prevTake != null) {
                     aData.DuplicateTake(aData.prevTake, true);
@@ -1436,7 +1436,7 @@ namespace M8.Animator.Edit {
             Rect rectNewGroup = new Rect(rectNewTrack.x + rectNewTrack.width + 5f, height_indicator_footer / 2f - 15f / 2f, 15f, 15f);
             Rect rectBtnNewGroup = new Rect(rectNewGroup.x, 0f, rectNewGroup.width, height_indicator_footer);
             if(GUI.Button(rectBtnNewGroup, new GUIContent("", "New Group"), "label")) {
-                aData.RegisterTakesUndo("New Group", false);
+                aData.RegisterTakesUndo("New Group");
                 cancelTextEditting();
                 TakeEditCurrent().addGroup(aData.currentTake);
                 setScrollViewValue(maxScrollView());
@@ -1467,7 +1467,7 @@ namespace M8.Animator.Edit {
                         if((UnityEditor.EditorUtility.DisplayDialog("Delete " + strTitleDeleteTrack, "Are you sure you want to delete " + strMsgDeleteTrack + "?", "Delete", "Cancel"))) {
                             isRenamingTrack = -1;
 
-                            aData.RegisterTakesUndo("Delete Track", true);
+                            aData.RegisterTakesUndo("Delete Track");
 
                             // delete camera fade
                             if(TakeEdit(curTake).selectedTrack != -1 && track == curTake.cameraSwitcher && CameraFade.hasInstance() && CameraFade.isPreview()) {
@@ -1504,19 +1504,19 @@ namespace M8.Animator.Edit {
                         else if(choice == 0) deleteContents = true;
                         if(delete) {
                             if(deleteContents) {
-                                aData.RegisterTakesUndo("Delete Group", false);
+                                aData.RegisterTakesUndo("Delete Group");
 
                                 TakeEdit(take).deleteSelectedGroup(take, true);
                             }
                             else {
-                                aData.RegisterTakesUndo("Delete Group", false);
+                                aData.RegisterTakesUndo("Delete Group");
 
                                 TakeEdit(take).deleteSelectedGroup(take, false);
                             }
                         }
                     }
                     else { //no tracks inside group
-                        aData.RegisterTakesUndo("Delete Group", false);
+                        aData.RegisterTakesUndo("Delete Group");
                         TakeEditCurrent().deleteSelectedGroup(aData.currentTake, false);
                     }
                 }
@@ -2375,7 +2375,7 @@ namespace M8.Animator.Edit {
                         var rTrack = (RotationEulerTrack)_track;
                         var nAxis = (AxisFlags)EditorGUI.EnumFlagsField(new Rect(width_track - 48f - width_subtrack_space * group_level - 4f, height_track - 38f, 48f, 15f), rTrack.axis);
                         if(rTrack.axis != nAxis) {
-                            aData.RegisterTakesUndo("Change Rotation Euler Axis", false);
+                            aData.RegisterTakesUndo("Change Rotation Euler Axis");
                             rTrack.axis = nAxis;
                         }
                     }
@@ -2383,7 +2383,7 @@ namespace M8.Animator.Edit {
                         var sTrack = (ScaleTrack)_track;
                         var nAxis = (AxisFlags)EditorGUI.EnumFlagsField(new Rect(width_track - 48f - width_subtrack_space * group_level - 4f, height_track - 38f, 48f, 15f), sTrack.axis);
                         if(sTrack.axis != nAxis) {
-                            aData.RegisterTakesUndo("Change Scale Axis", false);
+                            aData.RegisterTakesUndo("Change Scale Axis");
                             sTrack.axis = nAxis;
                         }
                     }
@@ -3077,7 +3077,7 @@ namespace M8.Animator.Edit {
                     GUI.SelectionGrid(rectSelGrid, interp > 0 ? interp - 1 : 0, texInterpl2, 3, GUI.skin.GetStyle("ButtonImage")) + 1;
 
                 if(interp != nInterp) {
-                    aData.RegisterTakesUndo("Change Interpolation", false);
+                    aData.RegisterTakesUndo("Change Interpolation");
 
                     key.interp = (Key.Interpolation)nInterp;
 
@@ -3100,7 +3100,7 @@ namespace M8.Animator.Edit {
                     rectPosition = new Rect(0f, start_y, width_inspector - margin, 40f);
                     Vector3 nPos = EditorGUI.Vector3Field(rectPosition, "Position", tKey.position);
                     if(tKey.position != nPos) {
-                        aData.RegisterTakesUndo("Change Position", false);
+                        aData.RegisterTakesUndo("Change Position");
                         tKey.position = nPos;
 
                         _dirtyTrackUpdate(ctake, sTrack);
@@ -3124,7 +3124,7 @@ namespace M8.Animator.Edit {
                 rectPosition = new Rect(0f, rectPosition.y + rectPosition.height + height_inspector_space, width_inspector - margin, 20.0f);
                 bool nPixelSnap = EditorGUI.Toggle(rectPosition, "Pixel-Snap", tTrack.pixelSnap);
                 if(nPixelSnap != tTrack.pixelSnap) {
-                    aData.RegisterTakesUndo("Set Pixel-Snap", false);
+                    aData.RegisterTakesUndo("Set Pixel-Snap");
                     tTrack.pixelSnap = nPixelSnap;
                 }
                 //display pixel-per-unit
@@ -3138,7 +3138,7 @@ namespace M8.Animator.Edit {
 
                     if(nppu <= 0.0f) nppu = 0.001f;
                     if(tTrack.pixelPerUnit != nppu) {
-                        aData.RegisterTakesUndo("Set Pixel-Per-Unit", false);
+                        aData.RegisterTakesUndo("Set Pixel-Per-Unit");
                         tTrack.pixelPerUnit = nppu;
                     }
                 }
@@ -3153,7 +3153,7 @@ namespace M8.Animator.Edit {
                 Vector3 rot = rKey.rotation.eulerAngles;
                 Vector3 nrot = EditorGUI.Vector3Field(rectQuaternion, "Rotation", rot);
                 if(rot != nrot) {
-                    aData.RegisterTakesUndo("Change Rotation", false);
+                    aData.RegisterTakesUndo("Change Rotation");
                     rKey.rotation = Quaternion.Euler(nrot);
 
                     _dirtyTrackUpdate(ctake, sTrack);
@@ -3175,7 +3175,7 @@ namespace M8.Animator.Edit {
                 // euler
                 Vector3 nrot = EditorGUI.Vector3Field(rectQuaternion, "Rotation", rKey.rotation);
                 if(rKey.rotation != nrot) {
-                    aData.RegisterTakesUndo("Change Rotation", false);
+                    aData.RegisterTakesUndo("Change Rotation");
                     rKey.rotation = nrot;
 
                     _dirtyTrackUpdate(ctake, sTrack);
@@ -3197,7 +3197,7 @@ namespace M8.Animator.Edit {
                 // euler
                 var nscale = EditorGUI.Vector3Field(rectScale, "Scale", sKey.scale);
                 if(sKey.scale != nscale) {
-                    aData.RegisterTakesUndo("Change Scale", false);
+                    aData.RegisterTakesUndo("Change Scale");
                     sKey.scale = nscale;
 
                     _dirtyTrackUpdate(ctake, sTrack);
@@ -3221,7 +3221,7 @@ namespace M8.Animator.Edit {
                 Rect rectObjectTarget = new Rect(rectLabelTarget.x + rectLabelTarget.width + 3f, rectLabelTarget.y + 3f, width_inspector - rectLabelTarget.width - 3f - margin - width_button_delete, 16f);
                 Transform ntgt = (Transform)EditorGUI.ObjectField(rectObjectTarget, oKey.GetTarget(aData.target), typeof(Transform), true);
                 if(oKey.GetTarget(aData.target) != ntgt) {
-                    aData.RegisterTakesUndo("Change Target", false);
+                    aData.RegisterTakesUndo("Change Target");
                     oKey.SetTarget(aData.target, ntgt);
 
                     _dirtyTrackUpdate(ctake, sTrack);
@@ -3253,7 +3253,7 @@ namespace M8.Animator.Edit {
                 Rect rectObjectField = new Rect(rectLabelAnimClip.x + rectLabelAnimClip.width + 2f, rectLabelAnimClip.y + 3f, width_inspector - rectLabelAnimClip.width - margin, 16f);
                 AnimationClip nclip = (AnimationClip)EditorGUI.ObjectField(rectObjectField, aKey.amClip, typeof(AnimationClip), false);
                 if(aKey.amClip != nclip) {
-                    aData.RegisterTakesUndo("Change Animation Clip", false);
+                    aData.RegisterTakesUndo("Change Animation Clip");
                     aKey.amClip = nclip;
                     // preview new position
                     ctake.previewFrame(aData.target, ctake.selectedFrame);
@@ -3264,7 +3264,7 @@ namespace M8.Animator.Edit {
                 Rect rectPopupWrapMode = new Rect(rectLabelWrapMode.x + rectLabelWrapMode.width, rectLabelWrapMode.y + 3f, 120f, 22f);
                 WrapMode nwrapmode = indexToWrapMode(EditorGUI.Popup(rectPopupWrapMode, wrapModeToIndex(aKey.wrapMode), wrapModeNames));
                 if(aKey.wrapMode != nwrapmode) {
-                    aData.RegisterTakesUndo("Wrap Mode", false);
+                    aData.RegisterTakesUndo("Wrap Mode");
                     aKey.wrapMode = nwrapmode;
                     // preview new position
                     ctake.previewFrame(aData.target, ctake.selectedFrame);
@@ -3275,7 +3275,7 @@ namespace M8.Animator.Edit {
                 Rect rectToggleCrossfade = new Rect(rectLabelCrossfade.x + rectLabelCrossfade.width, rectLabelCrossfade.y + 2f, 20f, rectLabelCrossfade.height);
                 bool ncrossfade = EditorGUI.Toggle(rectToggleCrossfade, aKey.crossfade);
                 if(aKey.crossfade != ncrossfade) {
-                    aData.RegisterTakesUndo("Cross Fade", false);
+                    aData.RegisterTakesUndo("Cross Fade");
                     aKey.crossfade = ncrossfade;
                     // preview new position
                     ctake.previewFrame(aData.target, ctake.selectedFrame);
@@ -3286,7 +3286,7 @@ namespace M8.Animator.Edit {
                 Rect rectFloatFieldCrossFade = new Rect(rectLabelCrossFadeTime.x + rectLabelCrossFadeTime.width + margin, rectLabelCrossFadeTime.y + 3f, 40f, rectLabelCrossFadeTime.height);
                 float ncrossfadet = EditorGUI.FloatField(rectFloatFieldCrossFade, aKey.crossfadeTime);
                 if(aKey.crossfadeTime != ncrossfadet) {
-                    aData.RegisterTakesUndo("Cross Fade Time", false);
+                    aData.RegisterTakesUndo("Cross Fade Time");
                     aKey.crossfadeTime = ncrossfadet;
                 }
                 Rect rectLabelSeconds = new Rect(rectFloatFieldCrossFade.x + rectFloatFieldCrossFade.width + margin, rectLabelCrossFadeTime.y, 20f, rectLabelCrossFadeTime.height);
@@ -3304,7 +3304,7 @@ namespace M8.Animator.Edit {
                 Rect rectObjectField = new Rect(rectLabelAudioClip.x + rectLabelAudioClip.width + margin, rectLabelAudioClip.y + 3f, width_inspector - rectLabelAudioClip.width - margin, 16f);
                 AudioClip nclip = (AudioClip)EditorGUI.ObjectField(rectObjectField, auKey.audioClip, typeof(AudioClip), false);
                 if(auKey.audioClip != nclip) {
-                    aData.RegisterTakesUndo("Set Audio Clip", false);
+                    aData.RegisterTakesUndo("Set Audio Clip");
                     auKey.audioClip = nclip;
 
                 }
@@ -3314,7 +3314,7 @@ namespace M8.Animator.Edit {
                 Rect rectToggleLoop = new Rect(rectLabelLoop.x + rectLabelLoop.width + margin, rectLabelLoop.y + 2f, 22f, 22f);
                 bool nloop = EditorGUI.Toggle(rectToggleLoop, auKey.loop);
                 if(auKey.loop != nloop) {
-                    aData.RegisterTakesUndo("Set Audio Loop", false);
+                    aData.RegisterTakesUndo("Set Audio Loop");
                     auKey.loop = nloop;
                 }
 
@@ -3324,7 +3324,7 @@ namespace M8.Animator.Edit {
                 Rect rectToggleOneShot = new Rect(rectLabelOneShot.x + rectLabelOneShot.width + margin, rectLabelOneShot.y + 2f, 22f, 22f);
                 bool nOneShot = EditorGUI.Toggle(rectToggleOneShot, auKey.oneShot);
                 if(auKey.oneShot != nOneShot) {
-                    aData.RegisterTakesUndo("Set Audio One Shot", false);
+                    aData.RegisterTakesUndo("Set Audio One Shot");
                     auKey.oneShot = nOneShot;
                 }
                 return;
@@ -3342,7 +3342,7 @@ namespace M8.Animator.Edit {
                     int val = Convert.ToInt32(pKey.val);
                     int nval = EditorGUI.IntField(rectField, propertyLabel, val);
                     if(val != nval) {
-                        aData.RegisterTakesUndo("Change Property Value", false);
+                        aData.RegisterTakesUndo("Change Property Value");
                         pKey.val = nval;
                         isUpdated = true;
                     }
@@ -3351,7 +3351,7 @@ namespace M8.Animator.Edit {
                     float val = (float)pKey.val;
                     float nval = EditorGUI.FloatField(rectField, propertyLabel, val);
                     if(val != nval) {
-                        aData.RegisterTakesUndo("Change Property Value", false);
+                        aData.RegisterTakesUndo("Change Property Value");
                         pKey.val = nval;
                         isUpdated = true;
                     }
@@ -3360,7 +3360,7 @@ namespace M8.Animator.Edit {
                     bool val = pKey.val > 0.0;
                     bool nval = EditorGUI.Toggle(rectField, propertyLabel, val);
                     if(val != nval) {
-                        aData.RegisterTakesUndo("Change Property Value", false);
+                        aData.RegisterTakesUndo("Change Property Value");
                         pKey.valb = nval;
                         isUpdated = true;
                     }
@@ -3369,7 +3369,7 @@ namespace M8.Animator.Edit {
                     string val = pKey.valString;
                     string nval = EditorGUI.TextField(rectField, propertyLabel, val);
                     if(val != nval) {
-                        aData.RegisterTakesUndo("Change Property Value", false);
+                        aData.RegisterTakesUndo("Change Property Value");
                         pKey.valString = nval;
                         isUpdated = true;
                     }
@@ -3378,7 +3378,7 @@ namespace M8.Animator.Edit {
                     rectField.height = 40f;
                     Vector2 nval = EditorGUI.Vector2Field(rectField, propertyLabel, pKey.vect2);
                     if(pKey.vect2 != nval) {
-                        aData.RegisterTakesUndo("Change Property Value", false);
+                        aData.RegisterTakesUndo("Change Property Value");
                         pKey.vect2 = nval;
                         isUpdated = true;
                     }
@@ -3387,7 +3387,7 @@ namespace M8.Animator.Edit {
                     rectField.height = 40f;
                     Vector3 nval = EditorGUI.Vector3Field(rectField, propertyLabel, pKey.vect3);
                     if(pKey.vect3 != nval) {
-                        aData.RegisterTakesUndo("Change Property Value", false);
+                        aData.RegisterTakesUndo("Change Property Value");
                         pKey.vect3 = nval;
                         isUpdated = true;
                     }
@@ -3395,7 +3395,7 @@ namespace M8.Animator.Edit {
                 else if(pTrack.valueType == PropertyTrack.ValueType.Color) {
                     var nclr = RenderColorProperty(rectField, propertyLabel, pKey.color);
                     if(pKey.color != nclr) {
-                        aData.RegisterTakesUndo("Change Property Value", false);
+                        aData.RegisterTakesUndo("Change Property Value");
                         pKey.color = nclr;
                         isUpdated = true;
                     }
@@ -3404,7 +3404,7 @@ namespace M8.Animator.Edit {
                     rectField.height = 60f;
                     Rect nrect = EditorGUI.RectField(rectField, propertyLabel, pKey.rect);
                     if(pKey.rect != nrect) {
-                        aData.RegisterTakesUndo("Change Property Value", false);
+                        aData.RegisterTakesUndo("Change Property Value");
                         pKey.rect = nrect;
                         isUpdated = true;
                     }
@@ -3414,7 +3414,7 @@ namespace M8.Animator.Edit {
                     rectField.height = 40f;
                     Vector4 nvec = EditorGUI.Vector4Field(rectField, propertyLabel, pKey.vect4);
                     if(pKey.vect4 != nvec) {
-                        aData.RegisterTakesUndo("Change Property Value", false);
+                        aData.RegisterTakesUndo("Change Property Value");
                         pKey.vect4 = nvec;
                         isUpdated = true;
                     }
@@ -3426,7 +3426,7 @@ namespace M8.Animator.Edit {
                     UnityEngine.Object nval = EditorGUI.ObjectField(rectField, val, typeof(Sprite), false);
                     GUI.skin = skin; EditorUtility.ResetDisplayControls();
                     if(val != nval) {
-                        aData.RegisterTakesUndo("Change Property Value", false);
+                        aData.RegisterTakesUndo("Change Property Value");
                         pKey.valObj = nval;
                         isUpdated = true;
                     }
@@ -3439,7 +3439,7 @@ namespace M8.Animator.Edit {
                     Enum curEnum = Enum.ToObject(pTrack.GetCachedInfoType(aData.target), (int)pKey.val) as Enum;
                     Enum newEnum = EditorGUI.EnumPopup(rectField, curEnum);
                     if(curEnum != newEnum) {
-                        aData.RegisterTakesUndo("Change Property Value", false);
+                        aData.RegisterTakesUndo("Change Property Value");
                         pKey.val = Convert.ToDouble(newEnum);
                         isUpdated = true;
                     }
@@ -3479,12 +3479,12 @@ namespace M8.Animator.Edit {
                 bool newVal = EditorGUI.Toggle(rectField, sTrack.getTrackType(), pKey.setActive);
 
                 if(newStartVal != goActiveTrack.startActive) {
-                    aData.RegisterTakesUndo("Set GameObject Start Active", false);
+                    aData.RegisterTakesUndo("Set GameObject Start Active");
                     goActiveTrack.startActive = newStartVal;
                 }
 
                 if(newVal != pKey.setActive) {
-                    aData.RegisterTakesUndo("Set GameObject Active", false);
+                    aData.RegisterTakesUndo("Set GameObject Active");
                     pKey.setActive = newVal;
 
                     _dirtyTrackUpdate(ctake, sTrack);
@@ -3593,7 +3593,7 @@ namespace M8.Animator.Edit {
                 Rect rectLabelSendMessage = new Rect(0f, rectLabelObjectMessage.y + rectLabelObjectMessage.height + height_inspector_space, 150f, 20f);
                 GUI.Label(rectLabelSendMessage, "Use SendMessage");
                 Rect rectToggleSendMessage = new Rect(rectLabelSendMessage.x + rectLabelSendMessage.width + margin, rectLabelSendMessage.y, 20f, 20f);
-                if(eKey.setUseSendMessage(GUI.Toggle(rectToggleSendMessage, eKey.useSendMessage, ""), delegate (EventKey k) { aData.RegisterTakesUndo("Set Event Key Method Mode", false); }))
+                if(eKey.setUseSendMessage(GUI.Toggle(rectToggleSendMessage, eKey.useSendMessage, ""), delegate (EventKey k) { aData.RegisterTakesUndo("Set Event Key Method Mode"); }))
                     sTrack.updateCache(aData.target);
 
                 GUI.enabled = !isPlaying;
@@ -3645,7 +3645,7 @@ namespace M8.Animator.Edit {
                 Rect rectSelGridType = new Rect(rectLabelType.x + rectLabelType.width + margin, rectLabelType.y, rectView.width - margin - rectLabelType.width, 22f);
                 int newType = GUI.SelectionGrid(rectSelGridType, cKey.type, new string[] { "Camera", "Color" }, 2);
                 if(cKey.type != newType) {
-                    aData.RegisterTakesUndo("Set Camera Track Type", false);
+                    aData.RegisterTakesUndo("Set Camera Track Type");
                     cKey.type = newType;
 
                     _dirtyTrackUpdate(ctake, sTrack);
@@ -3657,7 +3657,7 @@ namespace M8.Animator.Edit {
                 if(cKey.type == 0) {
                     Camera newCam = (Camera)EditorGUI.ObjectField(rectCameraColor, cKey.GetCamera(aData.target), typeof(Camera), true);
                     if(cKey.GetCamera(aData.target) != newCam) {
-                        aData.RegisterTakesUndo("Set Camera Track Camera", false);
+                        aData.RegisterTakesUndo("Set Camera Track Camera");
                         cKey.SetCamera(aData.target, newCam);
 
                         _dirtyTrackUpdate(ctake, sTrack);
@@ -3666,7 +3666,7 @@ namespace M8.Animator.Edit {
                 else {
                     Color newColor = EditorGUI.ColorField(rectCameraColor, cKey.color);
                     if(cKey.color != newColor) {
-                        aData.RegisterTakesUndo("Set Camera Track Color", false);
+                        aData.RegisterTakesUndo("Set Camera Track Color");
                         cKey.color = newColor;
 
                         _dirtyTrackUpdate(ctake, sTrack);
@@ -3688,7 +3688,7 @@ namespace M8.Animator.Edit {
                         Rect rectToggleRenderTexture = new Rect(rectView.width - 22f, rectLabelRenderTexture.y, 22f, 22f);
                         bool newStill = !GUI.Toggle(rectToggleRenderTexture, !cKey.still, "");
                         if(cKey.still != newStill) {
-                            aData.RegisterTakesUndo("Set Camera Track Still", false);
+                            aData.RegisterTakesUndo("Set Camera Track Still");
                             cKey.still = newStill;
 
                             _dirtyTrackUpdate(ctake, sTrack);
@@ -3710,7 +3710,7 @@ namespace M8.Animator.Edit {
                 if(aTrack.propertyType == MaterialTrack.ValueType.Float) {
                     float fval = EditorGUI.FloatField(rectField, propertyLabel, aKey.val);
                     if(aKey.val != fval) {
-                        aData.RegisterTakesUndo("Change Material Property Value", false);
+                        aData.RegisterTakesUndo("Change Material Property Value");
                         aKey.val = fval;
                         isUpdated = true;
                     }
@@ -3727,7 +3727,7 @@ namespace M8.Animator.Edit {
                             //slider
                             float fval = EditorGUI.Slider(rectField, propertyLabel, aKey.val, valMin, valMax);
                             if(aKey.val != fval) {
-                                aData.RegisterTakesUndo("Change Material Property Value", false);
+                                aData.RegisterTakesUndo("Change Material Property Value");
                                 aKey.val = fval;
                                 isUpdated = true;
                             }
@@ -3739,7 +3739,7 @@ namespace M8.Animator.Edit {
                     rectField.height = 40f;
                     Vector4 nvec = EditorGUI.Vector4Field(rectField, propertyLabel, aKey.vector);
                     if(aKey.vector != nvec) {
-                        aData.RegisterTakesUndo("Change Material Property Value", false);
+                        aData.RegisterTakesUndo("Change Material Property Value");
                         aKey.vector = nvec;
                         isUpdated = true;
                     }
@@ -3747,7 +3747,7 @@ namespace M8.Animator.Edit {
                 else if(aTrack.propertyType == MaterialTrack.ValueType.Color) {
                     var nclr = RenderColorProperty(rectField, propertyLabel, aKey.color);
                     if(aKey.color != nclr) {
-                        aData.RegisterTakesUndo("Change Material Property Value", false);
+                        aData.RegisterTakesUndo("Change Material Property Value");
                         aKey.color = nclr;
                         isUpdated = true;
                     }
@@ -3760,7 +3760,7 @@ namespace M8.Animator.Edit {
                     GUI.skin = skin; EditorUtility.ResetDisplayControls();
 
                     if(aKey.texture != nval) {
-                        aData.RegisterTakesUndo("Change Material Property Value", false);
+                        aData.RegisterTakesUndo("Change Material Property Value");
                         aKey.texture = nval;
                         isUpdated = true;
                     }
@@ -3769,7 +3769,7 @@ namespace M8.Animator.Edit {
                     rectField.height = 40f;
                     Vector2 nvec = EditorGUI.Vector2Field(rectField, propertyLabel, aKey.texOfs);
                     if(aKey.texOfs != nvec) {
-                        aData.RegisterTakesUndo("Change Material Property Value", false);
+                        aData.RegisterTakesUndo("Change Material Property Value");
                         aKey.texOfs = nvec;
                         isUpdated = true;
                     }
@@ -3778,7 +3778,7 @@ namespace M8.Animator.Edit {
                     rectField.height = 40f;
                     Vector2 nvec = EditorGUI.Vector2Field(rectField, propertyLabel, aKey.texScale);
                     if(aKey.texScale != nvec) {
-                        aData.RegisterTakesUndo("Change Material Property Value", false);
+                        aData.RegisterTakesUndo("Change Material Property Value");
                         aKey.texScale = nvec;
                         isUpdated = true;
                     }
@@ -3820,7 +3820,7 @@ namespace M8.Animator.Edit {
 
                     // show elements if folded out
                     if(parameter.lsArray.Count <= 0) {
-                        aData.RegisterTakesUndo("Change Event Key Field", false);
+                        aData.RegisterTakesUndo("Change Event Key Field");
                         EventData a = new EventData();
                         a.setValueType(t.GetElementType());
                         parameter.lsArray.Add(a);
@@ -3841,14 +3841,14 @@ namespace M8.Animator.Edit {
                     if(parameter.lsArray.Count <= 1) GUI.enabled = false;
                     Rect rectButtonRemoveElement = new Rect(rect.x + rect.width - 40f, rectLabelElement.y, 20f, 20f);
                     if(GUI.Button(rectButtonRemoveElement, "-")) {
-                        aData.RegisterTakesUndo("Change Event Key Field", false);
+                        aData.RegisterTakesUndo("Change Event Key Field");
                         parameter.lsArray.RemoveAt(parameter.lsArray.Count - 1);
                     }
                     Rect rectButtonAddElement = new Rect(rectButtonRemoveElement);
                     rectButtonAddElement.x += rectButtonRemoveElement.width + margin;
                     GUI.enabled = !isPlaying;
                     if(GUI.Button(rectButtonAddElement, "+")) {
-                        aData.RegisterTakesUndo("Change Event Key Field", false);
+                        aData.RegisterTakesUndo("Change Event Key Field");
                         EventData a = new EventData();
                         a.setValueType(t.GetElementType());
                         parameter.lsArray.Add(a);
@@ -3859,49 +3859,49 @@ namespace M8.Animator.Edit {
                 // bool field
                 height_field += 20f;
                 var val = EditorGUI.Toggle(rect, name, data.val_bool);
-                if(data.val_bool != val) { aData.RegisterTakesUndo("Change Event Key Field", false); data.val_bool = val; }
+                if(data.val_bool != val) { aData.RegisterTakesUndo("Change Event Key Field"); data.val_bool = val; }
             }
             else if((t == typeof(int)) || (t == typeof(long))) {
                 // int field
                 height_field += 20f;
                 var val = EditorGUI.IntField(rect, name, data.val_int);
-                if(data.val_int != val) { aData.RegisterTakesUndo("Change Event Key Field", false); data.val_int = val; }
+                if(data.val_int != val) { aData.RegisterTakesUndo("Change Event Key Field"); data.val_int = val; }
             }
             else if((t == typeof(float)) || (t == typeof(double))) {
                 // float field
                 height_field += 20f;
                 var val = EditorGUI.FloatField(rect, name, data.val_float);
-                if(data.val_float != val) { aData.RegisterTakesUndo("Change Event Key Field", false); data.val_float = val; }
+                if(data.val_float != val) { aData.RegisterTakesUndo("Change Event Key Field"); data.val_float = val; }
             }
             else if(t == typeof(Vector2)) {
                 // vector2 field
                 height_field += 40f;
                 var val = EditorGUI.Vector2Field(rect, name, data.val_vect2);
-                if(data.val_vect2 != val) { aData.RegisterTakesUndo("Change Event Key Field", false); data.val_vect2 = val; }
+                if(data.val_vect2 != val) { aData.RegisterTakesUndo("Change Event Key Field"); data.val_vect2 = val; }
             }
             else if(t == typeof(Vector3)) {
                 // vector3 field
                 height_field += 40f;
                 var val = EditorGUI.Vector3Field(rect, name, data.val_vect3);
-                if(data.val_vect3 != val) { aData.RegisterTakesUndo("Change Event Key Field", false); data.val_vect3 = val; }
+                if(data.val_vect3 != val) { aData.RegisterTakesUndo("Change Event Key Field"); data.val_vect3 = val; }
             }
             else if(t == typeof(Vector4)) {
                 // vector4 field
                 height_field += 40f;
                 var val = EditorGUI.Vector4Field(rect, name, data.val_vect4);
-                if(data.val_vect4 != val) { aData.RegisterTakesUndo("Change Event Key Field", false); data.val_vect4 = val; }
+                if(data.val_vect4 != val) { aData.RegisterTakesUndo("Change Event Key Field"); data.val_vect4 = val; }
             }
             else if(t == typeof(Color)) {
                 // color field
                 height_field += 40f;
                 var val = EditorGUI.ColorField(rect, name, data.val_color);
-                if(data.val_color != val) { aData.RegisterTakesUndo("Change Event Key Field", false); data.val_color = val; }
+                if(data.val_color != val) { aData.RegisterTakesUndo("Change Event Key Field"); data.val_color = val; }
             }
             else if(t == typeof(Rect)) {
                 // rect field
                 height_field += 60f;
                 var val = EditorGUI.RectField(rect, name, data.val_rect);
-                if(data.val_rect != val) { aData.RegisterTakesUndo("Change Event Key Field", false); data.val_rect = val; }
+                if(data.val_rect != val) { aData.RegisterTakesUndo("Change Event Key Field"); data.val_rect = val; }
             }
             else if(t == typeof(string)) {
                 height_field += 20f;
@@ -3909,7 +3909,7 @@ namespace M8.Animator.Edit {
                 if(data.val_string == null) data.val_string = "";
                 // string field
                 var val = EditorGUI.TextField(rect, name, data.val_string);
-                if(data.val_string != val) { aData.RegisterTakesUndo("Change Event Key Field", false); data.val_string = val; }
+                if(data.val_string != val) { aData.RegisterTakesUndo("Change Event Key Field"); data.val_string = val; }
             }
             else if(t == typeof(char)) {
                 height_field += 20f;
@@ -3920,7 +3920,7 @@ namespace M8.Animator.Edit {
                 GUI.Label(rectLabelCharField, name);
                 Rect rectTextFieldChar = new Rect(rectLabelCharField.x + rectLabelCharField.width + margin, rectLabelCharField.y, rect.width - rectLabelCharField.width - margin, rect.height);
                 var val = GUI.TextField(rectTextFieldChar, data.val_string, 1);
-                if(data.val_string != val) { aData.RegisterTakesUndo("Change Event Key Field", false); data.val_string = val; }
+                if(data.val_string != val) { aData.RegisterTakesUndo("Change Event Key Field"); data.val_string = val; }
             }
             else if(t == typeof(GameObject)) {
                 height_field += 40f + margin;
@@ -3935,7 +3935,7 @@ namespace M8.Animator.Edit {
                 GameObject newGO = EditorGUI.ObjectField(rectObjectField, curGO, typeof(GameObject), true) as GameObject;
 
                 if(curGO != newGO) {
-                    aData.RegisterTakesUndo("Change Event Key Field", false);
+                    aData.RegisterTakesUndo("Change Event Key Field");
 
                     if(newGO) {
                         data.SetAsGameObject(iTarget, newGO, !newGO.scene.IsValid()); //if scene is not valid, it must be from the asset
@@ -3959,7 +3959,7 @@ namespace M8.Animator.Edit {
                 UnityEngine.Object newObj = EditorGUI.ObjectField(rectObjectField, curObj, t, true);
 
                 if(curObj != newObj) {
-                    aData.RegisterTakesUndo("Change Event Key Field", false);
+                    aData.RegisterTakesUndo("Change Event Key Field");
 
                     Component newComp = newObj as Component;
                     if(newComp) {
@@ -3983,7 +3983,7 @@ namespace M8.Animator.Edit {
                 var curVal = data.toObject(iTarget) as UnityEngine.Object;
                 var newVal = EditorGUI.ObjectField(rectObjectField, curVal, typeof(UnityEngine.Object), true);
                 if(curVal != newVal) {
-                    aData.RegisterTakesUndo("Change Event Key Field", false);
+                    aData.RegisterTakesUndo("Change Event Key Field");
                     if(newVal is GameObject) { //special case if Object is GameObject (in case it is from scene)
                         if(newVal)
                             data.SetAsGameObject(iTarget, (GameObject)newVal, !((GameObject)newVal).scene.IsValid()); //if scene is not valid, it must be from the asset
@@ -4009,7 +4009,7 @@ namespace M8.Animator.Edit {
                 GUI.Label(rectLabelField, name);
                 Rect rectObjectField = new Rect(rect.x, rectLabelField.y + rectLabelField.height + margin, rect.width, 16f);
                 var val = EditorGUI.EnumPopup(rectObjectField, data.val_enum);
-                if(data.val_enum != val) { aData.RegisterTakesUndo("Change Event Key Field", false); data.val_enum = val; }
+                if(data.val_enum != val) { aData.RegisterTakesUndo("Change Event Key Field"); data.val_enum = val; }
             }
             else {
                 height_field += 20f;
@@ -4029,7 +4029,7 @@ namespace M8.Animator.Edit {
             if(amTrack is TranslationTrack || amTrack is RotationTrack || amTrack is RotationEulerTrack || amTrack is ScaleTrack) {
                 Transform nt = (Transform)EditorGUI.ObjectField(rect, amTrack.GetTarget(aData.target), typeof(Transform), true/*,GUILayout.Width (width_track-padding_track*2)*/);
                 if(!amTrack.isTargetEqual(aData.target, nt)) {
-                    aData.RegisterTakesUndo("Set Transform", false);
+                    aData.RegisterTakesUndo("Set Transform");
                     amTrack.SetTarget(aData.target, nt);
                 }
             }
@@ -4038,7 +4038,7 @@ namespace M8.Animator.Edit {
                 OrientationTrack otrack = amTrack as OrientationTrack;
                 Transform nt = (Transform)EditorGUI.ObjectField(rect, amTrack.GetTarget(aData.target), typeof(Transform), true);
                 if(!otrack.isTargetEqual(aData.target, nt)) {
-                    aData.RegisterTakesUndo("Set Transform", false);
+                    aData.RegisterTakesUndo("Set Transform");
                     otrack.SetTarget(aData.target, nt);
                     otrack.updateCache(aData.target);
                 }
@@ -4050,7 +4050,7 @@ namespace M8.Animator.Edit {
                     UnityEditor.EditorUtility.DisplayDialog("No Animation Component", "You must add an Animation component to the GameObject before you can use it in an Animation Track.", "Okay");
                 }
                 else if(!amTrack.isTargetEqual(aData.target, nobj)) {
-                    aData.RegisterTakesUndo("Set GameObject", false);
+                    aData.RegisterTakesUndo("Set GameObject");
                     amTrack.SetTarget(aData.target, nobj ? nobj.transform : null);
                 }
             }
@@ -4058,7 +4058,7 @@ namespace M8.Animator.Edit {
             else if(amTrack is AudioTrack) {
                 AudioSource nsrc = (AudioSource)EditorGUI.ObjectField(rect, amTrack.GetTarget(aData.target), typeof(AudioSource), true);
                 if(!amTrack.isTargetEqual(aData.target, nsrc)) {
-                    aData.RegisterTakesUndo("Set Audio Source", false);
+                    aData.RegisterTakesUndo("Set Audio Source");
                     if(nsrc != null) nsrc.playOnAwake = false;
                     amTrack.SetTarget(aData.target, nsrc ? nsrc.transform : null);
                 }
@@ -4076,7 +4076,7 @@ namespace M8.Animator.Edit {
                         changeGO = false;
                     }
                     if(changeGO) {
-                        aData.RegisterTakesUndo("Set GameObject", false);
+                        aData.RegisterTakesUndo("Set GameObject");
 
                         if(!componentsMatch) {
                             if(amTrack is PropertyTrack) { //remove all keys if required component is missing
@@ -4110,7 +4110,7 @@ namespace M8.Animator.Edit {
                         changeObj = false;
                     }
                     if(changeObj) {
-                        aData.RegisterTakesUndo("Set Event Target", false);
+                        aData.RegisterTakesUndo("Set Event Target");
 
                         if(!isMatched) {
                             //delete keys
@@ -4132,7 +4132,7 @@ namespace M8.Animator.Edit {
             else if(amTrack is MaterialTrack) {
                 Renderer render = (Renderer)EditorGUI.ObjectField(rect, amTrack.GetTarget(aData.target), typeof(Renderer), true);
                 if(!amTrack.isTargetEqual(aData.target, render)) {
-                    aData.RegisterTakesUndo("Set Renderer", false);
+                    aData.RegisterTakesUndo("Set Renderer");
                     amTrack.SetTarget(aData.target, render ? render.transform : null);
                 }
             }
@@ -4160,7 +4160,7 @@ namespace M8.Animator.Edit {
                 }
                 int newIndex = EditorGUI.Popup(rectPopup, index, TransitionPicker.TransitionNames);
                 if(key.cameraFadeType != TransitionPicker.TransitionOrder[newIndex]) {
-                    aData.RegisterTakesUndo("Set Camera Track Fade Type", false);
+                    aData.RegisterTakesUndo("Set Camera Track Fade Type");
                     key.cameraFadeType = TransitionPicker.TransitionOrder[newIndex];
                     // reset parameters
                     TransitionPicker.setDefaultParametersForKey(ref key);
@@ -4194,7 +4194,7 @@ namespace M8.Animator.Edit {
                 }
                 int newIndex = EditorGUILayout.Popup(index, TransitionPicker.TransitionNames);
                 if(key.cameraFadeType != TransitionPicker.TransitionOrder[newIndex]) {
-                    aData.RegisterTakesUndo("Set Camera Track Fade Type", false);
+                    aData.RegisterTakesUndo("Set Camera Track Fade Type");
                     key.cameraFadeType = TransitionPicker.TransitionOrder[newIndex];
                     // reset parameters
                     TransitionPicker.setDefaultParametersForKey(ref key);
@@ -4227,7 +4227,7 @@ namespace M8.Animator.Edit {
                 int easeInd = (int)key.easeType;
                 int nease = GetEaseIndex(EditorGUI.Popup(rectPopup, GetEaseTypeNameIndex(key.easeType), easeTypeNames));
                 if(easeInd != nease) {
-                    aData.RegisterTakesUndo("Change Ease", false);
+                    aData.RegisterTakesUndo("Change Ease");
                     key.setEaseType((Ease)nease);
                     // update cache when modifying varaibles
                     track.updateCache(aData.target);
@@ -4253,7 +4253,7 @@ namespace M8.Animator.Edit {
 
                     float namp = EditorGUI.FloatField(rectAmp, "Amplitude", key.amplitude);
                     if(key.amplitude != namp) {
-                        aData.RegisterTakesUndo("Change Amplitude", false);
+                        aData.RegisterTakesUndo("Change Amplitude");
                         key.amplitude = namp;
                     }
 
@@ -4261,7 +4261,7 @@ namespace M8.Animator.Edit {
                     Rect rectPer = new Rect(x, y, 200f, height);
                     float nperiod = EditorGUI.FloatField(rectPer, "Period", key.period);
                     if(key.period != nperiod) {
-                        aData.RegisterTakesUndo("Change Period", false);
+                        aData.RegisterTakesUndo("Change Period");
                         key.period = nperiod;
                     }
                 }
@@ -4277,7 +4277,7 @@ namespace M8.Animator.Edit {
                 int easeInd = (int)key.easeType;
                 int nease = GetEaseIndex(EditorGUILayout.Popup(GetEaseTypeNameIndex(key.easeType), easeTypeNames));
                 if(easeInd != nease) {
-                    aData.RegisterTakesUndo("Change Ease", false);
+                    aData.RegisterTakesUndo("Change Ease");
                     key.setEaseType((Ease)nease);
 
                     window._dirtyTrackUpdate(window.aData.currentTake, track);
@@ -4450,7 +4450,7 @@ namespace M8.Animator.Edit {
                 }
                 // if finished move selection
                 if(dragType == (int)DragType.MoveSelection) {
-                    aData.RegisterTakesUndo("Move Keys", false);
+                    aData.RegisterTakesUndo("Move Keys");
                     
                     Take take = aData.currentTake;
 
@@ -4471,11 +4471,11 @@ namespace M8.Animator.Edit {
                     // if finished dragging group element
                 }
                 else if(dragType == (int)DragType.GroupElement) {
-                    aData.RegisterTakesUndo("Move Element", false);
+                    aData.RegisterTakesUndo("Move Element");
                     processDropGroupElement(draggingGroupElementType, draggingGroupElement, mouseOverElement, mouseOverGroupElement);
                 }
                 else if(dragType == (int)DragType.ResizeAction) {
-                    aData.RegisterTakesUndo("Resize Action", false);
+                    aData.RegisterTakesUndo("Resize Action");
                     Track _track = TakeEditCurrent().getSelectedTrack(aData.currentTake);
                     //Key[] dKeys = 
                     _track.removeDuplicateKeys();
@@ -5357,7 +5357,7 @@ namespace M8.Animator.Edit {
             addTarget(key, false);
         }
         void addTarget(object key, bool withTranslationTrack) {
-            aData.RegisterTakesUndo("Add Target", false);
+            aData.RegisterTakesUndo("Add Target");
 
             Track sTrack = TakeEditCurrent().getSelectedTrack(aData.currentTake);
 
@@ -5475,7 +5475,7 @@ namespace M8.Animator.Edit {
                     //prepare data
                     const string label = "Add Sprite Keys";
 
-                    aData.RegisterTakesUndo(label, false);
+                    aData.RegisterTakesUndo(label);
 
                     //insert keys
                     Take take = aData.currentTake;
@@ -5531,7 +5531,7 @@ namespace M8.Animator.Edit {
                 newGO.transform.localPosition = Vector3.zero;
 
                 //prepare animator data
-                aData.RegisterTakesUndo("Add Sprite Track", false);
+                aData.RegisterTakesUndo("Add Sprite Track");
 
                 //add track
                 addTrack((int)SerializeType.Property);
@@ -5591,7 +5591,7 @@ namespace M8.Animator.Edit {
         }
         void addKey(int _track, int _frame) {
             // add a key to the track number and frame, used in OnGUI. Needs to be updated for every track type.
-            aData.RegisterTakesUndo("New Key", false);
+            aData.RegisterTakesUndo("New Key");
 
             Track amTrack = aData.currentTake.getTrack(_track);
             
@@ -5743,7 +5743,7 @@ namespace M8.Animator.Edit {
             }
         }
         void deleteKeyFromSelectedFrame() {
-            aData.RegisterTakesUndo("Clear Frame", false);
+            aData.RegisterTakesUndo("Clear Frame");
 
             Track amTrack = TakeEditCurrent().getSelectedTrack(aData.currentTake);
 
@@ -5766,7 +5766,7 @@ namespace M8.Animator.Edit {
                 }
             }
             if(shouldClearFrames) {
-                aData.RegisterTakesUndo("Clear Frame", false);
+                aData.RegisterTakesUndo("Clear Frame");
 
                 foreach(int track_id in takeEditCurrent.contextSelectionTrackIds) {
                     int trackInd = aData.currentTake.getTrackIndex(track_id);
@@ -5787,7 +5787,7 @@ namespace M8.Animator.Edit {
         #region Menus/Context
 
         void addTrackFromMenu(object type) {
-            aData.RegisterTakesUndo("New Track", false);
+            aData.RegisterTakesUndo("New Track");
             addTrack(type);
         }
         void AddTrackFromMenuDrag(object type) {
@@ -5795,7 +5795,7 @@ namespace M8.Animator.Edit {
             mLateCallQueue.Enqueue(new LateCallData {
                 count = 30,
                 callback = () => {
-                    aData.RegisterTakesUndo("New Track", false);
+                    aData.RegisterTakesUndo("New Track");
                     addTrack(type);
                 }
             });
@@ -5986,7 +5986,7 @@ namespace M8.Animator.Edit {
             else if(index == 6) contextReverseKeys();
         }
         void contextReverseKeys() {
-            aData.RegisterTakesUndo("Reverse Key Order", false);
+            aData.RegisterTakesUndo("Reverse Key Order");
 
             TakeEditControl takeEdit = TakeEditCurrent();
             Take take = aData.currentTake;
@@ -6049,7 +6049,7 @@ namespace M8.Animator.Edit {
                         if(newKeys.Count > 0) {
                             //record undo
                             if(!isUndoRegistered) {
-                                aData.RegisterTakesUndo("Paste Frames", false);
+                                aData.RegisterTakesUndo("Paste Frames");
                                 isUndoRegistered = true;
                             }
 
@@ -6122,7 +6122,7 @@ namespace M8.Animator.Edit {
                     if(newKeys.Count > 0) {
                         //record undo
                         if(!isUndoRegistered) {
-                            aData.RegisterTakesUndo("Paste Frames", false);
+                            aData.RegisterTakesUndo("Paste Frames");
                             isUndoRegistered = true;
                         }
 
@@ -6195,7 +6195,7 @@ namespace M8.Animator.Edit {
             contextSaveKeysToBuffer();
         }
         void contextSelectAllFrames() {
-            aData.RegisterTakesUndo("Select All Frames", false);
+            aData.RegisterTakesUndo("Select All Frames");
             var curTake = aData.currentTake;
             var curTakeEdit = TakeEdit(curTake);
             int totalFrames = curTakeEdit.getTotalSelectedFrames(curTake);

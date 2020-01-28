@@ -5,6 +5,7 @@ using UnityEngine;
 using DG.Tweening;
 
 namespace M8.Animator {
+    [System.Serializable]
     public abstract class Key {
         public abstract SerializeType serializeType { get; }
 

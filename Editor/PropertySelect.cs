@@ -196,7 +196,7 @@ namespace M8.Animator.Edit {
                 changePropertyValue = false;
             }
             if(changePropertyValue) {
-                aData.RegisterTakesUndo("Set Property", false);
+                aData.RegisterTakesUndo("Set Property");
 
                 // delete keys
                 if(track.keys.Count > 0) {

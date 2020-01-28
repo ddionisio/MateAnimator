@@ -129,7 +129,7 @@ namespace M8.Animator.Edit {
 
             //check for change
             if(mTrack.materialIndex != matInd || mTrack.materialOverride != matOverride || mTrack.property != shaderProperty || mTrack.propertyType != shaderPropertyType) {
-                aData.RegisterTakesUndo("Material Track Property Change", false);
+                aData.RegisterTakesUndo("Material Track Property Change");
 
                 mTrack.materialIndex = matInd;
                 mTrack.materialOverride = matOverride;
