@@ -19,6 +19,9 @@ Import/Export, Code Generator are currently disabled.
 
 
 ## Updates
+### 1-28-20
+* Updated serialization to use SerializeReference with Unity 2019.3. Tracks and keys are now directly serialized in Takes. The animator will convert the old serialization if it exists (I plan to move this to M8AnimatorUpgrade, and remove the old serialization). Hopefully this will resolve some of the strange issues that occur with undo/redo/prefab.
+### Previous
 * Changed EventTrack, you can now select functions from any Component if target is a GameObject.
 * No longer need to setup DOTween Preferences.
 * loop parameter now works for Play functions.
@@ -41,6 +44,7 @@ Import/Export, Code Generator are currently disabled.
 Grab [MateAnimatorUpgrade](https://github.com/ddionisio/MateAnimatorUpgrade) and check its README.md for further instructions.
 
 ## TODO
+* Package installation via Unity 2019.3's Package Manager through Github.
 * Track duplicate interface.
 * Unify pathing of position track to all other tracks.
 * Alternate Meta by using ID component (easier, less human error, but with a little bit more overhead)
@@ -56,8 +60,7 @@ Grab [MateAnimatorUpgrade](https://github.com/ddionisio/MateAnimatorUpgrade) and
 ## DEBUG
 You can check the serialized data by setting the Inspector mode to Debug:
 * Select 'Debug' via the dropdown menu on the upper right header of the Inspector window.
-* Look for 'Serialize Data' under Animate. Expand it to check all the Track and Key used by takes.
-* Look for 'Take Data' under Animate to look at Take data.
+* You can see all the takes/tracks/keys within the Animate's inspector.
 
 ## License
 MateAnimator is licensed under a Creative Commons Attribution-NonCommercial 3.0 Unported License
