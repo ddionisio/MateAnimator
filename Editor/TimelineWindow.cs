@@ -177,7 +177,7 @@ namespace M8.Animator.Edit {
         //private float height_frame = 60f;
         private float width_inspector_open = 250f;
         private float width_inspector_closed = 40f;
-        private float width_take_popup = 400f;
+        private float width_take_popup = 250f;
         private float height_menu_bar = /*30f*/20f;
         private float height_control_bar = 20f;
         private float width_playback_speed = 43f;
