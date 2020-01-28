@@ -177,7 +177,7 @@ namespace M8.Animator.Edit {
         //private float height_frame = 60f;
         private float width_inspector_open = 250f;
         private float width_inspector_closed = 40f;
-        private float width_take_popup = 200f;
+        private float width_take_popup = 400f;
         private float height_menu_bar = /*30f*/20f;
         private float height_control_bar = 20f;
         private float width_playback_speed = 43f;
@@ -1168,23 +1168,33 @@ namespace M8.Animator.Edit {
             int trackCount = aData.currentTake.getTrackCount();
             #endregion
             #region menu bar
+            const float menuBarY = 0f, menuBarHeight = 80f;
             GUIStyle styleLabelMenu = new GUIStyle(EditorStyles.toolbarButton);
             styleLabelMenu.normal.background = null;
             //GUI.color = new Color(190f/255f,190f/255f,190f/255f,1f);
             if(EditorStyles.toolbar.normal.background) GUI.DrawTexture(new Rect(0f, 0f, position.width, height_menu_bar - 2f), EditorStyles.toolbar.normal.background);
             //GUI.color = Color.white;
-            #region select name
+            #region select name / refresh
             Rect rectSelectLabel;
 
             if(aData.gameObject) {
                 GUI.color = Color.white;
                 GUIContent selectLabel = new GUIContent(aData.gameObject.name);
                 Vector2 selectLabelSize = EditorStyles.toolbarButton.CalcSize(selectLabel);
-                rectSelectLabel = new Rect(margin, 0f, selectLabelSize.x, height_button_delete);
+                rectSelectLabel = new Rect(margin, 0f, selectLabelSize.x + 8f, height_button_delete);
 
                 if(GUI.Button(rectSelectLabel, selectLabel, EditorStyles.toolbarButton)) {
-                    EditorGUIUtility.PingObject(aData.gameObject);
-                    Selection.activeGameObject = aData.gameObject;
+                    ClearKeysBuffer();
+                    contextSelectionTracksBuffer.Clear();
+                    cachedContextSelection.Clear();
+
+                    GameObject go = _aData.gameObject;
+                    _aData = null;
+                    Selection.activeGameObject = go;
+
+                    EditorGUIUtility.PingObject(go);
+
+                    return;
                 }
                 //GUI.color = Color.white;
             }
@@ -1193,7 +1203,7 @@ namespace M8.Animator.Edit {
             #endregion
 
             #region options button
-            Rect rectBtnOptions = new Rect(rectSelectLabel.x + rectSelectLabel.width + margin, 0f, 60f, height_button_delete);
+            Rect rectBtnOptions = new Rect(rectSelectLabel.x + rectSelectLabel.width + margin, menuBarY, 60f, height_button_delete);
             if(GUI.Button(rectBtnOptions, "Options", EditorStyles.toolbarButton)) {
                 EditorWindow windowOptions = ScriptableObject.CreateInstance<Options>();
                 //windowOptions.Show();
@@ -1202,21 +1212,8 @@ namespace M8.Animator.Edit {
             }
             if(rectBtnOptions.Contains(e.mousePosition) && mouseOverElement == (int)ElementType.None) mouseOverElement = (int)ElementType.Button;
             #endregion
-            #region refresh button
-            bool doRefresh = false;
-            Rect rectBtnCodeView = new Rect(rectBtnOptions.x + rectBtnOptions.width + margin, rectBtnOptions.y, 80f, rectBtnOptions.height);
-            doRefresh = GUI.Button(rectBtnCodeView, "Refresh", EditorStyles.toolbarButton);
-            if(rectBtnCodeView.Contains(e.mousePosition) && mouseOverElement == (int)ElementType.None) {
-                mouseOverElement = (int)ElementType.Button;
-            }
-            #endregion
             #region take popup, change take or create new take
-            Rect rectLabelCurrentTake = new Rect(rectBtnCodeView.x, rectBtnCodeView.y, rectBtnCodeView.width, rectBtnCodeView.height);
-            if(!compact) {
-                rectLabelCurrentTake = new Rect(rectBtnCodeView.x + rectBtnCodeView.width + margin, rectBtnCodeView.y, 80f, rectBtnCodeView.height);
-                GUI.Label(rectLabelCurrentTake, "Current Take:", styleLabelMenu);
-            }
-            Rect rectTakePopup = new Rect(rectLabelCurrentTake.x + rectLabelCurrentTake.width + margin, rectLabelCurrentTake.y/*+3f*/, width_take_popup, 20f);
+            Rect rectTakePopup = new Rect(rectBtnOptions.x + rectBtnOptions.width + margin, menuBarY/*+3f*/, width_take_popup, 20f);
             // if renaming take, show textfield
             if(isRenamingTake) {
                 GUI.SetNextControlName("RenameTake");
@@ -1248,7 +1245,7 @@ namespace M8.Animator.Edit {
             Texture texRenameTake;
             if(isRenamingTake) texRenameTake = getSkinTextureStyleState("accept").background;
             else texRenameTake = getSkinTextureStyleState("rename").background;
-            Rect rectBtnRenameTake = new Rect(rectTakePopup.x + rectTakePopup.width + margin, rectLabelCurrentTake.y, width_button_delete, height_button_delete);
+            Rect rectBtnRenameTake = new Rect(rectTakePopup.x + rectTakePopup.width + margin, menuBarY, width_button_delete, height_button_delete);
             // button
             if(GUI.Button(rectBtnRenameTake, new GUIContent(texRenameTake, (isRenamingTake ? "Accept" : "Rename Take")),/*GUI.skin.GetStyle("ButtonImage")*/EditorStyles.toolbarButton)) {
                 if(!isRenamingTake) aData.RegisterTakesUndo("Rename Take");
@@ -1341,15 +1338,15 @@ namespace M8.Animator.Edit {
             }
             #endregion
             #region settings
-            Rect rectLabelSettings = new Rect(rectBtnPlayOnStart.x + rectBtnPlayOnStart.width + margin, rectBtnPlayOnStart.y, 200f, rectLabelCurrentTake.height);
+            Rect rectLabelSettings = new Rect(rectBtnPlayOnStart.x + rectBtnPlayOnStart.width + margin, rectBtnPlayOnStart.y, 200f, menuBarHeight);
 
             if(compact) {
                 rectLabelSettings.width = GUI.skin.label.CalcSize(new GUIContent("Settings")).x;
                 GUI.Label(rectLabelSettings, "Settings", styleLabelMenu);
             }
             else {
-                string strSettings = "Settings: " + numFrames + " Frames; " + aData.currentTake.frameRate + " Fps";
-                rectLabelSettings.width = GUI.skin.label.CalcSize(new GUIContent(strSettings)).x;
+                string strSettings = numFrames + " Frames; " + aData.currentTake.frameRate + " Fps";
+                rectLabelSettings.width = GUI.skin.label.CalcSize(new GUIContent(strSettings)).x + 10f;
                 GUI.Label(rectLabelSettings, strSettings, styleLabelMenu);
             }
             Rect rectBtnModify = new Rect(rectLabelSettings.x + rectLabelSettings.width + margin, rectLabelSettings.y, 60f, rectBtnOptions.height);
@@ -2010,17 +2007,6 @@ namespace M8.Animator.Edit {
                 e.Use();
             else if(e.type == EventType.MouseMove)
                 Repaint();
-
-            if(doRefresh) {
-                ClearKeysBuffer();
-                contextSelectionTracksBuffer.Clear();
-                cachedContextSelection.Clear();
-
-                GameObject go = _aData.gameObject;
-                _aData = null;
-                Selection.activeGameObject = go;
-            }
-
             if(e.type == EventType.MouseMove || e.type == EventType.DragUpdated) {
                 mouseMoveTrack = mouseOverTrack;
                 mouseMoveFrame = mouseOverFrame;
