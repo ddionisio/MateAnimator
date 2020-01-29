@@ -399,8 +399,6 @@ namespace M8.Animator.Edit {
             mTakeEdits = newTakeEdits;
         }
 
-        private GameObject mTempHolder;
-
         private struct LateCallData {
             public int count;
             public System.Action callback;
@@ -445,9 +443,6 @@ namespace M8.Animator.Edit {
             Take.isProLicense = true;
 
             //autoRepaintOnSceneChange = true;
-
-            mTempHolder = new GameObject();
-            mTempHolder.hideFlags = HideFlags.HideAndDontSave;
 
             Undo.undoRedoPerformed += OnUndoRedo;
         }
@@ -3010,6 +3005,7 @@ namespace M8.Animator.Edit {
         }
         void showInspectorPropertiesFor(Rect rect, int _track, int _frame, Event e) {
             Take ctake = aData.currentTake;
+            bool isPrefabVariant = aData.isPrefabVariant;
 
             // if there are no tracks, return
             if(ctake.getTrackCount() <= 0) return;
@@ -3208,7 +3204,7 @@ namespace M8.Animator.Edit {
                 Transform ntgt = (Transform)EditorGUI.ObjectField(rectObjectTarget, oKey.GetTarget(aData.target), typeof(Transform), true);
                 if(oKey.GetTarget(aData.target) != ntgt) {
                     aData.RegisterTakesUndo("Change Target");
-                    oKey.SetTarget(aData.target, ntgt);
+                    oKey.SetTarget(aData.target, ntgt, isPrefabVariant);
 
                     _dirtyTrackUpdate(ctake, sTrack);
                 }
@@ -4007,6 +4003,9 @@ namespace M8.Animator.Edit {
 
         void showObjectFieldFor(Track amTrack, float width_track, Rect rect) {
             if(rect.width < 22f) return;
+
+            bool isPrefabVariant = aData.isPrefabVariant;
+
             // show object field for track, used in OnGUI. Needs to be updated for every track type.
             GUI.skin = null;
             EditorUtility.ResetDisplayControls();
@@ -4016,7 +4015,7 @@ namespace M8.Animator.Edit {
                 Transform nt = (Transform)EditorGUI.ObjectField(rect, amTrack.GetTarget(aData.target), typeof(Transform), true/*,GUILayout.Width (width_track-padding_track*2)*/);
                 if(!amTrack.isTargetEqual(aData.target, nt)) {
                     aData.RegisterTakesUndo("Set Transform");
-                    amTrack.SetTarget(aData.target, nt);
+                    amTrack.SetTarget(aData.target, nt, isPrefabVariant);
                 }
             }
             // orient
@@ -4025,7 +4024,7 @@ namespace M8.Animator.Edit {
                 Transform nt = (Transform)EditorGUI.ObjectField(rect, amTrack.GetTarget(aData.target), typeof(Transform), true);
                 if(!otrack.isTargetEqual(aData.target, nt)) {
                     aData.RegisterTakesUndo("Set Transform");
-                    otrack.SetTarget(aData.target, nt);
+                    otrack.SetTarget(aData.target, nt, isPrefabVariant);
                     otrack.updateCache(aData.target);
                 }
             }
@@ -4037,7 +4036,7 @@ namespace M8.Animator.Edit {
                 }
                 else if(!amTrack.isTargetEqual(aData.target, nobj)) {
                     aData.RegisterTakesUndo("Set GameObject");
-                    amTrack.SetTarget(aData.target, nobj ? nobj.transform : null);
+                    amTrack.SetTarget(aData.target, nobj ? nobj.transform : null, isPrefabVariant);
                 }
             }
             // audio
@@ -4046,7 +4045,7 @@ namespace M8.Animator.Edit {
                 if(!amTrack.isTargetEqual(aData.target, nsrc)) {
                     aData.RegisterTakesUndo("Set Audio Source");
                     if(nsrc != null) nsrc.playOnAwake = false;
-                    amTrack.SetTarget(aData.target, nsrc ? nsrc.transform : null);
+                    amTrack.SetTarget(aData.target, nsrc ? nsrc.transform : null, isPrefabVariant);
                 }
             }
             // property
@@ -4073,7 +4072,7 @@ namespace M8.Animator.Edit {
                             }
                         }
 
-                        amTrack.SetTarget(aData.target, ngo ? ngo.transform : null);
+                        amTrack.SetTarget(aData.target, ngo ? ngo.transform : null, isPrefabVariant);
 
                         amTrack.updateCache(aData.target);
                     }
@@ -4104,9 +4103,9 @@ namespace M8.Animator.Edit {
                         }
 
                         if(comp)
-                            eventTrack.SetTargetAsComponent(aData.target, comp.transform, comp);
+                            eventTrack.SetTargetAsComponent(aData.target, comp.transform, comp, isPrefabVariant);
                         else if(go)
-                            eventTrack.SetTargetAsGameObject(aData.target, go);
+                            eventTrack.SetTargetAsGameObject(aData.target, go, isPrefabVariant);
                         else
                             eventTrack.SetTargetAsObject(nobj);
 
@@ -4119,7 +4118,7 @@ namespace M8.Animator.Edit {
                 Renderer render = (Renderer)EditorGUI.ObjectField(rect, amTrack.GetTarget(aData.target), typeof(Renderer), true);
                 if(!amTrack.isTargetEqual(aData.target, render)) {
                     aData.RegisterTakesUndo("Set Renderer");
-                    amTrack.SetTarget(aData.target, render ? render.transform : null);
+                    amTrack.SetTarget(aData.target, render ? render.transform : null, isPrefabVariant);
                 }
             }
 
@@ -5356,7 +5355,7 @@ namespace M8.Animator.Edit {
             target.transform.rotation = Quaternion.identity;
             target.transform.localScale = Vector3.one;
             // set target
-            oKey.SetTarget(aData.target, target.transform);
+            oKey.SetTarget(aData.target, target.transform, aData.isPrefabVariant);
 
             _dirtyTrackUpdate(aData.currentTake, sTrack);
 
@@ -5386,7 +5385,7 @@ namespace M8.Animator.Edit {
         T _addTrack<T>(GameObject object_window) where T : Track {
             T t = System.Activator.CreateInstance<T>();
             T track = t;
-            aData.currentTake.addTrack(TakeEditCurrent().selectedGroup, aData.target, object_window ? object_window.transform : null, track);
+            aData.currentTake.addTrack(TakeEditCurrent().selectedGroup, aData.target, object_window ? object_window.transform : null, aData.isPrefabVariant, track);
             return track;
         }
 
@@ -5526,7 +5525,7 @@ namespace M8.Animator.Edit {
                 timelineSelectTrack(aData.currentTake.trackCounter);
 
                 PropertyTrack newTrack = TakeEdit(take).getSelectedTrack(take) as PropertyTrack;
-                newTrack.SetTarget(aData.target, newGO.transform);
+                newTrack.SetTarget(aData.target, newGO.transform, aData.isPrefabVariant);
 
                 //insert keys
                 float sprFPS = oData.spriteInsertFramePerSecond;
@@ -5640,7 +5639,7 @@ namespace M8.Animator.Edit {
                     OrientationKey _oKey = ((amTrack as OrientationTrack).getKeyOnFrame(last_key) as OrientationKey);
                     last_target = _oKey.GetTarget(aData.target);
                 }
-                (amTrack as OrientationTrack).addKey(aData.target, _frame, last_target);
+                (amTrack as OrientationTrack).addKey(aData.target, _frame, last_target, aData.isPrefabVariant);
             }
             else if(amTrack is UnityAnimationTrack) {
                 // animation

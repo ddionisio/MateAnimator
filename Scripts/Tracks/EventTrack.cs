@@ -35,10 +35,10 @@ namespace M8.Animator {
         }
 
         /// <summary>
-        /// Set target directly as the GameObject item, rather than an object within the item
+        /// Set target directly as the GameObject item, rather than an object within the item. Set usePath = true to only apply path.
         /// </summary>
-        public void SetTargetAsGameObject(ITarget target, GameObject item) {
-            if(target.meta && item) {
+        public void SetTargetAsGameObject(ITarget target, GameObject item, bool usePath) {
+            if((target.meta || usePath) && item) {
                 _targetPath = Utility.GetPath(target.root, item);
                 target.SetCache(_targetPath, item.transform);
 
@@ -53,10 +53,10 @@ namespace M8.Animator {
         }
 
         /// <summary>
-        /// This is to provide proper path to where the component is attached via the given item.  The "comp" is applied as the target object.
+        /// This is to provide proper path to where the component is attached via the given item.  The "comp" is applied as the target object. Set usePath = true to only apply path.
         /// </summary>
-        public void SetTargetAsComponent(ITarget target, Transform item, Component comp) {
-            if(target.meta) {
+        public void SetTargetAsComponent(ITarget target, Transform item, Component comp, bool usePath) {
+            if(target.meta || usePath) {
                 if(item) {
                     _targetPath = Utility.GetPath(target.root, item);
                     target.SetCache(_targetPath, item);
@@ -173,10 +173,10 @@ namespace M8.Animator {
                                 return lsFlagToKeep;
                             }
 
-                            SetTargetAsComponent(target, newReferences[i].transform, comp);
+                            SetTargetAsComponent(target, newReferences[i].transform, comp, !string.IsNullOrEmpty(targetPath));
                         }
                         else {
-                            SetTarget(target, newReferences[i].transform);
+                            SetTarget(target, newReferences[i].transform, !string.IsNullOrEmpty(targetPath));
                         }
 
                         didUpdateObj = true;

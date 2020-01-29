@@ -20,10 +20,12 @@ namespace M8.Animator {
         [SerializeField]
         string targetPath = "";
 
+        public bool isTargetPath { get { return !string.IsNullOrEmpty(targetPath); } }
+
         public int endFrame;
 
-        public void SetTarget(ITarget itarget, Transform t) {
-            if(itarget.meta) {
+        public void SetTarget(ITarget itarget, Transform t, bool usePath) {
+            if(itarget.meta || usePath) {
                 target = null;
                 targetPath = Utility.GetPath(itarget.root, t);
                 itarget.SetCache(targetPath, t);

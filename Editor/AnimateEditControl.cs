@@ -97,6 +97,33 @@ namespace M8.Animator.Edit {
 
         public bool isValid { get { return mData != null; } }
 
+        public bool isPrefabVariant { 
+            get {
+                if(!isValid) return false;
+
+                if(PrefabUtility.IsPartOfVariantPrefab(mData)) //we are editing in the scene
+                    return true;
+
+                if(PrefabUtility.IsPartOfAnyPrefab(mData)) //we are editing an existing prefab
+                    return false;
+
+                //check if we are added within a prefab variant (during prefab edit mode)
+
+                //check upwards if we are within a prefab
+                var isRootPrefab = false;
+                var root = mData.transform;
+                while(root) {
+                    isRootPrefab = PrefabUtility.IsPartOfAnyPrefab(root);
+                    if(isRootPrefab)
+                        break;
+
+                    root = root.parent;
+                }
+
+                return isRootPrefab;
+            } 
+        }
+
         public AnimateEditControl(Animate aData) {
             SetData(aData);
         }

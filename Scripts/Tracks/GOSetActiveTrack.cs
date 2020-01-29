@@ -113,7 +113,7 @@ namespace M8.Animator {
             if(go) {
                 for(int i = 0; i < oldReferences.Count; i++) {
                     if(oldReferences[i] == go) {
-                        SetTarget(target, newReferences[i].transform);
+                        SetTarget(target, newReferences[i].transform, !string.IsNullOrEmpty(targetPath));
                         didUpdateObj = true;
                         break;
                     }

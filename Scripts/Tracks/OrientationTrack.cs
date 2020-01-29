@@ -26,11 +26,11 @@ namespace M8.Animator {
             return "Orientation";
         }
         // add a new key
-        public void addKey(ITarget itarget, int _frame, Transform target) {
+        public void addKey(ITarget itarget, int _frame, Transform target, bool usePath) {
             foreach(OrientationKey key in keys) {
                 // if key exists on frame, update key
                 if(key.frame == _frame) {
-                    key.SetTarget(itarget, target);
+                    key.SetTarget(itarget, target, usePath);
                     // update cache
                     updateCache(itarget);
                     return;
@@ -39,7 +39,7 @@ namespace M8.Animator {
             OrientationKey a = new OrientationKey();
             a.frame = _frame;
             if(target)
-                a.SetTarget(itarget, target);
+                a.SetTarget(itarget, target, usePath);
             // set default ease type to linear
             a.easeType = Ease.Linear;// AMTween.EaseType.linear;
                                           // add a new key
@@ -220,13 +220,13 @@ namespace M8.Animator {
             bool didUpdateObj = false;
             for(int i = 0; i < oldReferences.Count; i++) {
                 if(!didUpdateObj && tgt && oldReferences[i] == tgt.gameObject) {
-                    SetTarget(itarget, newReferences[i].transform);
+                    SetTarget(itarget, newReferences[i].transform, !string.IsNullOrEmpty(targetPath));
                     didUpdateObj = true;
                 }
                 foreach(OrientationKey key in keys) {
                     Transform t = key.GetTarget(itarget);
                     if(t && oldReferences[i] == t.gameObject) {
-                        key.SetTarget(itarget, newReferences[i].transform);
+                        key.SetTarget(itarget, newReferences[i].transform, key.isTargetPath);
                     }
                 }
             }

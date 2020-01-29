@@ -313,7 +313,7 @@ namespace M8.Animator {
                     }
                     // missing property
 
-                    SetTarget(target, newReferences[i].transform);
+                    SetTarget(target, newReferences[i].transform, !string.IsNullOrEmpty(targetPath));
                     break;
                 }
             }

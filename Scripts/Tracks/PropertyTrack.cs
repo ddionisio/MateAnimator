@@ -571,7 +571,7 @@ namespace M8.Animator {
                         return lsFlagToKeep;
                     }
 
-                    SetTarget(target, newReferences[i].transform);
+                    SetTarget(target, newReferences[i].transform, !string.IsNullOrEmpty(targetPath));
                     setComponent(target, _component);
                     break;
                 }

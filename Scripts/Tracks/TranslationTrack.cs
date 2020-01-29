@@ -24,8 +24,8 @@ namespace M8.Animator {
             return targetGO ? targetGO.transform : _obj;
         }
 
-        public override void SetTarget(ITarget target, Transform item) {
-            base.SetTarget(target, item);
+        public override void SetTarget(ITarget target, Transform item, bool usePath) {
+            base.SetTarget(target, item, usePath);
             if(item != null && keys.Count <= 0) cachedInitialPosition = item.localPosition;
         }
 
@@ -370,7 +370,7 @@ namespace M8.Animator {
             if(!t) return new List<GameObject>();
             for(int i = 0; i < oldReferences.Count; i++) {
                 if(oldReferences[i] == t.gameObject) {
-                    SetTarget(target, newReferences[i].transform);
+                    SetTarget(target, newReferences[i].transform, !string.IsNullOrEmpty(targetPath));
                     break;
                 }
             }

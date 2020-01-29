@@ -111,10 +111,10 @@ namespace M8.Animator {
 #region Tracks
 
         // add translation track
-        public void addTrack(int groupId, ITarget target, Transform obj, Track a) {
+        public void addTrack(int groupId, ITarget target, Transform obj, bool usePath, Track a) {
             a.setName(getTrackCount());
             a.id = getUniqueTrackID();
-            a.SetTarget(target, obj);
+            a.SetTarget(target, obj, usePath);
             addTrack(groupId, a);
             if(a is CameraSwitcherTrack) mCameraSwitcher = a as CameraSwitcherTrack;
         }
