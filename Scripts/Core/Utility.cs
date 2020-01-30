@@ -271,6 +271,18 @@ namespace M8.Animator {
 			return tgt;
 		}
 
+		public static bool IsInHierarchy(Transform root, Transform child) {			
+			var parent = child.parent;
+			while(parent) {
+				if(parent == root)
+					return true;
+
+				parent = parent.parent;
+			}
+
+			return false;
+		}
+
 		public static string GetPath(Transform root, UnityEngine.Object target) {
 			Transform tgt = GetTransform(target);
 			
@@ -279,8 +291,6 @@ namespace M8.Animator {
 					return ".";
 				}
 				else {
-					Transform rootParent = root.parent;
-
 					bool isHierarchyRelative = true;
 					StringBuilder strBuff = new StringBuilder(tgt.name, 128);
 					Transform tgtParent = tgt.parent;					
@@ -290,7 +300,7 @@ namespace M8.Animator {
 							break;
 						}
 
-						if(tgtParent == rootParent)
+						if(IsInHierarchy(tgtParent, root))
 							break;
 
 						strBuff.Insert(0, '/');
@@ -302,6 +312,7 @@ namespace M8.Animator {
 						//add relative path from root
 						strBuff.Insert(0, "../");
 
+						Transform rootParent = root.parent;
 						while(rootParent && rootParent != tgtParent) {
 							strBuff.Insert(0, "../");
 							rootParent = rootParent.parent;
