@@ -177,7 +177,7 @@ namespace M8.Animator {
 			Transform ret = null;
 			
 			if(!string.IsNullOrEmpty(path)) {
-				if(path[0] == '.') {
+				if(path == ".") {
 	                return root;
 				}
 
@@ -195,8 +195,17 @@ namespace M8.Animator {
 	            }
 	            else {
 	                names = path.Split('/');
-	                startInd = 0;
-	                parent = root;
+
+					parent = root;
+
+					//move parent upwards for ".." paths
+					for(startInd = 0; startInd < names.Length; startInd++) {
+						var name = names[startInd];
+						if(name != "..")
+							break;
+
+						parent = root.parent;
+					}
 	            }
 
 	            //iterate through names and store in ret
@@ -251,14 +260,32 @@ namespace M8.Animator {
 							_targetPathAbsolute = false;
 							break;
 						}
-						
-						strBuff.Insert(0, '/');
-						strBuff.Insert(0, tgtParent.name);
-						tgtParent = tgtParent.parent;
+
+						var nextParent = tgtParent.parent;
+						if(nextParent) {
+							strBuff.Insert(0, '/');
+							strBuff.Insert(0, tgtParent.name);
+							tgtParent = nextParent;
+						}
+						else
+							break;
 					}
 					
-					if(_targetPathAbsolute)
-						strBuff.Insert(0, '/');
+					if(_targetPathAbsolute) {
+						//add relative path from root
+						Transform rootParent = root.parent;
+						while(rootParent) {
+							strBuff.Insert(0, "../");
+
+							rootParent = rootParent.parent;
+							if(rootParent == tgtParent) {
+								if(rootParent == null) //root is the scene
+									strBuff.Insert(0, "../");
+
+								break;
+							}
+						}
+					}
 					
 					return strBuff.ToString();
 				}
