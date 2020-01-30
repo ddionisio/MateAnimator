@@ -204,27 +204,54 @@ namespace M8.Animator {
 						if(name != "..")
 							break;
 
-						parent = root.parent;
+						if(parent)
+							parent = parent.parent;
 					}
 	            }
+								
+				if(!parent) {
+					//parent is scene, iterate from scene
+					var goList = new List<GameObject>();
 
-	            //iterate through names and store in ret
-	            for(int i = startInd; i < names.Length; i++) {
-	                //search child in current parent
-	                int cCount = parent.childCount;
-	                for(int c = 0; c < cCount; c++) {
-	                    Transform child = parent.GetChild(c);
-	                    if(child.name == names[i]) {
-	                        ret = child;
-	                        break;
-	                    }
-	                }
+					var sceneCount = UnityEngine.SceneManagement.SceneManager.sceneCount;
+					for(int i = 0; i < sceneCount; i++) {
+						var scene = UnityEngine.SceneManagement.SceneManager.GetSceneAt(i);
+						scene.GetRootGameObjects(goList);
 
-	                if(ret == null)
-	                    break; //path not found
+						for(int j = 0; j < goList.Count; j++) {
+							var go = goList[j];
+							if(go.name == names[startInd]) {
+								if(startInd == names.Length - 1) //found target
+									return go.transform;
 
-	                parent = ret;
-	            }
+								parent = go.transform;
+								startInd++;
+								break;
+							}
+						}
+
+						if(parent) //found matching root
+							break;
+					}
+				}
+
+				//iterate through names and store in ret
+				for(int i = startInd; i < names.Length; i++) {
+					//search child in current parent
+					int cCount = parent.childCount;
+					for(int c = 0; c < cCount; c++) {
+						Transform child = parent.GetChild(c);
+						if(child.name == names[i]) {
+							ret = child;
+							break;
+						}
+					}
+
+					if(ret == null)
+						break; //path not found
+
+					parent = ret;
+				}
 			}
 
 			return ret;
@@ -252,38 +279,32 @@ namespace M8.Animator {
 					return ".";
 				}
 				else {
-					bool _targetPathAbsolute = true;
+					Transform rootParent = root.parent;
+
+					bool isHierarchyRelative = true;
 					StringBuilder strBuff = new StringBuilder(tgt.name, 128);
-					Transform tgtParent = tgt.parent;
+					Transform tgtParent = tgt.parent;					
 					while(tgtParent) {
 						if(tgtParent == root) {
-							_targetPathAbsolute = false;
+							isHierarchyRelative = false;
 							break;
 						}
 
-						var nextParent = tgtParent.parent;
-						if(nextParent) {
-							strBuff.Insert(0, '/');
-							strBuff.Insert(0, tgtParent.name);
-							tgtParent = nextParent;
-						}
-						else
+						if(tgtParent == rootParent)
 							break;
+
+						strBuff.Insert(0, '/');
+						strBuff.Insert(0, tgtParent.name);
+						tgtParent = tgtParent.parent;
 					}
 					
-					if(_targetPathAbsolute) {
+					if(isHierarchyRelative) {
 						//add relative path from root
-						Transform rootParent = root.parent;
-						while(rootParent) {
+						strBuff.Insert(0, "../");
+
+						while(rootParent && rootParent != tgtParent) {
 							strBuff.Insert(0, "../");
-
 							rootParent = rootParent.parent;
-							if(rootParent == tgtParent) {
-								if(rootParent == null) //root is the scene
-									strBuff.Insert(0, "../");
-
-								break;
-							}
 						}
 					}
 					
