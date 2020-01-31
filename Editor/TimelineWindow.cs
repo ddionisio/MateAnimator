@@ -739,12 +739,12 @@ namespace M8.Animator.Edit {
             if(aData == null) {
                 if(Selection.activeGameObject && Selection.activeGameObject.scene.IsValid()) { //if scene is not valid, it must be from the asset
                     AnimateEditControl newDat = AnimEdit(Selection.activeGameObject.GetComponent<Animate>());
-                    if(newDat != aData) {
+                    if(newDat != aData)
                         aData = newDat;
-                        Repaint();
-                    }
                 }
             }
+
+            Repaint();
         }
         void OnGUI() {
             /*if(Event.current.type != EventType.Repaint && Event.current.type != EventType.Layout) {
@@ -1175,12 +1175,49 @@ namespace M8.Animator.Edit {
             Rect rectSelectLabel;
 
             if(aData.gameObject) {
-                GUI.color = Color.white;
-                GUIContent selectLabel = new GUIContent(aData.gameObject.name);
+                //deselect
+                Rect rectCloseLabel = new Rect(margin, menuBarY, 20f, height_button_delete);
+                if(GUI.Button(rectCloseLabel, "x", EditorStyles.toolbarButton)) {
+                    if(Selection.activeGameObject) {
+                        if(aData.gameObject == Selection.activeGameObject || Selection.activeGameObject.GetComponent<Animate>())
+                            Selection.activeGameObject = null;
+                    }
+
+                    aData = null;
+                    return;
+                }
+
+                bool refreshCurrent = false;
+
+                var otherAnimator = Selection.activeGameObject && aData.gameObject != Selection.activeGameObject ? Selection.activeGameObject.GetComponent<Animate>() : null;
+
+                //select current
+                Rect rectSelectCurrent = new Rect(rectCloseLabel.xMax, menuBarY, 0f, height_button_delete);
+                if(otherAnimator) {
+                    rectSelectCurrent.x += margin; rectSelectCurrent.width = 20f;
+                    if(GUI.Button(rectSelectCurrent, "«", EditorStyles.toolbarButton))
+                        refreshCurrent = true;
+                }
+
+                //select current/other
+                GUI.color = otherAnimator ? Color.yellow : Color.white;
+
+                GUIContent selectLabel = new GUIContent(otherAnimator ? otherAnimator.name : aData.name);
                 Vector2 selectLabelSize = EditorStyles.toolbarButton.CalcSize(selectLabel);
-                rectSelectLabel = new Rect(margin, 0f, selectLabelSize.x + 8f, height_button_delete);
+                rectSelectLabel = new Rect(rectSelectCurrent.xMax + margin, menuBarY, selectLabelSize.x + 8f, height_button_delete);
 
                 if(GUI.Button(rectSelectLabel, selectLabel, EditorStyles.toolbarButton)) {
+                    if(otherAnimator) {
+                        aData = new AnimateEditControl(otherAnimator);
+                        EditorGUIUtility.PingObject(otherAnimator.gameObject);
+                    }
+                    else
+                        refreshCurrent = true;
+                }
+
+                GUI.color = Color.white;
+
+                if(refreshCurrent) {
                     ClearKeysBuffer();
                     contextSelectionTracksBuffer.Clear();
                     cachedContextSelection.Clear();
@@ -1191,9 +1228,9 @@ namespace M8.Animator.Edit {
 
                     EditorGUIUtility.PingObject(go);
 
+                    Repaint();
                     return;
                 }
-                //GUI.color = Color.white;
             }
             else
                 rectSelectLabel = new Rect();
