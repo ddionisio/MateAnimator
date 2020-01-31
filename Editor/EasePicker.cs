@@ -203,6 +203,7 @@ namespace M8.Animator.Edit {
                     track.updateCache(aData.target);
                     // preview new position
                     aData.currentTake.previewFrame(aData.target, aData.currentTake.selectedFrame);
+                    aData.RecordTakesChanged();
                 }
                 this.Close();
             }

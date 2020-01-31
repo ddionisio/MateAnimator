@@ -135,6 +135,8 @@ namespace M8.Animator.Edit {
                 mTrack.materialOverride = matOverride;
                 mTrack.property = shaderProperty;
                 mTrack.propertyType = shaderPropertyType;
+
+                aData.RecordTakesChanged();
             }
         }
 

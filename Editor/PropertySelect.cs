@@ -210,6 +210,8 @@ namespace M8.Animator.Edit {
                 // set component
                 track.setComponent(aData.target, propertyComponent);
                 track.updateCache(aData.target);
+
+                aData.RecordTakesChanged();
             }
             this.Close();
         }

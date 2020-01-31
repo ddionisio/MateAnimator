@@ -68,6 +68,8 @@ namespace M8.Animator.Edit {
                 take.loopMode = loopMode;
                 take.loopBackToFrame = loopBackFrameCheck ? Mathf.Clamp(loopBackFrame, 1, totalFrames) : 0;
 
+                aData.RecordTakesChanged();
+
                 GetWindow(typeof(TimelineWindow)).Repaint();
             }
         }

@@ -327,6 +327,8 @@ namespace M8.Animator.Edit {
 
                         foreach(Take take in prevTakes)
                             DuplicateTake(take, true);
+
+                        RecordTakesChanged();
                     }
                 }
                 else {                    
@@ -340,6 +342,8 @@ namespace M8.Animator.Edit {
                     RegisterTakesUndo("Meta Add Empty Take");
 
                     AddNewTake();
+
+                    RecordTakesChanged();
                 }
 
                 //get new play on start
