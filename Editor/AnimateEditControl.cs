@@ -97,32 +97,7 @@ namespace M8.Animator.Edit {
 
         public bool isValid { get { return mData != null; } }
 
-        public bool isPrefabVariant { 
-            get {
-                if(!isValid) return false;
-
-                if(PrefabUtility.IsPartOfVariantPrefab(mData)) //we are editing in the scene
-                    return true;
-
-                if(PrefabUtility.IsPartOfAnyPrefab(mData)) //we are editing an existing prefab
-                    return false;
-
-                //check if we are added within a prefab variant (during prefab edit mode)
-
-                //check upwards if we are within a prefab
-                var isRootPrefab = false;
-                var root = mData.transform;
-                while(root) {
-                    isRootPrefab = PrefabUtility.IsPartOfAnyPrefab(root);
-                    if(isRootPrefab)
-                        break;
-
-                    root = root.parent;
-                }
-
-                return isRootPrefab;
-            } 
-        }
+        public bool isPartOfPrefab { get { return PrefabUtility.IsPartOfAnyPrefab(mData); } }
 
         public AnimateEditControl(Animate aData) {
             SetData(aData);
@@ -156,6 +131,15 @@ namespace M8.Animator.Edit {
             }
             else {
                 UnityEditor.Undo.RegisterCompleteObjectUndo(mData, label);
+            }
+        }
+
+        public void RecordTakesChanged() {            
+            if(meta) { //no need to apply anything
+
+            }
+            else if(isPartOfPrefab) { //tell prefab that changes are made
+                PrefabUtility.RecordPrefabInstancePropertyModifications(mData);
             }
         }
 

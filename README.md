@@ -19,6 +19,8 @@ Import/Export, Code Generator are currently disabled.
 
 
 ## Updates
+### 1-30-20
+* Seems like using SerializeReference is screwing with object references with prefabs (I suspect that Unity doesn't seem to know how to properly update the object references in SerializeReference when instantiating a prefab). Serialization is reverted back to the old way.
 ### 1-28-20
 * Updated serialization to use SerializeReference with Unity 2019.3. Tracks and keys are now directly serialized in Takes. The animator will convert the old serialization if it exists (I plan to move this to M8AnimatorUpgrade, and remove the old serialization). Hopefully this will resolve some of the strange issues that occur with undo/redo/prefab.
 ### Previous

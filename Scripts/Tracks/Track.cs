@@ -18,13 +18,8 @@ namespace M8.Animator {
 
         public virtual int order { get { return 0; } }
 
-#if UNITY_2019_3_OR_NEWER
-        [SerializeReference]
-        public List<Key> keys = new List<Key>();
-#else
         public List<Key> keys { get { return mKeys; } set { mKeys = value; } }
         private List<Key> mKeys = new List<Key>();
-#endif
 
         /// <summary>
         /// If true, then track has settings to display even if there is no key selected.

@@ -728,25 +728,15 @@ namespace M8.Animator {
         #endregion
 
         void ISerializationCallbackReceiver.OnBeforeSerialize() {
-#if UNITY_2019_3_OR_NEWER
-#else
             serializeData = new SerializeData();
 
             if(_meta == null)
                 serializeData.Serialize(takeData);
-#endif
         }
 
         void ISerializationCallbackReceiver.OnAfterDeserialize() {
             if(_meta == null) {
-#if UNITY_2019_3_OR_NEWER
-                if(serializeData != null && !serializeData.isEmpty) {
-                    serializeData.Deserialize(takeData);
-                    serializeData = null;
-                }
-#else
                 serializeData.Deserialize(takeData);
-#endif
             }
         }
     }

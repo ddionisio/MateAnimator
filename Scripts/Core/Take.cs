@@ -17,13 +17,8 @@ namespace M8.Animator {
         public LoopType loopMode = LoopType.Restart;
         public int loopBackToFrame = 0; //set this to loop back at given frame when sequence is complete, make sure numLoop = 1 and loopMode is Restart
 
-#if UNITY_2019_3_OR_NEWER
-        [SerializeReference]
-        public List<Track> trackValues = new List<Track>();
-#else
         public List<Track> trackValues { get { return mTrackValues; } set { mTrackValues = value; } }
         private List<Track> mTrackValues = new List<Track>();
-#endif
 
         public int trackCounter = 1;     // number of tracks created, used to generate unique track ids
         public int groupCounter = 0;     // number of groups created, used to generate unique group ids. negative number to differentiate from positive track ids
