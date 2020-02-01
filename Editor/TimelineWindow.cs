@@ -1187,37 +1187,14 @@ namespace M8.Animator.Edit {
                     return;
                 }
 
-                bool refreshCurrent = false;
-
                 var otherAnimator = Selection.activeGameObject && aData.gameObject != Selection.activeGameObject ? Selection.activeGameObject.GetComponent<Animate>() : null;
-
+                                
                 //select current
-                Rect rectSelectCurrent = new Rect(rectCloseLabel.xMax, menuBarY, 0f, height_button_delete);
-                if(otherAnimator) {
-                    rectSelectCurrent.x += margin; rectSelectCurrent.width = 20f;
-                    if(GUI.Button(rectSelectCurrent, "«", EditorStyles.toolbarButton))
-                        refreshCurrent = true;
-                }
-
-                //select current/other
-                GUI.color = otherAnimator ? Color.yellow : Color.white;
-
-                GUIContent selectLabel = new GUIContent(otherAnimator ? otherAnimator.name : aData.name);
+                GUIContent selectLabel = new GUIContent(aData.name);
                 Vector2 selectLabelSize = EditorStyles.toolbarButton.CalcSize(selectLabel);
-                rectSelectLabel = new Rect(rectSelectCurrent.xMax + margin, menuBarY, selectLabelSize.x + 8f, height_button_delete);
+                rectSelectLabel = new Rect(rectCloseLabel.xMax + margin, menuBarY, selectLabelSize.x + 8f, height_button_delete);
 
                 if(GUI.Button(rectSelectLabel, selectLabel, EditorStyles.toolbarButton)) {
-                    if(otherAnimator) {
-                        aData = new AnimateEditControl(otherAnimator);
-                        EditorGUIUtility.PingObject(otherAnimator.gameObject);
-                    }
-                    else
-                        refreshCurrent = true;
-                }
-
-                GUI.color = Color.white;
-
-                if(refreshCurrent) {
                     ClearKeysBuffer();
                     contextSelectionTracksBuffer.Clear();
                     cachedContextSelection.Clear();
@@ -1231,13 +1208,28 @@ namespace M8.Animator.Edit {
                     Repaint();
                     return;
                 }
+
+                //select active animator
+                if(otherAnimator) {
+                    GUI.color = Color.yellow;
+
+                    rectSelectLabel.x += rectSelectLabel.width + margin;
+                    rectSelectLabel.width = 24f;
+
+                    if(GUI.Button(rectSelectLabel, "»", EditorStyles.toolbarButton)) {
+                        aData = new AnimateEditControl(otherAnimator);
+                        EditorGUIUtility.PingObject(otherAnimator.gameObject);
+                    }
+                }
+
+                GUI.color = Color.white;
             }
             else
                 rectSelectLabel = new Rect();
             #endregion
 
             #region options button
-            Rect rectBtnOptions = new Rect(rectSelectLabel.x + rectSelectLabel.width + margin, menuBarY, 60f, height_button_delete);
+            Rect rectBtnOptions = new Rect(rectSelectLabel.xMax + margin, menuBarY, 60f, height_button_delete);
             if(GUI.Button(rectBtnOptions, "Options", EditorStyles.toolbarButton)) {
                 EditorWindow windowOptions = ScriptableObject.CreateInstance<Options>();
                 //windowOptions.Show();
