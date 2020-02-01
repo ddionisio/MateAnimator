@@ -30,7 +30,6 @@ Import/Export, Code Generator are currently disabled.
 * You can play/goto takes during runtime, useful for debugging.
 
 ## Known Issues
-* Prefab Variant - animators inside a variant of a prefab will somehow destroy the tracks. I'm not entirely sure what the reasons are, or how to track it (yet another serialization issue).
 * Event Tracker - if you can't find the function for a component, make sure the target is the said component. Simply drag the component you want to the target. I will revamp this feature sometime in the near feature.
 * CameraSwitcher Track is currently not working. This needs to be completely overhauled.
 
@@ -56,13 +55,12 @@ Grab [MateAnimatorUpgrade](https://github.com/ddionisio/MateAnimatorUpgrade) and
 * Work with MechAnim. - allow change state, etc. and preview.
 * Work with Particles - allow play/pause/stop and preview.
 * Scene preview for Material property track.
-* Any other glitches with mouse events.
 * Camera transition fixes (too glitchy, maybe do something like UE4's director)
 
 ## DEBUG
 You can check the serialized data by setting the Inspector mode to Debug:
 * Select 'Debug' via the dropdown menu on the upper right header of the Inspector window.
-* You can see all the takes/tracks/keys within the Animate's inspector.
+* You can see all the tracks/keys in "Serialize Data".
 
 ## License
 MateAnimator is licensed under a Creative Commons Attribution-NonCommercial 3.0 Unported License
