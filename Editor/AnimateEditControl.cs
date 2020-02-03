@@ -227,6 +227,36 @@ namespace M8.Animator.Edit {
             return -1;
         }
 
+        public Track DuplicateTrack(Take srcTake, Track srcTrack, bool includeKeys, bool isUniqueId) {
+            var dupTrack = SerializeData.CreateTrack(srcTrack.serializeType);
+            srcTrack.CopyTo(dupTrack);
+
+            dupTrack.maintainTrack(mDataTarget);
+
+            if(isUniqueId)
+                dupTrack.id = srcTake.getUniqueTrackID();
+
+            Object tgtObj = dupTrack.GetTarget(mDataTarget);
+
+            //if there's no target, then we can't add the keys for events and properties
+            if(includeKeys && !(tgtObj == null && (dupTrack is PropertyTrack || dupTrack is EventTrack))) {
+                foreach(var key in srcTrack.keys) {
+                    var dupKey = SerializeData.CreateKey(key.serializeType);
+                    if(dupKey != null) {
+                        key.CopyTo(dupKey);
+                        dupKey.maintainKey(mDataTarget, tgtObj);
+                        dupTrack.keys.Add(dupKey);
+                    }
+                }
+
+                dupTrack.updateCache(mDataTarget);
+            }
+
+            srcTake.trackValues.Add(dupTrack);
+
+            return dupTrack;
+        }
+
         /// <summary>
         /// This will only duplicate the tracks and groups, includeKeys=true to also duplicate keys
         /// </summary>
@@ -262,29 +292,8 @@ namespace M8.Animator.Edit {
             a.trackCounter = dupTake.trackCounter;
             
             a.trackValues = new List<Track>();
-            foreach(var track in dupTake.trackValues) {
-                var dupTrack = SerializeData.CreateTrack(track.serializeType);
-                track.CopyTo(dupTrack);
-                a.trackValues.Add(dupTrack);
-
-                dupTrack.maintainTrack(mDataTarget);
-
-                Object tgtObj = dupTrack.GetTarget(mDataTarget);
-
-                //if there's no target, then we can't add the keys for events and properties
-                if(includeKeys && !(tgtObj == null && (dupTrack is PropertyTrack || dupTrack is EventTrack))) {
-                    foreach(var key in track.keys) {
-                        var dupKey = SerializeData.CreateKey(key.serializeType);
-                        if(dupKey != null) {
-                            key.CopyTo(dupKey);
-                            dupKey.maintainKey(mDataTarget, tgtObj);
-                            dupTrack.keys.Add(dupKey);
-                        }
-                    }
-
-                    dupTrack.updateCache(mDataTarget);
-                }
-            }
+            foreach(var track in dupTake.trackValues)
+                DuplicateTrack(a, track, includeKeys, false);
 
             takes.Add(a);
         }

@@ -212,6 +212,8 @@ namespace M8.Animator.Edit {
         private Texture tex_icon_group_closed;
         private Texture tex_icon_group_open;
         private Texture tex_icon_group_hover;
+        private Texture tex_icon_duplicate;
+        private Texture tex_icon_duplicate_hover;
         private Texture tex_element_position;
         private Texture texFrKey;
         private Texture texFrSet;
@@ -511,6 +513,8 @@ namespace M8.Animator.Edit {
                 tex_icon_group_closed = EditorResource.LoadEditorTexture("am_icon_group_closed");
                 tex_icon_group_open = EditorResource.LoadEditorTexture("am_icon_group_open");
                 tex_icon_group_hover = EditorResource.LoadEditorTexture("am_icon_group_hover");
+                tex_icon_duplicate = EditorResource.LoadEditorTexture("am_icon_duplicate");
+                tex_icon_duplicate_hover = EditorResource.LoadEditorTexture("am_icon_duplicate_hover");
                 tex_element_position = EditorResource.LoadEditorTexture("am_element_position");
                 texFrKey = EditorResource.LoadEditorTexture(EditorGUIUtility.isProSkin ? "am_key" : "am_key_light");
                 texFrSet = EditorResource.LoadEditorTexture(EditorGUIUtility.isProSkin ? "am_frame_set" : "am_frame_set_light");
@@ -1477,8 +1481,48 @@ namespace M8.Animator.Edit {
                 mouseOverElement = (int)ElementType.Button;
             }
             #endregion
+            #region duplicate button
+            Rect rectDuplicateGroup = new Rect(rectNewGroup.x + rectNewGroup.width + 5f, height_indicator_footer / 2f - 15f / 2f, 15f, 15f);
+            Rect rectBtnDuplicateGroup = new Rect(rectDuplicateGroup.x, 0f, rectDuplicateGroup.width, height_indicator_footer);
+            if(trackCount <= 0 || TakeEditCurrent().contextSelectionTrackIds == null || TakeEditCurrent().contextSelectionTrackIds.Count <= 0) GUI.enabled = false;
+            else GUI.enabled = !isPlaying;
+            if(!GUI.enabled) GUI.color = new Color(GUI.color.r, GUI.color.g, GUI.color.b, 0.25f);
+            if(GUI.Button(rectBtnDuplicateGroup, new GUIContent("", "Duplicate Track(s)"), "label")) {
+                aData.RegisterTakesUndo("Duplicate Track(s)");
+                cancelTextEditting();
+                var curTake = aData.currentTake;
+                var takeEdit = TakeEditCurrent();
+
+                var newTrackIds = new List<int>();
+
+                for(int i = 0; i < takeEdit.contextSelectionTrackIds.Count; i++) {
+                    var track = curTake.getTrack(takeEdit.contextSelectionTrackIds[i]);
+                    if(track != null) {
+                        var dupTrack = aData.DuplicateTrack(curTake, track, true, true);
+
+                        newTrackIds.Add(dupTrack.id);
+
+                        //move at bottom of track source's group
+                        var toGrpId = curTake.getTrackGroup(track.id);
+                        curTake.addToGroup(dupTrack.id, toGrpId);
+                    }
+                }
+
+                //change track selections
+                takeEdit.selectedTrack = newTrackIds[0];
+                takeEdit.contextSelectionTrackIds = newTrackIds;
+
+                aData.RecordTakesChanged();
+            }
+            GUI.DrawTexture(rectDuplicateGroup, GUI.enabled && rectBtnDuplicateGroup.Contains(e.mousePosition) ? tex_icon_duplicate_hover : tex_icon_duplicate);
+            if(rectBtnDuplicateGroup.Contains(e.mousePosition) && mouseOverElement == (int)ElementType.None) {
+                mouseOverElement = (int)ElementType.Button;
+            }
+            GUI.color = new Color(GUI.color.r, GUI.color.g, GUI.color.b, 1f);
+            GUI.enabled = !isPlaying;
+            #endregion
             #region delete track button
-            Rect rectDeleteElement = new Rect(rectNewGroup.x + rectNewGroup.width + 5f + 1f, height_indicator_footer / 2f - 11f / 2f, 11f, 11f);
+            Rect rectDeleteElement = new Rect(rectDuplicateGroup.x + rectDuplicateGroup.width + 5f + 1f, height_indicator_footer / 2f - 11f / 2f, 11f, 11f);
             Rect rectBtnDeleteElement = new Rect(rectDeleteElement.x, 0f, rectDeleteElement.width, height_indicator_footer);
             if(TakeEditCurrent().selectedGroup >= 0) GUI.enabled = false;
             if(TakeEditCurrent().selectedGroup >= 0 && (trackCount <= 0 || (TakeEditCurrent().contextSelectionTrackIds != null && TakeEditCurrent().contextSelectionTrackIds.Count <= 0))) GUI.enabled = false;
@@ -1557,11 +1601,11 @@ namespace M8.Animator.Edit {
                     }
                 }
             }
-            GUI.DrawTexture(rectDeleteElement, (getSkinTextureStyleState((GUI.enabled && rectBtnDeleteElement.Contains(e.mousePosition) ? "delete_hover" : "delete")).background));
+            GUI.DrawTexture(rectDeleteElement, getSkinTextureStyleState(GUI.enabled && rectBtnDeleteElement.Contains(e.mousePosition) ? "delete_hover" : "delete").background);
             if(rectBtnDeleteElement.Contains(e.mousePosition) && mouseOverElement == (int)ElementType.None) {
                 mouseOverElement = (int)ElementType.Button;
             }
-            if(GUI.color.a < 1f) GUI.color = new Color(GUI.color.r, GUI.color.g, GUI.color.b, 1f);
+            GUI.color = new Color(GUI.color.r, GUI.color.g, GUI.color.b, 1f);
             GUI.enabled = !isPlaying;
             #endregion
             #region resize track
