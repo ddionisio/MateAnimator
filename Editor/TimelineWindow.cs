@@ -1498,13 +1498,13 @@ namespace M8.Animator.Edit {
                 for(int i = 0; i < takeEdit.contextSelectionTrackIds.Count; i++) {
                     var track = curTake.getTrack(takeEdit.contextSelectionTrackIds[i]);
                     if(track != null) {
-                        var dupTrack = aData.DuplicateTrack(curTake, track, true, true);
+                        var dupTrack = aData.DuplicateTrack(track, true);
+
+                        //add to the bottom of original track's group
+                        var toGrpId = curTake.getTrackGroup(track.id);
+                        curTake.addExistingTrack(toGrpId, dupTrack, true, true);
 
                         newTrackIds.Add(dupTrack.id);
-
-                        //move at bottom of track source's group
-                        var toGrpId = curTake.getTrackGroup(track.id);
-                        curTake.addToGroup(dupTrack.id, toGrpId);
                     }
                 }
 

@@ -227,14 +227,11 @@ namespace M8.Animator.Edit {
             return -1;
         }
 
-        public Track DuplicateTrack(Take srcTake, Track srcTrack, bool includeKeys, bool isUniqueId) {
+        public Track DuplicateTrack(Track srcTrack, bool includeKeys) {
             var dupTrack = SerializeData.CreateTrack(srcTrack.serializeType);
             srcTrack.CopyTo(dupTrack);
 
             dupTrack.maintainTrack(mDataTarget);
-
-            if(isUniqueId)
-                dupTrack.id = srcTake.getUniqueTrackID();
 
             Object tgtObj = dupTrack.GetTarget(mDataTarget);
 
@@ -251,8 +248,6 @@ namespace M8.Animator.Edit {
 
                 dupTrack.updateCache(mDataTarget);
             }
-
-            srcTake.trackValues.Add(dupTrack);
 
             return dupTrack;
         }
@@ -292,8 +287,10 @@ namespace M8.Animator.Edit {
             a.trackCounter = dupTake.trackCounter;
             
             a.trackValues = new List<Track>();
-            foreach(var track in dupTake.trackValues)
-                DuplicateTrack(a, track, includeKeys, false);
+            foreach(var track in dupTake.trackValues) {
+                var dupTrack = DuplicateTrack(track, includeKeys);
+                a.trackValues.Add(dupTrack);
+            }
 
             takes.Add(a);
         }

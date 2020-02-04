@@ -114,6 +114,15 @@ namespace M8.Animator {
             if(a is CameraSwitcherTrack) mCameraSwitcher = a as CameraSwitcherTrack;
         }
 
+        public void addExistingTrack(int groupID, Track track, bool generateName, bool generateID) {
+            if(generateName)
+                track.setName(getTrackCount());
+            if(generateID)
+                track.id = getUniqueTrackID();
+
+            addTrack(groupID, track);
+        }
+
         public void deleteTrack(int trackid, bool deleteFromGroup = true) {
             Track track = getTrack(trackid);
             if(track != null)
