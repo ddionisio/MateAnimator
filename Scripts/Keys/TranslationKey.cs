@@ -224,6 +224,11 @@ namespace M8.Animator {
             //allow tracks with just one key
             if(track.keys.Count == 1)
                 interp = Interpolation.None;
+            else if(canTween) {
+                //invalid or in-between keys
+                if(path.Length <= 1) return;
+                if(getNumberOfFrames(frameRate) <= 0) return;
+            }
 
             var trans = obj as Transform;
             var transParent = trans.parent;
@@ -251,9 +256,6 @@ namespace M8.Animator {
                 seq.Insert(this, tweener);
             }
             else {
-                if(path.Length <= 1) return;
-                if(getNumberOfFrames(frameRate) <= 0) return;
-
                 var tween = GetPathTween(frameRate);
 
                 if(body2D) {

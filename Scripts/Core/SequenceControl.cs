@@ -96,30 +96,17 @@ namespace M8.Animator {
 
             //take.maintainCaches(target);
 
-            float minWaitTime = float.MaxValue;
-
             foreach(Track track in take.trackValues) {
                 Object tgt = null;
                 if((tgt = track.GetTarget(target)) != null) {
                     track.buildSequenceStart(this);
 
-                    int keyMax = track.keys.Count;
-                    if(keyMax > 0) {
-                        for(int keyInd = 0; keyInd < keyMax; keyInd++) {
-                            Key key = track.keys[keyInd];
-                            key.build(this, track, keyInd, tgt);
-                        }
-
-                        float waitTime = track.keys[0].getWaitTime(take.frameRate, 0.0f);
-                        if(waitTime < minWaitTime)
-                            minWaitTime = waitTime;
+                    for(int keyInd = 0; keyInd < track.keys.Count; keyInd++) {
+                        Key key = track.keys[keyInd];
+                        key.build(this, track, keyInd, tgt);
                     }
                 }
             }
-
-            //prepend delay at the beginning
-            if(minWaitTime > 0.0f)
-                sequence.PrependInterval(minWaitTime);
 
             //append delay at the end
             if((LoopCount >= 0 || loopBackFrame <= 0) && take.endFramePadding > 0)

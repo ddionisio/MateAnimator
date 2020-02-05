@@ -131,28 +131,25 @@ namespace M8.Animator {
 
             TranslationKey firstKey = keys[0] as TranslationKey;
 
-            //check if behind first key
-            if(iFrame <= firstKey.frame && (!firstKey.canTween || firstKey.path.Length == 1))
+            //check if only key or behind first key
+            if(keyCount == 1 || iFrame <= firstKey.frame)
                 return convertPosition(t, firstKey.position, forceWorld);
-
-            TranslationKey lastKey = keyCount == 1 ? firstKey : keys[keyCount - 1] as TranslationKey;
-
-            //check if past last key
-            if(iFrame >= lastKey.endFrame) {
-                if(!lastKey.canTween || keyCount == 1) //only allow position if it's non-tween, or it's just one key
-                    return convertPosition(t, lastKey.position, forceWorld);
-                else //invalid key
-                    return GetPosition(t);
-            }
 
             //check in-between
             for(int i = 0; i < keyCount; i++) {
                 TranslationKey key = keys[i] as TranslationKey;
 
-                if(key.path == null)
+                if(key.canTween && key.path.Length <= 1) //invalid
                     continue;
 
-                if(iFrame >= key.endFrame && i < keyCount - 1) continue;
+                if(iFrame >= key.endFrame) {
+                    if(key.path.Length > 0 && i + key.path.Length == keyCount) //end of last path in track?
+                        return convertPosition(t, key.path[key.path.Length - 1], forceWorld);
+                    else if(i + 1 == keyCount) //last non-tween key in track?
+                        return convertPosition(t, key.position, forceWorld);
+                    else
+                        continue;
+                }
 
                 if(!key.canTween)
                     return convertPosition(t, key.position, forceWorld);
@@ -164,8 +161,7 @@ namespace M8.Animator {
                 return convertPosition(t, key.GetPoint(t, frameRate, Mathf.Clamp01(_value)), forceWorld);
             }
 
-            Debug.LogError("Animator: Could not get " + t.name + " position at frame '" + frame + "'");
-            return GetPosition(t);
+            return GetPosition(t); //last key is impartial tween
         }
         // draw gizmos
         public override void drawGizmos(ITarget target, float gizmo_size, bool inPlayMode, int frame, int frameRate) {
