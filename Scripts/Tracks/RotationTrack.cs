@@ -25,7 +25,9 @@ namespace M8.Animator {
             if(item != null && keys.Count <= 0) cachedInitialRotation = item.localRotation;
         }
 
-        public override int version { get { return 2; } }
+        public override int version { get { return 3; } }
+
+        public override int interpCount { get { return 3; } }
 
         Quaternion cachedInitialRotation;
 
@@ -34,6 +36,8 @@ namespace M8.Animator {
         }
         // add a new key
         public void addKey(ITarget target, int _frame, Quaternion _rotation) {
+            RotationKey prevKey = null;
+
             foreach(RotationKey key in keys) {
                 // if key exists on frame, update key
                 if(key.frame == _frame) {
@@ -42,17 +46,36 @@ namespace M8.Animator {
                     updateCache(target);
                     return;
                 }
+                else if(key.frame < _frame)
+                    prevKey = key;
             }
+
             RotationKey a = new RotationKey();
             a.frame = _frame;
             a.rotation = _rotation;
-            // set default ease type to linear
-            a.easeType = Ease.Linear;
+
+            // copy interpolation and ease type from previous
+            if(prevKey != null) {
+                a.interp = prevKey.interp;
+                a.easeType = prevKey.easeType;
+                a.easeCurve = prevKey.easeCurve;
+            }
+            else {
+                // set default
+                a.interp = Key.Interpolation.Curve;
+                a.easeType = Ease.Linear;
+            }
 
             // add a new key
             keys.Add(a);
             // update cache
             updateCache(target);
+        }
+
+        public override void undoRedoPerformed() {
+            //path preview must be rebuilt
+            foreach(RotationKey key in keys)
+                key.ClearCache();
         }
 
         // update cache (optimized)
@@ -63,64 +86,35 @@ namespace M8.Animator {
                 RotationKey key = keys[i] as RotationKey;
 
                 key.version = version;
+                key.GeneratePath(this, i);
+                key.ClearCache();
 
-                //a.type = (keys[i] as RotationKey).type;
+                //invalidate some keys in between
+                if(key.path.Length > 1) {
+                    int endInd = i + key.path.Length - 1;
+                    if(endInd < keys.Count - 1) //don't count the last element if there are more keys ahead
+                        endInd--;
 
-                if(keys.Count > (i + 1)) key.endFrame = keys[i + 1].frame;
-                else {
-                    if(i > 0 && !keys[i - 1].canTween)
-                        key.interp = Key.Interpolation.None;
+                    for(int j = i + 1; j <= endInd; j++) {
+                        var _key = keys[j] as RotationKey;
 
-                    key.endFrame = -1;
+                        _key.version = version;
+                        _key.interp = key.interp;
+                        _key.easeType = key.easeType;
+                        _key.endFrame = -1;
+                        _key.path = new Vector3[0];
+                    }
+
+                    i = endInd;
                 }
             }
         }
         // preview a frame in the scene view
         public override void previewFrame(ITarget target, float frame, int frameRate, bool play, float playSpeed) {
             Transform t = GetTarget(target) as Transform;
-
-            int keyCount = keys.Count;
-
             if(!t) return;
-            if(keys == null || keyCount <= 0) return;
 
-            // if before or equal to first frame, or is the only frame
-            RotationKey firstKey = keys[0] as RotationKey;
-            if(firstKey.endFrame == -1 || (frame <= (float)firstKey.frame && !firstKey.canTween)) {
-                t.localRotation = firstKey.rotation;
-                return;
-            }
-
-            // if lies on rotation action
-            for(int i = 0; i < keys.Count; i++) {
-                RotationKey key = keys[i] as RotationKey;
-                RotationKey keyNext = i + 1 < keys.Count ? keys[i + 1] as RotationKey : null;
-
-                if(frame >= (float)key.endFrame && keyNext != null && (!keyNext.canTween || keyNext.endFrame != -1)) continue;
-                // if no ease
-                if(!key.canTween || keyNext == null) {
-                    t.localRotation = key.rotation;
-                    return;
-                }
-                // else find Quaternion using easing function
-
-                float numFrames = (float)key.getNumberOfFrames(frameRate);
-
-                float framePositionInAction = Mathf.Clamp(frame - (float)key.frame, 0f, numFrames);
-
-                Quaternion qStart = key.rotation;
-                Quaternion qEnd = keyNext.rotation;
-
-                if(key.hasCustomEase()) {
-                    t.localRotation = Quaternion.LerpUnclamped(qStart, qEnd, Utility.EaseCustom(0.0f, 1.0f, framePositionInAction / numFrames, key.easeCurve));
-                }
-                else {
-                    var ease = Utility.GetEasingFunction((Ease)key.easeType);
-                    t.localRotation = Quaternion.LerpUnclamped(qStart, qEnd, ease(framePositionInAction, numFrames, key.amplitude, key.period));
-                }
-
-                return;
-            }
+            t.localRotation = getRotationAtFrame(t, frame, frameRate);
         }
         // returns true if autoKey successful, sets output key
         public bool autoKey(ITarget itarget, Transform aObj, int frame, int frameRate) {
@@ -136,8 +130,9 @@ namespace M8.Animator {
 
                 return false;
             }
-            Quaternion oldRot = getRotationAtFrame(frame, frameRate);
-            if(r != oldRot) {
+
+            var curKey = (RotationKey)getKeyOnFrame(frame, false);
+            if(curKey == null || curKey.rotation != t.localRotation) {
                 // if updated position, addkey
                 addKey(itarget, frame, r);
                 return true;
@@ -145,43 +140,79 @@ namespace M8.Animator {
 
             return false;
         }
-        Quaternion getRotationAtFrame(int frame, int frameRate) {
-            // if before or equal to first frame, or is the only frame
-            RotationKey firstKey = keys[0] as RotationKey;
-            if(firstKey.endFrame == -1 || (frame <= (float)firstKey.frame && !firstKey.canTween)) {
+        Quaternion getRotationAtFrame(Transform transform, float frame, int frameRate) {
+            int keyCount = keys.Count;
+
+            if(keyCount <= 0) return transform.localRotation;
+
+            int iFrame = Mathf.RoundToInt(frame);
+
+            var firstKey = keys[0] as RotationKey;
+
+            //check if only key or behind first key
+            if(keyCount == 1 || iFrame <= firstKey.frame)
                 return firstKey.rotation;
-            }
 
             // if lies on rotation action
-            for(int i = 0; i < keys.Count; i++) {
+            for(int i = 0; i < keyCount; i++) {
                 RotationKey key = keys[i] as RotationKey;
-                RotationKey keyNext = i + 1 < keys.Count ? keys[i + 1] as RotationKey : null;
 
-                if(frame >= (float)key.endFrame && keyNext != null && (!keyNext.canTween || keyNext.endFrame != -1)) continue;
-                // if no ease
-                if(!key.canTween || keyNext == null) {
-                    return key.rotation;
+                if(key.endFrame == -1) //invalid
+                    continue;
+
+                //end of last path in track?
+                if(iFrame >= key.endFrame) {
+                    switch(key.interp) {
+                        case Key.Interpolation.Linear:
+                            if(i + 1 == keyCount - 1)
+                                return ((RotationKey)keys[i + 1]).rotation;
+                            break;
+                        case Key.Interpolation.Curve:
+                            if(key.path.Length > 0 && i + key.path.Length == keyCount) //end of last path in track?
+                                return ((RotationKey)keys[key.path.Length - 1]).rotation;
+                            break;
+                        case Key.Interpolation.None:
+                            if(i + 1 == keyCount)
+                                return key.rotation;
+                            break;
+                    }
+
+                    continue;
                 }
-                // else find Quaternion using easing function
 
-                float numFrames = (float)key.getNumberOfFrames(frameRate);
+                switch(key.interp) {
+                    case Key.Interpolation.None:
+                        return key.rotation;
 
-                float framePositionInAction = Mathf.Clamp(frame - (float)key.frame, 0f, numFrames);
+                    case Key.Interpolation.Linear:
+                        RotationKey keyNext = keys[i + 1] as RotationKey;
 
-                Quaternion qStart = key.rotation;
-                Quaternion qEnd = keyNext.rotation;
+                        float numFrames = (float)key.getNumberOfFrames(frameRate);
 
-                if(key.hasCustomEase()) {
-                    return Quaternion.LerpUnclamped(qStart, qEnd, Utility.EaseCustom(0.0f, 1.0f, framePositionInAction / numFrames, key.easeCurve));
-                }
-                else {
-                    var ease = Utility.GetEasingFunction((Ease)key.easeType);
-                    return Quaternion.LerpUnclamped(qStart, qEnd, ease(framePositionInAction, numFrames, key.amplitude, key.period));
+                        float framePositionInAction = Mathf.Clamp(frame - (float)key.frame, 0f, numFrames);
+
+                        Quaternion qStart = key.rotation;
+                        Quaternion qEnd = keyNext.rotation;
+
+                        if(key.hasCustomEase()) {
+                            return Quaternion.LerpUnclamped(qStart, qEnd, Utility.EaseCustom(0.0f, 1.0f, framePositionInAction / numFrames, key.easeCurve));
+                        }
+                        else {
+                            var ease = Utility.GetEasingFunction((Ease)key.easeType);
+                            return Quaternion.LerpUnclamped(qStart, qEnd, ease(framePositionInAction, numFrames, key.amplitude, key.period));
+                        }
+
+                    case Key.Interpolation.Curve:
+                        if(key.path.Length <= 1) //invalid key
+                            return transform.localRotation;
+
+                        float _value = Mathf.Clamp01((frame - key.frame) / key.getNumberOfFrames(frameRate));
+
+                        return key.GetRotationFromPath(transform, frameRate, Mathf.Clamp01(_value));
                 }
             }
 
-            Debug.LogError("Animator: Could not get rotation at frame '" + frame + "'");
-            return Quaternion.identity;
+            return transform.localRotation;
         }
         public Quaternion getInitialRotation() {
             return (keys[0] as RotationKey).rotation;
