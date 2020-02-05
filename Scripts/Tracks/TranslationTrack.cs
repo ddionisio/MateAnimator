@@ -139,7 +139,7 @@ namespace M8.Animator {
 
             //check if past last key
             if(iFrame >= lastKey.endFrame) {
-                if(!lastKey.canTween) //only allow position if it's non-tween
+                if(!lastKey.canTween || keyCount == 1) //only allow position if it's non-tween, or it's just one key
                     return convertPosition(t, lastKey.position, forceWorld);
                 else //invalid key
                     return GetPosition(t);
