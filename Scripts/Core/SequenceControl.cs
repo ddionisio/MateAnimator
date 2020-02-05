@@ -160,7 +160,9 @@ namespace M8.Animator {
 
             target.SequenceComplete(this);
 
-            if(!mIsAutoKill) {
+            if(mIsAutoKill)
+                sequence = null;
+            else {
                 if(take.numLoop < 0 && take.loopBackToFrame > 0) {
                     (target as Animate).PlayAtFrame(take.name, take.loopBackToFrame);
                     return;

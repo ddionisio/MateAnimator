@@ -132,7 +132,7 @@ namespace M8.Animator {
             else return getStartTargetForFrame(itarget, frame);
         }
         // draw gizmos
-        public override void drawGizmos(ITarget itarget, float gizmo_size, bool inPlayMode, int frame) {
+        public override void drawGizmos(ITarget itarget, float gizmo_size, bool inPlayMode, int frame, int frameRate) {
             if(!obj) return;
 
             // draw line to target

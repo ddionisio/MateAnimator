@@ -17,7 +17,6 @@ namespace M8.Animator {
         public override SerializeType serializeType { get { return SerializeType.Translation; } }
 
         public const int pathResolution = 10;
-        public const int SUBDIVISIONS_MULTIPLIER = 16;
 
         public Vector3 position;
 
@@ -28,53 +27,175 @@ namespace M8.Animator {
 
         public bool isClosed { get { return path.Length > 1 && path[0] == path[path.Length - 1]; } }
 
-        private PathDataPreview mPathPreview;
+        private TweenerCore<Vector3, Path, PathOptions> mPathTween;
 
-        public PathDataPreview pathPreview {
-            get {
-                if(mPathPreview == null) {
-                    int indMod = 1;
-                    int pAdd = isClosed ? 1 : 0;
-                    int len = path.Length;
+        /// <summary>
+        /// Generate path points and endFrame. keyInd is the index of this key in the track.
+        /// </summary>
+        public void GeneratePath(TranslationTrack track, int keyInd) {
+            switch(interp) {
+                case Interpolation.None:
+                    path = new Vector3[0];
+                    endFrame = keyInd + 1 < track.keys.Count ? track.keys[keyInd + 1].frame : frame;
+                    break;
 
-                    Vector3[] pts = new Vector3[len + 2 + pAdd];
-                    for(int i = 0; i < len; ++i)
-                        pts[i + indMod] = path[i];
+                case Interpolation.Linear:
+                    if(keyInd + 1 < track.keys.Count) {
+                        path = new Vector3[2];
 
-                    len = pts.Length;
+                        path[0] = position;
 
-                    if(isClosed) {
-                        // Close path.
-                        pts[len - 2] = pts[1];
+                        var nextKey = (TranslationKey)track.keys[keyInd + 1];
+
+                        path[1] = nextKey.position;
+
+                        endFrame = nextKey.frame;
+                    }
+                    else { //fail-safe
+                        path = new Vector3[0];
+                        endFrame = frame;
+                    }
+                    break;
+
+                case Interpolation.Curve:
+                    var pathList = new List<Vector3>();
+
+                    for(int i = keyInd; i < track.keys.Count; i++) {
+                        var key = (TranslationKey)track.keys[i];
+
+                        pathList.Add(key.position);
+                        endFrame = key.frame;
+
+                        if(key.interp != Interpolation.Curve)
+                            break;
                     }
 
-                    // Add control points.
-                    if(isClosed) {
-                        pts[0] = pts[len - 3];
-                        pts[len - 1] = pts[2];
-                    }
-                    else {
-                        pts[0] = pts[1];
-                        Vector3 lastP = pts[len - 2];
-                        Vector3 diffV = lastP - pts[len - 3];
-                        pts[len - 1] = lastP + diffV;
-                    }
+                    if(pathList.Count > 1)
+                        path = pathList.ToArray();
+                    else
+                        path = new Vector3[0];
+                    break;
+            }
+        }
+        
+        /// <summary>
+        /// Grab tweener, create if it doesn't exists. keyInd is the index of this key in the track.
+        /// </summary>
+        TweenerCore<Vector3, Path, PathOptions> GetPathTween(int frameRate) {
+            if((mPathTween == null || !mPathTween.active) && path.Length > 1) {
+                var pathType = path.Length == 2 ? PathType.Linear : PathType.CatmullRom;
 
-                    // Create the path.
-                    mPathPreview = new PathDataPreview((Interpolation)interp == Interpolation.Curve ? PathType.CatmullRom : PathType.Linear, pts);
+                var pathData = new Path(pathType, path, pathResolution);
 
-                    // Store arc lengths tables for constant speed.
-                    mPathPreview.StoreTimeToLenTables(mPathPreview.path.Length * SUBDIVISIONS_MULTIPLIER);
-                }
+                mPathTween = DOTween.To(PathPlugin.Get(), _Getter, _SetterNull, pathData, getTime(frameRate));
 
-                return mPathPreview;
+                mPathTween.SetRelative(false).SetOptions(isClosed);
             }
 
-            set { mPathPreview = value; }
+            return mPathTween;
         }
 
-        public Vector3 GetPoint(float t) {
-            return isConstSpeed ? pathPreview.GetConstPoint(t) : pathPreview.GetPoint(t);
+        Vector3 _Getter() { return position; }
+
+        void _SetterNull(Vector3 val) { }
+
+        public void ClearCache() {
+            if(mPathTween != null) {
+                mPathTween.Kill();
+                mPathTween = null;
+            }
+        }
+
+        /// <summary>
+        /// Grab position within t = [0, 1]. keyInd is the index of this key in the track.
+        /// </summary>
+        public Vector3 GetPoint(Transform transform, int frameRate, float t) {
+            var tween = GetPathTween(frameRate);
+            if(tween == null) //not tweenable
+                return position;
+
+            if(tween.target == null)
+                tween.SetTarget(transform);
+
+            if(!tween.IsInitialized())
+                tween.ForceInit();
+
+            float finalT;
+
+            if(hasCustomEase())
+                finalT = Utility.EaseCustom(0.0f, 1.0f, t, easeCurve);
+            else {
+                var ease = Utility.GetEasingFunction(easeType);
+                finalT = ease(t, 1f, amplitude, period);
+                if(float.IsNaN(finalT)) //this really shouldn't happen...
+                    return position;
+            }
+
+            return tween.PathGetPoint(finalT);
+        }
+
+        public void DrawGizmos(Transform transform, float ptSize, int frameRate) {
+            Matrix4x4 mtx = transform.parent ? transform.parent.localToWorldMatrix : Matrix4x4.identity;
+
+            //draw path
+            switch(interp) {
+                case Interpolation.None:
+                    Gizmos.color = Color.green;
+                    Gizmos.DrawSphere(mtx.MultiplyPoint3x4(position), ptSize);
+                    break;
+
+                case Interpolation.Linear:
+                    if(path.Length <= 0)
+                        return;
+                    else if(path.Length == 1) {
+                        Gizmos.color = Color.green;
+
+                        Gizmos.DrawSphere(mtx.MultiplyPoint3x4(position), ptSize);
+                    }
+                    else {
+                        Vector3 pt1 = mtx.MultiplyPoint3x4(path[0]), pt2 = mtx.MultiplyPoint3x4(path[1]);
+
+                        Gizmos.color = new Color(0.6f, 0.6f, 0.6f, 0.6f);
+
+                        Gizmos.DrawLine(pt1, pt2);
+
+                        Gizmos.color = Color.green;
+
+                        Gizmos.DrawSphere(pt1, ptSize);
+                        Gizmos.DrawSphere(pt2, ptSize);
+                    }
+                    break;
+
+                case Interpolation.Curve:
+                    if(path.Length <= 0)
+                        return;
+
+                    var tween = GetPathTween(frameRate);
+                    if(tween == null)
+                        return;
+
+                    if(tween.target == null)
+                        tween.SetTarget(transform);
+
+                    if(!tween.IsInitialized())
+                        tween.ForceInit();
+
+                    Gizmos.color = new Color(0.6f, 0.6f, 0.6f, 0.6f);
+
+                    int subdivisions = pathResolution * path.Length;
+                    for(int i = 0; i < subdivisions; i++) {
+                        var pt1 = tween.PathGetPoint(i / (float)subdivisions);
+                        var pt2 = tween.PathGetPoint((i + 1) / (float)subdivisions);
+
+                        Gizmos.DrawLine(mtx.MultiplyPoint3x4(pt1), mtx.MultiplyPoint3x4(pt2));
+                    }
+
+                    Gizmos.color = Color.green;
+
+                    for(int i = 0; i < path.Length; i++)
+                        Gizmos.DrawSphere(mtx.MultiplyPoint3x4(path[i]), ptSize);
+                    break;
+            }
         }
 
         // copy properties from key
@@ -131,44 +252,41 @@ namespace M8.Animator {
             }
             else {
                 if(path.Length <= 1) return;
-                if(getNumberOfFrames(seq.take.frameRate) <= 0) return;
+                if(getNumberOfFrames(frameRate) <= 0) return;
 
-                TweenerCore<Vector3, Path, PathOptions> ret = null;
-
-                bool isRelative = false;
-
-                PathType pathType = path.Length == 2 ? PathType.Linear : PathType.CatmullRom;
-
-                var pathTween = new Path(pathType, path, pathResolution);
-                var timeTween = getTime(frameRate);
+                var tween = GetPathTween(frameRate);
 
                 if(body2D) {
                     if(pixelSnap)
-                        ret = DOTween.To(PathPlugin.Get(), () => path[0], x => body2D.MovePosition(transParent.TransformPoint(new Vector2(Mathf.Round(x.x * ppu) / ppu, Mathf.Round(x.y * ppu) / ppu))), pathTween, timeTween).SetTarget(body2D);
+                        tween.setter = x => body2D.MovePosition(transParent.TransformPoint(new Vector2(Mathf.Round(x.x * ppu) / ppu, Mathf.Round(x.y * ppu) / ppu)));
                     else
-                        ret = DOTween.To(PathPlugin.Get(), () => path[0], x => body2D.MovePosition(transParent.TransformPoint(x)), pathTween, timeTween).SetTarget(body2D);
+                        tween.setter = x => body2D.MovePosition(transParent.TransformPoint(x));
+
+                    tween.SetTarget(body2D);
                 }
                 else if(body) {
                     if(pixelSnap)
-                        ret = DOTween.To(PathPlugin.Get(), () => path[0], x => body.MovePosition(transParent.TransformPoint(new Vector3(Mathf.Round(x.x * ppu) / ppu, Mathf.Round(x.y * ppu) / ppu, Mathf.Round(x.z * ppu) / ppu))), pathTween, timeTween).SetTarget(body);
+                        tween.setter = x => body.MovePosition(transParent.TransformPoint(new Vector3(Mathf.Round(x.x * ppu) / ppu, Mathf.Round(x.y * ppu) / ppu, Mathf.Round(x.z * ppu) / ppu)));
                     else
-                        ret = DOTween.To(PathPlugin.Get(), () => path[0], x => body.MovePosition(transParent.TransformPoint(x)), pathTween, timeTween).SetTarget(body);
+                        tween.setter = x => body.MovePosition(transParent.TransformPoint(x));
+
+                    tween.SetTarget(body);
                 }
                 else {
                     if(pixelSnap)
-                        ret = DOTween.To(PathPlugin.Get(), () => path[0], x => trans.localPosition = new Vector3(Mathf.Round(x.x * ppu) / ppu, Mathf.Round(x.y * ppu) / ppu, Mathf.Round(x.z * ppu) / ppu), pathTween, timeTween).SetTarget(trans);
+                        tween.setter = x => trans.localPosition = new Vector3(Mathf.Round(x.x * ppu) / ppu, Mathf.Round(x.y * ppu) / ppu, Mathf.Round(x.z * ppu) / ppu);
                     else
-                        ret = DOTween.To(PathPlugin.Get(), () => path[0], x => trans.localPosition = x, pathTween, timeTween).SetTarget(trans);
+                        tween.setter = x => trans.localPosition = x;
+
+                    tween.SetTarget(trans);
                 }
 
-                ret.SetRelative(isRelative).SetOptions(isClosed);
-
                 if(hasCustomEase())
-                    ret.SetEase(easeCurve);
+                    tween.SetEase(easeCurve);
                 else
-                    ret.SetEase(easeType, amplitude, period);
+                    tween.SetEase(easeType, amplitude, period);
 
-                seq.Insert(this, ret);
+                seq.Insert(this, tween);
             }
         }
         #endregion

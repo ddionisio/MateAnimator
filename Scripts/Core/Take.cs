@@ -31,8 +31,6 @@ namespace M8.Animator {
 
         public static bool isProLicense = true;
 
-        private bool mTracksSorted = false;
-
         private CameraSwitcherTrack mCameraSwitcher;
 
         public CameraSwitcherTrack cameraSwitcher {
@@ -568,15 +566,7 @@ namespace M8.Animator {
         }
 
         void sortTracks() {
-#if UNITY_EDITOR
-            if(!Application.isPlaying)
-                mTracksSorted = false;
-#endif
-
-            if(!mTracksSorted) {
-                trackValues.Sort(TrackCompare);
-                mTracksSorted = true;
-            }
+            trackValues.Sort(TrackCompare);
         }
 
         private struct TrackIndex {
@@ -676,8 +666,6 @@ namespace M8.Animator {
         /// Start up tracks, doing one-time initializations and specific setups
         /// </summary>
         public void PlayStart(ITarget itarget, float _frame, float animScale) {
-            sortTracks();
-
             foreach(Track track in trackValues) //call to start
                 track.PlayStart(itarget, _frame, frameRate, animScale);
         }
@@ -907,7 +895,7 @@ namespace M8.Animator {
 
         public void drawGizmos(ITarget itarget, float gizmo_size, bool inPlayMode) {
             foreach(Track track in trackValues)
-                track.drawGizmos(itarget, gizmo_size, inPlayMode, selectedFrame);
+                track.drawGizmos(itarget, gizmo_size, inPlayMode, selectedFrame, frameRate);
         }
 
         public bool maintainCaches(ITarget itarget) {
