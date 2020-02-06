@@ -90,6 +90,14 @@ namespace M8.Animator {
         const string bsField = "endFrame";
 
         public override void build(SequenceControl seq, Track track, int index, UnityEngine.Object target) {
+            //allow tracks with just one key
+            if(track.keys.Count == 1)
+                interp = Interpolation.None;
+            else if(canTween) {
+                //invalid or in-between keys
+                if(endFrame == -1) return;
+            }
+
             var matTrack = track as MaterialTrack;
             var propType = matTrack.propertyType;
 
@@ -102,72 +110,66 @@ namespace M8.Animator {
 
             Tweener tween = null;
 
-            int keyCount = track.keys.Count;
-            var endKey = index + 1 < keyCount ? track.keys[index + 1] as MaterialKey : null;
-            float frameCount = endKey != null ? endKey.frame - frame + 1 : 1f;
+            int keyCount = track.keys.Count;            
+            float time = getTime(frameRate);
 
             switch(propType) {
                 case MaterialTrack.ValueType.Float:
                 case MaterialTrack.ValueType.Range:
-                    if(!canTween || keyCount == 1) {//allow one key
-                        var setTween = DOTween.To(new TweenPlugValueSet<float>(), () => matInst.GetFloat(propId), (x) => matInst.SetFloat(propId, x), val, frameCount / frameRate);
+                    if(!canTween) {
+                        var setTween = DOTween.To(new TweenPlugValueSet<float>(), () => matInst.GetFloat(propId), (x) => matInst.SetFloat(propId, x), val, time);
                         seq.Insert(this, setTween);
                     }
                     else {
-                        if(targetsAreEqual(propType, endKey)) return;
-
-                        tween = DOTween.To(new FloatPlugin(), () => matInst.GetFloat(propId), (x) => matInst.SetFloat(propId, x), endKey.val, getTime(frameRate));
+                        var endKey = track.keys[index + 1] as MaterialKey;
+                        tween = DOTween.To(new FloatPlugin(), () => val, (x) => matInst.SetFloat(propId, x), endKey.val, time);
                     }
                     break;
                 case MaterialTrack.ValueType.Vector:
-                    if(!canTween || keyCount == 1) {//allow one key
-                        var setTween = DOTween.To(new TweenPlugValueSet<Vector4>(), () => matInst.GetVector(propId), (x) => matInst.SetVector(propId, x), vector, frameCount / frameRate);
+                    if(!canTween) {
+                        var setTween = DOTween.To(new TweenPlugValueSet<Vector4>(), () => matInst.GetVector(propId), (x) => matInst.SetVector(propId, x), vector, time);
                         seq.Insert(this, setTween);
                     }
                     else {
-                        if(targetsAreEqual(propType, endKey)) return;
-
-                        tween = DOTween.To(TweenPluginFactory.CreateVector4(), () => matInst.GetVector(propId), (x) => matInst.SetVector(propId, x), endKey.vector, getTime(frameRate));
+                        var endKey = track.keys[index + 1] as MaterialKey;
+                        tween = DOTween.To(TweenPluginFactory.CreateVector4(), () => vector, (x) => matInst.SetVector(propId, x), endKey.vector, time);
                     }
                     break;
                 case MaterialTrack.ValueType.Color:
-                    if(!canTween || keyCount == 1) {//allow one key
+                    if(!canTween) {
                         var val = color;
-                        var setTween = DOTween.To(new TweenPlugValueSet<Color>(), () => matInst.GetColor(propId), (x) => matInst.SetColor(propId, x), val, frameCount / frameRate);
+                        var setTween = DOTween.To(new TweenPlugValueSet<Color>(), () => matInst.GetColor(propId), (x) => matInst.SetColor(propId, x), val, time);
                         seq.Insert(this, setTween);
                     }
                     else {
-                        if(targetsAreEqual(propType, endKey)) return;
-
-                        tween = DOTween.To(TweenPluginFactory.CreateColor(), () => matInst.GetColor(propId), (x) => matInst.SetColor(propId, x), endKey.color, getTime(frameRate));
+                        var endKey = track.keys[index + 1] as MaterialKey;
+                        tween = DOTween.To(TweenPluginFactory.CreateColor(), () => color, (x) => matInst.SetColor(propId, x), endKey.color, time);
                     }
                     break;
                 case MaterialTrack.ValueType.TexOfs:
-                    if(!canTween || keyCount == 1) {//allow one key
+                    if(!canTween) {
                         var val = texOfs;
-                        var setTween = DOTween.To(new TweenPlugValueSet<Vector2>(), () => matInst.GetTextureOffset(prop), (x) => matInst.SetTextureOffset(prop, x), val, frameCount / frameRate);
+                        var setTween = DOTween.To(new TweenPlugValueSet<Vector2>(), () => matInst.GetTextureOffset(prop), (x) => matInst.SetTextureOffset(prop, x), val, time);
                         seq.Insert(this, setTween);
                     }
                     else {
-                        if(targetsAreEqual(propType, endKey)) return;
-
-                        tween = DOTween.To(TweenPluginFactory.CreateVector2(), () => matInst.GetTextureOffset(prop), (x) => matInst.SetTextureOffset(prop, x), endKey.texOfs, getTime(frameRate));
+                        var endKey = track.keys[index + 1] as MaterialKey;
+                        tween = DOTween.To(TweenPluginFactory.CreateVector2(), () => texOfs, (x) => matInst.SetTextureOffset(prop, x), endKey.texOfs, time);
                     }
                     break;
                 case MaterialTrack.ValueType.TexScale:
-                    if(!canTween || keyCount == 1) {//allow one key
+                    if(!canTween) {
                         var val = texScale;
-                        var setTween = DOTween.To(new TweenPlugValueSet<Vector2>(), () => matInst.GetTextureScale(prop), (x) => matInst.SetTextureScale(prop, x), val, frameCount / frameRate);
+                        var setTween = DOTween.To(new TweenPlugValueSet<Vector2>(), () => matInst.GetTextureScale(prop), (x) => matInst.SetTextureScale(prop, x), val, time);
                         seq.Insert(this, setTween);
                     }
                     else {
-                        if(targetsAreEqual(propType, endKey)) return;
-
-                        tween = DOTween.To(TweenPluginFactory.CreateVector2(), () => matInst.GetTextureScale(prop), (x) => matInst.SetTextureScale(prop, x), endKey.texScale, getTime(frameRate));
+                        var endKey = track.keys[index + 1] as MaterialKey;
+                        tween = DOTween.To(TweenPluginFactory.CreateVector2(), () => texScale, (x) => matInst.SetTextureScale(prop, x), endKey.texScale, time);
                     }
                     break;
                 case MaterialTrack.ValueType.TexEnv:
-                    var texEnvTween = DOTween.To(new TweenPlugValueSet<Texture>(), () => matInst.GetTexture(propId), (x) => matInst.SetTexture(propId, x), texture, frameCount / frameRate);
+                    var texEnvTween = DOTween.To(new TweenPlugValueSet<Texture>(), () => matInst.GetTexture(propId), (x) => matInst.SetTexture(propId, x), texture, time);
                     seq.Insert(this, texEnvTween);
                     break;
             }

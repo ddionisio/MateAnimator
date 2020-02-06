@@ -172,9 +172,15 @@ namespace M8.Animator {
         }
 
         public override void build(SequenceControl seq, Track track, int index, UnityEngine.Object target) {
-            PropertyTrack propTrack = track as PropertyTrack;
+            //allow tracks with just one key
+            if(track.keys.Count == 1)
+                interp = Interpolation.None;
+            else if(canTween && track.canTween) {
+                //invalid or in-between keys
+                if(endFrame == -1) return;
+            }
 
-            if(endFrame == -1 && canTween && propTrack.canTween) return;
+            PropertyTrack propTrack = track as PropertyTrack;
 
             PropertyTrack.ValueType valueType = propTrack.valueType;
 
@@ -192,7 +198,7 @@ namespace M8.Animator {
                 propTrack.RefreshData(comp);
 
                 //allow tracks with just one key
-                if(!propTrack.canTween || !canTween || track.keys.Count == 1)
+                if(!propTrack.canTween || !canTween)
                     seq.Insert(this, GenerateSingleValueTweener(seq, propTrack, frameRate, comp));
                 else {
                     //grab end frame
@@ -202,29 +208,31 @@ namespace M8.Animator {
 
                     Tweener tween = null;
 
+                    var time = getTime(frameRate);
+
                     PropertyInfo propInfo = propTrack.GetCachedPropertyInfo();
                     if(propInfo != null) {
                         switch(valueType) {
                             case PropertyTrack.ValueType.Integer:
-                                tween = DOTween.To(new IntPlugin(), () => System.Convert.ToInt32(propInfo.GetValue(comp, null)), (x) => propInfo.SetValue(comp, x, null), System.Convert.ToInt32(endKey.val), getTime(frameRate)); break;
+                                tween = DOTween.To(new IntPlugin(), () => System.Convert.ToInt32(val), (x) => propInfo.SetValue(comp, x, null), System.Convert.ToInt32(endKey.val), time); break;
                             case PropertyTrack.ValueType.Float:
-                                tween = DOTween.To(new FloatPlugin(), () => System.Convert.ToSingle(propInfo.GetValue(comp, null)), (x) => propInfo.SetValue(comp, x, null), System.Convert.ToSingle(endKey.val), getTime(frameRate)); break;
+                                tween = DOTween.To(new FloatPlugin(), () => System.Convert.ToSingle(val), (x) => propInfo.SetValue(comp, x, null), System.Convert.ToSingle(endKey.val), time); break;
                             case PropertyTrack.ValueType.Double:
-                                tween = DOTween.To(new DoublePlugin(), () => System.Convert.ToDouble(propInfo.GetValue(comp, null)), (x) => propInfo.SetValue(comp, x, null), endKey.val, getTime(frameRate)); break;
+                                tween = DOTween.To(new DoublePlugin(), () => val, (x) => propInfo.SetValue(comp, x, null), endKey.val, time); break;
                             case PropertyTrack.ValueType.Long:
-                                tween = DOTween.To(new LongPlugin(), () => System.Convert.ToInt64(propInfo.GetValue(comp, null)), (x) => propInfo.SetValue(comp, x, null), System.Convert.ToInt64(endKey.val), getTime(frameRate)); break;
+                                tween = DOTween.To(new LongPlugin(), () => System.Convert.ToInt64(val), (x) => propInfo.SetValue(comp, x, null), System.Convert.ToInt64(endKey.val), time); break;
                             case PropertyTrack.ValueType.Vector2:
-                                tween = DOTween.To(TweenPluginFactory.CreateVector2(), () => (Vector2)propInfo.GetValue(comp, null), (x) => propInfo.SetValue(comp, x, null), endKey.vect2, getTime(frameRate)); break;
+                                tween = DOTween.To(TweenPluginFactory.CreateVector2(), () => vect2, (x) => propInfo.SetValue(comp, x, null), endKey.vect2, time); break;
                             case PropertyTrack.ValueType.Vector3:
-                                tween = DOTween.To(TweenPluginFactory.CreateVector3(), () => (Vector3)propInfo.GetValue(comp, null), (x) => propInfo.SetValue(comp, x, null), endKey.vect3, getTime(frameRate)); break;
+                                tween = DOTween.To(TweenPluginFactory.CreateVector3(), () => vect3, (x) => propInfo.SetValue(comp, x, null), endKey.vect3, time); break;
                             case PropertyTrack.ValueType.Color:
-                                tween = DOTween.To(TweenPluginFactory.CreateColor(), () => (Color)propInfo.GetValue(comp, null), (x) => propInfo.SetValue(comp, x, null), endKey.color, getTime(frameRate)); break;
+                                tween = DOTween.To(TweenPluginFactory.CreateColor(), () => color, (x) => propInfo.SetValue(comp, x, null), endKey.color, time); break;
                             case PropertyTrack.ValueType.Rect:
-                                tween = DOTween.To(new RectPlugin(), () => (Rect)propInfo.GetValue(comp, null), (x) => propInfo.SetValue(comp, x, null), endKey.rect, getTime(frameRate)); break;
+                                tween = DOTween.To(new RectPlugin(), () => rect, (x) => propInfo.SetValue(comp, x, null), endKey.rect, time); break;
                             case PropertyTrack.ValueType.Vector4:
-                                tween = DOTween.To(TweenPluginFactory.CreateVector4(), () => (Vector4)propInfo.GetValue(comp, null), (x) => propInfo.SetValue(comp, x, null), endKey.vect4, getTime(frameRate)); break;
+                                tween = DOTween.To(TweenPluginFactory.CreateVector4(), () => vect4, (x) => propInfo.SetValue(comp, x, null), endKey.vect4, time); break;
                             case PropertyTrack.ValueType.Quaternion:
-                                tween = DOTween.To(new PureQuaternionPlugin(), () => (Quaternion)propInfo.GetValue(comp, null), (x) => propInfo.SetValue(comp, x, null), endKey.quat, getTime(frameRate)); break;
+                                tween = DOTween.To(new PureQuaternionPlugin(), () => quat, (x) => propInfo.SetValue(comp, x, null), endKey.quat, time); break;
                         }
                     }
                     else {
@@ -232,25 +240,25 @@ namespace M8.Animator {
                         if(fieldInfo != null) {
                             switch(valueType) {
                                 case PropertyTrack.ValueType.Integer:
-                                    tween = DOTween.To(new IntPlugin(), () => System.Convert.ToInt32(fieldInfo.GetValue(comp)), (x) => fieldInfo.SetValue(comp, x), System.Convert.ToInt32(endKey.val), getTime(frameRate)); break;
+                                    tween = DOTween.To(new IntPlugin(), () => System.Convert.ToInt32(val), (x) => fieldInfo.SetValue(comp, x), System.Convert.ToInt32(endKey.val), time); break;
                                 case PropertyTrack.ValueType.Float:
-                                    tween = DOTween.To(new FloatPlugin(), () => System.Convert.ToSingle(fieldInfo.GetValue(comp)), (x) => fieldInfo.SetValue(comp, x), System.Convert.ToSingle(endKey.val), getTime(frameRate)); break;
+                                    tween = DOTween.To(new FloatPlugin(), () => System.Convert.ToSingle(val), (x) => fieldInfo.SetValue(comp, x), System.Convert.ToSingle(endKey.val), time); break;
                                 case PropertyTrack.ValueType.Double:
-                                    tween = DOTween.To(new DoublePlugin(), () => System.Convert.ToDouble(fieldInfo.GetValue(comp)), (x) => fieldInfo.SetValue(comp, x), endKey.val, getTime(frameRate)); break;
+                                    tween = DOTween.To(new DoublePlugin(), () => val, (x) => fieldInfo.SetValue(comp, x), endKey.val, time); break;
                                 case PropertyTrack.ValueType.Long:
-                                    tween = DOTween.To(new LongPlugin(), () => System.Convert.ToInt64(fieldInfo.GetValue(comp)), (x) => fieldInfo.SetValue(comp, x), System.Convert.ToInt64(endKey.val), getTime(frameRate)); break;
+                                    tween = DOTween.To(new LongPlugin(), () => System.Convert.ToInt64(val), (x) => fieldInfo.SetValue(comp, x), System.Convert.ToInt64(endKey.val), time); break;
                                 case PropertyTrack.ValueType.Vector2:
-                                    tween = DOTween.To(TweenPluginFactory.CreateVector2(), () => (Vector2)fieldInfo.GetValue(comp), (x) => fieldInfo.SetValue(comp, x), endKey.vect2, getTime(frameRate)); break;
+                                    tween = DOTween.To(TweenPluginFactory.CreateVector2(), () => vect2, (x) => fieldInfo.SetValue(comp, x), endKey.vect2, time); break;
                                 case PropertyTrack.ValueType.Vector3:
-                                    tween = DOTween.To(TweenPluginFactory.CreateVector3(), () => (Vector3)fieldInfo.GetValue(comp), (x) => fieldInfo.SetValue(comp, x), endKey.vect3, getTime(frameRate)); break;
+                                    tween = DOTween.To(TweenPluginFactory.CreateVector3(), () => vect3, (x) => fieldInfo.SetValue(comp, x), endKey.vect3, time); break;
                                 case PropertyTrack.ValueType.Color:
-                                    tween = DOTween.To(TweenPluginFactory.CreateColor(), () => (Color)fieldInfo.GetValue(comp), (x) => fieldInfo.SetValue(comp, x), endKey.color, getTime(frameRate)); break;
+                                    tween = DOTween.To(TweenPluginFactory.CreateColor(), () => color, (x) => fieldInfo.SetValue(comp, x), endKey.color, time); break;
                                 case PropertyTrack.ValueType.Rect:
-                                    tween = DOTween.To(new RectPlugin(), () => (Rect)fieldInfo.GetValue(comp), (x) => fieldInfo.SetValue(comp, x), endKey.rect, getTime(frameRate)); break;
+                                    tween = DOTween.To(new RectPlugin(), () => (Rect)fieldInfo.GetValue(comp), (x) => fieldInfo.SetValue(comp, x), endKey.rect, time); break;
                                 case PropertyTrack.ValueType.Vector4:
-                                    tween = DOTween.To(TweenPluginFactory.CreateVector4(), () => (Vector4)fieldInfo.GetValue(comp), (x) => fieldInfo.SetValue(comp, x), endKey.vect4, getTime(frameRate)); break;
+                                    tween = DOTween.To(TweenPluginFactory.CreateVector4(), () => vect4, (x) => fieldInfo.SetValue(comp, x), endKey.vect4, time); break;
                                 case PropertyTrack.ValueType.Quaternion:
-                                    tween = DOTween.To(new PureQuaternionPlugin(), () => (Quaternion)fieldInfo.GetValue(comp), (x) => fieldInfo.SetValue(comp, x), endKey.quat, getTime(frameRate)); break;
+                                    tween = DOTween.To(new PureQuaternionPlugin(), () => quat, (x) => fieldInfo.SetValue(comp, x), endKey.quat, time); break;
                             }
                         }
                     }

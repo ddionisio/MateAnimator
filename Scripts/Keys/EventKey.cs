@@ -11,6 +11,8 @@ namespace M8.Animator {
     public class EventKey : Key {
         public override SerializeType serializeType { get { return SerializeType.Event; } }
 
+        public override bool canTween { get { return false; } }
+
         public bool useSendMessage = false;
         public List<EventParameter> parameters = new List<EventParameter>();
         public string methodName;

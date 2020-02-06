@@ -112,19 +112,31 @@ namespace M8.Animator {
             //mat.get
             //
 
-            MaterialKey k = null;
+            MaterialKey k = null, prevKey = null;
 
             foreach(MaterialKey key in keys) {
                 // if key exists on frame, update key
                 if(key.frame == _frame) {
                     k = key;
                 }
+                else if(key.frame < _frame) {
+                    prevKey = key;
+                }
             }
 
             if(k == null) {
                 k = new MaterialKey();
                 k.frame = _frame;
-                k.interp = Key.Interpolation.Linear;
+
+                //copy previous frame tween settings
+                if(prevKey != null) {
+                    k.interp = prevKey.interp;
+                    k.easeType = prevKey.easeType;
+                    k.easeCurve = prevKey.easeCurve;
+                }
+                else
+                    k.interp = canTween ? Key.Interpolation.Linear : Key.Interpolation.None; //default
+
                 // add a new key
                 keys.Add(k);
             }
@@ -210,10 +222,7 @@ namespace M8.Animator {
 
                 if(keys.Count > (i + 1)) key.endFrame = keys[i + 1].frame;
                 else {
-                    if(!canTween || (i > 0 && !keys[i - 1].canTween))
-                        key.interp = Key.Interpolation.None;
-
-                    key.endFrame = -1;
+                    key.endFrame = key.canTween ? -1 : key.frame; //last key, invalid if tween, one frame for end
                 }
             }
         }

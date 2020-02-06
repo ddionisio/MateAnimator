@@ -2742,26 +2742,7 @@ namespace M8.Animator.Edit {
                 Rect rectTimelineActions = new Rect(0f, _current_height_frame, 0f, height_track - current_height_frame);    // used to group textures into one draw call
                 if(!drawEachAction) {
                     if(_track.keys.Count > 0) {
-                        if(_track is EventTrack) {
-                            texBox = texBoxDarkBlue;
-
-                            for(int i = 0; i < _track.keys.Count; i++) {
-                                var key = _track.keys[i];
-
-                                if(key.frame + 1 < _startFrame) continue;
-                                else if(key.frame > _endFrame) break;
-
-                                drawBox(key.frame, key.frame, _startFrame, _endFrame, rectTimelineActions, rectFramesBirdsEye.width, texBox);
-                            }
-                        }
-                        else if(_track is PropertyTrack || _track is MaterialTrack) {
-                            // event track, from first action start frame to end frame
-                            cached_action_startFrame = _track.keys[0].getStartFrame();
-                            cached_action_endFrame = _track.keys[_track.keys.Count - 1].getStartFrame();
-                            texBox = texBoxLightBlue;
-                            drawBox(cached_action_startFrame, cached_action_endFrame, _startFrame, _endFrame, rectTimelineActions, rectFramesBirdsEye.width, texBox);
-                        }
-                        else if(_track is GOSetActiveTrack) {
+                        if(_track is GOSetActiveTrack) {
                             texBox = texBoxLightBlue;
 
                             int lastStartInd = -1;
@@ -2824,26 +2805,23 @@ namespace M8.Animator.Edit {
                                     draw = true;
 
                                 if(draw) {
-                                    if(_track is TranslationTrack) {
-                                        // translation track, from first action frame to end action frame
-                                        cached_action_startFrame = _track.keys[lastStartInd].getStartFrame();
-                                        cached_action_endFrame = !_track.keys[lastStartInd].canTween ? cached_action_startFrame :
-                                            !_track.keys[i].canTween ? _track.keys[i].frame : (_track.keys[i] as TranslationKey).endFrame;
-                                        texBox = texBoxGreen;
-                                    }
-                                    else {
-                                        cached_action_startFrame = _track.keys[lastStartInd].getStartFrame();
-                                        cached_action_endFrame = _track.keys[i].getStartFrame();
+                                    cached_action_startFrame = _track.keys[lastStartInd].getStartFrame();
+                                    cached_action_endFrame = _track.keys[i].getStartFrame();
 
-                                        if(_track is RotationTrack || _track is RotationEulerTrack)
-                                            texBox = texBoxYellow;
-                                        else if(_track is OrientationTrack)
-                                            texBox = texBoxOrange;
-                                        else if(_track is CameraSwitcherTrack)
-                                            texBox = texBoxPurple;
-                                        else if(_track is ScaleTrack)
-                                            texBox = texBoxLightPurple;
-                                    }
+                                    if(_track is RotationTrack || _track is RotationEulerTrack)
+                                        texBox = texBoxYellow;
+                                    else if(_track is OrientationTrack)
+                                        texBox = texBoxOrange;
+                                    else if(_track is CameraSwitcherTrack)
+                                        texBox = texBoxPurple;
+                                    else if(_track is ScaleTrack)
+                                        texBox = texBoxLightPurple;
+                                    else if(_track is PropertyTrack || _track is MaterialTrack)
+                                        texBox = texBoxLightBlue;
+                                    else if(_track is EventTrack)
+                                        texBox = texBoxDarkBlue;
+                                    else
+                                        texBox = texBoxGreen;
 
                                     drawBox(cached_action_startFrame, cached_action_endFrame, _startFrame, _endFrame, rectTimelineActions, rectFramesBirdsEye.width, texBox);
 

@@ -213,19 +213,30 @@ namespace M8.Animator {
             Component comp = GetTargetComp(target);
             RefreshData(comp);
 
-            PropertyKey k = null;
+            PropertyKey k = null, prevKey = null;
 
             foreach(PropertyKey key in keys) {
                 // if key exists on frame, update key
                 if(key.frame == _frame) {
                     k = key;
                 }
+                else if(key.frame < _frame)
+                    prevKey = key;
             }
 
             if(k == null) {
                 k = new PropertyKey();
                 k.frame = _frame;
-                k.interp = canTween ? Key.Interpolation.Linear : Key.Interpolation.None;
+
+                //copy previous frame tween settings
+                if(prevKey != null) {
+                    k.interp = prevKey.interp;
+                    k.easeType = prevKey.easeType;
+                    k.easeCurve = prevKey.easeCurve;
+                }
+                else
+                    k.interp = canTween ? Key.Interpolation.Linear : Key.Interpolation.None; //default
+
                 // add a new key
                 keys.Add(k);
             }
@@ -333,6 +344,12 @@ namespace M8.Animator {
 
             RefreshData(comp);
 
+            Type _type = GetCachedInfoType();
+            if(_type == null) {
+                Debug.LogError("Animator: Fatal Error; fieldInfo, propertyInfo and methodInfo are unset for Value Type " + valueType);
+                return;
+            }
+
             for(int i = 0; i < keys.Count; i++) {
                 PropertyKey key = keys[i] as PropertyKey;
                 PropertyKey keyNext = i + 1 < keys.Count ? keys[i + 1] as PropertyKey : null;
@@ -345,16 +362,7 @@ namespace M8.Animator {
 
                 if(keyNext != null) key.endFrame = keyNext.frame;
                 else {
-                    if(!canTween || (i > 0 && !keys[i - 1].canTween))
-                        key.interp = Key.Interpolation.None;
-
-                    key.endFrame = -1;
-                }
-
-                Type _type = GetCachedInfoType();
-                if(_type == null) {
-                    Debug.LogError("Animator: Fatal Error; fieldInfo, propertyInfo and methodInfo are unset for Value Type " + valueType);
-                    return;
+                    key.endFrame = key.canTween ? -1 : key.frame; //last key, invalid if tween, one frame for end
                 }
             }
         }
