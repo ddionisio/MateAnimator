@@ -29,6 +29,8 @@ namespace M8.Animator {
 
         public override int version { get { return 1; } }
 
+        public override int interpCount { get { return 3; } }
+
         Vector3 cachedInitialScale;
 
         public override string getTrackType() {
@@ -36,6 +38,8 @@ namespace M8.Animator {
         }
         // add a new key
         public void addKey(ITarget target, int _frame, Vector3 _scale) {
+            ScaleKey prevKey = null;
+
             foreach(ScaleKey key in keys) {
                 // if key exists on frame, update key
                 if(key.frame == _frame) {
@@ -44,12 +48,24 @@ namespace M8.Animator {
                     updateCache(target);
                     return;
                 }
+                else if(key.frame < _frame)
+                    prevKey = key;
             }
+
             var a = new ScaleKey();
             a.frame = _frame;
             a.scale = _scale;
-            // set default ease type to linear
-            a.easeType = Ease.Linear;
+
+            // copy interpolation and ease type from previous
+            if(prevKey != null) {
+                a.interp = prevKey.interp;
+                a.easeType = prevKey.easeType;
+                a.easeCurve = prevKey.easeCurve;
+            }
+            else { //set default
+                a.interp = Key.Interpolation.Curve;
+                a.easeType = Ease.Linear;
+            }
 
             // add a new key
             keys.Add(a);
@@ -57,69 +73,52 @@ namespace M8.Animator {
             updateCache(target);
         }
 
+        public override void undoRedoPerformed() {
+            //path preview must be rebuilt
+            foreach(ScaleKey key in keys)
+                key.ClearCache();
+        }
+
         // update cache (optimized)
         public override void updateCache(ITarget target) {
             base.updateCache(target);
 
             for(int i = 0; i < keys.Count; i++) {
-                var key = keys[i] as ScaleKey;
+                ScaleKey key = keys[i] as ScaleKey;
 
                 key.version = version;
+                key.GeneratePath(this, i);
+                key.ClearCache();
 
-                if(keys.Count > (i + 1)) key.endFrame = keys[i + 1].frame;
-                else {
-                    if(i > 0 && !keys[i - 1].canTween)
-                        key.interp = Key.Interpolation.None;
+                //invalidate some keys in between
+                if(key.path.Length > 1) {
+                    int endInd = i + key.path.Length - 1;
+                    if(endInd < keys.Count - 1 || key.interp != keys[endInd].interp) //don't count the last element if there are more keys ahead
+                        endInd--;
 
-                    key.endFrame = -1;
+                    for(int j = i + 1; j <= endInd; j++) {
+                        var _key = keys[j] as ScaleKey;
+
+                        _key.version = version;
+                        _key.interp = key.interp;
+                        _key.easeType = key.easeType;
+                        _key.endFrame = -1;
+                        _key.path = new Vector3[0];
+                    }
+
+                    i = endInd;
                 }
             }
         }
+
         // preview a frame in the scene view
         public override void previewFrame(ITarget target, float frame, int frameRate, bool play, float playSpeed) {
             Transform t = GetTarget(target) as Transform;
-
             if(!t) return;
-            if(keys == null || keys.Count <= 0) return;
 
-            // if before or equal to first frame, or is the only frame
-            var firstKey = keys[0] as ScaleKey;
-            if(firstKey.endFrame == -1 || (frame <= firstKey.frame && !firstKey.canTween)) {
-                ApplyScale(t, firstKey.scale);
-                return;
-            }
-
-            // if lies on scale action
-            for(int i = 0; i < keys.Count; i++) {
-                var key = keys[i] as ScaleKey;
-                var keyNext = i + 1 < keys.Count ? keys[i + 1] as ScaleKey : null;
-
-                if(frame >= (float)key.endFrame && keyNext != null && (!keyNext.canTween || keyNext.endFrame != -1)) continue;
-                // if no ease
-                if(!key.canTween || keyNext == null) {
-                    ApplyScale(t, key.scale);
-                    return;
-                }
-                // else easing function
-
-                float numFrames = (float)key.getNumberOfFrames(frameRate);
-
-                float framePositionInAction = Mathf.Clamp(frame - key.frame, 0f, numFrames);
-
-                Vector3 qStart = key.scale;
-                Vector3 qEnd = keyNext.scale;
-
-                if(key.hasCustomEase()) {
-                    ApplyScale(t, Vector3.Lerp(qStart, qEnd, Utility.EaseCustom(0.0f, 1.0f, framePositionInAction / numFrames, key.easeCurve)));
-                }
-                else {
-                    var ease = Utility.GetEasingFunction(key.easeType);
-                    ApplyScale(t, Vector3.Lerp(qStart, qEnd, ease(framePositionInAction, numFrames, key.amplitude, key.period)));
-                }
-
-                return;
-            }
+            t.localScale = getScaleAtFrame(t, frame, frameRate);
         }
+
         // returns true if autoKey successful, sets output key
         public bool autoKey(ITarget itarget, Transform aObj, int frame, int frameRate) {
             Transform t = GetTarget(itarget) as Transform;
@@ -134,8 +133,9 @@ namespace M8.Animator {
 
                 return false;
             }
-            Vector3 oldScale = getScaleAtFrame(frame, frameRate);
-            if(s != oldScale) {
+
+            var curKey = (ScaleKey)getKeyOnFrame(frame, false);
+            if(curKey == null || curKey.scale != t.localScale) {
                 // if updated position, addkey
                 addKey(itarget, frame, s);
                 return true;
@@ -143,7 +143,7 @@ namespace M8.Animator {
 
             return false;
         }
-        void ApplyScale(Transform t, Vector3 toScale) {
+        Vector3 GetScale(Transform t, Vector3 toScale) {
             Vector3 s = t.localScale;
 
             if((axis & AxisFlags.X) != AxisFlags.None)
@@ -153,45 +153,81 @@ namespace M8.Animator {
             if((axis & AxisFlags.Z) != AxisFlags.None)
                 s.z = toScale.z;
 
-            t.localScale = s;
+            return s;
         }
-        Vector3 getScaleAtFrame(int frame, int frameRate) {
-            // if before or equal to first frame, or is the only frame
+        Vector3 getScaleAtFrame(Transform transform, float frame, int frameRate) {
+            int keyCount = keys.Count;
+
+            if(keyCount <= 0) return transform.localScale;
+
+            int iFrame = Mathf.RoundToInt(frame);
+
             var firstKey = keys[0] as ScaleKey;
-            if(firstKey.endFrame == -1 || (frame <= (float)firstKey.frame && !firstKey.canTween)) {
-                return firstKey.scale;
-            }
 
-            // if lies on scale action
-            for(int i = 0; i < keys.Count; i++) {
+            //check if only key or behind first key
+            if(keyCount == 1 || iFrame <= firstKey.frame)
+                return GetScale(transform, firstKey.scale);
+
+            // if lies on rotation action
+            for(int i = 0; i < keyCount; i++) {
                 var key = keys[i] as ScaleKey;
-                var keyNext = i + 1 < keys.Count ? keys[i + 1] as ScaleKey : null;
 
-                if(frame >= (float)key.endFrame && keyNext != null && (!keyNext.canTween || keyNext.endFrame != -1)) continue;
-                // if no ease
-                if(!key.canTween || keyNext == null) {
-                    return key.scale;
+                if(key.endFrame == -1) //invalid
+                    continue;
+
+                //end of last path in track?
+                if(iFrame >= key.endFrame) {
+                    switch(key.interp) {
+                        case Key.Interpolation.Linear:
+                            if(i + 1 == keyCount - 1)
+                                return GetScale(transform, ((ScaleKey)keys[i + 1]).scale);
+                            break;
+                        case Key.Interpolation.Curve:
+                            if(key.path.Length > 0 && i + key.path.Length == keyCount) //end of last path in track?
+                                return GetScale(transform, ((ScaleKey)keys[key.path.Length - 1]).scale);
+                            break;
+                        case Key.Interpolation.None:
+                            if(i + 1 == keyCount)
+                                return GetScale(transform, key.scale);
+                            break;
+                    }
+
+                    continue;
                 }
-                // else easing function
 
-                float numFrames = (float)key.getNumberOfFrames(frameRate);
+                switch(key.interp) {
+                    case Key.Interpolation.None:
+                        return key.scale;
 
-                float framePositionInAction = Mathf.Clamp(frame - (float)key.frame, 0f, numFrames);
+                    case Key.Interpolation.Linear:
+                        var keyNext = keys[i + 1] as ScaleKey;
 
-                var sStart = key.scale;
-                var sEnd = keyNext.scale;
+                        float numFrames = (float)key.getNumberOfFrames(frameRate);
 
-                if(key.hasCustomEase()) {
-                    return Vector3.Lerp(sStart, sEnd, Utility.EaseCustom(0.0f, 1.0f, framePositionInAction / numFrames, key.easeCurve));
-                }
-                else {
-                    var ease = Utility.GetEasingFunction(key.easeType);
-                    return Vector3.Lerp(sStart, sEnd, ease(framePositionInAction, numFrames, key.amplitude, key.period));
+                        float framePositionInAction = Mathf.Clamp(frame - (float)key.frame, 0f, numFrames);
+
+                        var start = key.scale;
+                        var end = keyNext.scale;
+
+                        if(key.hasCustomEase()) {
+                            return GetScale(transform, Vector3.Lerp(start, end, Utility.EaseCustom(0.0f, 1.0f, framePositionInAction / numFrames, key.easeCurve)));
+                        }
+                        else {
+                            var ease = Utility.GetEasingFunction((Ease)key.easeType);
+                            return GetScale(transform, Vector3.Lerp(start, end, ease(framePositionInAction, numFrames, key.amplitude, key.period)));
+                        }
+
+                    case Key.Interpolation.Curve:
+                        if(key.path.Length <= 1) //invalid key
+                            return transform.localScale;
+
+                        float _value = Mathf.Clamp01((frame - key.frame) / key.getNumberOfFrames(frameRate));
+
+                        return GetScale(transform, key.GetScaleFromPath(transform, frameRate, Mathf.Clamp01(_value)));
                 }
             }
 
-            Debug.LogError("Animator: Could not get scale at frame '" + frame + "'");
-            return Vector3.zero;
+            return transform.localScale;
         }
         public Vector3 getInitialScale() {
             return ((ScaleKey)keys[0]).scale;
@@ -229,6 +265,7 @@ namespace M8.Animator {
         protected override void DoCopy(Track track) {
             var ntrack = (ScaleTrack)track;
             ntrack._obj = _obj;
+            ntrack.axis = axis;
             ntrack.cachedInitialScale = cachedInitialScale;
         }
     }

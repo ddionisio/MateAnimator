@@ -264,6 +264,7 @@ namespace M8.Animator {
         protected override void DoCopy(Track track) {
             var ntrack = track as RotationEulerTrack;
             ntrack._obj = _obj;
+            ntrack.axis = axis;
             ntrack.cachedInitialRotation = cachedInitialRotation;
         }
     }
