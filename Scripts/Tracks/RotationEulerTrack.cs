@@ -29,6 +29,8 @@ namespace M8.Animator {
 
         public override int version { get { return 1; } }
 
+        public override int interpCount { get { return 3; } }
+
         Vector3 cachedInitialRotation;
 
         public override string getTrackType() {
@@ -36,6 +38,8 @@ namespace M8.Animator {
         }
         // add a new key
         public void addKey(ITarget target, int _frame, Vector3 _rotation) {
+            RotationEulerKey prevKey = null;
+
             foreach(RotationEulerKey key in keys) {
                 // if key exists on frame, update key
                 if(key.frame == _frame) {
@@ -44,17 +48,35 @@ namespace M8.Animator {
                     updateCache(target);
                     return;
                 }
+                else if(key.frame < _frame)
+                    prevKey = key;
             }
+
             var a = new RotationEulerKey();
             a.frame = _frame;
             a.rotation = _rotation;
-            // set default ease type to linear
-            a.easeType = Ease.Linear;
+
+            // copy interpolation and ease type from previous
+            if(prevKey != null) {
+                a.interp = prevKey.interp;
+                a.easeType = prevKey.easeType;
+                a.easeCurve = prevKey.easeCurve;
+            }
+            else { //set default
+                a.interp = Key.Interpolation.Curve;
+                a.easeType = Ease.Linear;
+            }
 
             // add a new key
             keys.Add(a);
             // update cache
             updateCache(target);
+        }
+
+        public override void undoRedoPerformed() {
+            //path preview must be rebuilt
+            foreach(RotationEulerKey key in keys)
+                key.ClearCache();
         }
 
         // update cache (optimized)
@@ -65,60 +87,36 @@ namespace M8.Animator {
                 RotationEulerKey key = keys[i] as RotationEulerKey;
 
                 key.version = version;
+                key.GeneratePath(this, i);
+                key.ClearCache();
 
-                if(keys.Count > (i + 1)) key.endFrame = keys[i + 1].frame;
-                else {
-                    if(i > 0 && !keys[i - 1].canTween)
-                        key.interp = Key.Interpolation.None;
+                //invalidate some keys in between
+                if(key.path.Length > 1) {
+                    int endInd = i + key.path.Length - 1;
+                    if(endInd < keys.Count - 1 || key.interp != keys[endInd].interp) //don't count the last element if there are more keys ahead
+                        endInd--;
 
-                    key.endFrame = -1;
+                    for(int j = i + 1; j <= endInd; j++) {
+                        var _key = keys[j] as RotationEulerKey;
+
+                        _key.version = version;
+                        _key.interp = key.interp;
+                        _key.easeType = key.easeType;
+                        _key.endFrame = -1;
+                        _key.path = new Vector3[0];
+                    }
+
+                    i = endInd;
                 }
             }
         }
+
         // preview a frame in the scene view
         public override void previewFrame(ITarget target, float frame, int frameRate, bool play, float playSpeed) {
             Transform t = GetTarget(target) as Transform;
-
             if(!t) return;
-            if(keys == null || keys.Count <= 0) return;
 
-            // if before or equal to first frame, or is the only frame
-            RotationEulerKey firstKey = keys[0] as RotationEulerKey;
-            if(firstKey.endFrame == -1 || (frame <= firstKey.frame && !firstKey.canTween)) {
-                ApplyRot(t, firstKey.rotation);
-                return;
-            }
-
-            // if lies on rotation action
-            for(int i = 0; i < keys.Count; i++) {
-                RotationEulerKey key = keys[i] as RotationEulerKey;
-                RotationEulerKey keyNext = i + 1 < keys.Count ? keys[i + 1] as RotationEulerKey : null;
-
-                if(frame >= (float)key.endFrame && keyNext != null && (!keyNext.canTween || keyNext.endFrame != -1)) continue;
-                // if no ease
-                if(!key.canTween || keyNext == null) {
-                    ApplyRot(t, key.rotation);
-                    return;
-                }
-                // else easing function
-
-                float numFrames = (float)key.getNumberOfFrames(frameRate);
-
-                float framePositionInAction = Mathf.Clamp(frame - key.frame, 0f, numFrames);
-
-                Vector3 qStart = key.rotation;
-                Vector3 qEnd = keyNext.rotation;
-
-                if(key.hasCustomEase()) {
-                    ApplyRot(t, Vector3.Lerp(qStart, qEnd, Utility.EaseCustom(0.0f, 1.0f, framePositionInAction / numFrames, key.easeCurve)));
-                }
-                else {
-                    var ease = Utility.GetEasingFunction(key.easeType);
-                    ApplyRot(t, Vector3.Lerp(qStart, qEnd, ease(framePositionInAction, numFrames, key.amplitude, key.period)));
-                }
-
-                return;
-            }
+            t.localEulerAngles = getRotationAtFrame(t, frame, frameRate);
         }
         // returns true if autoKey successful, sets output key
         public bool autoKey(ITarget itarget, Transform aObj, int frame, int frameRate) {
@@ -134,8 +132,9 @@ namespace M8.Animator {
 
                 return false;
             }
-            Vector3 oldRot = getRotationAtFrame(frame, frameRate);
-            if(r != oldRot) {
+
+            var curKey = (RotationEulerKey)getKeyOnFrame(frame, false);
+            if(curKey == null || curKey.rotation != t.localEulerAngles) {
                 // if updated position, addkey
                 addKey(itarget, frame, r);
                 return true;
@@ -143,7 +142,7 @@ namespace M8.Animator {
 
             return false;
         }
-        void ApplyRot(Transform t, Vector3 toRot) {
+        Vector3 GetRotation(Transform t, Vector3 toRot) {
             Vector3 rot = t.localEulerAngles;
 
             if((axis & AxisFlags.X) != AxisFlags.None)
@@ -153,45 +152,81 @@ namespace M8.Animator {
             if((axis & AxisFlags.Z) != AxisFlags.None)
                 rot.z = toRot.z;
 
-            t.localEulerAngles = rot;
+            return rot;
         }
-        Vector3 getRotationAtFrame(int frame, int frameRate) {
-            // if before or equal to first frame, or is the only frame
-            RotationEulerKey firstKey = keys[0] as RotationEulerKey;
-            if(firstKey.endFrame == -1 || (frame <= (float)firstKey.frame && !firstKey.canTween)) {
-                return firstKey.rotation;
-            }
+        Vector3 getRotationAtFrame(Transform transform, float frame, int frameRate) {
+            int keyCount = keys.Count;
+
+            if(keyCount <= 0) return transform.localEulerAngles;
+
+            int iFrame = Mathf.RoundToInt(frame);
+
+            var firstKey = keys[0] as RotationEulerKey;
+
+            //check if only key or behind first key
+            if(keyCount == 1 || iFrame <= firstKey.frame)
+                return GetRotation(transform, firstKey.rotation);
 
             // if lies on rotation action
-            for(int i = 0; i < keys.Count; i++) {
-                RotationEulerKey key = keys[i] as RotationEulerKey;
-                RotationEulerKey keyNext = i + 1 < keys.Count ? keys[i + 1] as RotationEulerKey : null;
+            for(int i = 0; i < keyCount; i++) {
+                var key = keys[i] as RotationEulerKey;
 
-                if(frame >= (float)key.endFrame && keyNext != null && (!keyNext.canTween || keyNext.endFrame != -1)) continue;
-                // if no ease
-                if(!key.canTween || keyNext == null) {
-                    return key.rotation;
+                if(key.endFrame == -1) //invalid
+                    continue;
+
+                //end of last path in track?
+                if(iFrame >= key.endFrame) {
+                    switch(key.interp) {
+                        case Key.Interpolation.Linear:
+                            if(i + 1 == keyCount - 1)
+                                return GetRotation(transform, ((RotationEulerKey)keys[i + 1]).rotation);
+                            break;
+                        case Key.Interpolation.Curve:
+                            if(key.path.Length > 0 && i + key.path.Length == keyCount) //end of last path in track?
+                                return GetRotation(transform, ((RotationEulerKey)keys[key.path.Length - 1]).rotation);
+                            break;
+                        case Key.Interpolation.None:
+                            if(i + 1 == keyCount)
+                                return GetRotation(transform, key.rotation);
+                            break;
+                    }
+
+                    continue;
                 }
-                // else easing function
 
-                float numFrames = (float)key.getNumberOfFrames(frameRate);
+                switch(key.interp) {
+                    case Key.Interpolation.None:
+                        return key.rotation;
 
-                float framePositionInAction = Mathf.Clamp(frame - (float)key.frame, 0f, numFrames);
+                    case Key.Interpolation.Linear:
+                        var keyNext = keys[i + 1] as RotationEulerKey;
 
-                Vector3 qStart = key.rotation;
-                Vector3 qEnd = keyNext.rotation;
+                        float numFrames = (float)key.getNumberOfFrames(frameRate);
 
-                if(key.hasCustomEase()) {
-                    return Vector3.Lerp(qStart, qEnd, Utility.EaseCustom(0.0f, 1.0f, framePositionInAction / numFrames, key.easeCurve));
-                }
-                else {
-                    var ease = Utility.GetEasingFunction(key.easeType);
-                    return Vector3.Lerp(qStart, qEnd, ease(framePositionInAction, numFrames, key.amplitude, key.period));
+                        float framePositionInAction = Mathf.Clamp(frame - (float)key.frame, 0f, numFrames);
+
+                        var start = key.rotation;
+                        var end = keyNext.rotation;
+
+                        if(key.hasCustomEase()) {
+                            return GetRotation(transform, Vector3.Lerp(start, end, Utility.EaseCustom(0.0f, 1.0f, framePositionInAction / numFrames, key.easeCurve)));
+                        }
+                        else {
+                            var ease = Utility.GetEasingFunction((Ease)key.easeType);
+                            return GetRotation(transform, Vector3.Lerp(start, end, ease(framePositionInAction, numFrames, key.amplitude, key.period)));
+                        }
+
+                    case Key.Interpolation.Curve:
+                        if(key.path.Length <= 1) //invalid key
+                            return transform.localEulerAngles;
+
+                        float _value = Mathf.Clamp01((frame - key.frame) / key.getNumberOfFrames(frameRate));
+
+                        return GetRotation(transform, key.GetRotationFromPath(transform, frameRate, Mathf.Clamp01(_value)));
                 }
             }
 
-            Debug.LogError("Animator: Could not get rotation at frame '" + frame + "'");
-            return Vector3.zero;
+            return transform.localEulerAngles;
         }
         public Vector3 getInitialRotation() {
             return (keys[0] as RotationEulerKey).rotation;

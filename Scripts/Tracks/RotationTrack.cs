@@ -92,7 +92,7 @@ namespace M8.Animator {
                 //invalidate some keys in between
                 if(key.path.Length > 1) {
                     int endInd = i + key.path.Length - 1;
-                    if(endInd < keys.Count - 1) //don't count the last element if there are more keys ahead
+                    if(endInd < keys.Count - 1 || key.interp != keys[endInd].interp) //don't count the last element if there are more keys ahead
                         endInd--;
 
                     for(int j = i + 1; j <= endInd; j++) {
