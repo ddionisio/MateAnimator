@@ -37,8 +37,6 @@ namespace M8.Animator {
             name = "Track" + (index + 1);
         }
 
-        public bool started { get; private set; }
-
         //TODO: change (Set/Get)SerializeObject to Unity.Engine.Object target { get; set; }
 
         /// <summary>
@@ -205,18 +203,9 @@ namespace M8.Animator {
         /// Called when about to play during runtime, also use for initializing things (mostly for tweeners)
         /// </summary>
         public virtual void PlayStart(ITarget itarget, float frame, int frameRate, float animScale) {
-            if(!started) {
-                started = true;
-
-                //preview from starting frame so that the first tweener will grab the appropriate start value
-                if(canTween && keys.Count > 1 && keys[0].canTween)
-                    previewFrame(itarget, 0f, frameRate, false, 1.0f);
-            }
-            else {
-                //apply first frame if frame > first frame
-                if(canTween && keys.Count > 1 && keys[0].canTween && keys[0].frame > Mathf.RoundToInt(frame))
-                    previewFrame(itarget, 0f, frameRate, false, 1.0f);
-            }
+            //snap values to first key if frame is behind
+            if(keys.Count > 0 && keys[0].frame > Mathf.RoundToInt(frame))
+                previewFrame(itarget, frame, frameRate, false, 1.0f);
         }
 
         public void Reset(ITarget itarget, int frameRate) {
