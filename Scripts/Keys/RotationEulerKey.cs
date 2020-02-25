@@ -68,11 +68,24 @@ namespace M8.Animator {
         }
 
         /// <summary>
+        /// Check if all points of path are equal.
+        /// </summary>
+        bool IsPathPointsEqual() {
+            for(int i = 0; i < path.Length; i++) {
+                if(i > 0 && path[i - 1] != path[i])
+                    return false;
+            }
+
+            return true;
+        }
+
+        /// <summary>
         /// Grab tweener, create if it doesn't exists. keyInd is the index of this key in the track.
         /// </summary>
         TweenerCore<Vector3, Path, PathOptions> GetPathTween(int frameRate) {
             if((mPathTween == null || !mPathTween.active) && path.Length > 1) {
-                var pathType = path.Length == 2 ? PathType.Linear : PathType.CatmullRom;
+                //if all points are equal, then set to Linear to prevent error from DOTween
+                var pathType = path.Length == 2 || IsPathPointsEqual() ? PathType.Linear : PathType.CatmullRom;
 
                 var pathData = new Path(pathType, path, pathResolution);
 
