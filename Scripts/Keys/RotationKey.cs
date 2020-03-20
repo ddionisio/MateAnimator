@@ -26,7 +26,7 @@ namespace M8.Animator {
 
         public bool isClosed { get { return path.Length > 1 && path[0] == path[path.Length - 1]; } }
 
-        private TweenerCore<Vector3, Path, PathOptions> mPathTween;
+        private TweenerCore<Vector3, Path, PathOptions> mPathPreviewTween;
 
         /// <summary>
         /// Generate path points and endFrame. keyInd is the index of this key in the track.
@@ -86,21 +86,19 @@ namespace M8.Animator {
         }
 
         /// <summary>
-        /// Grab tweener, create if it doesn't exists. keyInd is the index of this key in the track.
+        /// Create the tween based on the path, there must at least be two points
         /// </summary>
-        TweenerCore<Vector3, Path, PathOptions> GetPathTween(int frameRate) {
-            if((mPathTween == null || !mPathTween.active) && path.Length > 1) {
-                //if all points are equal, then set to Linear to prevent error from DOTween
-                var pathType = path.Length == 2 || IsPathPointsEqual() ? PathType.Linear : PathType.CatmullRom;
+        TweenerCore<Vector3, Path, PathOptions> CreatePathTween(int frameRate) {
+            //if all points are equal, then set to Linear to prevent error from DOTween
+            var pathType = path.Length == 2 || IsPathPointsEqual() ? PathType.Linear : PathType.CatmullRom;
 
-                var pathData = new Path(pathType, path, pathResolution);
+            var pathData = new Path(pathType, path, pathResolution);
 
-                mPathTween = DOTween.To(PathPlugin.Get(), _PathGetter, _PathSetterNull, pathData, getTime(frameRate));
+            var tween = DOTween.To(PathPlugin.Get(), _PathGetter, _PathSetterNull, pathData, getTime(frameRate));
 
-                mPathTween.SetRelative(false).SetOptions(isClosed);
-            }
+            tween.SetRelative(false).SetOptions(isClosed);
 
-            return mPathTween;
+            return tween;
         }
 
         Vector3 _PathGetter() { return rotation.eulerAngles; }
@@ -108,9 +106,9 @@ namespace M8.Animator {
         void _PathSetterNull(Vector3 val) { }
 
         public void ClearCache() {
-            if(mPathTween != null) {
-                mPathTween.Kill();
-                mPathTween = null;
+            if(mPathPreviewTween != null) {
+                mPathPreviewTween.Kill();
+                mPathPreviewTween = null;
             }
         }
 
@@ -118,15 +116,17 @@ namespace M8.Animator {
         /// Grab position within t = [0, 1]. keyInd is the index of this key in the track.
         /// </summary>
         public Quaternion GetRotationFromPath(Transform transform, int frameRate, float t) {
-            var tween = GetPathTween(frameRate);
-            if(tween == null) //not tweenable
+            if((mPathPreviewTween == null || !mPathPreviewTween.active) && path.Length > 1)
+                mPathPreviewTween = CreatePathTween(frameRate);
+
+            if(mPathPreviewTween == null) //not tweenable
                 return rotation;
 
-            if(tween.target == null)
-                tween.SetTarget(transform);
+            if(mPathPreviewTween.target == null) //this is just a placeholder to prevent error exception
+                mPathPreviewTween.SetTarget(transform);
 
-            if(!tween.IsInitialized())
-                tween.ForceInit();
+            if(!mPathPreviewTween.IsInitialized())
+                mPathPreviewTween.ForceInit();
 
             float finalT;
 
@@ -139,7 +139,7 @@ namespace M8.Animator {
                     return rotation;
             }
 
-            return Quaternion.Euler(tween.PathGetPoint(finalT));
+            return Quaternion.Euler(mPathPreviewTween.PathGetPoint(finalT));
         }
 
         // copy properties from key
@@ -214,7 +214,7 @@ namespace M8.Animator {
                     break;
 
                 case Interpolation.Curve:
-                    var pathTween = GetPathTween(frameRate);
+                    var pathTween = CreatePathTween(frameRate);
 
                     if(body2D) {
                         pathTween.setter = x => body2D.MoveRotation(transParent.eulerAngles.z + x.z);
