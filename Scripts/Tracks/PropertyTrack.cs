@@ -45,6 +45,8 @@ namespace M8.Animator {
 
         public override int version { get { return 2; } }
 
+        public override int interpCount { get { return canTween ? 3 : 1; } }
+
         private FieldInfo cachedFieldInfo;
         private PropertyInfo cachedPropertyInfo;
         private bool isCached;
@@ -352,17 +354,28 @@ namespace M8.Animator {
 
             for(int i = 0; i < keys.Count; i++) {
                 PropertyKey key = keys[i] as PropertyKey;
-                PropertyKey keyNext = i + 1 < keys.Count ? keys[i + 1] as PropertyKey : null;
-
-                if(key.version > 0 && key.version != version) {
-                    //TODO: ...
-                }
 
                 key.version = version;
+                key.GeneratePath(this, i);
+                key.ClearCache();
 
-                if(keyNext != null) key.endFrame = keyNext.frame;
-                else {
-                    key.endFrame = key.canTween ? -1 : key.frame; //last key, invalid if tween, one frame for end
+                //invalidate some keys in between
+                if(key.path.Length > 1) {
+                    int endInd = i + key.path.Length - 1;
+                    if(endInd < keys.Count - 1 || key.interp != keys[endInd].interp) //don't count the last element if there are more keys ahead
+                        endInd--;
+
+                    for(int j = i + 1; j <= endInd; j++) {
+                        var _key = keys[j] as PropertyKey;
+
+                        _key.version = version;
+                        _key.interp = key.interp;
+                        _key.easeType = key.easeType;
+                        _key.endFrame = -1;
+                        _key.path = new TweenPlugPathPoint[0];
+                    }
+
+                    i = endInd;
                 }
             }
         }
@@ -428,9 +441,16 @@ namespace M8.Animator {
             if(!isCached)
                 RefreshData(comp);
 
-            // if before or equal to first frame, or is the only frame
-            PropertyKey firstKey = keys[0] as PropertyKey;
-            if(firstKey.endFrame == -1 || (frame <= (float)firstKey.frame && !firstKey.canTween)) {
+            int keyCount = keys.Count;
+
+            if(keyCount <= 0) return;
+
+            int iFrame = Mathf.RoundToInt(frame);
+
+            var firstKey = keys[0] as PropertyKey;
+
+            //check if only key or behind first key
+            if(keyCount == 1 || iFrame <= firstKey.frame) {
                 //go.rotation = (cache[0] as AMPropertyAction).getStartQuaternion();
                 setComponentValueFromCachedInfo(comp, firstKey.getValue(valueType));
                 if(comp is Transform)
@@ -438,91 +458,133 @@ namespace M8.Animator {
                 return;
             }
 
-            // if lies on property action
             for(int i = 0; i < keys.Count; i++) {
-                PropertyKey key = keys[i] as PropertyKey;
-                PropertyKey keyNext = i + 1 < keys.Count ? keys[i + 1] as PropertyKey : null;
+                var key = keys[i] as PropertyKey;
 
-                if(frame >= (float)key.endFrame && keyNext != null && (!keyNext.canTween || keyNext.endFrame != -1)) continue;
-                // if no ease
-                if(!key.canTween || keyNext == null) {
+                if(key.endFrame == -1) //invalid
+                    continue;
+
+                //end of last path in track?
+                if(iFrame >= key.endFrame) {
+                    PropertyKey toKey = null;
+
+                    if(key.interp == Key.Interpolation.None) {
+                        if(i + 1 == keyCount)
+                            toKey = key;
+                    }
+                    else if(key.interp == Key.Interpolation.Linear || key.path.Length == 0) {
+                        if(i + 1 == keyCount - 1)
+                            toKey = (PropertyKey)keys[i + 1];
+                    }
+                    else if(key.interp == Key.Interpolation.Curve) {
+                        if(key.path.Length > 0 && i + key.path.Length == keyCount) //end of last path in track?
+                            toKey = (PropertyKey)keys[key.path.Length - 1];
+                    }
+
+                    if(toKey != null) {
+                        setComponentValueFromCachedInfo(comp, toKey.getValue(valueType));
+                        if(comp is Transform)
+                            refreshTransform(go);
+
+                        return;
+                    }
+
+                    continue;
+                }
+
+                if(key.interp == Key.Interpolation.None) {
                     setComponentValueFromCachedInfo(comp, key.getValue(valueType));
                     if(comp is Transform)
                         refreshTransform(go);
-                    return;
                 }
-                // else find value using easing function
+                else if(key.interp == Key.Interpolation.Linear || key.path.Length == 0) {
+                    PropertyKey keyNext = i + 1 < keys.Count ? keys[i + 1] as PropertyKey : null;
 
-                float numFrames = (float)key.getNumberOfFrames(frameRate);
+                    float numFrames = (float)key.getNumberOfFrames(frameRate);
 
-                float framePositionInAction = Mathf.Clamp(frame - (float)key.frame, 0f, numFrames);
+                    float framePositionInAction = Mathf.Clamp(frame - (float)key.frame, 0f, numFrames);
 
-                float t;
+                    float t;
 
-                if(key.hasCustomEase()) {
-                    t = Utility.EaseCustom(0.0f, 1.0f, framePositionInAction / key.getNumberOfFrames(frameRate), key.easeCurve);
+                    if(key.hasCustomEase()) {
+                        t = Utility.EaseCustom(0.0f, 1.0f, framePositionInAction / key.getNumberOfFrames(frameRate), key.easeCurve);
+                    }
+                    else {
+                        var ease = Utility.GetEasingFunction(key.easeType);
+                        t = ease(framePositionInAction, key.getNumberOfFrames(frameRate), key.amplitude, key.period);
+                    }
+
+                    //qCurrent.x = ease(qStart.x,qEnd.x,percentage);
+                    switch((ValueType)valueType) {
+                        case ValueType.Integer:
+                            setComponentValueFromCachedInfo(comp, keyNext != null ? Mathf.RoundToInt(Mathf.Lerp(Convert.ToSingle(key.val), Convert.ToSingle(keyNext.val), t)) : Convert.ToInt32(key.val));
+                            break;
+                        case ValueType.Long:
+                            setComponentValueFromCachedInfo(comp, keyNext != null ? (long)Mathf.RoundToInt(Mathf.Lerp(Convert.ToSingle(key.val), Convert.ToSingle(keyNext.val), t)) : Convert.ToInt64(key.val));
+                            break;
+                        case ValueType.Float:
+                            setComponentValueFromCachedInfo(comp, keyNext != null ? Mathf.Lerp(Convert.ToSingle(key.val), Convert.ToSingle(keyNext.val), t) : Convert.ToSingle(key.val));
+                            break;
+                        case ValueType.Double:
+                            setComponentValueFromCachedInfo(comp, keyNext != null ? key.val + ((double)t) * (keyNext.val - key.val) : key.val);
+                            break;
+                        case ValueType.Vector2:
+                            setComponentValueFromCachedInfo(comp, keyNext != null ? Vector2.Lerp(key.vect2, keyNext.vect2, t) : key.vect2);
+                            break;
+                        case ValueType.Vector3:
+                            setComponentValueFromCachedInfo(comp, keyNext != null ? Vector3.Lerp(key.vect3, keyNext.vect3, t) : key.vect3);
+                            break;
+                        case ValueType.Color:
+                            setComponentValueFromCachedInfo(comp, keyNext != null ? Color.Lerp(key.color, keyNext.color, t) : key.color);
+                            break;
+                        case ValueType.Rect:
+                            if(keyNext != null) {
+                                Rect vStartRect = key.rect;
+                                Rect vEndRect = keyNext.rect;
+                                Rect vCurrentRect = new Rect();
+                                vCurrentRect.x = Mathf.Lerp(vStartRect.x, vEndRect.x, t);
+                                vCurrentRect.y = Mathf.Lerp(vStartRect.y, vEndRect.y, t);
+                                vCurrentRect.width = Mathf.Lerp(vStartRect.width, vEndRect.width, t);
+                                vCurrentRect.height = Mathf.Lerp(vStartRect.height, vEndRect.height, t);
+                                setComponentValueFromCachedInfo(comp, vCurrentRect);
+                            }
+                            else
+                                setComponentValueFromCachedInfo(comp, key.rect);
+                            break;
+                        case ValueType.Vector4:
+                            setComponentValueFromCachedInfo(comp, keyNext != null ? Vector4.Lerp(key.vect4, keyNext.vect4, t) : key.vect4);
+                            break;
+                        case ValueType.Quaternion:
+                            setComponentValueFromCachedInfo(comp, keyNext != null ? Quaternion.Slerp(key.quat, keyNext.quat, t) : key.quat);
+                            break;
+                        default:
+                            Debug.LogError("Animator: Invalid ValueType " + valueType.ToString());
+                            break;
+                    }
+                    if(comp is Transform)
+                        refreshTransform(go);
                 }
-                else {
-                    var ease = Utility.GetEasingFunction(key.easeType);
-                    t = ease(framePositionInAction, key.getNumberOfFrames(frameRate), key.amplitude, key.period);
-                }
+                else if(key.interp == Key.Interpolation.Curve) {
+                    float t = Mathf.Clamp01((frame - key.frame) / key.getNumberOfFrames(frameRate));
 
-                //qCurrent.x = ease(qStart.x,qEnd.x,percentage);
-                switch((ValueType)valueType) {
-                    case ValueType.Integer:
-                        setComponentValueFromCachedInfo(comp, keyNext != null ? Mathf.RoundToInt(Mathf.Lerp(Convert.ToSingle(key.val), Convert.ToSingle(keyNext.val), t)) : Convert.ToInt32(key.val));
-                        break;
-                    case ValueType.Long:
-                        setComponentValueFromCachedInfo(comp, keyNext != null ? (long)Mathf.RoundToInt(Mathf.Lerp(Convert.ToSingle(key.val), Convert.ToSingle(keyNext.val), t)) : Convert.ToInt64(key.val));
-                        break;
-                    case ValueType.Float:
-                        setComponentValueFromCachedInfo(comp, keyNext != null ? Mathf.Lerp(Convert.ToSingle(key.val), Convert.ToSingle(keyNext.val), t) : Convert.ToSingle(key.val));
-                        break;
-                    case ValueType.Double:
-                        setComponentValueFromCachedInfo(comp, keyNext != null ? key.val + ((double)t) * (keyNext.val - key.val) : key.val);
-                        break;
-                    case ValueType.Vector2:
-                        setComponentValueFromCachedInfo(comp, keyNext != null ? Vector2.Lerp(key.vect2, keyNext.vect2, t) : key.vect2);
-                        break;
-                    case ValueType.Vector3:
-                        setComponentValueFromCachedInfo(comp, keyNext != null ? Vector3.Lerp(key.vect3, keyNext.vect3, t) : key.vect3);
-                        break;
-                    case ValueType.Color:
-                        setComponentValueFromCachedInfo(comp, keyNext != null ? Color.Lerp(key.color, keyNext.color, t) : key.color);
-                        break;
-                    case ValueType.Rect:
-                        if(keyNext != null) {
-                            Rect vStartRect = key.rect;
-                            Rect vEndRect = keyNext.rect;
-                            Rect vCurrentRect = new Rect();
-                            vCurrentRect.x = Mathf.Lerp(vStartRect.x, vEndRect.x, t);
-                            vCurrentRect.y = Mathf.Lerp(vStartRect.y, vEndRect.y, t);
-                            vCurrentRect.width = Mathf.Lerp(vStartRect.width, vEndRect.width, t);
-                            vCurrentRect.height = Mathf.Lerp(vStartRect.height, vEndRect.height, t);
-                            setComponentValueFromCachedInfo(comp, vCurrentRect);
-                        }
-                        else
-                            setComponentValueFromCachedInfo(comp, key.rect);
-                        break;
-                    case ValueType.Vector4:
-                        setComponentValueFromCachedInfo(comp, keyNext != null ? Vector4.Lerp(key.vect4, keyNext.vect4, t) : key.vect4);
-                        break;
-                    case ValueType.Quaternion:
-                        setComponentValueFromCachedInfo(comp, keyNext != null ? Quaternion.Slerp(key.quat, keyNext.quat, t) : key.quat);
-                        break;
-                    default:
+                    var val = key.GetValueFromPath(valueType, t);
+                    if(val == null) {
                         Debug.LogError("Animator: Invalid ValueType " + valueType.ToString());
-                        break;
+                        return;
+                    }
+
+                    setComponentValueFromCachedInfo(comp, val);
+
+                    if(comp is Transform)
+                        refreshTransform(go);
                 }
-                if(comp is Transform)
-                    refreshTransform(go);
+
                 return;
             }
         }
         public void refreshTransform(GameObject targetGO) {
             if(Application.isPlaying || !targetGO) return;
-            Vector3 lp = targetGO.transform.localPosition;
-            targetGO.transform.localPosition = lp;
+            targetGO.transform.hasChanged = true;
         }
 
         public string getComponentName() {
@@ -598,3 +660,4 @@ namespace M8.Animator {
         }
     }
 }
+ 

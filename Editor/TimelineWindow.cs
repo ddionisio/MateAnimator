@@ -2869,7 +2869,7 @@ namespace M8.Animator.Edit {
                         didClampBackwards = true;
                         clamped = -1;
                     }
-                    else if(_track is UnityAnimationTrack || _track is AudioTrack || _track is PropertyTrack || _track is MaterialTrack || _track is EventTrack || _track is GOSetActiveTrack || _track is CameraSwitcherTrack) {
+                    else if(_track is UnityAnimationTrack || _track is AudioTrack || _track is EventTrack || _track is GOSetActiveTrack || _track is CameraSwitcherTrack) {
                         // single frame tracks (clamp box to last frame) (if audio track not set, clamp)
                         action_startFrame = _track.keys[i].getStartFrame();
                         if(i < _track.keys.Count - 1) {
@@ -2885,7 +2885,13 @@ namespace M8.Animator.Edit {
                         // tracks with start frame and end frame (do not clamp box, stop before last key)
                         if(_track.keys[i].getNumberOfFrames(curTake.frameRate) <= 0) continue;
                         action_startFrame = _track.keys[i].getStartFrame();
-                        action_endFrame = _track.keys[i].getStartFrame() + _track.keys[i].getNumberOfFrames(curTake.frameRate);
+                        if((_track is PropertyTrack || _track is MaterialTrack) && i >= _track.keys.Count - 1) { //clamp to end of window (allows detail to be displayed properly)
+                            clamped = 1;
+                            action_endFrame = _endFrame;
+                            if(action_endFrame > numFrames) action_endFrame = numFrames + 1;
+                        }
+                        else
+                            action_endFrame = _track.keys[i].getStartFrame() + _track.keys[i].getNumberOfFrames(curTake.frameRate);
                     }
                     if(action_startFrame > _endFrame) {
                         last_action_startFrame = action_startFrame;
@@ -5314,7 +5320,7 @@ namespace M8.Animator.Edit {
                 int keyInd = _track.getKeyIndex(_key);
                 PropertyTrack propTrack = _track as PropertyTrack;
                 PropertyKey propkey = _key as PropertyKey;
-                PropertyKey nextKey = keyInd >= 0 && keyInd + 1 < _track.keys.Count ? _track.keys[keyInd + 1] as PropertyKey : null;
+                PropertyKey nextKey = propkey.path.Length == 0 && keyInd >= 0 && keyInd + 1 < _track.keys.Count ? _track.keys[keyInd + 1] as PropertyKey : null; //don't show value detail if path
 
                 string info = propTrack.getTrackType() + "\n";
                 if(propkey.targetsAreEqual(propTrack.valueType, nextKey) || !_key.canTween || !propTrack.canTween) brief = true;

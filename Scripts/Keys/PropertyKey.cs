@@ -12,6 +12,8 @@ namespace M8.Animator {
     public class PropertyKey : Key {
         public override SerializeType serializeType { get { return SerializeType.Property; } }
 
+        public const int pathResolution = 10;
+
         public int endFrame;
 
         //union for single values
@@ -28,6 +30,150 @@ namespace M8.Animator {
         public Color color { get { return new Color(vect4.x, vect4.y, vect4.z, vect4.w); } set { vect4.Set(value.r, value.g, value.b, value.a); } }
         public Rect rect { get { return new Rect(vect4.x, vect4.y, vect4.z, vect4.w); } set { vect4.Set(value.xMin, value.yMin, value.width, value.height); } }
         public Quaternion quat { get { return new Quaternion(vect4.x, vect4.y, vect4.z, vect4.w); } set { vect4.Set(value.x, value.y, value.z, value.w); } }
+
+        public TweenPlugPathPoint[] path;
+
+        public bool isClosed { get { return path.Length > 1 && path[0].Equal(path[path.Length - 1]); } }
+
+        private TweenPlugPath mPathPreview;
+
+        private TweenPlugPathPoint GeneratePathPoint(PropertyTrack.ValueType valueType) {
+            switch(valueType) {
+                case PropertyTrack.ValueType.Float:
+                case PropertyTrack.ValueType.Integer:
+                case PropertyTrack.ValueType.Long:
+                case PropertyTrack.ValueType.Double:
+                    return new TweenPlugPathPoint(System.Convert.ToSingle(val));
+
+                case PropertyTrack.ValueType.Vector2:
+                    return new TweenPlugPathPoint(vect2);
+                case PropertyTrack.ValueType.Vector3:
+                    return new TweenPlugPathPoint(vect3);
+                case PropertyTrack.ValueType.Vector4:
+                    return new TweenPlugPathPoint(vect4);
+
+                case PropertyTrack.ValueType.Color:
+                    return new TweenPlugPathPoint(color);
+
+                case PropertyTrack.ValueType.Rect:
+                    return new TweenPlugPathPoint(rect);
+
+                case PropertyTrack.ValueType.Quaternion: //TODO: quaternion is treated as euler angles
+                    return new TweenPlugPathPoint(quat.eulerAngles);
+            }
+
+            return new TweenPlugPathPoint(0);
+        }
+
+        /// <summary>
+        /// Generate path points and endFrame. keyInd is the index of this key in the track.
+        /// </summary>
+        public void GeneratePath(PropertyTrack track, int keyInd) {
+            switch(interp) {
+                case Interpolation.None:
+                    path = new TweenPlugPathPoint[0];
+                    endFrame = keyInd + 1 < track.keys.Count ? track.keys[keyInd + 1].frame : frame;
+                    break;
+
+                case Interpolation.Linear:
+                    path = new TweenPlugPathPoint[0];
+
+                    if(keyInd + 1 < track.keys.Count)
+                        endFrame = track.keys[keyInd + 1].frame;
+                    else //fail-safe
+                        endFrame = -1;
+                    break;
+
+                case Interpolation.Curve:
+                    var pathList = new List<TweenPlugPathPoint>();
+
+                    for(int i = keyInd; i < track.keys.Count; i++) {
+                        var key = (PropertyKey)track.keys[i];
+
+                        pathList.Add(key.GeneratePathPoint(track.valueType));
+                        endFrame = key.frame;
+
+                        if(key.interp != Interpolation.Curve)
+                            break;
+                    }
+
+                    if(pathList.Count > 1) {
+                        if(pathList.Count > 2)
+                            path = pathList.ToArray();
+                        else
+                            path = new TweenPlugPathPoint[0]; //use linear mode
+                    }
+                    else {
+                        endFrame = -1;
+                        path = new TweenPlugPathPoint[0];
+                    }
+                    break;
+            }
+        }
+
+        public void ClearCache() {
+            mPathPreview = null;
+        }
+
+        public object GetValueFromPathPoint(PropertyTrack.ValueType valueType, TweenPlugPathPoint pt) {
+            switch(valueType) {
+                case PropertyTrack.ValueType.Float:
+                    return pt.valueFloat;
+                case PropertyTrack.ValueType.Integer:
+                    return Mathf.RoundToInt(pt.valueFloat);
+                case PropertyTrack.ValueType.Long:
+                    return System.Convert.ToInt64(Mathf.RoundToInt(pt.valueFloat));
+                case PropertyTrack.ValueType.Double:
+                    return System.Convert.ToDouble(pt.valueFloat);
+
+                case PropertyTrack.ValueType.Vector2:
+                    return pt.valueVector2;
+                case PropertyTrack.ValueType.Vector3:
+                    return pt.valueVector3;
+                case PropertyTrack.ValueType.Vector4:
+                    return pt.valueVector4;
+
+                case PropertyTrack.ValueType.Color:
+                    return pt.valueColor;
+
+                case PropertyTrack.ValueType.Rect:
+                    return pt.valueRect;
+
+                case PropertyTrack.ValueType.Quaternion: //TODO: quaternion is treated as euler angles
+                    return Quaternion.Euler(pt.valueVector3);
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Grab position within t = [0, 1]. keyInd is the index of this key in the track.
+        /// </summary>
+        public object GetValueFromPath(PropertyTrack.ValueType valueType, float t) {
+
+            if(mPathPreview == null) {
+                if(path.Length <= 1) //invalid path
+                    return getValue(valueType);
+
+                mPathPreview = new TweenPlugPath(path.Length > 2 ? TweenPlugPathType.CatmullRom : TweenPlugPathType.Linear, path, pathResolution);
+                mPathPreview.Init(isClosed);
+            }
+
+            float finalT;
+
+            if(hasCustomEase())
+                finalT = Utility.EaseCustom(0.0f, 1.0f, t, easeCurve);
+            else {
+                var ease = Utility.GetEasingFunction(easeType);
+                finalT = ease(t, 1f, amplitude, period);
+                if(float.IsNaN(finalT)) //this really shouldn't happen...
+                    return getValue(valueType);
+            }
+
+            var pt = mPathPreview.GetPoint(finalT, true);
+
+            return GetValueFromPathPoint(valueType, pt);
+        }
 
         // copy properties from key
         public override void CopyTo(Key key) {
@@ -87,10 +233,7 @@ namespace M8.Animator {
             return null;
         }
 
-        Tweener GenerateSingleValueTweener(SequenceControl seq, PropertyTrack propTrack, float frameRate, Component comp) {
-            float numFrames = endFrame == -1 ? 1f : (float)(endFrame - frame);
-            float time = numFrames / frameRate;
-
+        Tweener GenerateSingleValueTweener(SequenceControl seq, PropertyTrack propTrack, float time, Component comp) {
             switch(propTrack.valueType) {
                 case PropertyTrack.ValueType.Integer: {
                         int _val = System.Convert.ToInt32(val);
@@ -175,107 +318,158 @@ namespace M8.Animator {
             //allow tracks with just one key
             if(track.keys.Count == 1)
                 interp = Interpolation.None;
-            else if(canTween && track.canTween) {
+            else if(canTween) {
                 //invalid or in-between keys
                 if(endFrame == -1) return;
+                if(interp == Interpolation.Curve && path.Length <= 1) return;
             }
 
             PropertyTrack propTrack = track as PropertyTrack;
+
+            string varName = propTrack.getMemberName();
+            if(string.IsNullOrEmpty(varName)) { Debug.LogError("Animator: No FieldInfo or PropertyInfo set."); return; }
 
             PropertyTrack.ValueType valueType = propTrack.valueType;
 
             //get component and fill the cached method info
             Component comp = propTrack.GetTargetComp(target as GameObject);
-
             if(comp == null) return;
 
-            string varName = propTrack.getMemberName();
+            propTrack.RefreshData(comp);
 
-            int frameRate = seq.take.frameRate;
+            float numFrames = endFrame == -1 ? 1f : (float)(endFrame - frame);
+            float time = numFrames / seq.take.frameRate;
 
-            //change to use setvalue track in AMSequence
-            if(!string.IsNullOrEmpty(varName)) {
-                propTrack.RefreshData(comp);
+            if(interp == Interpolation.None) {
+                seq.Insert(this, GenerateSingleValueTweener(seq, propTrack, time, comp));
+            }
+            else if(interp == Interpolation.Linear || path.Length == 0) {
+                //grab end frame
+                var endKey = track.keys[index + 1] as PropertyKey;
 
-                //allow tracks with just one key
-                if(!propTrack.canTween || !canTween)
-                    seq.Insert(this, GenerateSingleValueTweener(seq, propTrack, frameRate, comp));
-                else {
-                    //grab end frame
-                    var endKey = track.keys[index + 1] as PropertyKey;
+                if(targetsAreEqual(valueType, endKey)) return;
 
-                    if(targetsAreEqual(valueType, endKey)) return;
+                Tweener tweenLinear = null;
 
-                    Tweener tween = null;
+                switch(valueType) {
+                    case PropertyTrack.ValueType.Integer:
+                        tweenLinear = DOTween.To(new IntPlugin(), () => System.Convert.ToInt32(val), GenerateSetter<int>(propTrack, comp), System.Convert.ToInt32(endKey.val), time); break;
+                    case PropertyTrack.ValueType.Float:
+                        tweenLinear = DOTween.To(new FloatPlugin(), () => System.Convert.ToSingle(val), GenerateSetter<float>(propTrack, comp), System.Convert.ToSingle(endKey.val), time); break;
+                    case PropertyTrack.ValueType.Double:
+                        tweenLinear = DOTween.To(new DoublePlugin(), () => val, GenerateSetter<double>(propTrack, comp), endKey.val, time); break;
+                    case PropertyTrack.ValueType.Long:
+                        tweenLinear = DOTween.To(new LongPlugin(), () => System.Convert.ToInt64(val), GenerateSetter<long>(propTrack, comp), System.Convert.ToInt64(endKey.val), time); break;
+                    case PropertyTrack.ValueType.Vector2:
+                        tweenLinear = DOTween.To(TweenPluginFactory.CreateVector2(), () => vect2, GenerateSetter<Vector2>(propTrack, comp), endKey.vect2, time); break;
+                    case PropertyTrack.ValueType.Vector3:
+                        tweenLinear = DOTween.To(TweenPluginFactory.CreateVector3(), () => vect3, GenerateSetter<Vector3>(propTrack, comp), endKey.vect3, time); break;
+                    case PropertyTrack.ValueType.Color:
+                        tweenLinear = DOTween.To(TweenPluginFactory.CreateColor(), () => color, GenerateSetter<Color>(propTrack, comp), endKey.color, time); break;
+                    case PropertyTrack.ValueType.Rect:
+                        tweenLinear = DOTween.To(new RectPlugin(), () => rect, (x) => GenerateSetter<Rect>(propTrack, comp), endKey.rect, time); break;
+                    case PropertyTrack.ValueType.Vector4:
+                        tweenLinear = DOTween.To(TweenPluginFactory.CreateVector4(), () => vect4, GenerateSetter<Vector4>(propTrack, comp), endKey.vect4, time); break;
+                    case PropertyTrack.ValueType.Quaternion:
+                        tweenLinear = DOTween.To(new PureQuaternionPlugin(), () => quat, GenerateSetter<Quaternion>(propTrack, comp), endKey.quat, time); break;
+                }
 
-                    var time = getTime(frameRate);
+                if(tweenLinear != null) {
+                    if(hasCustomEase())
+                        tweenLinear.SetEase(easeCurve);
+                    else
+                        tweenLinear.SetEase(easeType, amplitude, period);
 
-                    PropertyInfo propInfo = propTrack.GetCachedPropertyInfo();
-                    if(propInfo != null) {
-                        switch(valueType) {
-                            case PropertyTrack.ValueType.Integer:
-                                tween = DOTween.To(new IntPlugin(), () => System.Convert.ToInt32(val), (x) => propInfo.SetValue(comp, x, null), System.Convert.ToInt32(endKey.val), time); break;
-                            case PropertyTrack.ValueType.Float:
-                                tween = DOTween.To(new FloatPlugin(), () => System.Convert.ToSingle(val), (x) => propInfo.SetValue(comp, x, null), System.Convert.ToSingle(endKey.val), time); break;
-                            case PropertyTrack.ValueType.Double:
-                                tween = DOTween.To(new DoublePlugin(), () => val, (x) => propInfo.SetValue(comp, x, null), endKey.val, time); break;
-                            case PropertyTrack.ValueType.Long:
-                                tween = DOTween.To(new LongPlugin(), () => System.Convert.ToInt64(val), (x) => propInfo.SetValue(comp, x, null), System.Convert.ToInt64(endKey.val), time); break;
-                            case PropertyTrack.ValueType.Vector2:
-                                tween = DOTween.To(TweenPluginFactory.CreateVector2(), () => vect2, (x) => propInfo.SetValue(comp, x, null), endKey.vect2, time); break;
-                            case PropertyTrack.ValueType.Vector3:
-                                tween = DOTween.To(TweenPluginFactory.CreateVector3(), () => vect3, (x) => propInfo.SetValue(comp, x, null), endKey.vect3, time); break;
-                            case PropertyTrack.ValueType.Color:
-                                tween = DOTween.To(TweenPluginFactory.CreateColor(), () => color, (x) => propInfo.SetValue(comp, x, null), endKey.color, time); break;
-                            case PropertyTrack.ValueType.Rect:
-                                tween = DOTween.To(new RectPlugin(), () => rect, (x) => propInfo.SetValue(comp, x, null), endKey.rect, time); break;
-                            case PropertyTrack.ValueType.Vector4:
-                                tween = DOTween.To(TweenPluginFactory.CreateVector4(), () => vect4, (x) => propInfo.SetValue(comp, x, null), endKey.vect4, time); break;
-                            case PropertyTrack.ValueType.Quaternion:
-                                tween = DOTween.To(new PureQuaternionPlugin(), () => quat, (x) => propInfo.SetValue(comp, x, null), endKey.quat, time); break;
-                        }
-                    }
-                    else {
-                        FieldInfo fieldInfo = propTrack.GetCachedFieldInfo();
-                        if(fieldInfo != null) {
-                            switch(valueType) {
-                                case PropertyTrack.ValueType.Integer:
-                                    tween = DOTween.To(new IntPlugin(), () => System.Convert.ToInt32(val), (x) => fieldInfo.SetValue(comp, x), System.Convert.ToInt32(endKey.val), time); break;
-                                case PropertyTrack.ValueType.Float:
-                                    tween = DOTween.To(new FloatPlugin(), () => System.Convert.ToSingle(val), (x) => fieldInfo.SetValue(comp, x), System.Convert.ToSingle(endKey.val), time); break;
-                                case PropertyTrack.ValueType.Double:
-                                    tween = DOTween.To(new DoublePlugin(), () => val, (x) => fieldInfo.SetValue(comp, x), endKey.val, time); break;
-                                case PropertyTrack.ValueType.Long:
-                                    tween = DOTween.To(new LongPlugin(), () => System.Convert.ToInt64(val), (x) => fieldInfo.SetValue(comp, x), System.Convert.ToInt64(endKey.val), time); break;
-                                case PropertyTrack.ValueType.Vector2:
-                                    tween = DOTween.To(TweenPluginFactory.CreateVector2(), () => vect2, (x) => fieldInfo.SetValue(comp, x), endKey.vect2, time); break;
-                                case PropertyTrack.ValueType.Vector3:
-                                    tween = DOTween.To(TweenPluginFactory.CreateVector3(), () => vect3, (x) => fieldInfo.SetValue(comp, x), endKey.vect3, time); break;
-                                case PropertyTrack.ValueType.Color:
-                                    tween = DOTween.To(TweenPluginFactory.CreateColor(), () => color, (x) => fieldInfo.SetValue(comp, x), endKey.color, time); break;
-                                case PropertyTrack.ValueType.Rect:
-                                    tween = DOTween.To(new RectPlugin(), () => (Rect)fieldInfo.GetValue(comp), (x) => fieldInfo.SetValue(comp, x), endKey.rect, time); break;
-                                case PropertyTrack.ValueType.Vector4:
-                                    tween = DOTween.To(TweenPluginFactory.CreateVector4(), () => vect4, (x) => fieldInfo.SetValue(comp, x), endKey.vect4, time); break;
-                                case PropertyTrack.ValueType.Quaternion:
-                                    tween = DOTween.To(new PureQuaternionPlugin(), () => quat, (x) => fieldInfo.SetValue(comp, x), endKey.quat, time); break;
-                            }
-                        }
-                    }
-
-                    if(tween != null) {
-                        if(hasCustomEase())
-                            tween.SetEase(easeCurve);
-                        else
-                            tween.SetEase((Ease)easeType, amplitude, period);
-
-                        seq.Insert(this, tween);
-                    }
+                    seq.Insert(this, tweenLinear);
                 }
             }
-            else
-                Debug.LogError("Animator: No FieldInfo or PropertyInfo set.");
+            else {
+                //create tween
+                var pathType = path.Length == 2 ? TweenPlugPathType.Linear : TweenPlugPathType.CatmullRom;
+                var pathData = new TweenPlugPath(pathType, path, pathResolution);
 
+                //options
+                var options = new TweenPlugPathOptions { loopType = LoopType.Restart, isClosedPath = isClosed };
+
+                Tweener tweenPath;
+
+                switch(valueType) {
+                    case PropertyTrack.ValueType.Integer: {
+                        var tween = DOTween.To(TweenPlugPathInt.Get(), () => System.Convert.ToInt32(val), GenerateSetter<int>(propTrack, comp), pathData, time);
+                        tween.plugOptions = options; tweenPath = tween;
+                    }
+                    break;
+
+                    case PropertyTrack.ValueType.Float: {
+                        var tween = DOTween.To(TweenPlugPathFloat.Get(), () => System.Convert.ToSingle(val), GenerateSetter<float>(propTrack, comp), pathData, time);
+                        tween.plugOptions = options; tweenPath = tween;
+                    }
+                    break;
+
+                    case PropertyTrack.ValueType.Double: {
+                        var tween = DOTween.To(TweenPlugPathDouble.Get(), () => val, GenerateSetter<double>(propTrack, comp), pathData, time);
+                        tween.plugOptions = options; tweenPath = tween;
+                    }
+                    break;
+
+                    case PropertyTrack.ValueType.Long: {
+                        var tween = DOTween.To(TweenPlugPathLong.Get(), () => System.Convert.ToInt64(val), GenerateSetter<long>(propTrack, comp), pathData, time);
+                        tween.plugOptions = options; tweenPath = tween;
+                    }
+                    break;
+
+                    case PropertyTrack.ValueType.Vector2: {
+                        var tween = DOTween.To(TweenPlugPathVector2.Get(), () => vect2, GenerateSetter<Vector2>(propTrack, comp), pathData, time);
+                        tween.plugOptions = options; tweenPath = tween;
+                    }
+                    break;
+
+                    case PropertyTrack.ValueType.Vector3: {
+                        var tween = DOTween.To(TweenPlugPathVector3.Get(), () => vect3, GenerateSetter<Vector3>(propTrack, comp), pathData, time);
+                        tween.plugOptions = options; tweenPath = tween;
+                    }
+                    break;
+
+                    case PropertyTrack.ValueType.Color: {
+                        var tween = DOTween.To(TweenPlugPathColor.Get(), () => color, GenerateSetter<Color>(propTrack, comp), pathData, time);
+                        tween.plugOptions = options; tweenPath = tween;
+                    }
+                    break;
+
+                    case PropertyTrack.ValueType.Rect: {
+                        var tween = DOTween.To(TweenPlugPathRect.Get(), () => rect, GenerateSetter<Rect>(propTrack, comp), pathData, time);
+                        tween.plugOptions = options; tweenPath = tween;
+                    }
+                    break;
+
+                    case PropertyTrack.ValueType.Vector4: {
+                        var tween = DOTween.To(TweenPlugPathVector4.Get(), () => vect4, GenerateSetter<Vector4>(propTrack, comp), pathData, time);
+                        tween.plugOptions = options; tweenPath = tween;
+                    }
+                    break;
+
+                    case PropertyTrack.ValueType.Quaternion: {
+                        var tween = DOTween.To(TweenPlugPathEuler.Get(), () => quat, GenerateSetter<Quaternion>(propTrack, comp), pathData, time);
+                        tween.plugOptions = options; tweenPath = tween;
+                    }
+                    break;
+
+                    default:
+                        tweenPath = null;
+                        break;
+                }
+
+                if(tweenPath != null) {
+                    tweenPath.SetRelative(false);
+
+                    if(hasCustomEase())
+                        tweenPath.SetEase(easeCurve);
+                    else
+                        tweenPath.SetEase(easeType, amplitude, period);
+
+                    seq.Insert(this, tweenPath);
+                }
+            }
             return;
         }
 
