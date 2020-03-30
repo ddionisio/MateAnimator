@@ -129,14 +129,30 @@ namespace M8.Animator.Edit {
 
             //check for change
             if(mTrack.materialIndex != matInd || mTrack.materialOverride != matOverride || mTrack.property != shaderProperty || mTrack.propertyType != shaderPropertyType) {
-                aData.RegisterTakesUndo("Material Track Property Change");
+                bool applyChanges = true;
+                bool deleteKeys = false;
 
-                mTrack.materialIndex = matInd;
-                mTrack.materialOverride = matOverride;
-                mTrack.property = shaderProperty;
-                mTrack.propertyType = shaderPropertyType;
+                //delete if changing type
+                if(mTrack.keys.Count > 0 && !MaterialTrack.IsValueTypeCompatible(mTrack.propertyType, shaderPropertyType)) {
+                    if(UnityEditor.EditorUtility.DisplayDialog("Data Will Be Lost", "You will lose all of the keyframes on track '" + mTrack.name + "' if you continue.", "Continue Anway", "Cancel"))
+                        deleteKeys = true;                        
+                    else
+                        applyChanges = false;
+                }
 
-                aData.RecordTakesChanged();
+                if(applyChanges) {
+                    aData.RegisterTakesUndo("Material Track Property Change");
+
+                    mTrack.materialIndex = matInd;
+                    mTrack.materialOverride = matOverride;
+                    mTrack.property = shaderProperty;
+                    mTrack.propertyType = shaderPropertyType;
+
+                    if(deleteKeys)
+                        mTrack.keys = new List<Key>();
+
+                    aData.RecordTakesChanged();
+                }
             }
         }
 

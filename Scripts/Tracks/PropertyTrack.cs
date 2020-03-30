@@ -237,7 +237,7 @@ namespace M8.Animator {
                     k.easeCurve = prevKey.easeCurve;
                 }
                 else
-                    k.interp = canTween ? Key.Interpolation.Linear : Key.Interpolation.None; //default
+                    k.interp = canTween ? Key.Interpolation.Curve : Key.Interpolation.None; //default
 
                 // add a new key
                 keys.Add(k);
