@@ -128,7 +128,7 @@ namespace M8.Animator {
             Transform sTarget = GetTarget(seq.target);
             Transform eTarget = canTween ? (track.keys[index + 1] as OrientationKey).GetTarget(seq.target) : null;
 
-            var tween = DOTween.To(new FloatPlugin(), () => 0f, (x) => {
+            var tween = DOTween.To(TweenPluginFactory.CreateFloat(), () => 0f, (x) => {
                 if(sTarget == null && eTarget == null)
                     return;
                 else if(sTarget == null)

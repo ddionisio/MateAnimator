@@ -183,9 +183,9 @@ namespace M8.Animator {
                         TweenerCore<float, float, TWeenPlugNoneOptions> tweenX;
 
                         if(body)
-                            tweenX = DOTween.To(new TweenPlugValueSet<float>(), () => target.localEulerAngles.x, (x) => { var a = target.localEulerAngles; body.rotation = Quaternion.Euler(x, a.y, a.z) * transParent.rotation; }, _x, timeLength);
+                            tweenX = DOTween.To(TweenPlugValueSet<float>.Get(), () => target.localEulerAngles.x, (x) => { var a = target.localEulerAngles; body.rotation = Quaternion.Euler(x, a.y, a.z) * transParent.rotation; }, _x, timeLength);
                         else
-                            tweenX = DOTween.To(new TweenPlugValueSet<float>(), () => target.localEulerAngles.x, (x) => { var a = target.localEulerAngles; a.x = x; target.localEulerAngles = a; }, _x, timeLength);
+                            tweenX = DOTween.To(TweenPlugValueSet<float>.Get(), () => target.localEulerAngles.x, (x) => { var a = target.localEulerAngles; a.x = x; target.localEulerAngles = a; }, _x, timeLength);
 
                         seq.Insert(this, tweenX);
                     }
@@ -194,9 +194,9 @@ namespace M8.Animator {
                         TweenerCore<float, float, TWeenPlugNoneOptions> tweenY;
 
                         if(body)
-                            tweenY = DOTween.To(new TweenPlugValueSet<float>(), () => target.localEulerAngles.y, (y) => { var a = target.localEulerAngles; body.rotation = Quaternion.Euler(a.x, y, a.z) * transParent.rotation; }, _y, timeLength);
+                            tweenY = DOTween.To(TweenPlugValueSet<float>.Get(), () => target.localEulerAngles.y, (y) => { var a = target.localEulerAngles; body.rotation = Quaternion.Euler(a.x, y, a.z) * transParent.rotation; }, _y, timeLength);
                         else
-                            tweenY = DOTween.To(new TweenPlugValueSet<float>(), () => target.localEulerAngles.y, (y) => { var a = target.localEulerAngles; a.y = y; target.localEulerAngles = a; }, _y, timeLength);
+                            tweenY = DOTween.To(TweenPlugValueSet<float>.Get(), () => target.localEulerAngles.y, (y) => { var a = target.localEulerAngles; a.y = y; target.localEulerAngles = a; }, _y, timeLength);
 
                         seq.Insert(this, tweenY);
                     }
@@ -205,11 +205,11 @@ namespace M8.Animator {
                         TweenerCore<float, float, TWeenPlugNoneOptions> tweenZ;
 
                         if(body2D)
-                            tweenZ = DOTween.To(new TweenPlugValueSet<float>(), () => target.localEulerAngles.z, (z) => { body2D.rotation = z + transParent.eulerAngles.z; }, _z, timeLength);
+                            tweenZ = DOTween.To(TweenPlugValueSet<float>.Get(), () => target.localEulerAngles.z, (z) => { body2D.rotation = z + transParent.eulerAngles.z; }, _z, timeLength);
                         else if(body)
-                            tweenZ = DOTween.To(new TweenPlugValueSet<float>(), () => target.localEulerAngles.z, (z) => { var a = target.localEulerAngles; body.rotation = Quaternion.Euler(a.x, a.y, z) * transParent.rotation; }, _z, timeLength);
+                            tweenZ = DOTween.To(TweenPlugValueSet<float>.Get(), () => target.localEulerAngles.z, (z) => { var a = target.localEulerAngles; body.rotation = Quaternion.Euler(a.x, a.y, z) * transParent.rotation; }, _z, timeLength);
                         else
-                            tweenZ = DOTween.To(new TweenPlugValueSet<float>(), () => target.localEulerAngles.z, (z) => { var a = target.localEulerAngles; a.z = z; target.localEulerAngles = a; }, _z, timeLength);
+                            tweenZ = DOTween.To(TweenPlugValueSet<float>.Get(), () => target.localEulerAngles.z, (z) => { var a = target.localEulerAngles; a.z = z; target.localEulerAngles = a; }, _z, timeLength);
 
                         seq.Insert(this, tweenZ);
                     }
@@ -217,11 +217,11 @@ namespace M8.Animator {
                         TweenerCore<Vector3, Vector3, TWeenPlugNoneOptions> tweenV;
 
                         if(body2D)
-                            tweenV = DOTween.To(new TweenPlugValueSet<Vector3>(), () => target.localEulerAngles, (r) => { body2D.rotation = r.z + transParent.eulerAngles.z; }, rotation, timeLength);
+                            tweenV = DOTween.To(TweenPlugValueSet<Vector3>.Get(), () => target.localEulerAngles, (r) => { body2D.rotation = r.z + transParent.eulerAngles.z; }, rotation, timeLength);
                         else if(body)
-                            tweenV = DOTween.To(new TweenPlugValueSet<Vector3>(), () => target.localEulerAngles, (r) => { body.rotation = Quaternion.Euler(r) * transParent.rotation; }, rotation, timeLength);
+                            tweenV = DOTween.To(TweenPlugValueSet<Vector3>.Get(), () => target.localEulerAngles, (r) => { body.rotation = Quaternion.Euler(r) * transParent.rotation; }, rotation, timeLength);
                         else
-                            tweenV = DOTween.To(new TweenPlugValueSet<Vector3>(), () => target.localEulerAngles, (r) => { target.localEulerAngles = r; }, rotation, timeLength);
+                            tweenV = DOTween.To(TweenPlugValueSet<Vector3>.Get(), () => target.localEulerAngles, (r) => { target.localEulerAngles = r; }, rotation, timeLength);
 
                         seq.Insert(this, tweenV);
                     }
@@ -241,13 +241,13 @@ namespace M8.Animator {
                         };
 
                         if(body2D) {
-                            tweenV = DOTween.To(new TweenPlugValueSet<Vector3>(), getter, (r) => {
+                            tweenV = DOTween.To(TweenPlugValueSet<Vector3>.Get(), getter, (r) => {
                                 if((axis & AxisFlags.Z) != AxisFlags.None)
                                     body2D.rotation = r.z + transParent.eulerAngles.z;
                             }, rotation, timeLength);
                         }
                         else if(body) {
-                            tweenV = DOTween.To(new TweenPlugValueSet<Vector3>(), getter, (r) => {
+                            tweenV = DOTween.To(TweenPlugValueSet<Vector3>.Get(), getter, (r) => {
                                 var rot = target.localEulerAngles;
                                 if((axis & AxisFlags.X) != AxisFlags.None)
                                     rot.x = r.x;
@@ -259,7 +259,7 @@ namespace M8.Animator {
                             }, rotation, timeLength);
                         }
                         else {
-                            tweenV = DOTween.To(new TweenPlugValueSet<Vector3>(), getter, (r) => {
+                            tweenV = DOTween.To(TweenPlugValueSet<Vector3>.Get(), getter, (r) => {
                                 var rot = target.localEulerAngles;
                                 if((axis & AxisFlags.X) != AxisFlags.None)
                                     rot.x = r.x;
@@ -282,23 +282,23 @@ namespace M8.Animator {
 
                     if(axis == AxisFlags.X) {
                         if(body)
-                            tween = DOTween.To(new FloatPlugin(), () => rotation.x, (x) => { var a = target.localEulerAngles; body.MoveRotation(Quaternion.Euler(x, a.y, a.z) * transParent.rotation); }, endRotation.x, timeLength);
+                            tween = DOTween.To(TweenPluginFactory.CreateFloat(), () => rotation.x, (x) => { var a = target.localEulerAngles; body.MoveRotation(Quaternion.Euler(x, a.y, a.z) * transParent.rotation); }, endRotation.x, timeLength);
                         else
-                            tween = DOTween.To(new FloatPlugin(), () => rotation.x, (x) => { var a = target.localEulerAngles; a.x = x; target.localEulerAngles = a; }, endRotation.x, timeLength);
+                            tween = DOTween.To(TweenPluginFactory.CreateFloat(), () => rotation.x, (x) => { var a = target.localEulerAngles; a.x = x; target.localEulerAngles = a; }, endRotation.x, timeLength);
                     }
                     else if(axis == AxisFlags.Y) {
                         if(body)
-                            tween = DOTween.To(new FloatPlugin(), () => rotation.y, (y) => { var a = target.localEulerAngles; body.MoveRotation(Quaternion.Euler(a.x, y, a.z) * transParent.rotation); }, endRotation.y, timeLength);
+                            tween = DOTween.To(TweenPluginFactory.CreateFloat(), () => rotation.y, (y) => { var a = target.localEulerAngles; body.MoveRotation(Quaternion.Euler(a.x, y, a.z) * transParent.rotation); }, endRotation.y, timeLength);
                         else
-                            tween = DOTween.To(new FloatPlugin(), () => rotation.y, (y) => { var a = target.localEulerAngles; a.y = y; target.localEulerAngles = a; }, endRotation.y, timeLength);
+                            tween = DOTween.To(TweenPluginFactory.CreateFloat(), () => rotation.y, (y) => { var a = target.localEulerAngles; a.y = y; target.localEulerAngles = a; }, endRotation.y, timeLength);
                     }
                     else if(axis == AxisFlags.Z) {
                         if(body2D)
-                            tween = DOTween.To(new FloatPlugin(), () => rotation.z, (z) => { body2D.rotation = z + transParent.eulerAngles.z; }, endRotation.z, timeLength);
+                            tween = DOTween.To(TweenPluginFactory.CreateFloat(), () => rotation.z, (z) => { body2D.rotation = z + transParent.eulerAngles.z; }, endRotation.z, timeLength);
                         else if(body)
-                            tween = DOTween.To(new FloatPlugin(), () => rotation.z, (z) => { var a = target.localEulerAngles; body.MoveRotation(Quaternion.Euler(a.x, a.y, z) * transParent.rotation); }, endRotation.z, timeLength);
+                            tween = DOTween.To(TweenPluginFactory.CreateFloat(), () => rotation.z, (z) => { var a = target.localEulerAngles; body.MoveRotation(Quaternion.Euler(a.x, a.y, z) * transParent.rotation); }, endRotation.z, timeLength);
                         else
-                            tween = DOTween.To(new FloatPlugin(), () => rotation.z, (z) => { var a = target.localEulerAngles; a.z = z; target.localEulerAngles = a; }, endRotation.z, timeLength);
+                            tween = DOTween.To(TweenPluginFactory.CreateFloat(), () => rotation.z, (z) => { var a = target.localEulerAngles; a.z = z; target.localEulerAngles = a; }, endRotation.z, timeLength);
                     }
                     else if(axis == AxisFlags.All) {
                         if(body2D)

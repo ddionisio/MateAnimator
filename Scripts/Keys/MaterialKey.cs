@@ -255,22 +255,22 @@ namespace M8.Animator {
                 switch(propType) {
                     case MaterialTrack.ValueType.Float:
                     case MaterialTrack.ValueType.Range:
-                        tween = DOTween.To(new TweenPlugValueSet<float>(), () => matInst.GetFloat(propId), (x) => matInst.SetFloat(propId, x), val, time);
+                        tween = DOTween.To(TweenPlugValueSet<float>.Get(), () => matInst.GetFloat(propId), (x) => matInst.SetFloat(propId, x), val, time);
                         break;
                     case MaterialTrack.ValueType.Vector:
-                        tween = DOTween.To(new TweenPlugValueSet<Vector4>(), () => matInst.GetVector(propId), (x) => matInst.SetVector(propId, x), vector, time);
+                        tween = DOTween.To(TweenPlugValueSet<Vector4>.Get(), () => matInst.GetVector(propId), (x) => matInst.SetVector(propId, x), vector, time);
                         break;
                     case MaterialTrack.ValueType.Color:
-                        tween = DOTween.To(new TweenPlugValueSet<Color>(), () => matInst.GetColor(propId), (x) => matInst.SetColor(propId, x), color, time);
+                        tween = DOTween.To(TweenPlugValueSet<Color>.Get(), () => matInst.GetColor(propId), (x) => matInst.SetColor(propId, x), color, time);
                         break;
                     case MaterialTrack.ValueType.TexOfs:
-                        tween = DOTween.To(new TweenPlugValueSet<Vector2>(), () => matInst.GetTextureOffset(prop), (x) => matInst.SetTextureOffset(prop, x), texOfs, time);
+                        tween = DOTween.To(TweenPlugValueSet<Vector2>.Get(), () => matInst.GetTextureOffset(prop), (x) => matInst.SetTextureOffset(prop, x), texOfs, time);
                         break;
                     case MaterialTrack.ValueType.TexScale:
-                        tween = DOTween.To(new TweenPlugValueSet<Vector2>(), () => matInst.GetTextureScale(prop), (x) => matInst.SetTextureScale(prop, x), texScale, time);
+                        tween = DOTween.To(TweenPlugValueSet<Vector2>.Get(), () => matInst.GetTextureScale(prop), (x) => matInst.SetTextureScale(prop, x), texScale, time);
                         break;
                     case MaterialTrack.ValueType.TexEnv:
-                        tween = DOTween.To(new TweenPlugValueSet<Texture>(), () => matInst.GetTexture(propId), (x) => matInst.SetTexture(propId, x), texture, time);
+                        tween = DOTween.To(TweenPlugValueSet<Texture>.Get(), () => matInst.GetTexture(propId), (x) => matInst.SetTexture(propId, x), texture, time);
                         break;
                 }
             }
@@ -280,7 +280,7 @@ namespace M8.Animator {
                 switch(propType) {
                     case MaterialTrack.ValueType.Float:
                     case MaterialTrack.ValueType.Range:
-                        tween = DOTween.To(new FloatPlugin(), () => val, (x) => matInst.SetFloat(propId, x), endKey.val, time);
+                        tween = DOTween.To(TweenPluginFactory.CreateFloat(), () => val, (x) => matInst.SetFloat(propId, x), endKey.val, time);
                         break;
                     case MaterialTrack.ValueType.Vector:
                         tween = DOTween.To(TweenPluginFactory.CreateVector4(), () => vector, (x) => matInst.SetVector(propId, x), endKey.vector, time);

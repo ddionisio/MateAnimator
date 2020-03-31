@@ -52,7 +52,7 @@ namespace M8.Animator {
                     var prevStartTime = prevKey.getWaitTime(frameRate, 0.0f);
                     var animState = anim[amClip.name];
 
-                    var tween = DOTween.To(new FloatPlugin(), () => 0f, (x) => {
+                    var tween = DOTween.To(TweenPluginFactory.CreateFloat(), () => 0f, (x) => {
                         if(x < crossfadeTime) {
                             float weight = x / crossfadeTime;
 
@@ -88,7 +88,7 @@ namespace M8.Animator {
                 else {
                     var animState = anim[amClip.name];
 
-                    var tween = DOTween.To(new FloatPlugin(), () => 0f, (x) => {
+                    var tween = DOTween.To(TweenPluginFactory.CreateFloat(), () => 0f, (x) => {
                         animState.enabled = true;
                         animState.wrapMode = wrapMode;
                         animState.time = x;
@@ -108,7 +108,7 @@ namespace M8.Animator {
             else {
                 var animState = anim[amClip.name];
 
-                var tween = DOTween.To(new FloatPlugin(), () => 0f, (x) => {
+                var tween = DOTween.To(TweenPluginFactory.CreateFloat(), () => 0f, (x) => {
                     animState.enabled = true;
                     animState.wrapMode = wrapMode;
                     animState.time = x;

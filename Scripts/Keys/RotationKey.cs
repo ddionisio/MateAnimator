@@ -184,11 +184,11 @@ namespace M8.Animator {
                     TweenerCore<Quaternion, Quaternion, TWeenPlugNoneOptions> valueTween;
 
                     if(body2D)
-                        valueTween = DOTween.To(new TweenPlugValueSet<Quaternion>(), () => trans.localRotation, (x) => body2D.rotation = (x * transParent.rotation).eulerAngles.z, rotation, time);
+                        valueTween = DOTween.To(TweenPlugValueSet<Quaternion>.Get(), () => trans.localRotation, (x) => body2D.rotation = (x * transParent.rotation).eulerAngles.z, rotation, time);
                     else if(body)
-                        valueTween = DOTween.To(new TweenPlugValueSet<Quaternion>(), () => trans.localRotation, (x) => body.rotation = x * transParent.rotation, rotation, time);
+                        valueTween = DOTween.To(TweenPlugValueSet<Quaternion>.Get(), () => trans.localRotation, (x) => body.rotation = x * transParent.rotation, rotation, time);
                     else
-                        valueTween = DOTween.To(new TweenPlugValueSet<Quaternion>(), () => trans.localRotation, (x) => trans.localRotation = x, rotation, time);
+                        valueTween = DOTween.To(TweenPlugValueSet<Quaternion>.Get(), () => trans.localRotation, (x) => trans.localRotation = x, rotation, time);
 
                     seq.Insert(this, valueTween);
                     break;
@@ -199,11 +199,11 @@ namespace M8.Animator {
                     TweenerCore<Quaternion, Quaternion, NoOptions> linearTween;
 
                     if(body2D)
-                        linearTween = DOTween.To(new PureQuaternionPlugin(), () => rotation, (x) => body2D.MoveRotation((x * transParent.rotation).eulerAngles.z), endRotation, time);
+                        linearTween = DOTween.To(TweenPluginFactory.CreateQuaternion(), () => rotation, (x) => body2D.MoveRotation((x * transParent.rotation).eulerAngles.z), endRotation, time);
                     else if(body)
-                        linearTween = DOTween.To(new PureQuaternionPlugin(), () => rotation, (x) => body.MoveRotation(x * transParent.rotation), endRotation, time);
+                        linearTween = DOTween.To(TweenPluginFactory.CreateQuaternion(), () => rotation, (x) => body.MoveRotation(x * transParent.rotation), endRotation, time);
                     else
-                        linearTween = DOTween.To(new PureQuaternionPlugin(), () => rotation, (x) => trans.localRotation = x, endRotation, time);
+                        linearTween = DOTween.To(TweenPluginFactory.CreateQuaternion(), () => rotation, (x) => trans.localRotation = x, endRotation, time);
 
                     if(hasCustomEase())
                         linearTween.SetEase(easeCurve);

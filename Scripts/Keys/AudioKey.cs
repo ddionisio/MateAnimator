@@ -33,44 +33,34 @@ namespace M8.Animator {
             float frameRate = seq.take.frameRate;
             float frameCount = Mathf.Ceil(audioClip.length * frameRate);
 
-            var tweenV = DOTween.To(new TweenPlugValueSetElapsed(), () => 0f, (t) => {
-                if(t >= 1f) return;
+            if(oneShot) {
+                seq.InsertCallback(this, () => {
+                    //don't play when going backwards
+                    if(_seq.isBackwards) return;
 
-                float fFrame = Mathf.RoundToInt(t * frameCount);
-                _src.time = (fFrame / frameRate) % audioClip.length;
-
-                _src.pitch = _seq.timeScale;
-
-                if(oneShot)
+                    _src.pitch = _seq.timeScale;
                     _src.PlayOneShot(audioClip);
-                else {
+                });
+            }
+            else {
+                var tweenV = DOTween.To(TweenPlugElapsed.Get(), () => 0f, (t) => {
+                    //don't play when going backwards
+                    if(_seq.isBackwards) return;
+
+                    _src.time = t % audioClip.length;
+
+                    _src.pitch = _seq.timeScale;
+
                     if((_src.isPlaying && _src.clip == audioClip)) return;
                     _src.loop = loop;
                     _src.clip = audioClip;
                     _src.Play();
-                }
-            }, 0, (loop && !oneShot) ? 1f / frameRate : getTime(seq.take.frameRate));
+                }, 0, audioClip.length);
 
-            tweenV.plugOptions.SetSequence(seq);
+                tweenV.plugOptions = new TweenPlugElapsedOptions(new TweenPlugElapsedCounter());
 
-            seq.Insert(this, tweenV);
-
-            /*
-            _seq.InsertCallback(sTime, () => {
-                //don't play when going backwards
-                if(_seq.isBackwards) return;
-
-                _src.pitch = _seq.timeScale;
-
-                if(oneShot)
-                    _src.PlayOneShot(audioClip);
-                else {
-                    if((_src.isPlaying && _src.clip == audioClip)) return;
-                    _src.loop = loop;
-                    _src.clip = audioClip;
-                    _src.Play();
-                }
-            });*/
+                seq.Insert(this, tweenV);
+            }
         }
 
         public ulong getTimeInSamples(int frequency, float time) {

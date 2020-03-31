@@ -262,11 +262,11 @@ namespace M8.Animator {
                 TweenerCore<Vector3, Vector3, TWeenPlugNoneOptions> tweener;
                                 
                 if(body2D)
-                    tweener = DOTween.To(new TweenPlugValueSet<Vector3>(), () => trans.localPosition, (x) => body2D.position = transParent.TransformPoint(x), pos, getTime(frameRate)); //1.0f / frameRate
+                    tweener = DOTween.To(TweenPlugValueSet<Vector3>.Get(), () => trans.localPosition, (x) => body2D.position = transParent.TransformPoint(x), pos, getTime(frameRate)); //1.0f / frameRate
                 else if(body)
-                    tweener = DOTween.To(new TweenPlugValueSet<Vector3>(), () => trans.localPosition, (x) => body.position = transParent.TransformPoint(x), pos, getTime(frameRate)); //1.0f / frameRate
+                    tweener = DOTween.To(TweenPlugValueSet<Vector3>.Get(), () => trans.localPosition, (x) => body.position = transParent.TransformPoint(x), pos, getTime(frameRate)); //1.0f / frameRate
                 else
-                    tweener = DOTween.To(new TweenPlugValueSet<Vector3>(), () => trans.localPosition, (x) => trans.localPosition = x, pos, getTime(frameRate)); //1.0f / frameRate
+                    tweener = DOTween.To(TweenPlugValueSet<Vector3>.Get(), () => trans.localPosition, (x) => trans.localPosition = x, pos, getTime(frameRate)); //1.0f / frameRate
 
                 seq.Insert(this, tweener);
             }

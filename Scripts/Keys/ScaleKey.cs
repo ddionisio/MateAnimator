@@ -176,25 +176,25 @@ namespace M8.Animator {
                 case Interpolation.None:
                     if(axis == AxisFlags.X) {
                         float _x = scale.x;
-                        var tweenX = DOTween.To(new TweenPlugValueSet<float>(), () => target.localScale.x, (x) => { var a = target.localScale; a.x = x; target.localScale = a; }, _x, timeLength);
+                        var tweenX = DOTween.To(TweenPlugValueSet<float>.Get(), () => target.localScale.x, (x) => { var a = target.localScale; a.x = x; target.localScale = a; }, _x, timeLength);
                         seq.Insert(this, tweenX);
                     }
                     else if(axis == AxisFlags.Y) {
                         float _y = scale.y;
-                        var tweenY = DOTween.To(new TweenPlugValueSet<float>(), () => target.localScale.y, (y) => { var a = target.localScale; a.y = y; target.localScale = a; }, _y, timeLength);
+                        var tweenY = DOTween.To(TweenPlugValueSet<float>.Get(), () => target.localScale.y, (y) => { var a = target.localScale; a.y = y; target.localScale = a; }, _y, timeLength);
                         seq.Insert(this, tweenY);
                     }
                     else if(axis == AxisFlags.Z) {
                         float _z = scale.z;
-                        var tweenZ = DOTween.To(new TweenPlugValueSet<float>(), () => target.localScale.z, (z) => { var a = target.localScale; a.z = z; target.localScale = a; }, _z, timeLength);
+                        var tweenZ = DOTween.To(TweenPlugValueSet<float>.Get(), () => target.localScale.z, (z) => { var a = target.localScale; a.z = z; target.localScale = a; }, _z, timeLength);
                         seq.Insert(this, tweenZ);
                     }
                     else if(axis == AxisFlags.All) {
-                        var tweenV = DOTween.To(new TweenPlugValueSet<Vector3>(), () => target.localScale, (s) => { target.localScale = s; }, scale, timeLength);
+                        var tweenV = DOTween.To(TweenPlugValueSet<Vector3>.Get(), () => target.localScale, (s) => { target.localScale = s; }, scale, timeLength);
                         seq.Insert(this, tweenV);
                     }
                     else {
-                        var tweenV = DOTween.To(new TweenPlugValueSet<Vector3>(),
+                        var tweenV = DOTween.To(TweenPlugValueSet<Vector3>.Get(),
                             () => {
                                 var ls = scale;
                                 var curls = target.localScale;
@@ -226,11 +226,11 @@ namespace M8.Animator {
                     Tweener tween;
 
                     if(axis == AxisFlags.X)
-                        tween = DOTween.To(new FloatPlugin(), () => scale.x, (x) => { var a = target.localScale; a.x = x; target.localScale = a; }, endScale.x, timeLength);
+                        tween = DOTween.To(TweenPluginFactory.CreateFloat(), () => scale.x, (x) => { var a = target.localScale; a.x = x; target.localScale = a; }, endScale.x, timeLength);
                     else if(axis == AxisFlags.Y)
-                        tween = DOTween.To(new FloatPlugin(), () => scale.y, (y) => { var a = target.localScale; a.y = y; target.localScale = a; }, endScale.y, timeLength);
+                        tween = DOTween.To(TweenPluginFactory.CreateFloat(), () => scale.y, (y) => { var a = target.localScale; a.y = y; target.localScale = a; }, endScale.y, timeLength);
                     else if(axis == AxisFlags.Z)
-                        tween = DOTween.To(new FloatPlugin(), () => scale.z, (z) => { var a = target.localScale; a.z = z; target.localScale = a; }, endScale.z, timeLength);
+                        tween = DOTween.To(TweenPluginFactory.CreateFloat(), () => scale.z, (z) => { var a = target.localScale; a.z = z; target.localScale = a; }, endScale.z, timeLength);
                     else if(axis == AxisFlags.All)
                         tween = DOTween.To(TweenPluginFactory.CreateVector3(), () => scale, (s) => target.localScale = s, endScale, timeLength);
                     else
