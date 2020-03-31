@@ -7,7 +7,6 @@ using System.Linq;
 using DG.Tweening;
 
 namespace M8.Animator {
-    [ExecuteInEditMode]
     [AddComponentMenu("M8/Animate")]
     public class Animate : MonoBehaviour, ITarget, ISerializationCallbackReceiver {
         public enum DisableAction {
@@ -592,21 +591,21 @@ namespace M8.Animator {
             mAnimScale = 1.0f;
         }
 
-        void Start() {
-            if(!Application.isPlaying)
-                return;
-
-            mStarted = true;
+        void Awake() {
             if(sequenceLoadAll && sequenceCtrls != null) {
                 for(int i = 0; i < sequenceCtrls.Length; i++) {
                     if(sequenceCtrls[i].sequence == null)
                         sequenceCtrls[i].Build(sequenceKillWhenDone, updateType, updateTimeIndependent);
                 }
             }
+        }
 
+        void Start() {
             if(!isPlaying && defaultTakeIndex != -1) {
                 Play(defaultTakeIndex, false);
             }
+
+            mStarted = true;
         }
 
         #region ITarget interface
