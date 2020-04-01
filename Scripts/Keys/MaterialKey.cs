@@ -60,8 +60,10 @@ namespace M8.Animator {
             else {
                 var ease = Utility.GetEasingFunction(key.easeType);
                 finalT = ease(t, 1f, key.amplitude, key.period);
-                if(float.IsNaN(finalT)) //this really shouldn't happen...
+                if(float.IsNaN(finalT)) { //this really shouldn't happen...
                     key.ApplyValue(valueType, prop, propId, mat);
+                    return;
+                }
             }
 
             var pt = key.path.GetPoint(finalT, true);
