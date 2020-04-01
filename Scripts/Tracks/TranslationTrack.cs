@@ -189,8 +189,6 @@ namespace M8.Animator {
                 var interp = key.interp;
                 var easeType = key.easeType;
 
-                key.version = version;
-
                 key.GeneratePath(this, i);
                 key.ClearCache();
 
@@ -203,7 +201,6 @@ namespace M8.Animator {
                     for(int j = i + 1; j <= endInd; j++) {
                         key = keys[j] as TranslationKey;
 
-                        key.version = version;
                         key.interp = interp;
                         key.easeType = easeType;
                         key.endFrame = key.frame;

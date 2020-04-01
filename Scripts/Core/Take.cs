@@ -105,7 +105,7 @@ namespace M8.Animator {
 
         // add translation track
         public void addTrack(int groupId, ITarget target, Transform obj, bool usePath, Track a) {
-            a.setName(getTrackCount());
+            a.Init(getTrackCount());
             a.id = getUniqueTrackID();
             a.SetTarget(target, obj, usePath);
             addTrack(groupId, a);
@@ -114,7 +114,7 @@ namespace M8.Animator {
 
         public void addExistingTrack(int groupID, Track track, bool generateName, bool generateID) {
             if(generateName)
-                track.setName(getTrackCount());
+                track.Init(getTrackCount());
             if(generateID)
                 track.id = getUniqueTrackID();
 
@@ -902,26 +902,11 @@ namespace M8.Animator {
             bool ret = false;
             // re-updates cache if there are null values
             if(trackValues != null) {
-                foreach(Track track in trackValues) {
-                    bool shouldUpdateCache = false;
-                    if(track != null && track.keys != null) {
-                        foreach(Key key in track.keys) {
-                            //update key's interpolation
-                            if(key.easeType == Ease.Unset) {
-                                key.interp = Key.Interpolation.None;
-                                key.easeType = Ease.Linear;
-                            }
-
-                            if(key.version != track.version) {
-                                key.version = track.version; //will be set to dirty later
-                                shouldUpdateCache = true;
-                                break;
-                            }
-                        }
-                        if(shouldUpdateCache) {
-                            track.updateCache(itarget);
-                            ret = true;
-                        }
+                for(int i = 0; i < trackValues.Count; i++) {
+                    var track = trackValues[i];
+                    if(!track.isVersionUpdated) {
+                        track.updateCache(itarget);
+                        ret = true;
                     }
                 }
             }

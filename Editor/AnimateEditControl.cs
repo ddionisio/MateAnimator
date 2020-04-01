@@ -151,6 +151,7 @@ namespace M8.Animator.Edit {
         }
 
         public void Refresh() {
+            bool hasChanges = false;
             if(takes == null || takes.Count == 0) {
                 //this is a newly created data
 
@@ -158,18 +159,9 @@ namespace M8.Animator.Edit {
                 AddNewTake();
 
                 mCurrentTakeInd = 0;
+                hasChanges = true;
             }
             else {
-                foreach(Take take in takes) {
-                    foreach(Track track in take.trackValues)
-                        track.updateCache(mDataTarget);
-                }
-            }
-        }
-
-        public void RefreshTakes() {
-            bool hasChanges = false;
-            if(takes != null) {
                 foreach(Take take in takes) {
                     if(take != null) {
                         if(take.maintainCaches(mDataTarget))

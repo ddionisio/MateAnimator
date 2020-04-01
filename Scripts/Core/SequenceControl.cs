@@ -99,6 +99,9 @@ namespace M8.Animator {
             foreach(Track track in take.trackValues) {
                 Object tgt = null;
                 if((tgt = track.GetTarget(target)) != null) {
+                    if(!track.isVersionUpdated) //ensure track data has proper cache
+                        track.updateCache(target);
+
                     track.buildSequenceStart(this);
 
                     for(int keyInd = 0; keyInd < track.keys.Count; keyInd++) {

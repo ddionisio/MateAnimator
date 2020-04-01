@@ -34,9 +34,7 @@ namespace M8.Animator.Edit {
                     if(_aData != null) {
                         //Debug.Log("previous data: " + _aData.name + " hash: " + _aData.GetHashCode());
 
-                        if(_aData.isValid)
-                            _aData.RefreshTakes();
-                        else
+                        if(!_aData.isValid)
                             EditDataCleanUp();
                     }
 
@@ -2844,13 +2842,6 @@ namespace M8.Animator.Edit {
 
                     #region calculate dimensions
                     int clamped = 0; // 0 = no clamp, -1 = backwards clamp, 1 = forwards clamp
-                    if(_track.keys[i].version != _track.version) {
-                        // if cache is null, recheck for component and update caches
-                        //aData = (Animate)GameObject.Find("Animate").GetComponent("Animate");
-                        if(!Application.isPlaying && curTake.maintainCaches(aData.target))
-                            //Just set the scenes dirty since we don't want to undo this
-                            aData.SetTakesDirty();
-                    }
                     if((_track is AudioTrack || _track is UnityAnimationTrack) && _track.keys[i].getNumberOfFrames(curTake.frameRate) > -1 && (_track.keys[i].getStartFrame() + _track.keys[i].getNumberOfFrames(curTake.frameRate) <= numFrames)) {
                         //based on content length
                         action_startFrame = _track.keys[i].getStartFrame();
@@ -5320,7 +5311,7 @@ namespace M8.Animator.Edit {
                 int keyInd = _track.getKeyIndex(_key);
                 PropertyTrack propTrack = _track as PropertyTrack;
                 PropertyKey propkey = _key as PropertyKey;
-                PropertyKey nextKey = propkey.path.Length == 0 && keyInd >= 0 && keyInd + 1 < _track.keys.Count ? _track.keys[keyInd + 1] as PropertyKey : null; //don't show value detail if path
+                PropertyKey nextKey = propkey.path == null && keyInd >= 0 && keyInd + 1 < _track.keys.Count ? _track.keys[keyInd + 1] as PropertyKey : null; //don't show value detail if path
 
                 string info = propTrack.getTrackType() + "\n";
                 if(propkey.targetsAreEqual(propTrack.valueType, nextKey) || !_key.canTween || !propTrack.canTween) brief = true;

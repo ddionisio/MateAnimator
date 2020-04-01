@@ -56,8 +56,6 @@ namespace M8.Animator {
             for(int i = 0; i < keys.Count; i++) {
                 OrientationKey key = keys[i] as OrientationKey;
 
-                key.version = version;
-
                 if(keys.Count > (i + 1)) key.endFrame = keys[i + 1].frame;
                 else {
                     if(i > 0 && !keys[i - 1].canTween)

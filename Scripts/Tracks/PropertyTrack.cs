@@ -43,7 +43,7 @@ namespace M8.Animator {
         [SerializeField]
         string propertyName;
 
-        public override int version { get { return 2; } }
+        public override int version { get { return 3; } }
 
         public override int interpCount { get { return canTween ? 3 : 1; } }
 
@@ -355,24 +355,20 @@ namespace M8.Animator {
             for(int i = 0; i < keys.Count; i++) {
                 PropertyKey key = keys[i] as PropertyKey;
 
-                key.version = version;
                 key.GeneratePath(this, i);
-                key.ClearCache();
 
                 //invalidate some keys in between
-                if(key.path.Length > 1) {
-                    int endInd = i + key.path.Length - 1;
+                if(key.path != null) {
+                    int endInd = i + key.keyCount - 1;
                     if(endInd < keys.Count - 1 || key.interp != keys[endInd].interp) //don't count the last element if there are more keys ahead
                         endInd--;
 
                     for(int j = i + 1; j <= endInd; j++) {
                         var _key = keys[j] as PropertyKey;
 
-                        _key.version = version;
                         _key.interp = key.interp;
                         _key.easeType = key.easeType;
-                        _key.endFrame = -1;
-                        _key.path = new TweenPlugPathPoint[0];
+                        _key.Invalidate();
                     }
 
                     i = endInd;
@@ -472,13 +468,13 @@ namespace M8.Animator {
                         if(i + 1 == keyCount)
                             toKey = key;
                     }
-                    else if(key.interp == Key.Interpolation.Linear || key.path.Length == 0) {
+                    else if(key.interp == Key.Interpolation.Linear || key.path == null) {
                         if(i + 1 == keyCount - 1)
                             toKey = (PropertyKey)keys[i + 1];
                     }
                     else if(key.interp == Key.Interpolation.Curve) {
-                        if(key.path.Length > 0 && i + key.path.Length == keyCount) //end of last path in track?
-                            toKey = (PropertyKey)keys[key.path.Length - 1];
+                        if(key.path != null && i + key.keyCount == keyCount) //end of last path in track?
+                            toKey = (PropertyKey)keys[i + key.keyCount - 1];
                     }
 
                     if(toKey != null) {
@@ -497,7 +493,7 @@ namespace M8.Animator {
                     if(comp is Transform)
                         refreshTransform(go);
                 }
-                else if(key.interp == Key.Interpolation.Linear || key.path.Length == 0) {
+                else if(key.interp == Key.Interpolation.Linear || key.path == null) {
                     PropertyKey keyNext = i + 1 < keys.Count ? keys[i + 1] as PropertyKey : null;
 
                     float numFrames = (float)key.getNumberOfFrames(frameRate);

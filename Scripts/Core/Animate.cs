@@ -194,8 +194,9 @@ namespace M8.Animator {
                     int count = _t.Count;
 
                     mSequenceCtrls = new SequenceControl[count];
-                    for(int i = 0; i < count; i++)
+                    for(int i = 0; i < count; i++) {
                         mSequenceCtrls[i] = new SequenceControl(this, i, _t[i]);
+                    }
                 }
 
                 return mSequenceCtrls;

@@ -32,8 +32,6 @@ namespace M8.Animator {
             for(int i = 0; i < keys.Count; i++) {
                 GOSetActiveKey key = keys[i] as GOSetActiveKey;
 
-                key.version = version;
-
                 if(keys.Count > (i + 1)) key.endFrame = keys[i + 1].frame;
                 else key.endFrame = -1;
             }

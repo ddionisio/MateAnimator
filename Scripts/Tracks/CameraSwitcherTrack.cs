@@ -79,8 +79,6 @@ namespace M8.Animator {
             for(int i = 0; i < keys.Count; i++) {
                 CameraSwitcherKey key = keys[i] as CameraSwitcherKey;
 
-                key.version = version;
-
                 if(keys.Count > i + 1) {
                     CameraSwitcherKey nextKey = keys[i + 1] as CameraSwitcherKey;
                     key.endFrame = nextKey.frame;

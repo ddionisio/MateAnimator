@@ -14,8 +14,6 @@ namespace M8.Animator {
             Linear = 1,
             None = 2
         }
-                
-        public int version = 1; //for upgrading/initializing
 
         public Interpolation interp = Interpolation.Curve;     // interpolation
 
@@ -28,6 +26,11 @@ namespace M8.Animator {
         public List<float> customEase = new List<float>();
                 
         public virtual bool canTween { get { return interp != Interpolation.None; } }
+
+        /// <summary>
+        /// Number of keys used for this key, usually 1 (self). For keys that use path, return waypoint count.
+        /// </summary>
+        public virtual int keyCount { get { return 1; } }
 
         private AnimationCurve _cachedEaseCurve;
         public AnimationCurve easeCurve {

@@ -12,6 +12,8 @@ namespace M8.Animator {
     public class PropertyKey : Key {
         public override SerializeType serializeType { get { return SerializeType.Property; } }
 
+        public override int keyCount { get { return path != null ? path.wps.Length : 1; } }
+
         public const int pathResolution = 10;
 
         public int endFrame;
@@ -31,11 +33,8 @@ namespace M8.Animator {
         public Rect rect { get { return new Rect(vect4.x, vect4.y, vect4.z, vect4.w); } set { vect4.Set(value.xMin, value.yMin, value.width, value.height); } }
         public Quaternion quat { get { return new Quaternion(vect4.x, vect4.y, vect4.z, vect4.w); } set { vect4.Set(value.x, value.y, value.z, value.w); } }
 
-        public TweenPlugPathPoint[] path;
-
-        public bool isClosed { get { return path.Length > 1 && path[0].Equal(path[path.Length - 1]); } }
-
-        private TweenPlugPath mPathPreview;
+        public TweenPlugPath path { get { return _paths.Length > 0 ? _paths[0] : null; } } //save serialize size by using array (path has a lot of serialized fields)
+        [SerializeField] TweenPlugPath[] _paths;
 
         private TweenPlugPathPoint GeneratePathPoint(PropertyTrack.ValueType valueType) {
             switch(valueType) {
@@ -71,48 +70,54 @@ namespace M8.Animator {
         public void GeneratePath(PropertyTrack track, int keyInd) {
             switch(interp) {
                 case Interpolation.None:
-                    path = new TweenPlugPathPoint[0];
+                    _paths = new TweenPlugPath[0];
                     endFrame = keyInd + 1 < track.keys.Count ? track.keys[keyInd + 1].frame : frame;
                     break;
 
                 case Interpolation.Linear:
-                    path = new TweenPlugPathPoint[0];
+                    _paths = new TweenPlugPath[0];
 
                     if(keyInd + 1 < track.keys.Count)
                         endFrame = track.keys[keyInd + 1].frame;
-                    else //fail-safe
-                        endFrame = -1;
+                    else //only one frame
+                        endFrame = frame;
                     break;
 
                 case Interpolation.Curve:
-                    var pathList = new List<TweenPlugPathPoint>();
+                    //if there's more than 2 keys, and next key is curve, then it's more than 2 pts.
+                    if(keyInd + 2 < track.keys.Count && track.keys[keyInd + 1].interp == Interpolation.Curve) {
+                        var pathList = new List<TweenPlugPathPoint>();
 
-                    for(int i = keyInd; i < track.keys.Count; i++) {
-                        var key = (PropertyKey)track.keys[i];
+                        for(int i = keyInd; i < track.keys.Count; i++) {
+                            var key = (PropertyKey)track.keys[i];
 
-                        pathList.Add(key.GeneratePathPoint(track.valueType));
-                        endFrame = key.frame;
+                            pathList.Add(key.GeneratePathPoint(track.valueType));
+                            endFrame = key.frame;
 
-                        if(key.interp != Interpolation.Curve)
-                            break;
+                            if(key.interp != Interpolation.Curve)
+                                break;
+                        }
+
+                        var newPath = new TweenPlugPath(TweenPlugPathType.CatmullRom, pathList.ToArray(), pathResolution);
+                        newPath.Init(newPath.isClosed);
+
+                        _paths = new TweenPlugPath[] { newPath };
                     }
-
-                    if(pathList.Count > 1) {
-                        if(pathList.Count > 2)
-                            path = pathList.ToArray();
+                    else { //use linear mode
+                        if(keyInd + 1 < track.keys.Count) {
+                            endFrame = track.keys[keyInd + 1].frame;
+                            _paths = new TweenPlugPath[0];
+                        }
                         else
-                            path = new TweenPlugPathPoint[0]; //use linear mode
-                    }
-                    else {
-                        endFrame = -1;
-                        path = new TweenPlugPathPoint[0];
+                            Invalidate();
                     }
                     break;
             }
         }
 
-        public void ClearCache() {
-            mPathPreview = null;
+        public void Invalidate() {
+            endFrame = -1;
+            _paths = new TweenPlugPath[0];
         }
 
         public object GetValueFromPathPoint(PropertyTrack.ValueType valueType, TweenPlugPathPoint pt) {
@@ -150,15 +155,6 @@ namespace M8.Animator {
         /// Grab position within t = [0, 1]. keyInd is the index of this key in the track.
         /// </summary>
         public object GetValueFromPath(PropertyTrack.ValueType valueType, float t) {
-
-            if(mPathPreview == null) {
-                if(path.Length <= 1) //invalid path
-                    return getValue(valueType);
-
-                mPathPreview = new TweenPlugPath(path.Length > 2 ? TweenPlugPathType.CatmullRom : TweenPlugPathType.Linear, path, pathResolution);
-                mPathPreview.Init(isClosed);
-            }
-
             float finalT;
 
             if(hasCustomEase())
@@ -170,7 +166,7 @@ namespace M8.Animator {
                     return getValue(valueType);
             }
 
-            var pt = mPathPreview.GetPoint(finalT, true);
+            var pt = path.GetPoint(finalT, true);
 
             return GetValueFromPathPoint(valueType, pt);
         }
@@ -343,7 +339,7 @@ namespace M8.Animator {
             if(interp == Interpolation.None) {
                 tween = GenerateSingleValueTweener(seq, propTrack, time, comp);
             }
-            else if(interp == Interpolation.Linear || path.Length == 0) {
+            else if(interp == Interpolation.Linear || path == null) {
                 //grab end frame
                 var endKey = track.keys[index + 1] as PropertyKey;
 
@@ -371,70 +367,66 @@ namespace M8.Animator {
                 }
             }
             else {
-                //create tween
-                var pathType = path.Length == 2 ? TweenPlugPathType.Linear : TweenPlugPathType.CatmullRom;
-                var pathData = new TweenPlugPath(pathType, path, pathResolution);
-
                 //options
-                var options = new TweenPlugPathOptions { loopType = LoopType.Restart, isClosedPath = isClosed };
+                var options = new TweenPlugPathOptions { loopType = LoopType.Restart, isClosedPath = path.isClosed };
 
                 switch(valueType) {
                     case PropertyTrack.ValueType.Integer: {
-                        var tweenPath = DOTween.To(TweenPlugPathInt.Get(), () => System.Convert.ToInt32(val), GenerateSetter<int>(propTrack, comp), pathData, time);
+                        var tweenPath = DOTween.To(TweenPlugPathInt.Get(), () => System.Convert.ToInt32(val), GenerateSetter<int>(propTrack, comp), path, time);
                         tweenPath.plugOptions = options; tween = tweenPath;
                     }
                     break;
 
                     case PropertyTrack.ValueType.Float: {
-                        var tweenPath = DOTween.To(TweenPlugPathFloat.Get(), () => System.Convert.ToSingle(val), GenerateSetter<float>(propTrack, comp), pathData, time);
+                        var tweenPath = DOTween.To(TweenPlugPathFloat.Get(), () => System.Convert.ToSingle(val), GenerateSetter<float>(propTrack, comp), path, time);
                         tweenPath.plugOptions = options; tween = tweenPath;
                     }
                     break;
 
                     case PropertyTrack.ValueType.Double: {
-                        var tweenPath = DOTween.To(TweenPlugPathDouble.Get(), () => val, GenerateSetter<double>(propTrack, comp), pathData, time);
+                        var tweenPath = DOTween.To(TweenPlugPathDouble.Get(), () => val, GenerateSetter<double>(propTrack, comp), path, time);
                         tweenPath.plugOptions = options; tween = tweenPath;
                     }
                     break;
 
                     case PropertyTrack.ValueType.Long: {
-                        var tweenPath = DOTween.To(TweenPlugPathLong.Get(), () => System.Convert.ToInt64(val), GenerateSetter<long>(propTrack, comp), pathData, time);
+                        var tweenPath = DOTween.To(TweenPlugPathLong.Get(), () => System.Convert.ToInt64(val), GenerateSetter<long>(propTrack, comp), path, time);
                         tweenPath.plugOptions = options; tween = tweenPath;
                     }
                     break;
 
                     case PropertyTrack.ValueType.Vector2: {
-                        var tweenPath = DOTween.To(TweenPlugPathVector2.Get(), () => vect2, GenerateSetter<Vector2>(propTrack, comp), pathData, time);
+                        var tweenPath = DOTween.To(TweenPlugPathVector2.Get(), () => vect2, GenerateSetter<Vector2>(propTrack, comp), path, time);
                         tweenPath.plugOptions = options; tween = tweenPath;
                     }
                     break;
 
                     case PropertyTrack.ValueType.Vector3: {
-                        var tweenPath = DOTween.To(TweenPlugPathVector3.Get(), () => vect3, GenerateSetter<Vector3>(propTrack, comp), pathData, time);
+                        var tweenPath = DOTween.To(TweenPlugPathVector3.Get(), () => vect3, GenerateSetter<Vector3>(propTrack, comp), path, time);
                         tweenPath.plugOptions = options; tween = tweenPath;
                     }
                     break;
 
                     case PropertyTrack.ValueType.Color: {
-                        var tweenPath = DOTween.To(TweenPlugPathColor.Get(), () => color, GenerateSetter<Color>(propTrack, comp), pathData, time);
+                        var tweenPath = DOTween.To(TweenPlugPathColor.Get(), () => color, GenerateSetter<Color>(propTrack, comp), path, time);
                         tweenPath.plugOptions = options; tween = tweenPath;
                     }
                     break;
 
                     case PropertyTrack.ValueType.Rect: {
-                        var tweenPath = DOTween.To(TweenPlugPathRect.Get(), () => rect, GenerateSetter<Rect>(propTrack, comp), pathData, time);
+                        var tweenPath = DOTween.To(TweenPlugPathRect.Get(), () => rect, GenerateSetter<Rect>(propTrack, comp), path, time);
                         tweenPath.plugOptions = options; tween = tweenPath;
                     }
                     break;
 
                     case PropertyTrack.ValueType.Vector4: {
-                        var tweenPath = DOTween.To(TweenPlugPathVector4.Get(), () => vect4, GenerateSetter<Vector4>(propTrack, comp), pathData, time);
+                        var tweenPath = DOTween.To(TweenPlugPathVector4.Get(), () => vect4, GenerateSetter<Vector4>(propTrack, comp), path, time);
                         tweenPath.plugOptions = options; tween = tweenPath;
                     }
                     break;
 
                     case PropertyTrack.ValueType.Quaternion: {
-                        var tweenPath = DOTween.To(TweenPlugPathEuler.Get(), () => quat, GenerateSetter<Quaternion>(propTrack, comp), pathData, time);
+                        var tweenPath = DOTween.To(TweenPlugPathEuler.Get(), () => quat, GenerateSetter<Quaternion>(propTrack, comp), path, time);
                         tweenPath.plugOptions = options; tween = tweenPath;
                     }
                     break;

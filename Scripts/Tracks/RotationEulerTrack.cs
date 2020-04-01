@@ -86,7 +86,6 @@ namespace M8.Animator {
             for(int i = 0; i < keys.Count; i++) {
                 RotationEulerKey key = keys[i] as RotationEulerKey;
 
-                key.version = version;
                 key.GeneratePath(this, i);
                 key.ClearCache();
 
@@ -99,7 +98,6 @@ namespace M8.Animator {
                     for(int j = i + 1; j <= endInd; j++) {
                         var _key = keys[j] as RotationEulerKey;
 
-                        _key.version = version;
                         _key.interp = key.interp;
                         _key.easeType = key.easeType;
                         _key.endFrame = -1;

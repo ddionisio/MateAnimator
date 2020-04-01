@@ -6,6 +6,9 @@ namespace M8.Animator {
     [System.Serializable]
     public abstract class Track {
         public abstract SerializeType serializeType { get; }
+
+        [SerializeField]
+        int _version = 1; //use for upgrading
         
         public int id;
         public string name;        
@@ -13,8 +16,8 @@ namespace M8.Animator {
 
         [SerializeField]
         protected string _targetPath; //for animations saved as meta
-                
-        public virtual int version { get { return 1; } } //must be at least 1
+
+        public virtual int version { get { return 1; } }
 
         public virtual int order { get { return 0; } }
 
@@ -32,9 +35,12 @@ namespace M8.Animator {
 
         public string targetPath { get { return _targetPath; } }
 
+        public bool isVersionUpdated { get { return _version == version; } }
+
         // set name based on index
-        public void setName(int index) {
+        public void Init(int index) {
             name = "Track" + (index + 1);
+            _version = version;
         }
 
         //TODO: change (Set/Get)SerializeObject to Unity.Engine.Object target { get; set; }
@@ -165,11 +171,6 @@ namespace M8.Animator {
                 key.maintainKey(itarget, obj);
         }
 
-        // set name from string
-        public void setName(string name) {
-            this.name = name;
-        }
-
         // does track have key on frame
         public bool hasKeyOnFrame(int _frame) {
             foreach(Key key in keys) {
@@ -186,6 +187,7 @@ namespace M8.Animator {
 
         // update cache
         public virtual void updateCache(ITarget target) {
+            _version = version;
             sortKeys();
         }
 
@@ -491,6 +493,7 @@ namespace M8.Animator {
         }
 
         public void CopyTo(Track track) {
+            track._version = _version;
             track.id = id;
             track.name = name;
             track._targetPath = _targetPath;
