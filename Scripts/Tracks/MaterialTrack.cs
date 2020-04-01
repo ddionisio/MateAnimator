@@ -290,7 +290,7 @@ namespace M8.Animator {
                                 toKey = (MaterialKey)keys[i + 1];
                         }
                         else if(key.interp == Key.Interpolation.Curve) {
-                            if(key.path != null && i + key.keyCount == keyCount) //end of last path in track?
+                            if(i + key.keyCount == keyCount) //end of last path in track?
                                 toKey = (MaterialKey)keys[i + key.keyCount - 1];
                         }
 

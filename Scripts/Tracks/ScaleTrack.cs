@@ -27,7 +27,7 @@ namespace M8.Animator {
             if(item != null && keys.Count <= 0) cachedInitialScale = item.localScale;
         }
 
-        public override int version { get { return 1; } }
+        public override int version { get { return 2; } }
 
         public override int interpCount { get { return 3; } }
 
@@ -73,12 +73,6 @@ namespace M8.Animator {
             updateCache(target);
         }
 
-        public override void undoRedoPerformed() {
-            //path preview must be rebuilt
-            foreach(ScaleKey key in keys)
-                key.ClearCache();
-        }
-
         // update cache (optimized)
         public override void updateCache(ITarget target) {
             base.updateCache(target);
@@ -87,11 +81,10 @@ namespace M8.Animator {
                 ScaleKey key = keys[i] as ScaleKey;
 
                 key.GeneratePath(this, i);
-                key.ClearCache();
 
                 //invalidate some keys in between
-                if(key.path.Length > 1) {
-                    int endInd = i + key.path.Length - 1;
+                if(key.path != null) {
+                    int endInd = i + key.keyCount - 1;
                     if(endInd < keys.Count - 1 || key.interp != keys[endInd].interp) //don't count the last element if there are more keys ahead
                         endInd--;
 
@@ -100,8 +93,7 @@ namespace M8.Animator {
 
                         _key.interp = key.interp;
                         _key.easeType = key.easeType;
-                        _key.endFrame = -1;
-                        _key.path = new Vector3[0];
+                        _key.Invalidate();
                     }
 
                     i = endInd;
@@ -175,53 +167,46 @@ namespace M8.Animator {
 
                 //end of last path in track?
                 if(iFrame >= key.endFrame) {
-                    switch(key.interp) {
-                        case Key.Interpolation.Linear:
-                            if(i + 1 == keyCount - 1)
-                                return GetScale(transform, ((ScaleKey)keys[i + 1]).scale);
-                            break;
-                        case Key.Interpolation.Curve:
-                            if(key.path.Length > 0 && i + key.path.Length == keyCount) //end of last path in track?
-                                return GetScale(transform, ((ScaleKey)keys[key.path.Length - 1]).scale);
-                            break;
-                        case Key.Interpolation.None:
-                            if(i + 1 == keyCount)
-                                return GetScale(transform, key.scale);
-                            break;
+                    if(key.interp == Key.Interpolation.None) {
+                        if(i + 1 == keyCount)
+                            return GetScale(transform, key.scale);
+                    }
+                    else if(key.interp == Key.Interpolation.Linear || key.path == null) {
+                        if(i + 1 == keyCount - 1)
+                            return GetScale(transform, ((ScaleKey)keys[i + 1]).scale);
+                    }
+                    else if(key.interp == Key.Interpolation.Curve) {
+                        if(i + key.keyCount == keyCount) //end of last path in track?
+                            return GetScale(transform, ((ScaleKey)keys[i + key.keyCount - 1]).scale);
                     }
 
                     continue;
                 }
 
-                switch(key.interp) {
-                    case Key.Interpolation.None:
-                        return key.scale;
+                if(key.interp == Key.Interpolation.None)
+                    return key.scale;
+                else if(key.interp == Key.Interpolation.Linear || key.path == null) {
+                    var keyNext = keys[i + 1] as ScaleKey;
 
-                    case Key.Interpolation.Linear:
-                        var keyNext = keys[i + 1] as ScaleKey;
+                    float numFrames = (float)key.getNumberOfFrames(frameRate);
 
-                        float numFrames = (float)key.getNumberOfFrames(frameRate);
+                    float framePositionInAction = Mathf.Clamp(frame - (float)key.frame, 0f, numFrames);
 
-                        float framePositionInAction = Mathf.Clamp(frame - (float)key.frame, 0f, numFrames);
+                    var start = key.scale;
+                    var end = keyNext.scale;
 
-                        var start = key.scale;
-                        var end = keyNext.scale;
+                    if(key.hasCustomEase()) {
+                        return GetScale(transform, Vector3.Lerp(start, end, Utility.EaseCustom(0.0f, 1.0f, framePositionInAction / numFrames, key.easeCurve)));
+                    }
+                    else {
+                        var ease = Utility.GetEasingFunction((Ease)key.easeType);
+                        return GetScale(transform, Vector3.Lerp(start, end, ease(framePositionInAction, numFrames, key.amplitude, key.period)));
+                    }
+                }
+                else {
+                    float _value = Mathf.Clamp01((frame - key.frame) / key.getNumberOfFrames(frameRate));
 
-                        if(key.hasCustomEase()) {
-                            return GetScale(transform, Vector3.Lerp(start, end, Utility.EaseCustom(0.0f, 1.0f, framePositionInAction / numFrames, key.easeCurve)));
-                        }
-                        else {
-                            var ease = Utility.GetEasingFunction((Ease)key.easeType);
-                            return GetScale(transform, Vector3.Lerp(start, end, ease(framePositionInAction, numFrames, key.amplitude, key.period)));
-                        }
-
-                    case Key.Interpolation.Curve:
-                        if(key.path.Length <= 1) //invalid key
-                            return transform.localScale;
-
-                        float _value = Mathf.Clamp01((frame - key.frame) / key.getNumberOfFrames(frameRate));
-
-                        return GetScale(transform, key.GetScaleFromPath(transform, frameRate, Mathf.Clamp01(_value)));
+                    return GetScale(transform, key.GetScaleFromPath(_value));
                 }
             }
 

@@ -13,17 +13,16 @@ namespace M8.Animator {
     public class RotationEulerKey : Key {
         public override SerializeType serializeType { get { return SerializeType.RotationEuler; } }
 
+        public override int keyCount { get { return path != null ? path.wps.Length : 1; } }
+
         public const int pathResolution = 10;
 
         public Vector3 rotation;
 
         public int endFrame;
 
-        public Vector3[] path;
-
-        public bool isClosed { get { return path.Length > 1 && path[0] == path[path.Length - 1]; } }
-
-        private TweenerCore<Vector3, Path, PathOptions> mPathPreviewTween;
+        public TweenPlugPath path { get { return _paths.Length > 0 ? _paths[0] : null; } } //save serialize size by using array (path has a lot of serialized fields)
+        [SerializeField] TweenPlugPath[] _paths;
 
         /// <summary>
         /// Generate path points and endFrame. keyInd is the index of this key in the track.
@@ -31,12 +30,12 @@ namespace M8.Animator {
         public void GeneratePath(RotationEulerTrack track, int keyInd) {
             switch(interp) {
                 case Interpolation.None:
-                    path = new Vector3[0];
+                    _paths = new TweenPlugPath[0];
                     endFrame = keyInd + 1 < track.keys.Count ? track.keys[keyInd + 1].frame : frame;
                     break;
 
                 case Interpolation.Linear:
-                    path = new Vector3[0];
+                    _paths = new TweenPlugPath[0];
 
                     if(keyInd + 1 < track.keys.Count)
                         endFrame = track.keys[keyInd + 1].frame;
@@ -45,82 +44,48 @@ namespace M8.Animator {
                     break;
 
                 case Interpolation.Curve:
-                    var pathList = new List<Vector3>();
+                    //if there's more than 2 keys, and next key is curve, then it's more than 2 pts.
+                    if(keyInd + 2 < track.keys.Count && track.keys[keyInd + 1].interp == Interpolation.Curve) {
+                        var pathList = new List<TweenPlugPathPoint>();
 
-                    for(int i = keyInd; i < track.keys.Count; i++) {
-                        var key = (RotationEulerKey)track.keys[i];
+                        for(int i = keyInd; i < track.keys.Count; i++) {
+                            var key = (RotationEulerKey)track.keys[i];
 
-                        pathList.Add(key.rotation);
-                        endFrame = key.frame;
+                            pathList.Add(new TweenPlugPathPoint(key.rotation));
+                            endFrame = key.frame;
 
-                        if(key.interp != Interpolation.Curve)
-                            break;
+                            if(key.interp != Interpolation.Curve)
+                                break;
+                        }
+
+                        var newPath = new TweenPlugPath(TweenPlugPathType.CatmullRom, pathList.ToArray(), pathResolution);
+                        newPath.Init(newPath.isClosed);
+
+                        _paths = new TweenPlugPath[] { newPath };
                     }
-
-                    if(pathList.Count > 1)
-                        path = pathList.ToArray();
                     else {
-                        endFrame = -1;
-                        path = new Vector3[0];
+                        if(keyInd + 1 < track.keys.Count) {
+                            endFrame = track.keys[keyInd + 1].frame;
+                            _paths = new TweenPlugPath[0];
+                        }
+                        else
+                            Invalidate();
                     }
                     break;
             }
         }
 
-        /// <summary>
-        /// Check if all points of path are equal.
-        /// </summary>
-        bool IsPathPointsEqual() {
-            for(int i = 0; i < path.Length; i++) {
-                if(i > 0 && path[i - 1] != path[i])
-                    return false;
-            }
-
-            return true;
-        }
-
-        /// <summary>
-        /// Create the tween based on the path, there must at least be two points
-        /// </summary>
-        TweenerCore<Vector3, Path, PathOptions> CreatePathTween(int frameRate) {
-            //if all points are equal, then set to Linear to prevent error from DOTween
-            var pathType = path.Length == 2 || IsPathPointsEqual() ? PathType.Linear : PathType.CatmullRom;
-
-            var pathData = new Path(pathType, path, pathResolution);
-
-            var tween = DOTween.To(PathPlugin.Get(), _Getter, _SetterNull, pathData, getTime(frameRate));
-
-            tween.SetRelative(false).SetOptions(isClosed);
-
-            return tween;
-        }
-
-        Vector3 _Getter() { return rotation; }
-
-        void _SetterNull(Vector3 val) { }
-
-        public void ClearCache() {
-            if(mPathPreviewTween != null) {
-                mPathPreviewTween.Kill();
-                mPathPreviewTween = null;
-            }
+        public void Invalidate() {
+            endFrame = -1;
+            _paths = new TweenPlugPath[0];
         }
 
         /// <summary>
         /// Grab position within t = [0, 1]. keyInd is the index of this key in the track.
         /// </summary>
-        public Vector3 GetRotationFromPath(Transform transform, int frameRate, float t) {
-            if((mPathPreviewTween == null || !mPathPreviewTween.active) && path.Length > 1)
-                mPathPreviewTween = CreatePathTween(frameRate);
-
-            if(mPathPreviewTween == null) //not tweenable
+        public Vector3 GetRotationFromPath(float t) {
+            if(path == null) //not tweenable
                 return rotation;
-
-            if(mPathPreviewTween.target == null) //this is just a placeholder to prevent error exception
-                mPathPreviewTween.SetTarget(transform);
-
-            if(!mPathPreviewTween.IsInitialized())
-                mPathPreviewTween.ForceInit();
 
             float finalT;
 
@@ -133,7 +98,9 @@ namespace M8.Animator {
                     return rotation;
             }
 
-            return mPathPreviewTween.PathGetPoint(finalT);
+            var pt = path.GetPoint(finalT, true);
+
+            return pt.valueVector3;
         }
 
         // copy properties from key
@@ -160,7 +127,6 @@ namespace M8.Animator {
             else if(canTween) {
                 //invalid or in-between keys
                 if(endFrame == -1) return;
-                if(interp == Interpolation.Curve && path.Length <= 1) return;
             }
 
             Transform target = obj as Transform;
@@ -176,273 +142,246 @@ namespace M8.Animator {
 
             float timeLength = getTime(frameRate);//1.0f / frameRate;
 
-            switch(interp) {
-                case Interpolation.None:
-                    if(axis == AxisFlags.X) {
-                        float _x = rotation.x;
-                        TweenerCore<float, float, TWeenPlugNoneOptions> tweenX;
+            if(interp == Interpolation.None) {
+                if(axis == AxisFlags.X) {
+                    float _x = rotation.x;
+                    TweenerCore<float, float, TWeenPlugNoneOptions> tweenX;
 
-                        if(body)
-                            tweenX = DOTween.To(TweenPlugValueSet<float>.Get(), () => target.localEulerAngles.x, (x) => { var a = target.localEulerAngles; body.rotation = Quaternion.Euler(x, a.y, a.z) * transParent.rotation; }, _x, timeLength);
-                        else
-                            tweenX = DOTween.To(TweenPlugValueSet<float>.Get(), () => target.localEulerAngles.x, (x) => { var a = target.localEulerAngles; a.x = x; target.localEulerAngles = a; }, _x, timeLength);
+                    if(body)
+                        tweenX = DOTween.To(TweenPlugValueSet<float>.Get(), () => target.localEulerAngles.x, (x) => { var a = target.localEulerAngles; body.rotation = Quaternion.Euler(x, a.y, a.z) * transParent.rotation; }, _x, timeLength);
+                    else
+                        tweenX = DOTween.To(TweenPlugValueSet<float>.Get(), () => target.localEulerAngles.x, (x) => { var a = target.localEulerAngles; a.x = x; target.localEulerAngles = a; }, _x, timeLength);
 
-                        seq.Insert(this, tweenX);
+                    seq.Insert(this, tweenX);
+                }
+                else if(axis == AxisFlags.Y) {
+                    float _y = rotation.y;
+                    TweenerCore<float, float, TWeenPlugNoneOptions> tweenY;
+
+                    if(body)
+                        tweenY = DOTween.To(TweenPlugValueSet<float>.Get(), () => target.localEulerAngles.y, (y) => { var a = target.localEulerAngles; body.rotation = Quaternion.Euler(a.x, y, a.z) * transParent.rotation; }, _y, timeLength);
+                    else
+                        tweenY = DOTween.To(TweenPlugValueSet<float>.Get(), () => target.localEulerAngles.y, (y) => { var a = target.localEulerAngles; a.y = y; target.localEulerAngles = a; }, _y, timeLength);
+
+                    seq.Insert(this, tweenY);
+                }
+                else if(axis == AxisFlags.Z) {
+                    float _z = rotation.z;
+                    TweenerCore<float, float, TWeenPlugNoneOptions> tweenZ;
+
+                    if(body2D)
+                        tweenZ = DOTween.To(TweenPlugValueSet<float>.Get(), () => target.localEulerAngles.z, (z) => { body2D.rotation = z + transParent.eulerAngles.z; }, _z, timeLength);
+                    else if(body)
+                        tweenZ = DOTween.To(TweenPlugValueSet<float>.Get(), () => target.localEulerAngles.z, (z) => { var a = target.localEulerAngles; body.rotation = Quaternion.Euler(a.x, a.y, z) * transParent.rotation; }, _z, timeLength);
+                    else
+                        tweenZ = DOTween.To(TweenPlugValueSet<float>.Get(), () => target.localEulerAngles.z, (z) => { var a = target.localEulerAngles; a.z = z; target.localEulerAngles = a; }, _z, timeLength);
+
+                    seq.Insert(this, tweenZ);
+                }
+                else if(axis == AxisFlags.All) {
+                    TweenerCore<Vector3, Vector3, TWeenPlugNoneOptions> tweenV;
+
+                    if(body2D)
+                        tweenV = DOTween.To(TweenPlugValueSet<Vector3>.Get(), () => target.localEulerAngles, (r) => { body2D.rotation = r.z + transParent.eulerAngles.z; }, rotation, timeLength);
+                    else if(body)
+                        tweenV = DOTween.To(TweenPlugValueSet<Vector3>.Get(), () => target.localEulerAngles, (r) => { body.rotation = Quaternion.Euler(r) * transParent.rotation; }, rotation, timeLength);
+                    else
+                        tweenV = DOTween.To(TweenPlugValueSet<Vector3>.Get(), () => target.localEulerAngles, (r) => { target.localEulerAngles = r; }, rotation, timeLength);
+
+                    seq.Insert(this, tweenV);
+                }
+                else {
+                    TweenerCore<Vector3, Vector3, TWeenPlugNoneOptions> tweenV;
+
+                    DOGetter<Vector3> getter = () => {
+                        var ret = rotation;
+                        var rot = target.localEulerAngles;
+                        if((axis & AxisFlags.X) != AxisFlags.None)
+                            ret.x = rot.x;
+                        if((axis & AxisFlags.Y) != AxisFlags.None)
+                            ret.y = rot.y;
+                        if((axis & AxisFlags.Z) != AxisFlags.None)
+                            ret.z = rot.z;
+                        return ret;
+                    };
+
+                    if(body2D) {
+                        tweenV = DOTween.To(TweenPlugValueSet<Vector3>.Get(), getter, (r) => {
+                            if((axis & AxisFlags.Z) != AxisFlags.None)
+                                body2D.rotation = r.z + transParent.eulerAngles.z;
+                        }, rotation, timeLength);
                     }
-                    else if(axis == AxisFlags.Y) {
-                        float _y = rotation.y;
-                        TweenerCore<float, float, TWeenPlugNoneOptions> tweenY;
-
-                        if(body)
-                            tweenY = DOTween.To(TweenPlugValueSet<float>.Get(), () => target.localEulerAngles.y, (y) => { var a = target.localEulerAngles; body.rotation = Quaternion.Euler(a.x, y, a.z) * transParent.rotation; }, _y, timeLength);
-                        else
-                            tweenY = DOTween.To(TweenPlugValueSet<float>.Get(), () => target.localEulerAngles.y, (y) => { var a = target.localEulerAngles; a.y = y; target.localEulerAngles = a; }, _y, timeLength);
-
-                        seq.Insert(this, tweenY);
-                    }
-                    else if(axis == AxisFlags.Z) {
-                        float _z = rotation.z;
-                        TweenerCore<float, float, TWeenPlugNoneOptions> tweenZ;
-
-                        if(body2D)
-                            tweenZ = DOTween.To(TweenPlugValueSet<float>.Get(), () => target.localEulerAngles.z, (z) => { body2D.rotation = z + transParent.eulerAngles.z; }, _z, timeLength);
-                        else if(body)
-                            tweenZ = DOTween.To(TweenPlugValueSet<float>.Get(), () => target.localEulerAngles.z, (z) => { var a = target.localEulerAngles; body.rotation = Quaternion.Euler(a.x, a.y, z) * transParent.rotation; }, _z, timeLength);
-                        else
-                            tweenZ = DOTween.To(TweenPlugValueSet<float>.Get(), () => target.localEulerAngles.z, (z) => { var a = target.localEulerAngles; a.z = z; target.localEulerAngles = a; }, _z, timeLength);
-
-                        seq.Insert(this, tweenZ);
-                    }
-                    else if(axis == AxisFlags.All) {
-                        TweenerCore<Vector3, Vector3, TWeenPlugNoneOptions> tweenV;
-
-                        if(body2D)
-                            tweenV = DOTween.To(TweenPlugValueSet<Vector3>.Get(), () => target.localEulerAngles, (r) => { body2D.rotation = r.z + transParent.eulerAngles.z; }, rotation, timeLength);
-                        else if(body)
-                            tweenV = DOTween.To(TweenPlugValueSet<Vector3>.Get(), () => target.localEulerAngles, (r) => { body.rotation = Quaternion.Euler(r) * transParent.rotation; }, rotation, timeLength);
-                        else
-                            tweenV = DOTween.To(TweenPlugValueSet<Vector3>.Get(), () => target.localEulerAngles, (r) => { target.localEulerAngles = r; }, rotation, timeLength);
-
-                        seq.Insert(this, tweenV);
-                    }
-                    else {
-                        TweenerCore<Vector3, Vector3, TWeenPlugNoneOptions> tweenV;
-
-                        DOGetter<Vector3> getter = () => {
-                            var ret = rotation;
+                    else if(body) {
+                        tweenV = DOTween.To(TweenPlugValueSet<Vector3>.Get(), getter, (r) => {
                             var rot = target.localEulerAngles;
                             if((axis & AxisFlags.X) != AxisFlags.None)
-                                ret.x = rot.x;
+                                rot.x = r.x;
                             if((axis & AxisFlags.Y) != AxisFlags.None)
-                                ret.y = rot.y;
+                                rot.y = r.y;
                             if((axis & AxisFlags.Z) != AxisFlags.None)
-                                ret.z = rot.z;
-                            return ret;
+                                rot.z = r.z;
+                            body.rotation = Quaternion.Euler(rot) * transParent.rotation;
+                        }, rotation, timeLength);
+                    }
+                    else {
+                        tweenV = DOTween.To(TweenPlugValueSet<Vector3>.Get(), getter, (r) => {
+                            var rot = target.localEulerAngles;
+                            if((axis & AxisFlags.X) != AxisFlags.None)
+                                rot.x = r.x;
+                            if((axis & AxisFlags.Y) != AxisFlags.None)
+                                rot.y = r.y;
+                            if((axis & AxisFlags.Z) != AxisFlags.None)
+                                rot.z = r.z;
+                            target.localEulerAngles = rot;
+                        }, rotation, timeLength);
+                    }
+
+                    seq.Insert(this, tweenV);
+                }
+            }
+            else if(interp == Interpolation.Linear || path == null) {
+                Vector3 endRotation = (track.keys[index + 1] as RotationEulerKey).rotation;
+
+                Tweener tween;
+
+                if(axis == AxisFlags.X) {
+                    if(body)
+                        tween = DOTween.To(TweenPluginFactory.CreateFloat(), () => rotation.x, (x) => { var a = target.localEulerAngles; body.MoveRotation(Quaternion.Euler(x, a.y, a.z) * transParent.rotation); }, endRotation.x, timeLength);
+                    else
+                        tween = DOTween.To(TweenPluginFactory.CreateFloat(), () => rotation.x, (x) => { var a = target.localEulerAngles; a.x = x; target.localEulerAngles = a; }, endRotation.x, timeLength);
+                }
+                else if(axis == AxisFlags.Y) {
+                    if(body)
+                        tween = DOTween.To(TweenPluginFactory.CreateFloat(), () => rotation.y, (y) => { var a = target.localEulerAngles; body.MoveRotation(Quaternion.Euler(a.x, y, a.z) * transParent.rotation); }, endRotation.y, timeLength);
+                    else
+                        tween = DOTween.To(TweenPluginFactory.CreateFloat(), () => rotation.y, (y) => { var a = target.localEulerAngles; a.y = y; target.localEulerAngles = a; }, endRotation.y, timeLength);
+                }
+                else if(axis == AxisFlags.Z) {
+                    if(body2D)
+                        tween = DOTween.To(TweenPluginFactory.CreateFloat(), () => rotation.z, (z) => { body2D.rotation = z + transParent.eulerAngles.z; }, endRotation.z, timeLength);
+                    else if(body)
+                        tween = DOTween.To(TweenPluginFactory.CreateFloat(), () => rotation.z, (z) => { var a = target.localEulerAngles; body.MoveRotation(Quaternion.Euler(a.x, a.y, z) * transParent.rotation); }, endRotation.z, timeLength);
+                    else
+                        tween = DOTween.To(TweenPluginFactory.CreateFloat(), () => rotation.z, (z) => { var a = target.localEulerAngles; a.z = z; target.localEulerAngles = a; }, endRotation.z, timeLength);
+                }
+                else if(axis == AxisFlags.All) {
+                    if(body2D)
+                        tween = DOTween.To(TweenPluginFactory.CreateVector3(), () => rotation, (r) => body2D.MoveRotation(r.z + transParent.eulerAngles.z), endRotation, timeLength);
+                    else if(body)
+                        tween = DOTween.To(TweenPluginFactory.CreateVector3(), () => rotation, (r) => body.MoveRotation(Quaternion.Euler(r) * transParent.rotation), endRotation, timeLength);
+                    else
+                        tween = DOTween.To(TweenPluginFactory.CreateVector3(), () => rotation, (r) => target.localEulerAngles = r, endRotation, timeLength);
+                }
+                else {
+                    if(body2D) {
+                        tween = DOTween.To(TweenPluginFactory.CreateVector3(), () => rotation, (r) => {
+                            if((axis & AxisFlags.Z) != AxisFlags.None)
+                                body2D.MoveRotation(r.z + transParent.eulerAngles.z);
+                        }, endRotation, timeLength);
+                    }
+                    else if(body) {
+                        tween = DOTween.To(TweenPluginFactory.CreateVector3(), () => rotation, (r) => {
+                            var rot = target.localEulerAngles;
+                            if((axis & AxisFlags.X) != AxisFlags.None)
+                                rot.x = r.x;
+                            if((axis & AxisFlags.Y) != AxisFlags.None)
+                                rot.y = r.y;
+                            if((axis & AxisFlags.Z) != AxisFlags.None)
+                                rot.z = r.z;
+                            body.MoveRotation(Quaternion.Euler(rot) * transParent.rotation);
+                        }, endRotation, timeLength);
+                    }
+                    else {
+                        tween = DOTween.To(TweenPluginFactory.CreateVector3(), () => rotation, (r) => {
+                            var rot = target.localEulerAngles;
+                            if((axis & AxisFlags.X) != AxisFlags.None)
+                                rot.x = r.x;
+                            if((axis & AxisFlags.Y) != AxisFlags.None)
+                                rot.y = r.y;
+                            if((axis & AxisFlags.Z) != AxisFlags.None)
+                                rot.z = r.z;
+                            target.localEulerAngles = rot;
+                        }, endRotation, timeLength);
+                    }
+                }
+
+                if(hasCustomEase())
+                    tween.SetEase(easeCurve);
+                else
+                    tween.SetEase(easeType, amplitude, period);
+
+                seq.Insert(this, tween);
+            }
+            else if(interp == Interpolation.Curve) {
+                var options = new TweenPlugPathOptions { loopType = LoopType.Restart, isClosedPath = path.isClosed };
+
+                DOSetter<Vector3> setter;
+                if(axis == AxisFlags.X) {
+                    if(body) 
+                        setter = (x) => { var a = target.localEulerAngles; body.MoveRotation(Quaternion.Euler(x.x, a.y, a.z) * transParent.rotation); };
+                    else
+                        setter = (x) => { var a = target.localEulerAngles; a.x = x.x; target.localEulerAngles = a; };
+                }
+                else if(axis == AxisFlags.Y) {
+                    if(body)
+                        setter = (x) => { var a = target.localEulerAngles; body.MoveRotation(Quaternion.Euler(a.x, x.y, a.z) * transParent.rotation); };
+                    else
+                        setter = (x) => { var a = target.localEulerAngles; a.y = x.y; target.localEulerAngles = a; };
+                }
+                else if(axis == AxisFlags.Z) {
+                    if(body2D)
+                        setter = (x) => { body2D.MoveRotation(x.z + transParent.eulerAngles.z); };
+                    else if(body)
+                        setter = (x) => { var a = target.localEulerAngles; body.MoveRotation(Quaternion.Euler(a.x, a.y, x.z) * transParent.rotation); };
+                    else
+                        setter = (x) => { var a = target.localEulerAngles; a.z = x.z; target.localEulerAngles = a; };
+                }
+                else if(axis == AxisFlags.All) {
+                    if(body2D)
+                        setter = (r) => body2D.MoveRotation(r.z + transParent.eulerAngles.z);
+                    else if(body)
+                        setter = (r) => body.MoveRotation(Quaternion.Euler(r) * transParent.rotation);
+                    else
+                        setter = (r) => target.localEulerAngles = r;
+                }
+                else {
+                    if(body2D)
+                        setter = (r) => {
+                            if((axis & AxisFlags.Z) != AxisFlags.None)
+                                body2D.MoveRotation(r.z + transParent.eulerAngles.z);
                         };
-
-                        if(body2D) {
-                            tweenV = DOTween.To(TweenPlugValueSet<Vector3>.Get(), getter, (r) => {
-                                if((axis & AxisFlags.Z) != AxisFlags.None)
-                                    body2D.rotation = r.z + transParent.eulerAngles.z;
-                            }, rotation, timeLength);
-                        }
-                        else if(body) {
-                            tweenV = DOTween.To(TweenPlugValueSet<Vector3>.Get(), getter, (r) => {
-                                var rot = target.localEulerAngles;
-                                if((axis & AxisFlags.X) != AxisFlags.None)
-                                    rot.x = r.x;
-                                if((axis & AxisFlags.Y) != AxisFlags.None)
-                                    rot.y = r.y;
-                                if((axis & AxisFlags.Z) != AxisFlags.None)
-                                    rot.z = r.z;
-                                body.rotation = Quaternion.Euler(rot) * transParent.rotation;
-                            }, rotation, timeLength);
-                        }
-                        else {
-                            tweenV = DOTween.To(TweenPlugValueSet<Vector3>.Get(), getter, (r) => {
-                                var rot = target.localEulerAngles;
-                                if((axis & AxisFlags.X) != AxisFlags.None)
-                                    rot.x = r.x;
-                                if((axis & AxisFlags.Y) != AxisFlags.None)
-                                    rot.y = r.y;
-                                if((axis & AxisFlags.Z) != AxisFlags.None)
-                                    rot.z = r.z;
-                                target.localEulerAngles = rot;
-                            }, rotation, timeLength);
-                        }
-
-                        seq.Insert(this, tweenV);
-                    }
-                    break;
-
-                case Interpolation.Linear:
-                    Vector3 endRotation = (track.keys[index + 1] as RotationEulerKey).rotation;
-
-                    Tweener tween;
-
-                    if(axis == AxisFlags.X) {
-                        if(body)
-                            tween = DOTween.To(TweenPluginFactory.CreateFloat(), () => rotation.x, (x) => { var a = target.localEulerAngles; body.MoveRotation(Quaternion.Euler(x, a.y, a.z) * transParent.rotation); }, endRotation.x, timeLength);
-                        else
-                            tween = DOTween.To(TweenPluginFactory.CreateFloat(), () => rotation.x, (x) => { var a = target.localEulerAngles; a.x = x; target.localEulerAngles = a; }, endRotation.x, timeLength);
-                    }
-                    else if(axis == AxisFlags.Y) {
-                        if(body)
-                            tween = DOTween.To(TweenPluginFactory.CreateFloat(), () => rotation.y, (y) => { var a = target.localEulerAngles; body.MoveRotation(Quaternion.Euler(a.x, y, a.z) * transParent.rotation); }, endRotation.y, timeLength);
-                        else
-                            tween = DOTween.To(TweenPluginFactory.CreateFloat(), () => rotation.y, (y) => { var a = target.localEulerAngles; a.y = y; target.localEulerAngles = a; }, endRotation.y, timeLength);
-                    }
-                    else if(axis == AxisFlags.Z) {
-                        if(body2D)
-                            tween = DOTween.To(TweenPluginFactory.CreateFloat(), () => rotation.z, (z) => { body2D.rotation = z + transParent.eulerAngles.z; }, endRotation.z, timeLength);
-                        else if(body)
-                            tween = DOTween.To(TweenPluginFactory.CreateFloat(), () => rotation.z, (z) => { var a = target.localEulerAngles; body.MoveRotation(Quaternion.Euler(a.x, a.y, z) * transParent.rotation); }, endRotation.z, timeLength);
-                        else
-                            tween = DOTween.To(TweenPluginFactory.CreateFloat(), () => rotation.z, (z) => { var a = target.localEulerAngles; a.z = z; target.localEulerAngles = a; }, endRotation.z, timeLength);
-                    }
-                    else if(axis == AxisFlags.All) {
-                        if(body2D)
-                            tween = DOTween.To(TweenPluginFactory.CreateVector3(), () => rotation, (r) => body2D.MoveRotation(r.z + transParent.eulerAngles.z), endRotation, timeLength);
-                        else if(body)
-                            tween = DOTween.To(TweenPluginFactory.CreateVector3(), () => rotation, (r) => body.MoveRotation(Quaternion.Euler(r) * transParent.rotation), endRotation, timeLength);
-                        else
-                            tween = DOTween.To(TweenPluginFactory.CreateVector3(), () => rotation, (r) => target.localEulerAngles = r, endRotation, timeLength);
-                    }
-                    else {
-                        if(body2D) {
-                            tween = DOTween.To(TweenPluginFactory.CreateVector3(), () => rotation, (r) => {
-                                if((axis & AxisFlags.Z) != AxisFlags.None)
-                                    body2D.MoveRotation(r.z + transParent.eulerAngles.z);
-                            }, endRotation, timeLength);
-                        }
-                        else if(body) {
-                            tween = DOTween.To(TweenPluginFactory.CreateVector3(), () => rotation, (r) => {
-                                var rot = target.localEulerAngles;
-                                if((axis & AxisFlags.X) != AxisFlags.None)
-                                    rot.x = r.x;
-                                if((axis & AxisFlags.Y) != AxisFlags.None)
-                                    rot.y = r.y;
-                                if((axis & AxisFlags.Z) != AxisFlags.None)
-                                    rot.z = r.z;
-                                body.MoveRotation(Quaternion.Euler(rot) * transParent.rotation);
-                            }, endRotation, timeLength);
-                        }
-                        else {
-                            tween = DOTween.To(TweenPluginFactory.CreateVector3(), () => rotation, (r) => {
-                                var rot = target.localEulerAngles;
-                                if((axis & AxisFlags.X) != AxisFlags.None)
-                                    rot.x = r.x;
-                                if((axis & AxisFlags.Y) != AxisFlags.None)
-                                    rot.y = r.y;
-                                if((axis & AxisFlags.Z) != AxisFlags.None)
-                                    rot.z = r.z;
-                                target.localEulerAngles = rot;
-                            }, endRotation, timeLength);
-                        }
-                    }
-
-                    if(hasCustomEase())
-                        tween.SetEase(easeCurve);
+                    else if(body)
+                        setter = (r) => {
+                            var rot = target.localEulerAngles;
+                            if((axis & AxisFlags.X) != AxisFlags.None)
+                                rot.x = r.x;
+                            if((axis & AxisFlags.Y) != AxisFlags.None)
+                                rot.y = r.y;
+                            if((axis & AxisFlags.Z) != AxisFlags.None)
+                                rot.z = r.z;
+                            body.MoveRotation(Quaternion.Euler(rot) * transParent.rotation);
+                        };
                     else
-                        tween.SetEase(easeType, amplitude, period);
+                        setter = (r) => {
+                            var rot = target.localEulerAngles;
+                            if((axis & AxisFlags.X) != AxisFlags.None)
+                                rot.x = r.x;
+                            if((axis & AxisFlags.Y) != AxisFlags.None)
+                                rot.y = r.y;
+                            if((axis & AxisFlags.Z) != AxisFlags.None)
+                                rot.z = r.z;
+                            target.localEulerAngles = rot;
+                        };
+                }
 
-                    seq.Insert(this, tween);
-                    break;
+                var tweenPath = DOTween.To(TweenPlugPathVector3.Get(), () => rotation, setter, path, timeLength);
 
-                case Interpolation.Curve:
-                    var pathTween = CreatePathTween(frameRate);
+                if(hasCustomEase())
+                    tweenPath.SetEase(easeCurve);
+                else
+                    tweenPath.SetEase(easeType, amplitude, period);
 
-                    if(axis == AxisFlags.X) {
-                        if(body) {
-                            pathTween.setter = (x) => { var a = target.localEulerAngles; body.MoveRotation(Quaternion.Euler(x.x, a.y, a.z) * transParent.rotation); };
-                            pathTween.SetTarget(body);
-                        }
-                        else {
-                            pathTween.setter = (x) => { var a = target.localEulerAngles; a.x = x.x; target.localEulerAngles = a; };
-                            pathTween.SetTarget(target);
-                        }
-                    }
-                    else if(axis == AxisFlags.Y) {
-                        if(body) {
-                            pathTween.setter = (x) => { var a = target.localEulerAngles; body.MoveRotation(Quaternion.Euler(a.x, x.y, a.z) * transParent.rotation); };
-                            pathTween.SetTarget(body);
-                        }
-                        else {
-                            pathTween.setter = (x) => { var a = target.localEulerAngles; a.y = x.y; target.localEulerAngles = a; };
-                            pathTween.SetTarget(target);
-                        }
-                    }
-                    else if(axis == AxisFlags.Z) {
-                        if(body2D) {
-                            pathTween.setter = (x) => { body2D.rotation = x.z + transParent.eulerAngles.z; };
-                            pathTween.SetTarget(body2D);
-                        }
-                        else if(body) {
-                            pathTween.setter = (x) => { var a = target.localEulerAngles; body.MoveRotation(Quaternion.Euler(a.x, a.y, x.z) * transParent.rotation); };
-                            pathTween.SetTarget(body);
-                        }
-                        else {
-                            pathTween.setter = (x) => { var a = target.localEulerAngles; a.z = x.z; target.localEulerAngles = a; };
-                            pathTween.SetTarget(target);
-                        }
-                    }
-                    else if(axis == AxisFlags.All) {
-                        if(body2D) {
-                            pathTween.setter = (r) => body2D.MoveRotation(r.z + transParent.eulerAngles.z);
-                            pathTween.SetTarget(body2D);
-                        }
-                        else if(body) {
-                            pathTween.setter = (r) => body.MoveRotation(Quaternion.Euler(r) * transParent.rotation);
-                            pathTween.SetTarget(body);
-                        }
-                        else {
-                            pathTween.setter = (r) => target.localEulerAngles = r;
-                            pathTween.SetTarget(target);
-                        }
-                    }
-                    else {
-                        if(body2D) {
-                            pathTween.setter = (r) => {
-                                if((axis & AxisFlags.Z) != AxisFlags.None)
-                                    body2D.MoveRotation(r.z + transParent.eulerAngles.z);
-                            };
-                            pathTween.SetTarget(body2D);
-                        }
-                        else if(body) {
-                            pathTween.setter = (r) => {
-                                var rot = target.localEulerAngles;
-                                if((axis & AxisFlags.X) != AxisFlags.None)
-                                    rot.x = r.x;
-                                if((axis & AxisFlags.Y) != AxisFlags.None)
-                                    rot.y = r.y;
-                                if((axis & AxisFlags.Z) != AxisFlags.None)
-                                    rot.z = r.z;
-                                body.MoveRotation(Quaternion.Euler(rot) * transParent.rotation);
-                            };
-                            pathTween.SetTarget(body);
-                        }
-                        else {
-                            pathTween.setter = (r) => {
-                                var rot = target.localEulerAngles;
-                                if((axis & AxisFlags.X) != AxisFlags.None)
-                                    rot.x = r.x;
-                                if((axis & AxisFlags.Y) != AxisFlags.None)
-                                    rot.y = r.y;
-                                if((axis & AxisFlags.Z) != AxisFlags.None)
-                                    rot.z = r.z;
-                                target.localEulerAngles = rot;
-                            };
-                            pathTween.SetTarget(target);
-                        }
-                    }
-
-                    if(hasCustomEase())
-                        pathTween.SetEase(easeCurve);
-                    else
-                        pathTween.SetEase(easeType, amplitude, period);
-
-                    seq.Insert(this, pathTween);
-                    break;
+                seq.Insert(this, tweenPath);
             }
         }
         #endregion

@@ -13,17 +13,16 @@ namespace M8.Animator {
     public class ScaleKey : Key {
         public override SerializeType serializeType { get { return SerializeType.Scale; } }
 
+        public override int keyCount { get { return path != null ? path.wps.Length : 1; } }
+
         public const int pathResolution = 10;
 
         public Vector3 scale;
 
         public int endFrame;
 
-        public Vector3[] path;
-
-        public bool isClosed { get { return path.Length > 1 && path[0] == path[path.Length - 1]; } }
-
-        private TweenerCore<Vector3, Path, PathOptions> mPathPreviewTween;
+        public TweenPlugPath path { get { return _paths.Length > 0 ? _paths[0] : null; } } //save serialize size by using array (path has a lot of serialized fields)
+        [SerializeField] TweenPlugPath[] _paths;
 
         /// <summary>
         /// Generate path points and endFrame. keyInd is the index of this key in the track.
@@ -31,12 +30,12 @@ namespace M8.Animator {
         public void GeneratePath(ScaleTrack track, int keyInd) {
             switch(interp) {
                 case Interpolation.None:
-                    path = new Vector3[0];
+                    _paths = new TweenPlugPath[0];
                     endFrame = keyInd + 1 < track.keys.Count ? track.keys[keyInd + 1].frame : frame;
                     break;
 
                 case Interpolation.Linear:
-                    path = new Vector3[0];
+                    _paths = new TweenPlugPath[0];
 
                     if(keyInd + 1 < track.keys.Count)
                         endFrame = track.keys[keyInd + 1].frame;
@@ -45,82 +44,48 @@ namespace M8.Animator {
                     break;
 
                 case Interpolation.Curve:
-                    var pathList = new List<Vector3>();
+                    //if there's more than 2 keys, and next key is curve, then it's more than 2 pts.
+                    if(keyInd + 2 < track.keys.Count && track.keys[keyInd + 1].interp == Interpolation.Curve) {
+                        var pathList = new List<TweenPlugPathPoint>();
 
-                    for(int i = keyInd; i < track.keys.Count; i++) {
-                        var key = (ScaleKey)track.keys[i];
+                        for(int i = keyInd; i < track.keys.Count; i++) {
+                            var key = (ScaleKey)track.keys[i];
 
-                        pathList.Add(key.scale);
-                        endFrame = key.frame;
+                            pathList.Add(new TweenPlugPathPoint(key.scale));
+                            endFrame = key.frame;
 
-                        if(key.interp != Interpolation.Curve)
-                            break;
+                            if(key.interp != Interpolation.Curve)
+                                break;
+                        }
+
+                        var newPath = new TweenPlugPath(TweenPlugPathType.CatmullRom, pathList.ToArray(), pathResolution);
+                        newPath.Init(newPath.isClosed);
+
+                        _paths = new TweenPlugPath[] { newPath };
                     }
-
-                    if(pathList.Count > 1)
-                        path = pathList.ToArray();
                     else {
-                        endFrame = -1;
-                        path = new Vector3[0];
+                        if(keyInd + 1 < track.keys.Count) {
+                            endFrame = track.keys[keyInd + 1].frame;
+                            _paths = new TweenPlugPath[0];
+                        }
+                        else
+                            Invalidate();
                     }
                     break;
             }
         }
 
-        /// <summary>
-        /// Check if all points of path are equal.
-        /// </summary>
-        bool IsPathPointsEqual() {
-            for(int i = 0; i < path.Length; i++) {
-                if(i > 0 && path[i - 1] != path[i])
-                    return false;
-            }
-
-            return true;
-        }
-
-        /// <summary>
-        /// Create the tween based on the path, there must at least be two points
-        /// </summary>
-        TweenerCore<Vector3, Path, PathOptions> CreatePathTween(int frameRate) {
-            //if all points are equal, then set to Linear to prevent error from DOTween
-            var pathType = path.Length == 2 || IsPathPointsEqual() ? PathType.Linear : PathType.CatmullRom;
-
-            var pathData = new Path(pathType, path, pathResolution);
-
-            var tween = DOTween.To(PathPlugin.Get(), _Getter, _SetterNull, pathData, getTime(frameRate));
-
-            tween.SetRelative(false).SetOptions(isClosed);
-
-            return tween;
-        }
-
-        Vector3 _Getter() { return scale; }
-
-        void _SetterNull(Vector3 val) { }
-
-        public void ClearCache() {
-            if(mPathPreviewTween != null) {
-                mPathPreviewTween.Kill();
-                mPathPreviewTween = null;
-            }
+        public void Invalidate() {
+            endFrame = -1;
+            _paths = new TweenPlugPath[0];
         }
 
         /// <summary>
         /// Grab position within t = [0, 1]. keyInd is the index of this key in the track.
         /// </summary>
-        public Vector3 GetScaleFromPath(Transform transform, int frameRate, float t) {
-            if((mPathPreviewTween == null || !mPathPreviewTween.active) && path.Length > 1)
-                mPathPreviewTween = CreatePathTween(frameRate);
-
-            if(mPathPreviewTween == null) //not tweenable
+        public Vector3 GetScaleFromPath(float t) {
+            if(path == null) //not tweenable
                 return scale;
-
-            if(mPathPreviewTween.target == null) //this is just a placeholder to prevent error exception
-                mPathPreviewTween.SetTarget(transform);
-
-            if(!mPathPreviewTween.IsInitialized())
-                mPathPreviewTween.ForceInit();
 
             float finalT;
 
@@ -133,7 +98,9 @@ namespace M8.Animator {
                     return scale;
             }
 
-            return mPathPreviewTween.PathGetPoint(finalT);
+            var pt = path.GetPoint(finalT, true);
+
+            return pt.valueVector3;
         }
 
         // copy properties from key
@@ -160,7 +127,6 @@ namespace M8.Animator {
             else if(canTween) {
                 //invalid or in-between keys
                 if(endFrame == -1) return;
-                if(interp == Interpolation.Curve && path.Length <= 1) return;
             }
 
             Transform target = obj as Transform;
@@ -172,69 +138,40 @@ namespace M8.Animator {
 
             float timeLength = getTime(frameRate);
 
-            switch(interp) {
-                case Interpolation.None:
-                    if(axis == AxisFlags.X) {
-                        float _x = scale.x;
-                        var tweenX = DOTween.To(TweenPlugValueSet<float>.Get(), () => target.localScale.x, (x) => { var a = target.localScale; a.x = x; target.localScale = a; }, _x, timeLength);
-                        seq.Insert(this, tweenX);
-                    }
-                    else if(axis == AxisFlags.Y) {
-                        float _y = scale.y;
-                        var tweenY = DOTween.To(TweenPlugValueSet<float>.Get(), () => target.localScale.y, (y) => { var a = target.localScale; a.y = y; target.localScale = a; }, _y, timeLength);
-                        seq.Insert(this, tweenY);
-                    }
-                    else if(axis == AxisFlags.Z) {
-                        float _z = scale.z;
-                        var tweenZ = DOTween.To(TweenPlugValueSet<float>.Get(), () => target.localScale.z, (z) => { var a = target.localScale; a.z = z; target.localScale = a; }, _z, timeLength);
-                        seq.Insert(this, tweenZ);
-                    }
-                    else if(axis == AxisFlags.All) {
-                        var tweenV = DOTween.To(TweenPlugValueSet<Vector3>.Get(), () => target.localScale, (s) => { target.localScale = s; }, scale, timeLength);
-                        seq.Insert(this, tweenV);
-                    }
-                    else {
-                        var tweenV = DOTween.To(TweenPlugValueSet<Vector3>.Get(),
-                            () => {
-                                var ls = scale;
-                                var curls = target.localScale;
-                                if((axis & AxisFlags.X) != AxisFlags.None)
-                                    ls.x = curls.x;
-                                if((axis & AxisFlags.Y) != AxisFlags.None)
-                                    ls.y = curls.y;
-                                if((axis & AxisFlags.Z) != AxisFlags.None)
-                                    ls.z = curls.z;
-                                return ls;
-                            },
-                            (s) => {
-                                var ls = target.localScale;
-                                if((axis & AxisFlags.X) != AxisFlags.None)
-                                    ls.x = s.x;
-                                if((axis & AxisFlags.Y) != AxisFlags.None)
-                                    ls.y = s.y;
-                                if((axis & AxisFlags.Z) != AxisFlags.None)
-                                    ls.z = s.z;
-                                target.localScale = ls;
-                            }, scale, timeLength);
-                        seq.Insert(this, tweenV);
-                    }
-                    break;
-
-                case Interpolation.Linear:
-                    Vector3 endScale = ((ScaleKey)track.keys[index + 1]).scale;
-
-                    Tweener tween;
-
-                    if(axis == AxisFlags.X)
-                        tween = DOTween.To(TweenPluginFactory.CreateFloat(), () => scale.x, (x) => { var a = target.localScale; a.x = x; target.localScale = a; }, endScale.x, timeLength);
-                    else if(axis == AxisFlags.Y)
-                        tween = DOTween.To(TweenPluginFactory.CreateFloat(), () => scale.y, (y) => { var a = target.localScale; a.y = y; target.localScale = a; }, endScale.y, timeLength);
-                    else if(axis == AxisFlags.Z)
-                        tween = DOTween.To(TweenPluginFactory.CreateFloat(), () => scale.z, (z) => { var a = target.localScale; a.z = z; target.localScale = a; }, endScale.z, timeLength);
-                    else if(axis == AxisFlags.All)
-                        tween = DOTween.To(TweenPluginFactory.CreateVector3(), () => scale, (s) => target.localScale = s, endScale, timeLength);
-                    else
-                        tween = DOTween.To(TweenPluginFactory.CreateVector3(), () => scale, (s) => {
+            if(interp == Interpolation.None) {
+                if(axis == AxisFlags.X) {
+                    float _x = scale.x;
+                    var tweenX = DOTween.To(TweenPlugValueSet<float>.Get(), () => target.localScale.x, (x) => { var a = target.localScale; a.x = x; target.localScale = a; }, _x, timeLength);
+                    seq.Insert(this, tweenX);
+                }
+                else if(axis == AxisFlags.Y) {
+                    float _y = scale.y;
+                    var tweenY = DOTween.To(TweenPlugValueSet<float>.Get(), () => target.localScale.y, (y) => { var a = target.localScale; a.y = y; target.localScale = a; }, _y, timeLength);
+                    seq.Insert(this, tweenY);
+                }
+                else if(axis == AxisFlags.Z) {
+                    float _z = scale.z;
+                    var tweenZ = DOTween.To(TweenPlugValueSet<float>.Get(), () => target.localScale.z, (z) => { var a = target.localScale; a.z = z; target.localScale = a; }, _z, timeLength);
+                    seq.Insert(this, tweenZ);
+                }
+                else if(axis == AxisFlags.All) {
+                    var tweenV = DOTween.To(TweenPlugValueSet<Vector3>.Get(), () => target.localScale, (s) => { target.localScale = s; }, scale, timeLength);
+                    seq.Insert(this, tweenV);
+                }
+                else {
+                    var tweenV = DOTween.To(TweenPlugValueSet<Vector3>.Get(),
+                        () => {
+                            var ls = scale;
+                            var curls = target.localScale;
+                            if((axis & AxisFlags.X) != AxisFlags.None)
+                                ls.x = curls.x;
+                            if((axis & AxisFlags.Y) != AxisFlags.None)
+                                ls.y = curls.y;
+                            if((axis & AxisFlags.Z) != AxisFlags.None)
+                                ls.z = curls.z;
+                            return ls;
+                        },
+                        (s) => {
                             var ls = target.localScale;
                             if((axis & AxisFlags.X) != AxisFlags.None)
                                 ls.x = s.x;
@@ -243,48 +180,75 @@ namespace M8.Animator {
                             if((axis & AxisFlags.Z) != AxisFlags.None)
                                 ls.z = s.z;
                             target.localScale = ls;
-                        }, endScale, timeLength);
+                        }, scale, timeLength);
+                    seq.Insert(this, tweenV);
+                }
+            }
+            else if(interp == Interpolation.Linear || path == null) {
+                Vector3 endScale = ((ScaleKey)track.keys[index + 1]).scale;
 
-                    if(hasCustomEase())
-                        tween.SetEase(easeCurve);
-                    else
-                        tween.SetEase(easeType, amplitude, period);
+                Tweener tween;
 
-                    seq.Insert(this, tween);
-                    break;
+                if(axis == AxisFlags.X)
+                    tween = DOTween.To(TweenPluginFactory.CreateFloat(), () => scale.x, (x) => { var a = target.localScale; a.x = x; target.localScale = a; }, endScale.x, timeLength);
+                else if(axis == AxisFlags.Y)
+                    tween = DOTween.To(TweenPluginFactory.CreateFloat(), () => scale.y, (y) => { var a = target.localScale; a.y = y; target.localScale = a; }, endScale.y, timeLength);
+                else if(axis == AxisFlags.Z)
+                    tween = DOTween.To(TweenPluginFactory.CreateFloat(), () => scale.z, (z) => { var a = target.localScale; a.z = z; target.localScale = a; }, endScale.z, timeLength);
+                else if(axis == AxisFlags.All)
+                    tween = DOTween.To(TweenPluginFactory.CreateVector3(), () => scale, (s) => target.localScale = s, endScale, timeLength);
+                else
+                    tween = DOTween.To(TweenPluginFactory.CreateVector3(), () => scale, (s) => {
+                        var ls = target.localScale;
+                        if((axis & AxisFlags.X) != AxisFlags.None)
+                            ls.x = s.x;
+                        if((axis & AxisFlags.Y) != AxisFlags.None)
+                            ls.y = s.y;
+                        if((axis & AxisFlags.Z) != AxisFlags.None)
+                            ls.z = s.z;
+                        target.localScale = ls;
+                    }, endScale, timeLength);
 
-                case Interpolation.Curve:
-                    var pathTween = CreatePathTween(frameRate);
+                if(hasCustomEase())
+                    tween.SetEase(easeCurve);
+                else
+                    tween.SetEase(easeType, amplitude, period);
 
-                    if(axis == AxisFlags.X)
-                        pathTween.setter = (s) => { var a = target.localScale; a.x = s.x; target.localScale = a; };
-                    else if(axis == AxisFlags.Y)
-                        pathTween.setter = (s) => { var a = target.localScale; a.y = s.y; target.localScale = a; };
-                    else if(axis == AxisFlags.Z)
-                        pathTween.setter = (s) => { var a = target.localScale; a.z = s.z; target.localScale = a; };
-                    else if(axis == AxisFlags.All)
-                        pathTween.setter = (s) => target.localScale = s;
-                    else
-                        pathTween.setter = (s) => {
-                            var ls = target.localScale;
-                            if((axis & AxisFlags.X) != AxisFlags.None)
-                                ls.x = s.x;
-                            if((axis & AxisFlags.Y) != AxisFlags.None)
-                                ls.y = s.y;
-                            if((axis & AxisFlags.Z) != AxisFlags.None)
-                                ls.z = s.z;
-                            target.localScale = ls;
-                        };
+                seq.Insert(this, tween);
+            }
+            else if(interp == Interpolation.Curve) {
+                var options = new TweenPlugPathOptions { loopType = LoopType.Restart, isClosedPath = path.isClosed };
 
-                    pathTween.SetTarget(target);
+                DOSetter<Vector3> setter;
 
-                    if(hasCustomEase())
-                        pathTween.SetEase(easeCurve);
-                    else
-                        pathTween.SetEase(easeType, amplitude, period);
+                if(axis == AxisFlags.X)
+                    setter = (s) => { var a = target.localScale; a.x = s.x; target.localScale = a; };
+                else if(axis == AxisFlags.Y)
+                    setter = (s) => { var a = target.localScale; a.y = s.y; target.localScale = a; };
+                else if(axis == AxisFlags.Z)
+                    setter = (s) => { var a = target.localScale; a.z = s.z; target.localScale = a; };
+                else if(axis == AxisFlags.All)
+                    setter = (s) => target.localScale = s;
+                else
+                    setter = (s) => {
+                        var ls = target.localScale;
+                        if((axis & AxisFlags.X) != AxisFlags.None)
+                            ls.x = s.x;
+                        if((axis & AxisFlags.Y) != AxisFlags.None)
+                            ls.y = s.y;
+                        if((axis & AxisFlags.Z) != AxisFlags.None)
+                            ls.z = s.z;
+                        target.localScale = ls;
+                    };
 
-                    seq.Insert(this, pathTween);
-                    break;
+                var tweenPath = DOTween.To(TweenPlugPathVector3.Get(), () => scale, setter, path, timeLength);
+
+                if(hasCustomEase())
+                    tweenPath.SetEase(easeCurve);
+                else
+                    tweenPath.SetEase(easeType, amplitude, period);
+
+                seq.Insert(this, tweenPath);
             }
         }
         #endregion
