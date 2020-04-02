@@ -14,6 +14,8 @@ namespace M8.Animator {
     public class RotationKey : Key {
         public override SerializeType serializeType { get { return SerializeType.Rotation; } }
 
+        public override int keyCount { get { return path != null ? path.wps.Length : 1; } }
+
         public const int pathResolution = 10;
 
         //public int type = 0; // 0 = Rotate To, 1 = Look At
@@ -22,11 +24,8 @@ namespace M8.Animator {
         public int endFrame;
 
         //curve-related TODO: use proper rotational spline
-        public Vector3[] path; //euler angles
-
-        public bool isClosed { get { return path.Length > 1 && path[0] == path[path.Length - 1]; } }
-
-        private TweenerCore<Vector3, Path, PathOptions> mPathPreviewTween;
+        public TweenPlugPath path { get { return _paths.Length > 0 ? _paths[0] : null; } } //save serialize size by using array (path has a lot of serialized fields)
+        [SerializeField] TweenPlugPath[] _paths;
 
         /// <summary>
         /// Generate path points and endFrame. keyInd is the index of this key in the track.
@@ -34,12 +33,12 @@ namespace M8.Animator {
         public void GeneratePath(RotationTrack track, int keyInd) {
             switch(interp) {
                 case Interpolation.None:
-                    path = new Vector3[0];
+                    _paths = new TweenPlugPath[0];
                     endFrame = keyInd + 1 < track.keys.Count ? track.keys[keyInd + 1].frame : frame;
                     break;
 
                 case Interpolation.Linear:
-                    path = new Vector3[0];
+                    _paths = new TweenPlugPath[0];
 
                     if(keyInd + 1 < track.keys.Count) {
                         var nextKey = (RotationKey)track.keys[keyInd + 1];
@@ -51,82 +50,48 @@ namespace M8.Animator {
                     break;
 
                 case Interpolation.Curve:
-                    var pathList = new List<Vector3>();
+                    //if there's more than 2 keys, and next key is curve, then it's more than 2 pts.
+                    if(keyInd + 2 < track.keys.Count && track.keys[keyInd + 1].interp == Interpolation.Curve) {
+                        var pathList = new List<TweenPlugPathPoint>();
 
-                    for(int i = keyInd; i < track.keys.Count; i++) {
-                        var key = (RotationKey)track.keys[i];
+                        for(int i = keyInd; i < track.keys.Count; i++) {
+                            var key = (RotationKey)track.keys[i];
 
-                        pathList.Add(key.rotation.eulerAngles);
-                        endFrame = key.frame;
+                            pathList.Add(new TweenPlugPathPoint(key.rotation.eulerAngles));
+                            endFrame = key.frame;
 
-                        if(key.interp != Interpolation.Curve)
-                            break;
+                            if(key.interp != Interpolation.Curve)
+                                break;
+                        }
+
+                        var newPath = new TweenPlugPath(TweenPlugPathType.CatmullRom, pathList.ToArray(), pathResolution);
+                        newPath.Init(newPath.isClosed);
+
+                        _paths = new TweenPlugPath[] { newPath };
                     }
-
-                    if(pathList.Count > 1)
-                        path = pathList.ToArray();
                     else {
-                        endFrame = -1;
-                        path = new Vector3[0];
+                        if(keyInd + 1 < track.keys.Count) {
+                            endFrame = track.keys[keyInd + 1].frame;
+                            _paths = new TweenPlugPath[0];
+                        }
+                        else
+                            Invalidate();
                     }
                     break;
             }
         }
 
-        /// <summary>
-        /// Check if all points of path are equal.
-        /// </summary>
-        bool IsPathPointsEqual() {
-            for(int i = 0; i < path.Length; i++) {
-                if(i > 0 && path[i - 1] != path[i])
-                    return false;
-            }
-
-            return true;
-        }
-
-        /// <summary>
-        /// Create the tween based on the path, there must at least be two points
-        /// </summary>
-        TweenerCore<Vector3, Path, PathOptions> CreatePathTween(int frameRate) {
-            //if all points are equal, then set to Linear to prevent error from DOTween
-            var pathType = path.Length == 2 || IsPathPointsEqual() ? PathType.Linear : PathType.CatmullRom;
-
-            var pathData = new Path(pathType, path, pathResolution);
-
-            var tween = DOTween.To(PathPlugin.Get(), _PathGetter, _PathSetterNull, pathData, getTime(frameRate));
-
-            tween.SetRelative(false).SetOptions(isClosed);
-
-            return tween;
-        }
-
-        Vector3 _PathGetter() { return rotation.eulerAngles; }
-
-        void _PathSetterNull(Vector3 val) { }
-
-        public void ClearCache() {
-            if(mPathPreviewTween != null) {
-                mPathPreviewTween.Kill();
-                mPathPreviewTween = null;
-            }
+        public void Invalidate() {
+            endFrame = -1;
+            _paths = new TweenPlugPath[0];
         }
 
         /// <summary>
         /// Grab position within t = [0, 1]. keyInd is the index of this key in the track.
         /// </summary>
-        public Quaternion GetRotationFromPath(Transform transform, int frameRate, float t) {
-            if((mPathPreviewTween == null || !mPathPreviewTween.active) && path.Length > 1)
-                mPathPreviewTween = CreatePathTween(frameRate);
-
-            if(mPathPreviewTween == null) //not tweenable
+        public Quaternion GetRotationFromPath(float t) {
+            if(path == null) //not tweenable
                 return rotation;
-
-            if(mPathPreviewTween.target == null) //this is just a placeholder to prevent error exception
-                mPathPreviewTween.SetTarget(transform);
-
-            if(!mPathPreviewTween.IsInitialized())
-                mPathPreviewTween.ForceInit();
 
             float finalT;
 
@@ -139,7 +104,9 @@ namespace M8.Animator {
                     return rotation;
             }
 
-            return Quaternion.Euler(mPathPreviewTween.PathGetPoint(finalT));
+            var pt = path.GetPoint(finalT, true);
+
+            return Quaternion.Euler(pt.valueVector3);
         }
 
         // copy properties from key
@@ -167,7 +134,6 @@ namespace M8.Animator {
             else if(canTween) {
                 //invalid or in-between keys
                 if(endFrame == -1) return;
-                if(interp == Interpolation.Curve && path.Length <= 1) return;
             }
 
             Transform trans = obj as Transform;
@@ -179,63 +145,56 @@ namespace M8.Animator {
             int frameRate = seq.take.frameRate;
             float time = getTime(frameRate);
 
-            switch(interp) {
-                case Interpolation.None:
-                    TweenerCore<Quaternion, Quaternion, TWeenPlugNoneOptions> valueTween;
+            if(interp == Interpolation.None) {
+                TweenerCore<Quaternion, Quaternion, TWeenPlugNoneOptions> valueTween;
 
-                    if(body2D)
-                        valueTween = DOTween.To(TweenPlugValueSet<Quaternion>.Get(), () => trans.localRotation, (x) => body2D.rotation = (x * transParent.rotation).eulerAngles.z, rotation, time);
-                    else if(body)
-                        valueTween = DOTween.To(TweenPlugValueSet<Quaternion>.Get(), () => trans.localRotation, (x) => body.rotation = x * transParent.rotation, rotation, time);
-                    else
-                        valueTween = DOTween.To(TweenPlugValueSet<Quaternion>.Get(), () => trans.localRotation, (x) => trans.localRotation = x, rotation, time);
+                if(body2D)
+                    valueTween = DOTween.To(TweenPlugValueSet<Quaternion>.Get(), () => trans.localRotation, (x) => body2D.rotation = (x * transParent.rotation).eulerAngles.z, rotation, time);
+                else if(body)
+                    valueTween = DOTween.To(TweenPlugValueSet<Quaternion>.Get(), () => trans.localRotation, (x) => body.rotation = x * transParent.rotation, rotation, time);
+                else
+                    valueTween = DOTween.To(TweenPlugValueSet<Quaternion>.Get(), () => trans.localRotation, (x) => trans.localRotation = x, rotation, time);
 
-                    seq.Insert(this, valueTween);
-                    break;
+                seq.Insert(this, valueTween);
+            }
+            else if(interp == Interpolation.Linear || path == null) {
+                Quaternion endRotation = (track.keys[index + 1] as RotationKey).rotation;
 
-                case Interpolation.Linear:
-                    Quaternion endRotation = (track.keys[index + 1] as RotationKey).rotation;
+                TweenerCore<Quaternion, Quaternion, NoOptions> linearTween;
 
-                    TweenerCore<Quaternion, Quaternion, NoOptions> linearTween;
+                if(body2D)
+                    linearTween = DOTween.To(TweenPluginFactory.CreateQuaternion(), () => rotation, (x) => body2D.MoveRotation((x * transParent.rotation).eulerAngles.z), endRotation, time);
+                else if(body)
+                    linearTween = DOTween.To(TweenPluginFactory.CreateQuaternion(), () => rotation, (x) => body.MoveRotation(x * transParent.rotation), endRotation, time);
+                else
+                    linearTween = DOTween.To(TweenPluginFactory.CreateQuaternion(), () => rotation, (x) => trans.localRotation = x, endRotation, time);
 
-                    if(body2D)
-                        linearTween = DOTween.To(TweenPluginFactory.CreateQuaternion(), () => rotation, (x) => body2D.MoveRotation((x * transParent.rotation).eulerAngles.z), endRotation, time);
-                    else if(body)
-                        linearTween = DOTween.To(TweenPluginFactory.CreateQuaternion(), () => rotation, (x) => body.MoveRotation(x * transParent.rotation), endRotation, time);
-                    else
-                        linearTween = DOTween.To(TweenPluginFactory.CreateQuaternion(), () => rotation, (x) => trans.localRotation = x, endRotation, time);
+                if(hasCustomEase())
+                    linearTween.SetEase(easeCurve);
+                else
+                    linearTween.SetEase(easeType, amplitude, period);
 
-                    if(hasCustomEase())
-                        linearTween.SetEase(easeCurve);
-                    else
-                        linearTween.SetEase(easeType, amplitude, period);
+                seq.Insert(this, linearTween);
+            }
+            else if(interp == Interpolation.Curve) {
+                var options = new TweenPlugPathOptions { loopType = LoopType.Restart, isClosedPath = path.isClosed };
 
-                    seq.Insert(this, linearTween);
-                    break;
+                DOSetter<Quaternion> setter;
+                if(body2D)
+                    setter = x => body2D.MoveRotation((x * transParent.rotation).eulerAngles.z);
+                else if(body)
+                    setter = x => body.MoveRotation(x * transParent.rotation);
+                else
+                    setter = x => trans.localRotation = x;
 
-                case Interpolation.Curve:
-                    var pathTween = CreatePathTween(frameRate);
+                var pathTween = DOTween.To(TweenPlugPathEuler.Get(), () => rotation, setter, path, time);
 
-                    if(body2D) {
-                        pathTween.setter = x => body2D.MoveRotation(transParent.eulerAngles.z + x.z);
-                        pathTween.SetTarget(body2D);
-                    }
-                    else if(body) {
-                        pathTween.setter = x => body.MoveRotation(Quaternion.Euler(x) * transParent.rotation);
-                        pathTween.SetTarget(body);
-                    }
-                    else {
-                        pathTween.setter = x => trans.localRotation = Quaternion.Euler(x);
-                        pathTween.SetTarget(trans);
-                    }
+                if(hasCustomEase())
+                    pathTween.SetEase(easeCurve);
+                else
+                    pathTween.SetEase(easeType, amplitude, period);
 
-                    if(hasCustomEase())
-                        pathTween.SetEase(easeCurve);
-                    else
-                        pathTween.SetEase(easeType, amplitude, period);
-
-                    seq.Insert(this, pathTween);
-                    break;
+                seq.Insert(this, pathTween);
             }
         }
         #endregion

@@ -25,7 +25,7 @@ namespace M8.Animator {
             if(item != null && keys.Count <= 0) cachedInitialRotation = item.localRotation;
         }
 
-        public override int version { get { return 3; } }
+        public override int version { get { return 4; } }
 
         public override int interpCount { get { return 3; } }
 
@@ -72,12 +72,6 @@ namespace M8.Animator {
             updateCache(target);
         }
 
-        public override void undoRedoPerformed() {
-            //path preview must be rebuilt
-            foreach(RotationKey key in keys)
-                key.ClearCache();
-        }
-
         // update cache (optimized)
         public override void updateCache(ITarget target) {
             base.updateCache(target);
@@ -86,11 +80,10 @@ namespace M8.Animator {
                 RotationKey key = keys[i] as RotationKey;
 
                 key.GeneratePath(this, i);
-                key.ClearCache();
 
                 //invalidate some keys in between
-                if(key.path.Length > 1) {
-                    int endInd = i + key.path.Length - 1;
+                if(key.path != null) {
+                    int endInd = i + key.keyCount - 1;
                     if(endInd < keys.Count - 1 || key.interp != keys[endInd].interp) //don't count the last element if there are more keys ahead
                         endInd--;
 
@@ -99,8 +92,7 @@ namespace M8.Animator {
 
                         _key.interp = key.interp;
                         _key.easeType = key.easeType;
-                        _key.endFrame = -1;
-                        _key.path = new Vector3[0];
+                        _key.Invalidate();
                     }
 
                     i = endInd;
@@ -160,53 +152,46 @@ namespace M8.Animator {
 
                 //end of last path in track?
                 if(iFrame >= key.endFrame) {
-                    switch(key.interp) {
-                        case Key.Interpolation.Linear:
-                            if(i + 1 == keyCount - 1)
-                                return ((RotationKey)keys[i + 1]).rotation;
-                            break;
-                        case Key.Interpolation.Curve:
-                            if(key.path.Length > 0 && i + key.path.Length == keyCount) //end of last path in track?
-                                return ((RotationKey)keys[key.path.Length - 1]).rotation;
-                            break;
-                        case Key.Interpolation.None:
-                            if(i + 1 == keyCount)
-                                return key.rotation;
-                            break;
+                    if(key.interp == Key.Interpolation.None) {
+                        if(i + 1 == keyCount)
+                            return key.rotation;
+                    }
+                    else if(key.interp == Key.Interpolation.Linear || key.path == null) {
+                        if(i + 1 == keyCount - 1)
+                            return ((RotationKey)keys[i + 1]).rotation;
+                    }
+                    else if(key.interp == Key.Interpolation.Curve) {
+                        if(i + key.keyCount == keyCount) //end of last path in track?
+                            return ((RotationKey)keys[i + key.keyCount - 1]).rotation;
                     }
 
                     continue;
                 }
 
-                switch(key.interp) {
-                    case Key.Interpolation.None:
-                        return key.rotation;
+                if(key.interp == Key.Interpolation.None)
+                    return key.rotation;
+                else if(key.interp == Key.Interpolation.Linear || key.path == null) {
+                    RotationKey keyNext = keys[i + 1] as RotationKey;
 
-                    case Key.Interpolation.Linear:
-                        RotationKey keyNext = keys[i + 1] as RotationKey;
+                    float numFrames = (float)key.getNumberOfFrames(frameRate);
 
-                        float numFrames = (float)key.getNumberOfFrames(frameRate);
+                    float framePositionInAction = Mathf.Clamp(frame - (float)key.frame, 0f, numFrames);
 
-                        float framePositionInAction = Mathf.Clamp(frame - (float)key.frame, 0f, numFrames);
+                    Quaternion qStart = key.rotation;
+                    Quaternion qEnd = keyNext.rotation;
 
-                        Quaternion qStart = key.rotation;
-                        Quaternion qEnd = keyNext.rotation;
+                    if(key.hasCustomEase()) {
+                        return Quaternion.LerpUnclamped(qStart, qEnd, Utility.EaseCustom(0.0f, 1.0f, framePositionInAction / numFrames, key.easeCurve));
+                    }
+                    else {
+                        var ease = Utility.GetEasingFunction((Ease)key.easeType);
+                        return Quaternion.LerpUnclamped(qStart, qEnd, ease(framePositionInAction, numFrames, key.amplitude, key.period));
+                    }
+                }
+                else {
+                    float _value = Mathf.Clamp01((frame - key.frame) / key.getNumberOfFrames(frameRate));
 
-                        if(key.hasCustomEase()) {
-                            return Quaternion.LerpUnclamped(qStart, qEnd, Utility.EaseCustom(0.0f, 1.0f, framePositionInAction / numFrames, key.easeCurve));
-                        }
-                        else {
-                            var ease = Utility.GetEasingFunction((Ease)key.easeType);
-                            return Quaternion.LerpUnclamped(qStart, qEnd, ease(framePositionInAction, numFrames, key.amplitude, key.period));
-                        }
-
-                    case Key.Interpolation.Curve:
-                        if(key.path.Length <= 1) //invalid key
-                            return transform.localRotation;
-
-                        float _value = Mathf.Clamp01((frame - key.frame) / key.getNumberOfFrames(frameRate));
-
-                        return key.GetRotationFromPath(transform, frameRate, Mathf.Clamp01(_value));
+                    return key.GetRotationFromPath(Mathf.Clamp01(_value));
                 }
             }
 

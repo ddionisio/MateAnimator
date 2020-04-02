@@ -258,7 +258,7 @@ namespace M8.Animator {
                 }
                 else if(axis == AxisFlags.Z) {
                     if(body2D)
-                        tween = DOTween.To(TweenPluginFactory.CreateFloat(), () => rotation.z, (z) => { body2D.rotation = z + transParent.eulerAngles.z; }, endRotation.z, timeLength);
+                        tween = DOTween.To(TweenPluginFactory.CreateFloat(), () => rotation.z, (z) => { body2D.MoveRotation(z + transParent.eulerAngles.z); }, endRotation.z, timeLength);
                     else if(body)
                         tween = DOTween.To(TweenPluginFactory.CreateFloat(), () => rotation.z, (z) => { var a = target.localEulerAngles; body.MoveRotation(Quaternion.Euler(a.x, a.y, z) * transParent.rotation); }, endRotation.z, timeLength);
                     else
