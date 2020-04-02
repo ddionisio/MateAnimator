@@ -895,7 +895,7 @@ namespace M8.Animator {
 
         public void drawGizmos(ITarget itarget, float gizmo_size, bool inPlayMode) {
             foreach(Track track in trackValues)
-                track.drawGizmos(itarget, gizmo_size, inPlayMode, selectedFrame, frameRate);
+                track.drawGizmos(itarget, gizmo_size, inPlayMode, selectedFrame);
         }
 
         public bool maintainCaches(ITarget itarget) {

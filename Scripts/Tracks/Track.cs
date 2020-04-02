@@ -180,7 +180,7 @@ namespace M8.Animator {
         }
 
         // draw track gizmos
-        public virtual void drawGizmos(ITarget target, float gizmo_size, bool inPlayMode, int frame, int frameRate) { }
+        public virtual void drawGizmos(ITarget target, float gizmo_size, bool inPlayMode, int frame) { }
 
         // preview frame
         public virtual void previewFrame(ITarget target, float frame, int frameRate, bool play, float playSpeed) { }

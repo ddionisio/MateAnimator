@@ -242,6 +242,7 @@ namespace M8.Animator {
                     };
 
                 var tweenPath = DOTween.To(TweenPlugPathVector3.Get(), () => scale, setter, path, timeLength);
+                tweenPath.plugOptions = options;
 
                 if(hasCustomEase())
                     tweenPath.SetEase(easeCurve);

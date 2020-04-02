@@ -29,7 +29,7 @@ namespace M8.Animator {
             if(item != null && keys.Count <= 0) cachedInitialPosition = item.localPosition;
         }
 
-        public override int version { get { return 2; } }
+        public override int version { get { return 3; } }
 
         public override bool hasTrackSettings { get { return true; } }
 
@@ -139,43 +139,72 @@ namespace M8.Animator {
             for(int i = 0; i < keyCount; i++) {
                 TranslationKey key = keys[i] as TranslationKey;
 
-                if(key.canTween && key.path.Length <= 1) //invalid
+                if(key.endFrame == -1) //invalid
                     continue;
 
+                //end of last path in track?
                 if(iFrame >= key.endFrame) {
-                    if(key.path.Length > 0 && i + key.path.Length == keyCount) //end of last path in track?
-                        return convertPosition(t, key.path[key.path.Length - 1], forceWorld);
-                    else if(i + 1 == keyCount) //last non-tween key in track?
-                        return convertPosition(t, key.position, forceWorld);
-                    else
-                        continue;
+                    if(key.interp == Key.Interpolation.None) {
+                        if(i + 1 == keyCount)
+                            return convertPosition(t, key.position, forceWorld);
+                    }
+                    else if(key.interp == Key.Interpolation.Linear || key.path == null) {
+                        if(i + 1 == keyCount - 1)
+                            return convertPosition(t, ((TranslationKey)keys[i + 1]).position, forceWorld);
+                    }
+                    else if(key.interp == Key.Interpolation.Curve) {
+                        if(i + key.keyCount == keyCount) //end of last path in track?
+                            return convertPosition(t, ((TranslationKey)keys[i + key.keyCount - 1]).position, forceWorld);
+                    }
+
+                    continue;
                 }
 
-                if(!key.canTween)
+                if(key.interp == Key.Interpolation.None)
                     return convertPosition(t, key.position, forceWorld);
-                else if(key.path.Length <= 1) //invalid key
-                    return GetPosition(t);
+                else if(key.interp == Key.Interpolation.Linear || key.path == null) {
+                    var keyNext = keys[i + 1] as TranslationKey;
 
-                float _value = Mathf.Clamp01((frame - key.frame) / key.getNumberOfFrames(frameRate));
+                    float numFrames = (float)key.getNumberOfFrames(frameRate);
 
-                return convertPosition(t, key.GetPoint(t, frameRate, Mathf.Clamp01(_value)), forceWorld);
+                    float framePositionInAction = Mathf.Clamp(frame - (float)key.frame, 0f, numFrames);
+
+                    var start = key.position;
+                    var end = keyNext.position;
+
+                    if(key.hasCustomEase()) {
+                        return convertPosition(t, Vector3.Lerp(start, end, Utility.EaseCustom(0.0f, 1.0f, framePositionInAction / numFrames, key.easeCurve)), forceWorld);
+                    }
+                    else {
+                        var ease = Utility.GetEasingFunction((Ease)key.easeType);
+                        return convertPosition(t, Vector3.Lerp(start, end, ease(framePositionInAction, numFrames, key.amplitude, key.period)), forceWorld);
+                    }
+                }
+                else {
+                    float _value = Mathf.Clamp01((frame - key.frame) / key.getNumberOfFrames(frameRate));
+
+                    var pt = key.GetPoint(_value);
+
+                    return convertPosition(t, pt, forceWorld);
+                }
             }
 
             return GetPosition(t); //last key is impartial tween
         }
         // draw gizmos
-        public override void drawGizmos(ITarget target, float gizmo_size, bool inPlayMode, int frame, int frameRate) {
+        public override void drawGizmos(ITarget target, float gizmo_size, bool inPlayMode, int frame) {
             Transform t = GetTarget(target) as Transform;
             if(!t) return;
 
-            foreach(TranslationKey key in keys)
-                key.DrawGizmos(t, gizmo_size, frameRate);
-        }
+            for(int i = 0; i < keys.Count;) {
+                var key = (TranslationKey)keys[i];
+                var nextKey = i + 1 < keys.Count ? (TranslationKey)keys[i + 1] : null;
 
-        public override void undoRedoPerformed() {
-            //path preview must be rebuilt
-            foreach(TranslationKey key in keys)
-                key.ClearCache();
+                if(key.endFrame != -1)
+                    key.DrawGizmos(nextKey, t, gizmo_size);
+
+                i += key.keyCount;
+            }
         }
 
         // update cache (optimized)
@@ -190,21 +219,19 @@ namespace M8.Animator {
                 var easeType = key.easeType;
 
                 key.GeneratePath(this, i);
-                key.ClearCache();
 
                 //invalidate some keys in between
-                if(key.path.Length > 1) {
-                    int endInd = i + key.path.Length - 1;
+                if(key.path != null) {
+                    int endInd = i + key.keyCount - 1;
                     if(endInd < keys.Count - 1 || key.interp != keys[endInd].interp) //don't count the last element if there are more keys ahead
                         endInd--;
 
                     for(int j = i + 1; j <= endInd; j++) {
-                        key = keys[j] as TranslationKey;
+                        var _key = keys[j] as TranslationKey;
 
-                        key.interp = interp;
-                        key.easeType = easeType;
-                        key.endFrame = key.frame;
-                        key.path = new Vector3[0];
+                        _key.interp = interp;
+                        _key.easeType = easeType;
+                        _key.Invalidate();
                     }
 
                     i = endInd;
