@@ -97,9 +97,12 @@ namespace M8.Animator {
         }
 
         public Quaternion getQuaternionAtPercent(Transform obj, Transform tgt, Transform tgte, float percentage) {
-            if(tgt == tgte || !canTween) {
+            if(tgt == null && tgte == null)
+                return obj.rotation;
+            else if(tgt == null)
+                return Quaternion.LookRotation(tgte.position - obj.position);
+            else if(tgte == null || tgt == tgte || !canTween)
                 return Quaternion.LookRotation(tgt.position - obj.position);
-            }
 
             Quaternion s = Quaternion.LookRotation(tgt.position - obj.position);
             Quaternion e = Quaternion.LookRotation(tgte.position - obj.position);

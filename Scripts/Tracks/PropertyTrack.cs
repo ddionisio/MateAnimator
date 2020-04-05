@@ -43,7 +43,7 @@ namespace M8.Animator {
         [SerializeField]
         string propertyName;
 
-        public override int version { get { return 3; } }
+        public override int version { get { return 4; } }
 
         public override int interpCount { get { return canTween ? 3 : 1; } }
 

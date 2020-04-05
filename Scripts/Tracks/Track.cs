@@ -24,11 +24,6 @@ namespace M8.Animator {
         public List<Key> keys { get { return mKeys; } set { mKeys = value; } }
         private List<Key> mKeys = new List<Key>();
 
-        /// <summary>
-        /// If true, then track has settings to display even if there is no key selected.
-        /// </summary>
-        public virtual bool hasTrackSettings { get { return false; } }
-
         public virtual bool canTween { get { return true; } }
 
         public virtual int interpCount { get { return 2; } } //at some point, all tracks can potentially use curve...
@@ -259,12 +254,13 @@ namespace M8.Animator {
 
         // get key on frame
         public Key getKeyOnFrame(int _frame, bool showWarning = true) {
-            foreach(Key key in keys) {
-                if(key.frame == _frame) return key;
+            int ind = getKeyIndexForFrame(_frame);
+            if(ind == -1) {
+                if(showWarning)
+                    Debug.LogError("Animator: No key found on frame " + _frame);
+                return null;
             }
-            if(showWarning)
-                Debug.LogError("Animator: No key found on frame " + _frame);
-            return null;
+            return keys[ind];
         }
 
         // track type as string
@@ -431,6 +427,24 @@ namespace M8.Animator {
             for(int i = 0; i < keys.Count; i++) {
                 if(keys[i].frame == startFrame) return i;
             }
+            return -1;
+        }
+
+        // grab the starting tweenable key the frame is in
+        public int getKeyTweenStartIndexForFrame(int frame) {
+            for(int i = keys.Count - 1; i >= 0; i--) {
+                var key = keys[i];
+                if(key.frame <= frame) {
+                    if(!key.canTween)
+                        return -1;
+
+                    if(key.isValid)
+                        return i;
+                    else if(i == keys.Count - 1) //frame is outside any keys
+                        return -1;
+                }
+            }
+
             return -1;
         }
 

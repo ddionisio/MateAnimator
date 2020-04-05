@@ -8,6 +8,10 @@ namespace M8.Animator {
     public class GOSetActiveTrack : Track {
         public override SerializeType serializeType { get { return SerializeType.GOSetActive; } }
 
+        public override bool canTween { get { return false; } }
+
+        public override int interpCount { get { return 1; } }
+
         [SerializeField]
         GameObject obj;
 

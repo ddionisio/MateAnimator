@@ -27,7 +27,7 @@ namespace M8.Animator {
             if(item != null && keys.Count <= 0) cachedInitialRotation = item.localEulerAngles;
         }
 
-        public override int version { get { return 2; } }
+        public override int version { get { return 3; } }
 
         public override int interpCount { get { return 3; } }
 

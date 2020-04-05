@@ -359,7 +359,7 @@ namespace M8.Animator.Edit {
             GUILayout.BeginVertical(GUILayout.Width(width_preview_max));
             // ease picker, hide if selected transition is "None"
             if(selectedTransition != (int)CameraSwitcherKey.Fade.None) {
-                if(TimelineWindow.showEasePicker(track, key, aData)) {
+                if(TimelineWindow.showEasePicker(track, key, track.getKeyIndex(key), aData)) {
                     if(isPlaying) percent = waitPercent * -1f;
                 }
             }

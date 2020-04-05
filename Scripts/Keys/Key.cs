@@ -32,6 +32,8 @@ namespace M8.Animator {
         /// </summary>
         public virtual int keyCount { get { return 1; } }
 
+        public virtual bool isValid { get { return true; } }
+
         private AnimationCurve _cachedEaseCurve;
         public AnimationCurve easeCurve {
             get {

@@ -10,75 +10,10 @@ using DG.Tweening.Plugins.Options;
 
 namespace M8.Animator {
     [System.Serializable]
-    public class RotationEulerKey : Key {
+    public class RotationEulerKey : PathKeyBase {
         public override SerializeType serializeType { get { return SerializeType.RotationEuler; } }
 
-        public override int keyCount { get { return path != null ? path.wps.Length : 1; } }
-
-        public const int pathResolution = 10;
-
         public Vector3 rotation;
-
-        public int endFrame;
-
-        public TweenPlugPath path { get { return _paths.Length > 0 ? _paths[0] : null; } } //save serialize size by using array (path has a lot of serialized fields)
-        [SerializeField] TweenPlugPath[] _paths;
-
-        /// <summary>
-        /// Generate path points and endFrame. keyInd is the index of this key in the track.
-        /// </summary>
-        public void GeneratePath(RotationEulerTrack track, int keyInd) {
-            switch(interp) {
-                case Interpolation.None:
-                    _paths = new TweenPlugPath[0];
-                    endFrame = keyInd + 1 < track.keys.Count ? track.keys[keyInd + 1].frame : frame;
-                    break;
-
-                case Interpolation.Linear:
-                    _paths = new TweenPlugPath[0];
-
-                    if(keyInd + 1 < track.keys.Count)
-                        endFrame = track.keys[keyInd + 1].frame;
-                    else //fail-safe
-                        endFrame = -1;
-                    break;
-
-                case Interpolation.Curve:
-                    //if there's more than 2 keys, and next key is curve, then it's more than 2 pts.
-                    if(keyInd + 2 < track.keys.Count && track.keys[keyInd + 1].interp == Interpolation.Curve) {
-                        var pathList = new List<TweenPlugPathPoint>();
-
-                        for(int i = keyInd; i < track.keys.Count; i++) {
-                            var key = (RotationEulerKey)track.keys[i];
-
-                            pathList.Add(new TweenPlugPathPoint(key.rotation));
-                            endFrame = key.frame;
-
-                            if(key.interp != Interpolation.Curve)
-                                break;
-                        }
-
-                        var newPath = new TweenPlugPath(TweenPlugPathType.CatmullRom, pathList.ToArray(), pathResolution);
-                        newPath.Init(newPath.isClosed);
-
-                        _paths = new TweenPlugPath[] { newPath };
-                    }
-                    else {
-                        if(keyInd + 1 < track.keys.Count) {
-                            endFrame = track.keys[keyInd + 1].frame;
-                            _paths = new TweenPlugPath[0];
-                        }
-                        else
-                            Invalidate();
-                    }
-                    break;
-            }
-        }
-
-        public void Invalidate() {
-            endFrame = -1;
-            _paths = new TweenPlugPath[0];
-        }
 
         /// <summary>
         /// Grab position within t = [0, 1]. keyInd is the index of this key in the track.
@@ -98,7 +33,7 @@ namespace M8.Animator {
                     return rotation;
             }
 
-            var pt = path.GetPoint(finalT, true);
+            var pt = path.GetPoint(finalT);
 
             return pt.valueVector3;
         }
@@ -110,6 +45,10 @@ namespace M8.Animator {
             var a = key as RotationEulerKey;
 
             a.rotation = rotation;
+        }
+
+        protected override TweenPlugPathPoint GeneratePathPoint(Track track) {
+            return new TweenPlugPathPoint(rotation);
         }
 
         #region action
@@ -419,7 +358,7 @@ namespace M8.Animator {
                 }
             }
             else if(interp == Interpolation.Curve) {
-                var options = new TweenPlugPathOptions { loopType = LoopType.Restart, isClosedPath = path.isClosed };
+                var options = new TweenPlugPathOptions { loopType = LoopType.Restart };
 
                 DOSetter<Vector3> setter;
                 if(axis == AxisFlags.X) {

@@ -13,81 +13,11 @@ using DG.Tweening.Plugins.Options;
 
 namespace M8.Animator {
     [System.Serializable]
-    public class TranslationKey : Key {
+    public class TranslationKey : PathKeyBase {
         public override SerializeType serializeType { get { return SerializeType.Translation; } }
 
-        public override int keyCount { get { return path != null ? path.wps.Length : 1; } }
-
-        public const int pathResolution = 10;
-
         public Vector3 position;
-
-        public int endFrame;
-
-        public bool isConstSpeed = true;
-
-        public TweenPlugPath path { get { return _paths.Length > 0 ? _paths[0] : null; } } //save serialize size by using array (path has a lot of serialized fields)
-        [SerializeField] TweenPlugPath[] _paths;
-
-        /// <summary>
-        /// Generate path points and endFrame. keyInd is the index of this key in the track.
-        /// </summary>
-        public void GeneratePath(TranslationTrack track, int keyInd) {
-            switch(interp) {
-                case Interpolation.None:
-                    _paths = new TweenPlugPath[0];
-                    endFrame = keyInd + 1 < track.keys.Count ? track.keys[keyInd + 1].frame : frame;
-                    break;
-
-                case Interpolation.Linear:
-                    _paths = new TweenPlugPath[0];
-
-                    if(keyInd + 1 < track.keys.Count) {
-                        var nextKey = (TranslationKey)track.keys[keyInd + 1];
-                        endFrame = nextKey.frame;
-                    }
-                    else { //fail-safe
-                        endFrame = -1;
-                    }
-                    break;
-
-                case Interpolation.Curve:
-                    //if there's more than 2 keys, and next key is curve, then it's more than 2 pts.
-                    if(keyInd + 2 < track.keys.Count && track.keys[keyInd + 1].interp == Interpolation.Curve) {
-                        var pathList = new List<TweenPlugPathPoint>();
-
-                        for(int i = keyInd; i < track.keys.Count; i++) {
-                            var key = (TranslationKey)track.keys[i];
-
-                            pathList.Add(new TweenPlugPathPoint(key.position));
-                            endFrame = key.frame;
-
-                            if(key.interp != Interpolation.Curve)
-                                break;
-                        }
-
-                        var newPath = new TweenPlugPath(TweenPlugPathType.CatmullRom, pathList.ToArray(), pathResolution);
-                        newPath.Init(newPath.isClosed);
-
-                        _paths = new TweenPlugPath[] { newPath };
-                    }
-                    else {
-                        if(keyInd + 1 < track.keys.Count) {
-                            endFrame = track.keys[keyInd + 1].frame;
-                            _paths = new TweenPlugPath[0];
-                        }
-                        else
-                            Invalidate();
-                    }
-                    break;
-            }
-        }
-
-        public void Invalidate() {
-            endFrame = -1;
-            _paths = new TweenPlugPath[0];
-        }
-
+                
         /// <summary>
         /// Grab position within t = [0, 1]. keyInd is the index of this key in the track.
         /// </summary>
@@ -106,7 +36,7 @@ namespace M8.Animator {
                     return position;
             }
 
-            var pt = path.GetPoint(finalT, true);
+            var pt = path.GetPoint(finalT);
 
             return pt.valueVector3;
         }
@@ -141,10 +71,10 @@ namespace M8.Animator {
 
                 int subdivisions = pathResolution * keyCount;
                 for(int i = 0; i < subdivisions; i++) {
-                    var pt = path.GetPoint(i / (float)subdivisions, true);
+                    var pt = path.GetPoint(i / (float)subdivisions);
                     var pt1 = pt.valueVector3;
 
-                    pt = path.GetPoint((i + 1) / (float)subdivisions, true);
+                    pt = path.GetPoint((i + 1) / (float)subdivisions);
                     var pt2 = pt.valueVector3;
 
                     Gizmos.DrawLine(mtx.MultiplyPoint3x4(pt1), mtx.MultiplyPoint3x4(pt2));
@@ -161,22 +91,17 @@ namespace M8.Animator {
         public override void CopyTo(Key key) {
             base.CopyTo(key);
 
-            TranslationKey a = key as TranslationKey;
+            TranslationKey a = (TranslationKey)key;
 
             a.position = position;
+        }
 
-            a.isConstSpeed = isConstSpeed;
+        protected override TweenPlugPathPoint GeneratePathPoint(Track track) {
+            return new TweenPlugPathPoint(position);
         }
 
         #region action
-        
-        public override int getNumberOfFrames(int frameRate) {
-            if(!canTween && (endFrame == -1 || endFrame == frame))
-                return 1;
-            else if(endFrame == -1)
-                return -1;
-            return endFrame - frame;
-        }
+
         public override void build(SequenceControl seq, Track track, int index, UnityEngine.Object obj) {
             //allow tracks with just one key
             if(track.keys.Count == 1)
@@ -282,7 +207,7 @@ namespace M8.Animator {
                 seq.Insert(this, linearTween);
             }
             else if(interp == Interpolation.Curve) {
-                var options = new TweenPlugPathOptions { loopType = LoopType.Restart, isClosedPath = path.isClosed };
+                var options = new TweenPlugPathOptions { loopType = LoopType.Restart };
 
                 DOSetter<Vector3> setter;
                 if(body2D) {

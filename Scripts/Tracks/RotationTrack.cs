@@ -25,7 +25,7 @@ namespace M8.Animator {
             if(item != null && keys.Count <= 0) cachedInitialRotation = item.localRotation;
         }
 
-        public override int version { get { return 4; } }
+        public override int version { get { return 5; } }
 
         public override int interpCount { get { return 3; } }
 

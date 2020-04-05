@@ -43,7 +43,7 @@ namespace M8.Animator {
         private int mPropId;
         private bool mIsInit;
 
-        public override int version { get { return 2; } }
+        public override int version { get { return 3; } }
 
         public Material materialOverride {
             get {

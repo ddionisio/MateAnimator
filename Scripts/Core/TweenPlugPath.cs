@@ -14,13 +14,9 @@ namespace M8.Animator {
     public struct TweenPlugPathOptions : IPlugOptions {
         //ensure these are set to the same as tween (they are not accessible for some reason)
         public LoopType loopType;
-        
-        public bool isClosedPath;
 
         public void Reset() {
             loopType = LoopType.Restart;
-
-            isClosedPath = false;
         }
     }
 
@@ -174,27 +170,25 @@ namespace M8.Animator {
         static TweenPlugPathCatmullRomDecoder _catmullRomDecoder;
         static TweenPlugPathLinearDecoder _linearDecoder;
 
-        public float[] wpLengths; // Unit length of each waypoint (public so it can be accessed at runtime by external scripts)
-
         public TweenPlugPathType type;
         public int subdivisionsXSegment; // Subdivisions x each segment
-        public int subdivisions; // Stored by PathPlugin > total subdivisions for whole path (derived automatically from subdivisionsXSegment)
         public TweenPlugPathPoint[] wps; // Waypoints (modified by PathPlugin when setting relative end/change value or by CubicBezierDecoder) - also modified by DOTweenPathInspector
+        public float[] wpsTimeTable; //normalized time per waypoint (exclude start=0f and end=1f)
         public TweenPlugPathControlPoint[] controlPoints; // Control points used by non-linear paths
         public float length; // Unit length of the path
-        public bool isFinalized; // TRUE when the path has been finalized (either by starting the tween or if the path was created by the Path Editor)
 
         public float[] timesTable; // Connected to lengthsTable, used for constant speed calculations
         public float[] lengthsTable; // Connected to timesTable, used for constant speed calculations
+
+        [SerializeField] bool _isConstantSpeed;
 
         public int linearWPIndex { get; set; } = -1; // Waypoint towards which we're moving (only stored for linear paths, when calling GetPoint)
 
         public int pathPointCount { get { return wps != null && wps.Length > 0 ? wps[0].vals.Length : 0; } }
 
-        public bool addedExtraStartWp { get; set; }
-        public bool addedExtraEndWp { get; set; }
-
         public bool isClosed { get { return wps.Length > 1 ? wps[wps.Length - 1].Equal(wps[0], wps[0].vals.Length) : false; } }
+
+        public bool isConstantSpeed { get { return _isConstantSpeed; } }
 
         TweenPlugPath _incrementalClone; // Last incremental clone. Stored in case of incremental loops, to avoid recreating a new path every time
         int _incrementalIndex = 0;
@@ -228,35 +222,62 @@ namespace M8.Animator {
         }
         TweenPlugPathPoint? _cachePoint;
 
-        public TweenPlugPath(TweenPlugPathType type, TweenPlugPathPoint[] waypoints, int subdivisionsXSegment) {
+        public TweenPlugPath(TweenPlugPathType type, TweenPlugPathPoint[] waypoints, float[] waypointNormalTimes, bool isConstantSpeed, int subdivisionsXSegment) {
             this.type = type;
             this.subdivisionsXSegment = subdivisionsXSegment;
-            
+            this._isConstantSpeed = isConstantSpeed;
+
             wps = waypoints;
+            wpsTimeTable = waypointNormalTimes;
         }
 
         public TweenPlugPath() { }
 
-        public void FinalizePath(bool isClosedPath) {
-            // Rebuild path to lock eventual axes
-            decoder.FinalizePath(this, wps, isClosedPath);
-            isFinalized = true;
+        //get time relative to waypoint time table
+        private float GetWPPerc(float t) {
+            if(t >= 1f) return t;
+
+            int timeTableCount = wpsTimeTable.Length;
+            float waypointLast = wps.Length - 1;
+            float _t, time, prevTime;
+
+            for(int i = 0; i < timeTableCount; i++) {
+                time = wpsTimeTable[i];
+                if(t <= time) {
+                    prevTime = i > 0 ? wpsTimeTable[i-1] : 0f;
+
+                    _t = (t - prevTime) / (time - prevTime); //grab percent between previous and current
+
+                    return Mathf.Lerp(i, i + 1, _t) / waypointLast; //grab percent within the waypoint indices (offset by one index to take waypoint 0 (t=0f) into account)
+                }
+            }
+
+            //compare at end=1f (last waypoint)
+            time = 1f;
+            prevTime = wpsTimeTable[timeTableCount - 1];
+
+            _t = (t - prevTime) / (time - prevTime); //grab percent between previous and current
+
+            return Mathf.Lerp(wpsTimeTable.Length, wpsTimeTable.Length + 1, _t) / waypointLast; //grab percent within the waypoint indices
         }
 
         /// <summary>
         /// Gets the point on the path at the given percentage (0 to 1). Returns value generated to its cache point, make sure to just copy these values.
         /// </summary>
         /// <param name="perc">The percentage (0 to 1) at which to get the point</param>
-        /// <param name="convertToConstantPerc">If TRUE constant speed is taken into account, otherwise not</param>
-        public TweenPlugPathPoint GetPoint(float perc, bool convertToConstantPerc = false) {
-            var ret = cachePoint;
-            if(convertToConstantPerc) perc = ConvertToConstantPathPerc(perc);
-            decoder.GetPoint(ret, perc, wps, this, controlPoints);
-            return ret;
+        public TweenPlugPathPoint GetPoint(float perc) {
+            if(wpsTimeTable != null && wpsTimeTable.Length > 0)
+                perc = GetWPPerc(perc); //get perc based on wp if available
+
+            if(isConstantSpeed) perc = ConvertToConstantPathPerc(perc);
+
+            decoder.GetPoint(cachePoint, perc, wps, this);
+
+            return cachePoint;
         }
 
         // Converts the given raw percentage to the correct percentage considering constant speed
-        public float ConvertToConstantPathPerc(float perc) {
+        private float ConvertToConstantPathPerc(float perc) {
             if(type == TweenPlugPathType.Linear) return perc;
 
             if(perc > 0 && perc < 1) {
@@ -287,33 +308,10 @@ namespace M8.Animator {
             return perc;
         }
 
-        // Returns the waypoint associated with the given path percentage
-        public int GetWaypointIndexFromPerc(float perc, bool isMovingForward) {
-            if(perc >= 1) return wps.Length - 1;
-            if(perc <= 0) return 0;
-            float totPercLen = length * perc;
-            float currLen = 0;
-            for(int i = 0, count = wpLengths.Length; i < count; i++) {
-                currLen += wpLengths[i];
-                if(i == count - 1) return isMovingForward ? i - 1 : i;
-                if(currLen < totPercLen) continue;
-                if(currLen > totPercLen) return isMovingForward ? i - 1 : i;
-                return i;
-            }
-            return 0;
-        }
-
-        public void Destroy() {
-            wps = null;
-            wpLengths = timesTable = lengthsTable = null;
-            isFinalized = false;
-        }
-
         // Clones this path with the given loop increment
         public TweenPlugPath CloneIncremental(int loopIncrement) {
             if(_incrementalClone != null) {
                 if(_incrementalIndex == loopIncrement) return _incrementalClone;
-                _incrementalClone.Destroy();
             }
 
             var _incCachePt = new TweenPlugPathPoint(pathPointCount);
@@ -351,79 +349,37 @@ namespace M8.Animator {
             _incrementalIndex = loopIncrement;
             _incrementalClone.type = type;
             _incrementalClone.subdivisionsXSegment = subdivisionsXSegment;
-            _incrementalClone.subdivisions = subdivisions;
             _incrementalClone.wps = incrWps;
             _incrementalClone.controlPoints = incrCps;
             _incrementalClone._cachePoint = _incCachePt;
 
             _incrementalClone.length = length;
-            _incrementalClone.wpLengths = wpLengths;
             _incrementalClone.timesTable = timesTable;
             _incrementalClone.lengthsTable = lengthsTable;
             _incrementalClone._decoder = _decoder;
 
-            _incrementalClone.isFinalized = true;
             return _incrementalClone;
         }
 
-        /// <summary>
-        /// Initialize and assume current value is the first waypoint
-        /// </summary>
-        /// <param name="isClosedPath"></param>
-        public void Init(bool isClosedPath) {
-            if(isFinalized)
-                return;
-
-            int unmodifiedWpsLen = wps.Length;
-            int ptCount = pathPointCount;
-            int additionalWps = 0;
-            bool hasAdditionalEndingP = false;
-
-            if(isClosedPath) {
-                var endWp = wps[unmodifiedWpsLen - 1];
-                /*if(path.type == PathType.CubicBezier) {
-                    if(unmodifiedWpsLen < 3) {
-                        Debug.LogError(
-                            "CubicBezier paths must contain waypoints in multiple of 3 excluding the starting point added automatically by DOTween" +
-                            " (1: waypoint, 2: IN control point, 3: OUT control point — the minimum amount of waypoints for a single curve is 3)"
-                        );
-                    }
-                    else endWp = path.wps[unmodifiedWpsLen - 3];
-                }*/
-                if(!endWp.Equal(wps[0], ptCount)) {
-                    hasAdditionalEndingP = true;
-                    additionalWps += 1;
-                }
-            }            
-            if(additionalWps > 0) {
-                int wpsLen = unmodifiedWpsLen + additionalWps;
-                var _wps = new TweenPlugPathPoint[wpsLen];
-                for(int i = 0; i < unmodifiedWpsLen; ++i) _wps[i] = wps[i];
-                if(hasAdditionalEndingP) _wps[_wps.Length - 1].Copy(_wps[0], ptCount);
-                wps = _wps;
-            }
-
-            // Finalize path
-            addedExtraStartWp = false;
-            addedExtraEndWp = hasAdditionalEndingP;
-            FinalizePath(isClosedPath);
+        public void Init() {
+            decoder.FinalizePath(this, wps, isClosed);
         }
     }
 
     public interface ITweenPlugPathDecoder {
         void FinalizePath(TweenPlugPath p, TweenPlugPathPoint[] wps, bool isClosedPath);
-        void GetPoint(TweenPlugPathPoint output, float perc, TweenPlugPathPoint[] wps, TweenPlugPath p, TweenPlugPathControlPoint[] controlPoints);
+        void GetPoint(TweenPlugPathPoint output, float perc, TweenPlugPathPoint[] wps, TweenPlugPath p);
     }
 
     public class TweenPlugPathLinearDecoder : ITweenPlugPathDecoder {
         public void FinalizePath(TweenPlugPath p, TweenPlugPathPoint[] wps, bool isClosedPath) {
             p.controlPoints = null;
-            // Store time to len tables
-            p.subdivisions = (wps.Length) * p.subdivisionsXSegment; // Unused
-            SetTimeToLengthTables(p, p.subdivisions);
+
+            var subdivisions = (wps.Length) * p.subdivisionsXSegment; // Unused
+            SetTimeToLengthTables(p, subdivisions);
         }
 
-        public void GetPoint(TweenPlugPathPoint output, float perc, TweenPlugPathPoint[] wps, TweenPlugPath p, TweenPlugPathControlPoint[] controlPoints) {
+        public void GetPoint(TweenPlugPathPoint output, float perc, TweenPlugPathPoint[] wps, TweenPlugPath p) {
             var ptCount = p.pathPointCount;
 
             if(perc <= 0) {
@@ -466,26 +422,18 @@ namespace M8.Animator {
             float pathLen = 0;
             int wpsLen = p.wps.Length;
             var ptCount = p.pathPointCount;
-            float[] wpLengths = new float[wpsLen];
             var prevP = p.wps[0];
-            for(int i = 0; i < wpsLen; i++) {
+            for(int i = 1; i < wpsLen; i++) {
                 var currP = p.wps[i];
                 float dist = TweenPlugPathPoint.Distance(currP, prevP, ptCount);
                 pathLen += dist;
                 prevP = currP;
-                wpLengths[i] = dist;
-            }
-            float[] timesTable = new float[wpsLen];
-            float tmpLen = 0;
-            for(int i = 1; i < wpsLen; i++) {
-                tmpLen += wpLengths[i];
-                timesTable[i] = tmpLen / pathLen;
             }
 
             // Assign
             p.length = pathLen;
-            p.wpLengths = wpLengths;
-            p.timesTable = timesTable;
+            p.lengthsTable = null;
+            p.timesTable = null;
         }
     }
 
@@ -494,8 +442,6 @@ namespace M8.Animator {
         static readonly TweenPlugPathPoint _emptyPoint = new TweenPlugPathPoint(0);
         static readonly TweenPlugPathPoint _cachePoint1 = new TweenPlugPathPoint(4);
         static readonly TweenPlugPathPoint _cachePoint2 = new TweenPlugPathPoint(4);
-        static readonly TweenPlugPathControlPoint[] _PartialControlPs = new TweenPlugPathControlPoint[2];
-        static readonly TweenPlugPathPoint[] _PartialWps = new TweenPlugPathPoint[2];
 
         public void FinalizePath(TweenPlugPath p, TweenPlugPathPoint[] wps, bool isClosedPath) {
             // Add starting and ending control points (uses only one vector per control point)
@@ -522,27 +468,30 @@ namespace M8.Animator {
 
                 p.controlPoints[1] = new TweenPlugPathControlPoint(newPt, _emptyPoint);
             }
-            // Store total subdivisions
+
             //            p.subdivisions = (wpsLen + 2) * p.subdivisionsXSegment;
-            p.subdivisions = wpsLen * p.subdivisionsXSegment;
-            // Store time to len tables
-            SetTimeToLengthTables(p, p.subdivisions);
-            // Store waypoints lengths
-            SetWaypointsLengths(p, p.subdivisionsXSegment);
+            var subdivisions = wpsLen * p.subdivisionsXSegment;
+            if(p.isConstantSpeed) {
+                // Store time to len tables
+                SetTimeToLengthTables(p, subdivisions);
+            }
+            else {
+                //only generate path length
+                SetPathLength(p, subdivisions);
+            }
         }
 
-        // controlPoints as a separate parameter so we can pass custom ones from SetWaypointsLengths
-        public void GetPoint(TweenPlugPathPoint output, float perc, TweenPlugPathPoint[] wps, TweenPlugPath p, TweenPlugPathControlPoint[] controlPoints) {
+        public void GetPoint(TweenPlugPathPoint output, float perc, TweenPlugPathPoint[] wps, TweenPlugPath p) {
             int numSections = wps.Length - 1; // Considering also control points
             int tSec = (int)Mathf.Floor(perc * numSections);
             int currPt = numSections - 1;
             if(currPt > tSec) currPt = tSec;
             float u = perc * numSections - currPt;
 
-            var aPt = currPt == 0 ? controlPoints[0].a : wps[currPt - 1];
+            var aPt = currPt == 0 ? p.controlPoints[0].a : wps[currPt - 1];
             var bPt = wps[currPt];
             var cPt = wps[currPt + 1];
-            var dPt = currPt + 2 > wps.Length - 1 ? controlPoints[1].a : wps[currPt + 2];
+            var dPt = currPt + 2 > wps.Length - 1 ? p.controlPoints[1].a : wps[currPt + 2];
 
             var ptCount = p.pathPointCount;
             for(int i = 0; i < ptCount; i++) {
@@ -565,10 +514,10 @@ namespace M8.Animator {
             float incr = 1f / subdivisions;
             float[] timesTable = new float[subdivisions];
             float[] lengthsTable = new float[subdivisions];
-            GetPoint(prevP, 0, p.wps, p, p.controlPoints);
+            GetPoint(prevP, 0, p.wps, p);
             for(int i = 1; i < subdivisions + 1; ++i) {
                 float perc = incr * i;
-                GetPoint(currP, perc, p.wps, p, p.controlPoints);
+                GetPoint(currP, perc, p.wps, p);
                 pathLen += TweenPlugPathPoint.Distance(currP, prevP, ptCount);
                 prevP.Copy(currP, ptCount);
                 timesTable[i - 1] = perc;
@@ -581,37 +530,25 @@ namespace M8.Animator {
             p.lengthsTable = lengthsTable;
         }
 
-        void SetWaypointsLengths(TweenPlugPath p, int subdivisions) {
+        void SetPathLength(TweenPlugPath p, int subdivisions) {
             TweenPlugPathPoint prevP = _cachePoint1, currP = _cachePoint2;
 
             var ptCount = p.pathPointCount;
 
-            // Create a relative path between each waypoint,
-            // with its start and end control lines coinciding with the next/prev waypoints.
-            int count = p.wps.Length;
-            float[] wpLengths = new float[count];
-            wpLengths[0] = 0;
-            for(int i = 1; i < count; ++i) {
-                // Create partial path
-                _PartialControlPs[0].a = i == 1 ? p.controlPoints[0].a : p.wps[i - 2];
-                _PartialWps[0] = p.wps[i - 1];
-                _PartialWps[1] = p.wps[i];
-                _PartialControlPs[1].a = i == count - 1 ? p.controlPoints[1].a : p.wps[i + 1];
-                // Calculate length of partial path
-                float partialLen = 0;
-                float incr = 1f / subdivisions;
-                GetPoint(prevP, 0, _PartialWps, p, _PartialControlPs);
-                for(int c = 1; c < subdivisions + 1; ++c) {
-                    float perc = incr * c;
-                    GetPoint(currP, perc, _PartialWps, p, _PartialControlPs);
-                    partialLen += TweenPlugPathPoint.Distance(currP, prevP, ptCount);
-                    prevP.Copy(currP, ptCount);
-                }
-                wpLengths[i] = partialLen;
+            float pathLen = 0;
+            float incr = 1f / subdivisions;
+            GetPoint(prevP, 0, p.wps, p);
+            for(int i = 1; i < subdivisions + 1; ++i) {
+                float perc = incr * i;
+                GetPoint(currP, perc, p.wps, p);
+                pathLen += TweenPlugPathPoint.Distance(currP, prevP, ptCount);
+                prevP.Copy(currP, ptCount);
             }
 
             // Assign
-            p.wpLengths = wpLengths;
+            p.length = pathLen;
+            p.timesTable = null;
+            p.lengthsTable = null;
         }
     }
 
@@ -624,69 +561,21 @@ namespace M8.Animator {
         protected abstract T GetValue(TweenPlugPathPoint pt);
 
         public override void Reset(TweenerCore<T, TweenPlugPath, TweenPlugPathOptions> t) {
-            t.endValue.Destroy(); // Clear path
             t.startValue = t.endValue = t.changeValue = null;
         }
 
         public override void SetFrom(TweenerCore<T, TweenPlugPath, TweenPlugPathOptions> t, bool isRelative) { }
         public override void SetFrom(TweenerCore<T, TweenPlugPath, TweenPlugPathOptions> t, TweenPlugPath fromValue, bool setImmediately) { }
 
+        public override void SetRelativeEndValue(TweenerCore<T, TweenPlugPath, TweenPlugPathOptions> t) { }
+
         public override TweenPlugPath ConvertToStartValue(TweenerCore<T, TweenPlugPath, TweenPlugPathOptions> t, T value) {
             // Simply sets the same path as start and endValue
             return t.endValue;
         }
 
-        // Recreates waypoints with correct control points and eventual additional starting point
-        // then sets the final path version
+        // Simply setup change value, paths will always be finalized via serialization from animator editor
         public override void SetChangeValue(TweenerCore<T, TweenPlugPath, TweenPlugPathOptions> t) {
-            if(t.endValue.isFinalized) {
-                t.changeValue = t.endValue;
-                return;
-            }
-
-            var curVal = t.getter();
-
-            var path = t.endValue;
-            int unmodifiedWpsLen = path.wps.Length;
-            int additionalWps = 0;
-            bool hasAdditionalStartingP = false, hasAdditionalEndingP = false;
-
-            // Create final wps and add eventual starting/ending waypoints.
-            if(!ApproximatelyEqual(path.wps[0], curVal)) {
-                hasAdditionalStartingP = true;
-                additionalWps += 1;
-            }
-            if(t.plugOptions.isClosedPath) {
-                var endWp = path.wps[unmodifiedWpsLen - 1];
-                /*if(path.type == PathType.CubicBezier) {
-                    if(unmodifiedWpsLen < 3) {
-                        Debug.LogError(
-                            "CubicBezier paths must contain waypoints in multiple of 3 excluding the starting point added automatically by DOTween" +
-                            " (1: waypoint, 2: IN control point, 3: OUT control point — the minimum amount of waypoints for a single curve is 3)"
-                        );
-                    }
-                    else endWp = path.wps[unmodifiedWpsLen - 3];
-                }*/
-                if(!Equal(endWp, curVal)) {
-                    hasAdditionalEndingP = true;
-                    additionalWps += 1;
-                }
-            }
-            if(additionalWps > 0) {
-                int wpsLen = unmodifiedWpsLen + additionalWps;
-                var wps = new TweenPlugPathPoint[wpsLen];
-                int indMod = hasAdditionalStartingP ? 1 : 0;
-                if(hasAdditionalStartingP) wps[0] = CreatePoint(curVal);
-                for(int i = 0; i < unmodifiedWpsLen; ++i) wps[i + indMod] = path.wps[i];
-                if(hasAdditionalEndingP) wps[wps.Length - 1].Copy(wps[0], path.pathPointCount);
-                path.wps = wps;
-            }
-
-            // Finalize path
-            path.addedExtraStartWp = hasAdditionalStartingP;
-            path.addedExtraEndWp = hasAdditionalEndingP;
-            path.FinalizePath(t.plugOptions.isClosedPath);
-
             // Set changeValue as a reference to endValue
             t.changeValue = t.endValue;
         }
@@ -696,15 +585,14 @@ namespace M8.Animator {
         }
 
         public override void EvaluateAndApply(TweenPlugPathOptions options, Tween t, bool isRelative, DOGetter<T> getter, DOSetter<T> setter, float elapsed, TweenPlugPath startValue, TweenPlugPath changeValue, float duration, bool usingInversePosition, UpdateNotice updateNotice) {
-            if(options.loopType == LoopType.Incremental && !options.isClosedPath) {
+            if(options.loopType == LoopType.Incremental && !changeValue.isClosed) {
                 int increment = (t.IsComplete() ? t.CompletedLoops() - 1 : t.CompletedLoops());
                 if(increment > 0) changeValue = changeValue.CloneIncremental(increment);
             }
 
             float pathPerc = EaseManager.Evaluate(t, elapsed, duration, t.easeOvershootOrAmplitude, t.easePeriod);
-            float constantPathPerc = changeValue.ConvertToConstantPathPerc(pathPerc);
 
-            var pt = changeValue.GetPoint(constantPathPerc);
+            var pt = changeValue.GetPoint(pathPerc);
             var val = GetValue(pt);
             setter(val);
         }
@@ -715,13 +603,6 @@ namespace M8.Animator {
         protected override bool Equal(TweenPlugPathPoint pt, float curVal) { return pt.valueFloat == curVal; }
         protected override TweenPlugPathPoint CreatePoint(float src) { return new TweenPlugPathPoint(src); }
         protected override float GetValue(TweenPlugPathPoint pt) { return pt.valueFloat; }
-        public override void SetRelativeEndValue(TweenerCore<float, TweenPlugPath, TweenPlugPathOptions> t) {
-            if(t.endValue.isFinalized) return;
-
-            var startP = t.getter();
-            int count = t.endValue.wps.Length;
-            for(int i = 0; i < count; ++i) t.endValue.wps[i].valueFloat += startP;
-        }
 
         public static ABSTweenPlugin<float, TweenPlugPath, TweenPlugPathOptions> Get() {
             if(mInstance == null) mInstance = new TweenPlugPathFloat();
@@ -735,13 +616,6 @@ namespace M8.Animator {
         protected override bool Equal(TweenPlugPathPoint pt, Vector2 curVal) { return pt.valueVector2 == curVal; }
         protected override TweenPlugPathPoint CreatePoint(Vector2 src) { return new TweenPlugPathPoint(src); }
         protected override Vector2 GetValue(TweenPlugPathPoint pt) { return pt.valueVector2; }
-        public override void SetRelativeEndValue(TweenerCore<Vector2, TweenPlugPath, TweenPlugPathOptions> t) {
-            if(t.endValue.isFinalized) return;
-
-            var startP = t.getter();
-            int count = t.endValue.wps.Length;
-            for(int i = 0; i < count; ++i) t.endValue.wps[i].valueVector2 += startP;
-        }
 
         public static ABSTweenPlugin<Vector2, TweenPlugPath, TweenPlugPathOptions> Get() {
             if(mInstance == null) mInstance = new TweenPlugPathVector2();
@@ -755,13 +629,6 @@ namespace M8.Animator {
         protected override bool Equal(TweenPlugPathPoint pt, Vector3 curVal) { return pt.valueVector3 == curVal; }
         protected override TweenPlugPathPoint CreatePoint(Vector3 src) { return new TweenPlugPathPoint(src); }
         protected override Vector3 GetValue(TweenPlugPathPoint pt) { return pt.valueVector3; }
-        public override void SetRelativeEndValue(TweenerCore<Vector3, TweenPlugPath, TweenPlugPathOptions> t) {
-            if(t.endValue.isFinalized) return;
-
-            var startP = t.getter();
-            int count = t.endValue.wps.Length;
-            for(int i = 0; i < count; ++i) t.endValue.wps[i].valueVector3 += startP;
-        }
 
         public static ABSTweenPlugin<Vector3, TweenPlugPath, TweenPlugPathOptions> Get() {
             if(mInstance == null) mInstance = new TweenPlugPathVector3();
@@ -775,13 +642,6 @@ namespace M8.Animator {
         protected override bool Equal(TweenPlugPathPoint pt, Vector4 curVal) { return pt.valueVector4 == curVal; }
         protected override TweenPlugPathPoint CreatePoint(Vector4 src) { return new TweenPlugPathPoint(src); }
         protected override Vector4 GetValue(TweenPlugPathPoint pt) { return pt.valueVector4; }
-        public override void SetRelativeEndValue(TweenerCore<Vector4, TweenPlugPath, TweenPlugPathOptions> t) {
-            if(t.endValue.isFinalized) return;
-
-            var startP = t.getter();
-            int count = t.endValue.wps.Length;
-            for(int i = 0; i < count; ++i) t.endValue.wps[i].valueVector4 += startP;
-        }
 
         public static ABSTweenPlugin<Vector4, TweenPlugPath, TweenPlugPathOptions> Get() {
             if(mInstance == null) mInstance = new TweenPlugPathVector4();
@@ -795,13 +655,6 @@ namespace M8.Animator {
         protected override bool Equal(TweenPlugPathPoint pt, Color curVal) { return pt.valueColor == curVal; }
         protected override TweenPlugPathPoint CreatePoint(Color src) { return new TweenPlugPathPoint(src); }
         protected override Color GetValue(TweenPlugPathPoint pt) { return pt.valueVector4; }
-        public override void SetRelativeEndValue(TweenerCore<Color, TweenPlugPath, TweenPlugPathOptions> t) {
-            if(t.endValue.isFinalized) return;
-
-            var startP = t.getter();
-            int count = t.endValue.wps.Length;
-            for(int i = 0; i < count; ++i) t.endValue.wps[i].valueColor += startP;
-        }
 
         public static ABSTweenPlugin<Color, TweenPlugPath, TweenPlugPathOptions> Get() {
             if(mInstance == null) mInstance = new TweenPlugPathColor();
@@ -815,20 +668,6 @@ namespace M8.Animator {
         protected override bool Equal(TweenPlugPathPoint pt, Rect curVal) { return pt.valueRect == curVal; }
         protected override TweenPlugPathPoint CreatePoint(Rect src) { return new TweenPlugPathPoint(src); }
         protected override Rect GetValue(TweenPlugPathPoint pt) { return pt.valueRect; }
-        public override void SetRelativeEndValue(TweenerCore<Rect, TweenPlugPath, TweenPlugPathOptions> t) {
-            if(t.endValue.isFinalized) return;
-
-            var startP = t.getter();
-            int count = t.endValue.wps.Length;
-            for(int i = 0; i < count; ++i) {
-                var rect = t.endValue.wps[i].valueRect;
-                rect.xMin += startP.xMin;
-                rect.yMin += startP.yMin;
-                rect.width += startP.width;
-                rect.height += startP.height;
-                t.endValue.wps[i].valueRect = rect;
-            }
-        }
 
         public static ABSTweenPlugin<Rect, TweenPlugPath, TweenPlugPathOptions> Get() {
             if(mInstance == null) mInstance = new TweenPlugPathRect();
@@ -842,13 +681,6 @@ namespace M8.Animator {
         protected override bool Equal(TweenPlugPathPoint pt, int curVal) { return pt.valueFloat == curVal; }
         protected override TweenPlugPathPoint CreatePoint(int src) { return new TweenPlugPathPoint(src); }
         protected override int GetValue(TweenPlugPathPoint pt) { return Mathf.RoundToInt(pt.valueFloat); }
-        public override void SetRelativeEndValue(TweenerCore<int, TweenPlugPath, TweenPlugPathOptions> t) {
-            if(t.endValue.isFinalized) return;
-
-            var startP = t.getter();
-            int count = t.endValue.wps.Length;
-            for(int i = 0; i < count; ++i) t.endValue.wps[i].valueFloat += startP;
-        }
 
         public static ABSTweenPlugin<int, TweenPlugPath, TweenPlugPathOptions> Get() {
             if(mInstance == null) mInstance = new TweenPlugPathInt();
@@ -862,13 +694,6 @@ namespace M8.Animator {
         protected override bool Equal(TweenPlugPathPoint pt, long curVal) { return pt.valueFloat == curVal; }
         protected override TweenPlugPathPoint CreatePoint(long src) { return new TweenPlugPathPoint(src); }
         protected override long GetValue(TweenPlugPathPoint pt) { return Mathf.RoundToInt(pt.valueFloat); }
-        public override void SetRelativeEndValue(TweenerCore<long, TweenPlugPath, TweenPlugPathOptions> t) {
-            if(t.endValue.isFinalized) return;
-
-            var startP = t.getter();
-            int count = t.endValue.wps.Length;
-            for(int i = 0; i < count; ++i) t.endValue.wps[i].valueFloat += startP;
-        }
 
         public static ABSTweenPlugin<long, TweenPlugPath, TweenPlugPathOptions> Get() {
             if(mInstance == null) mInstance = new TweenPlugPathLong();
@@ -882,13 +707,6 @@ namespace M8.Animator {
         protected override bool Equal(TweenPlugPathPoint pt, double curVal) { return pt.valueFloat == curVal; }
         protected override TweenPlugPathPoint CreatePoint(double src) { return new TweenPlugPathPoint((float)src); }
         protected override double GetValue(TweenPlugPathPoint pt) { return pt.valueFloat; }
-        public override void SetRelativeEndValue(TweenerCore<double, TweenPlugPath, TweenPlugPathOptions> t) {
-            if(t.endValue.isFinalized) return;
-
-            var startP = t.getter();
-            int count = t.endValue.wps.Length;
-            for(int i = 0; i < count; ++i) t.endValue.wps[i].valueFloat += (float)startP;
-        }
 
         public static ABSTweenPlugin<double, TweenPlugPath, TweenPlugPathOptions> Get() {
             if(mInstance == null) mInstance = new TweenPlugPathDouble();
@@ -902,13 +720,6 @@ namespace M8.Animator {
         protected override bool Equal(TweenPlugPathPoint pt, Quaternion curVal) { return pt.valueVector3 == curVal.eulerAngles; }
         protected override TweenPlugPathPoint CreatePoint(Quaternion src) { return new TweenPlugPathPoint(src.eulerAngles); }
         protected override Quaternion GetValue(TweenPlugPathPoint pt) { return Quaternion.Euler(pt.valueVector3); }
-        public override void SetRelativeEndValue(TweenerCore<Quaternion, TweenPlugPath, TweenPlugPathOptions> t) {
-            if(t.endValue.isFinalized) return;
-
-            var startP = t.getter().eulerAngles;
-            int count = t.endValue.wps.Length;
-            for(int i = 0; i < count; ++i) t.endValue.wps[i].valueVector3 += startP;
-        }
 
         public static ABSTweenPlugin<Quaternion, TweenPlugPath, TweenPlugPathOptions> Get() {
             if(mInstance == null) mInstance = new TweenPlugPathEuler();

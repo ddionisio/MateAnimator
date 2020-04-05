@@ -31,8 +31,6 @@ namespace M8.Animator {
 
         public override int version { get { return 3; } }
 
-        public override bool hasTrackSettings { get { return true; } }
-
         public override int interpCount { get { return 3; } }
 
         Vector3 GetPosition(Transform t) {
@@ -50,7 +48,7 @@ namespace M8.Animator {
 
         // add a new key, default interpolation and easeType
         public void addKey(ITarget itarget, int _frame, Vector3 _position) {
-            Key prevKey = null;
+            TranslationKey prevKey = null;
 
             foreach(TranslationKey key in keys) {
                 // if key exists on frame, update key
@@ -73,6 +71,7 @@ namespace M8.Animator {
                 a.interp = prevKey.interp;
                 a.easeType = prevKey.easeType;
                 a.easeCurve = prevKey.easeCurve;
+                a.isConstSpeed = prevKey.isConstSpeed;
             }
 
             // add a new key
@@ -203,7 +202,7 @@ namespace M8.Animator {
                 if(key.endFrame != -1)
                     key.DrawGizmos(nextKey, t, gizmo_size);
 
-                i += key.keyCount;
+                i += key.keyCount > 1 ? key.keyCount - 1 : 1;
             }
         }
 
@@ -217,6 +216,7 @@ namespace M8.Animator {
 
                 var interp = key.interp;
                 var easeType = key.easeType;
+                var isConstSpeed = key.isConstSpeed;
 
                 key.GeneratePath(this, i);
 
@@ -231,6 +231,7 @@ namespace M8.Animator {
 
                         _key.interp = interp;
                         _key.easeType = easeType;
+                        _key.isConstSpeed = isConstSpeed;
                         _key.Invalidate();
                     }
 

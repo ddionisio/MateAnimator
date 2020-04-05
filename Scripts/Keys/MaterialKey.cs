@@ -8,14 +8,8 @@ using DG.Tweening.Plugins;
 
 namespace M8.Animator {
     [System.Serializable]
-    public class MaterialKey : Key {
-        public const int pathResolution = 10;
-
+    public class MaterialKey : PathKeyBase {
         public override SerializeType serializeType { get { return SerializeType.Material; } }
-
-        public override int keyCount { get { return path != null ? path.wps.Length : 1; } }
-
-        public int endFrame;
 
         public Texture texture;
 
@@ -27,9 +21,6 @@ namespace M8.Animator {
         public Vector2 texScale { get { return new Vector2(_val4.z, _val4.w); } set { _val4.z = value.x; _val4.w = value.y; } }
         public Vector4 vector { get { return _val4; } set { _val4 = value; } }
         public Color color { get { return new Color(_val4.x, _val4.y, _val4.z, _val4.w); } set { _val4.Set(value.r, value.g, value.b, value.a); } }
-
-        public TweenPlugPath path { get { return _paths.Length > 0 ? _paths[0] : null; } } //save serialize size by using array (path has a lot of serialized fields)
-        [SerializeField] TweenPlugPath[] _paths;
 
         public static void ApplyValueLerp(MaterialTrack.ValueType valueType, string prop, int propId, Material mat, MaterialKey fromKey, MaterialKey toKey, float t) {
             switch(valueType) {
@@ -66,7 +57,7 @@ namespace M8.Animator {
                 }
             }
 
-            var pt = key.path.GetPoint(finalT, true);
+            var pt = key.path.GetPoint(finalT);
 
             var val = key.GetValueFromPathPoint(valueType, pt);
             if(val != null) {
@@ -91,8 +82,8 @@ namespace M8.Animator {
             }
         }
 
-        private TweenPlugPathPoint GeneratePathPoint(MaterialTrack.ValueType valueType) {
-            switch(valueType) {
+        protected override TweenPlugPathPoint GeneratePathPoint(Track track) {
+            switch(((MaterialTrack)track).propertyType) {
                 case MaterialTrack.ValueType.Color:
                     return new TweenPlugPathPoint(color);
                 case MaterialTrack.ValueType.Vector:
@@ -107,62 +98,6 @@ namespace M8.Animator {
             }
 
             return new TweenPlugPathPoint(0);
-        }
-
-        /// <summary>
-        /// Generate path points and endFrame. keyInd is the index of this key in the track.
-        /// </summary>
-        public void GeneratePath(MaterialTrack track, int keyInd) {
-            switch(interp) {
-                case Interpolation.None:
-                    _paths = new TweenPlugPath[0];
-                    endFrame = keyInd + 1 < track.keys.Count ? track.keys[keyInd + 1].frame : frame;
-                    break;
-
-                case Interpolation.Linear:
-                    _paths = new TweenPlugPath[0];
-
-                    if(keyInd + 1 < track.keys.Count)
-                        endFrame = track.keys[keyInd + 1].frame;
-                    else //only one frame
-                        endFrame = frame;
-                    break;
-
-                case Interpolation.Curve:
-                    //if there's more than 2 keys, and next key is curve, then it's more than 2 pts.
-                    if(keyInd + 2 < track.keys.Count && track.keys[keyInd + 1].interp == Interpolation.Curve) {
-                        var pathList = new List<TweenPlugPathPoint>();
-
-                        for(int i = keyInd; i < track.keys.Count; i++) {
-                            var key = (MaterialKey)track.keys[i];
-
-                            pathList.Add(key.GeneratePathPoint(track.propertyType));
-                            endFrame = key.frame;
-
-                            if(key.interp != Interpolation.Curve)
-                                break;
-                        }
-
-                        var newPath = new TweenPlugPath(TweenPlugPathType.CatmullRom, pathList.ToArray(), pathResolution);
-                        newPath.Init(newPath.isClosed);
-
-                        _paths = new TweenPlugPath[] { newPath };
-                    }
-                    else {
-                        if(keyInd + 1 < track.keys.Count) {
-                            endFrame = track.keys[keyInd + 1].frame;
-                            _paths = new TweenPlugPath[0];
-                        }
-                        else
-                            Invalidate();
-                    }
-                    break;
-            }
-        }
-
-        public void Invalidate() {
-            endFrame = -1;
-            _paths = new TweenPlugPath[0];
         }
 
         public object GetValueFromPathPoint(MaterialTrack.ValueType valueType, TweenPlugPathPoint pt) {
@@ -297,7 +232,7 @@ namespace M8.Animator {
             }
             else {
                 //options
-                var options = new TweenPlugPathOptions { loopType = LoopType.Restart, isClosedPath = path.isClosed };
+                var options = new TweenPlugPathOptions { loopType = LoopType.Restart };
 
                 switch(propType) {
                     case MaterialTrack.ValueType.Float:

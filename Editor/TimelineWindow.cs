@@ -3063,6 +3063,31 @@ namespace M8.Animator.Edit {
             }
             GUI.EndGroup();
         }
+        void _dirtyKeyUpdate(Take ctake, Track sTrack, Key key, int keyInd) {
+            _dirtyKeyUpdate(ctake, sTrack, key, keyInd, ctake.selectedFrame);
+        }
+        void _dirtyKeyUpdate(Take ctake, Track sTrack, Key key, int keyInd, int selectFrame) {
+            if(key != null) {
+                if(key is PathKeyBase) { //only update the relevant keys
+                    //check if there is a previous path that also use this key, regenerate path
+                    for(int i = keyInd - 1; i >= 0; i--) {
+                        var keyPath = (PathKeyBase)sTrack.keys[i];
+                        if(keyPath.isValid) {
+                            if(i + keyPath.keyCount - 1 >= keyInd)
+                                keyPath.GeneratePath(sTrack, i);
+                            break;
+                        }
+                    }
+
+                    ((PathKeyBase)key).GeneratePath(sTrack, keyInd);
+                }
+            }
+            else
+                sTrack.updateCache(aData.target);
+
+            // preview new position
+            ctake.previewFrame(aData.target, selectFrame);
+        }
         void _dirtyTrackUpdate(Take ctake, Track sTrack) {
             sTrack.updateCache(aData.target);
             // preview new position
@@ -3082,6 +3107,10 @@ namespace M8.Animator.Edit {
                     sTrack = ctake.trackValues[trackInd];
             }
             if(sTrack == null) return;
+
+            int keyInd = sTrack.getKeyIndexForFrame(_frame);
+            Key key = keyInd != -1 ? sTrack.keys[keyInd] : null;
+
             track_name = sTrack.name + ", ";
             GUIStyle styleLabelWordwrap = new GUIStyle(GUI.skin.label);
             styleLabelWordwrap.wordWrap = true;
@@ -3089,101 +3118,748 @@ namespace M8.Animator.Edit {
             if(OptionsFile.instance.time_numbering) strFrameInfo += "Time " + frameToTime(_frame, (float)ctake.frameRate).ToString("N2") + " s";
             else strFrameInfo += "Frame " + _frame;
             GUI.Label(new Rect(0f, 0f, width_inspector_open - width_inspector_closed - width_button_delete - margin, 20f), strFrameInfo, styleLabelWordwrap);
-            Rect rectBtnDeleteKey = new Rect(width_inspector_open - width_inspector_closed - width_button_delete - margin, 0f, width_button_delete, height_button_delete);
-            // if frame has no key or isPlaying, return
-            if(_track <= -1 || !(sTrack.hasKeyOnFrame(_frame) || sTrack.hasTrackSettings) || isPlaying) {
-                GUI.enabled = false;
-                // disabled delete key button
-                GUI.Button(rectBtnDeleteKey, (getSkinTextureStyleState("delete").background), GUI.skin.GetStyle("ButtonImage"));
-                GUI.enabled = !isPlaying;
-                return;
+            if(!isPlaying && key != null) {
+                Rect rectBtnDeleteKey = new Rect(width_inspector_open - width_inspector_closed - width_button_delete - margin, 0f, width_button_delete, height_button_delete);
+                if(GUI.Button(rectBtnDeleteKey, new GUIContent("", "Delete Key"), GUI.skin.GetStyle("ButtonImage"))) {
+                    deleteKeyFromSelectedFrame();
+                    return;
+                }
+                GUI.DrawTexture(new Rect(rectBtnDeleteKey.x + (rectBtnDeleteKey.height - 10f) / 2f, rectBtnDeleteKey.y + (rectBtnDeleteKey.width - 10f) / 2f, 10f, 10f), (getSkinTextureStyleState((rectBtnDeleteKey.Contains(e.mousePosition) ? "delete_hover" : "delete")).background));
             }
-            // delete key button
-            if(GUI.Button(rectBtnDeleteKey, new GUIContent("", "Delete Key"), GUI.skin.GetStyle("ButtonImage"))) {
-                deleteKeyFromSelectedFrame();
-                return;
-            }
-            GUI.DrawTexture(new Rect(rectBtnDeleteKey.x + (rectBtnDeleteKey.height - 10f) / 2f, rectBtnDeleteKey.y + (rectBtnDeleteKey.width - 10f) / 2f, 10f, 10f), (getSkinTextureStyleState((rectBtnDeleteKey.Contains(e.mousePosition) ? "delete_hover" : "delete")).background));
             float width_inspector = width_inspector_open - width_inspector_closed;
 
             float start_y = 30f + height_inspector_space;
 
-            Key key = sTrack.getKeyOnFrame(_frame, false);
-            if(key == null) return;
+            //starting key for path and tween
+            int keyTweenStartInd = sTrack.canTween ? sTrack.getKeyTweenStartIndexForFrame(_frame) : -1;
+            Key keyTweenStart = keyTweenStartInd != -1 ? sTrack.keys[keyTweenStartInd] : null;
+                        
+            //key type fields
+            if(key != null) {
+                //key to update when value is changed
+                int keyUpdateInd; Key keyUpdate;
+                if(key.isValid || keyTweenStart == null) { keyUpdateInd = keyInd; keyUpdate = key; }
+                else { keyUpdateInd = keyTweenStartInd; keyUpdate = keyTweenStart; }
 
-            //show interpolation if applicable
-            if(sTrack.canTween) {
-                Rect rectLabelInterp = new Rect(0f, start_y, 50f, 20f);
-                GUI.Label(rectLabelInterp, "Interpl.");
-                Rect rectSelGrid = new Rect(rectLabelInterp.x + rectLabelInterp.width + margin, rectLabelInterp.y, width_inspector - rectLabelInterp.width - margin * 2f, rectLabelInterp.height);
+                bool isChanged = false;
 
-                int interp = (int)key.interp;
-                int nInterp = sTrack.interpCount == 3 ?
-                    GUI.SelectionGrid(rectSelGrid, interp, texInterpl3, 3, GUI.skin.GetStyle("ButtonImage")) :
-                    GUI.SelectionGrid(rectSelGrid, interp > 0 ? interp - 1 : 0, texInterpl2, 3, GUI.skin.GetStyle("ButtonImage")) + 1;
-
-                if(interp != nInterp) {
-                    aData.RegisterTakesUndo("Change Interpolation");
-
-                    key.interp = (Key.Interpolation)nInterp;
-
-                    sTrack.updateCache(aData.target);
-                    // select the current frame
-                    timelineSelectFrame(_track, _frame);
-
-                    aData.RecordTakesChanged();
-                }
-
-                start_y = rectLabelInterp.max.y + height_inspector_space;
-            }
-
-            #region translation inspector
-            if(sTrack is TranslationTrack) {
-                TranslationTrack tTrack = (TranslationTrack)sTrack;
-                Rect rectPosition = new Rect(0f, start_y, 0f, 0f);
-                if(sTrack.hasKeyOnFrame(_frame)) {
+                #region translation key inspector
+                if(sTrack is TranslationTrack) {
                     TranslationKey tKey = (TranslationKey)key;
-
-                    // translation position
-                    rectPosition = new Rect(0f, start_y, width_inspector - margin, 40f);
-                    Vector3 nPos = EditorGUI.Vector3Field(rectPosition, "Position", tKey.position);
+                    Rect rectInspector = new Rect(0f, start_y, width_inspector - margin, 40f);
+                    Vector3 nPos = EditorGUI.Vector3Field(rectInspector, "Position", tKey.position);
                     if(tKey.position != nPos) {
                         aData.RegisterTakesUndo("Change Position");
                         tKey.position = nPos;
+                        isChanged = true;
+                    }
+
+                    start_y = rectInspector.yMax + height_inspector_space;
+                }
+                #endregion
+                #region rotation inspector
+                else if(sTrack is RotationTrack) {
+                    RotationKey rKey = (RotationKey)key;
+                    Rect rectInspector = new Rect(0f, start_y, width_inspector - margin, 40f);
+                    // quaternion
+                    Vector3 rot = rKey.rotation.eulerAngles;
+                    Vector3 nrot = EditorGUI.Vector3Field(rectInspector, "Rotation", rot);
+                    if(rot != nrot) {
+                        aData.RegisterTakesUndo("Change Rotation");
+                        rKey.rotation = Quaternion.Euler(nrot);
+                        isChanged = true;
+                    }
+
+                    start_y = rectInspector.yMax + height_inspector_space;
+                }
+                #endregion
+                #region rotation euler inspector
+                else if(sTrack is RotationEulerTrack) {
+                    RotationEulerKey rKey = (RotationEulerKey)key;
+                    Rect rectInspector = new Rect(0f, start_y, width_inspector - margin, 40f);
+                    // euler
+                    Vector3 nrot = EditorGUI.Vector3Field(rectInspector, "Rotation", rKey.rotation);
+                    if(rKey.rotation != nrot) {
+                        aData.RegisterTakesUndo("Change Rotation");
+                        rKey.rotation = nrot;
+                        isChanged = true;
+                    }
+
+                    start_y = rectInspector.yMax + height_inspector_space;
+                }
+                #endregion
+                #region scale inspector
+                else if(sTrack is ScaleTrack) {
+                    var sKey = (ScaleKey)key;
+                    Rect rectInspector = new Rect(0f, start_y, width_inspector - margin, 40f);
+                    // euler
+                    var nscale = EditorGUI.Vector3Field(rectInspector, "Scale", sKey.scale);
+                    if(sKey.scale != nscale) {
+                        aData.RegisterTakesUndo("Change Scale");
+                        sKey.scale = nscale;
+                        isChanged = true;
+                    }
+
+                    start_y = rectInspector.yMax + height_inspector_space;
+                }
+                #endregion
+                #region orientation inspector
+                else if(sTrack is OrientationTrack) {
+                    OrientationKey oKey = (OrientationKey)key;
+                    // target
+                    Rect rectLabelTarget = new Rect(0f, start_y, 50f, 22f);
+                    GUI.Label(rectLabelTarget, "Target");
+                    Rect rectObjectTarget = new Rect(rectLabelTarget.x + rectLabelTarget.width + 3f, rectLabelTarget.y + 3f, width_inspector - rectLabelTarget.width - 3f - margin - width_button_delete, 16f);
+                    Transform ntgt = (Transform)EditorGUI.ObjectField(rectObjectTarget, oKey.GetTarget(aData.target), typeof(Transform), true);
+                    if(oKey.GetTarget(aData.target) != ntgt) {
+                        aData.RegisterTakesUndo("Change Target");
+                        oKey.SetTarget(aData.target, ntgt, false);
 
                         _dirtyTrackUpdate(ctake, sTrack);
 
                         aData.RecordTakesChanged();
                     }
+                    Rect rectNewTarget = new Rect(width_inspector - width_button_delete - margin, rectLabelTarget.y, width_button_delete, width_button_delete);
+                    if(GUI.Button(rectNewTarget, "+")) {
+                        GenericMenu addTargetMenu = new GenericMenu();
+                        addTargetMenu.AddItem(new GUIContent("With Translation"), false, addTargetWithTranslationTrack, oKey);
+                        addTargetMenu.AddItem(new GUIContent("Without Translation"), false, addTargetWithoutTranslationTrack, oKey);
+                        addTargetMenu.ShowAsContext();
+                    }
 
-                    // if not only key, show ease
-                    bool isTKeyLastFrame = tKey == tTrack.keys[tTrack.keys.Count - 1];
+                    start_y = rectNewTarget.yMax + height_inspector_space;
+                }
+                #endregion
+                #region animation inspector
+                else if(sTrack is UnityAnimationTrack) {
+                    UnityAnimationKey aKey = (UnityAnimationKey)(sTrack as UnityAnimationTrack).getKeyOnFrame(_frame);
+                    // animation clip
+                    Rect rectLabelAnimClip = new Rect(0f, start_y, 100f, 22f);
+                    GUI.Label(rectLabelAnimClip, "Animation Clip");
+                    Rect rectObjectField = new Rect(rectLabelAnimClip.x + rectLabelAnimClip.width + 2f, rectLabelAnimClip.y + 3f, width_inspector - rectLabelAnimClip.width - margin, 16f);
+                    AnimationClip nclip = (AnimationClip)EditorGUI.ObjectField(rectObjectField, aKey.amClip, typeof(AnimationClip), false);
+                    if(aKey.amClip != nclip) {
+                        aData.RegisterTakesUndo("Change Animation Clip");
+                        aKey.amClip = nclip;
+                        // preview new position
+                        ctake.previewFrame(aData.target, ctake.selectedFrame);
+                        aData.RecordTakesChanged();
+                    }
+                    // wrap mode
+                    Rect rectLabelWrapMode = new Rect(0f, rectLabelAnimClip.y + rectLabelAnimClip.height + height_inspector_space, 85f, 22f);
+                    GUI.Label(rectLabelWrapMode, "Wrap Mode");
+                    Rect rectPopupWrapMode = new Rect(rectLabelWrapMode.x + rectLabelWrapMode.width, rectLabelWrapMode.y + 3f, 120f, 22f);
+                    WrapMode nwrapmode = indexToWrapMode(EditorGUI.Popup(rectPopupWrapMode, wrapModeToIndex(aKey.wrapMode), wrapModeNames));
+                    if(aKey.wrapMode != nwrapmode) {
+                        aData.RegisterTakesUndo("Wrap Mode");
+                        aKey.wrapMode = nwrapmode;
+                        // preview new position
+                        ctake.previewFrame(aData.target, ctake.selectedFrame);
+                        aData.RecordTakesChanged();
+                    }
+                    // crossfade
+                    Rect rectLabelCrossfade = new Rect(0f, rectLabelWrapMode.y + rectPopupWrapMode.height + height_inspector_space, 85f, 22f);
+                    GUI.Label(rectLabelCrossfade, "Crossfade");
+                    Rect rectToggleCrossfade = new Rect(rectLabelCrossfade.x + rectLabelCrossfade.width, rectLabelCrossfade.y + 2f, 20f, rectLabelCrossfade.height);
+                    bool ncrossfade = EditorGUI.Toggle(rectToggleCrossfade, aKey.crossfade);
+                    if(aKey.crossfade != ncrossfade) {
+                        aData.RegisterTakesUndo("Cross Fade");
+                        aKey.crossfade = ncrossfade;
+                        // preview new position
+                        ctake.previewFrame(aData.target, ctake.selectedFrame);
+                        aData.RecordTakesChanged();
+                    }
+                    Rect rectLabelCrossFadeTime = new Rect(rectToggleCrossfade.x + rectToggleCrossfade.width + 10f, rectLabelCrossfade.y, 35f, rectToggleCrossfade.height);
+                    if(!aKey.crossfade) GUI.enabled = false;
+                    GUI.Label(rectLabelCrossFadeTime, "Time");
+                    Rect rectFloatFieldCrossFade = new Rect(rectLabelCrossFadeTime.x + rectLabelCrossFadeTime.width + margin, rectLabelCrossFadeTime.y + 3f, 40f, rectLabelCrossFadeTime.height);
+                    float ncrossfadet = EditorGUI.FloatField(rectFloatFieldCrossFade, aKey.crossfadeTime);
+                    if(aKey.crossfadeTime != ncrossfadet) {
+                        aData.RegisterTakesUndo("Cross Fade Time");
+                        aKey.crossfadeTime = ncrossfadet;
+                        aData.RecordTakesChanged();
+                    }
+                    Rect rectLabelSeconds = new Rect(rectFloatFieldCrossFade.x + rectFloatFieldCrossFade.width + margin, rectLabelCrossFadeTime.y, 20f, rectLabelCrossFadeTime.height);
+                    GUI.Label(rectLabelSeconds, "s");
+                    GUI.enabled = true;
+                }
+                #endregion
+                #region audio inspector
+                else if(sTrack is AudioTrack) {
+                    AudioKey auKey = (AudioKey)(sTrack as AudioTrack).getKeyOnFrame(_frame);
+                    // audio clip
+                    Rect rectLabelAudioClip = new Rect(0f, start_y, 80f, 22f);
+                    GUI.Label(rectLabelAudioClip, "Audio Clip");
+                    Rect rectObjectField = new Rect(rectLabelAudioClip.x + rectLabelAudioClip.width + margin, rectLabelAudioClip.y + 3f, width_inspector - rectLabelAudioClip.width - margin, 16f);
+                    AudioClip nclip = (AudioClip)EditorGUI.ObjectField(rectObjectField, auKey.audioClip, typeof(AudioClip), false);
+                    if(auKey.audioClip != nclip) {
+                        aData.RegisterTakesUndo("Set Audio Clip");
+                        auKey.audioClip = nclip;
+                        aData.RecordTakesChanged();
+                    }
+                    Rect rectLabelLoop = new Rect(0f, rectLabelAudioClip.y + rectLabelAudioClip.height + height_inspector_space, 80f, 22f);
+                    // loop audio
+                    GUI.Label(rectLabelLoop, "Loop");
+                    Rect rectToggleLoop = new Rect(rectLabelLoop.x + rectLabelLoop.width + margin, rectLabelLoop.y + 2f, 22f, 22f);
+                    bool nloop = EditorGUI.Toggle(rectToggleLoop, auKey.loop);
+                    if(auKey.loop != nloop) {
+                        aData.RegisterTakesUndo("Set Audio Loop");
+                        auKey.loop = nloop;
+                        aData.RecordTakesChanged();
+                    }
 
-                    if(key.canTween && !isTKeyLastFrame) {
-                        rectPosition = new Rect(0f, rectPosition.y + rectPosition.height + height_inspector_space, width_inspector - margin, 0f);
-                        if(!isTKeyLastFrame && tKey.interp == Key.Interpolation.Linear)
-                            showEasePicker(sTrack, tKey, aData, rectPosition.x, rectPosition.y, rectPosition.width);
-                        else
-                            showEasePicker(sTrack, tTrack.getKeyStartFor(tKey.frame), aData, rectPosition.x, rectPosition.y, rectPosition.width);
-
-                        rectPosition.height = 80.0f;
+                    // One Shot?
+                    Rect rectLabelOneShot = new Rect(0f, rectLabelLoop.y + rectLabelLoop.height, 80f, 22f);
+                    GUI.Label(rectLabelOneShot, "One Shot");
+                    Rect rectToggleOneShot = new Rect(rectLabelOneShot.x + rectLabelOneShot.width + margin, rectLabelOneShot.y + 2f, 22f, 22f);
+                    bool nOneShot = EditorGUI.Toggle(rectToggleOneShot, auKey.oneShot);
+                    if(auKey.oneShot != nOneShot) {
+                        aData.RegisterTakesUndo("Set Audio One Shot");
+                        auKey.oneShot = nOneShot;
+                        aData.RecordTakesChanged();
                     }
                 }
+                #endregion
+                #region property inspector
+                else if(sTrack is PropertyTrack) {
+                    PropertyTrack pTrack = sTrack as PropertyTrack;
+                    PropertyKey pKey = (PropertyKey)key;
+                    // value
+                    string propertyLabel = pTrack.getTrackType();
+                    Rect rectField = new Rect(0f, start_y, width_inspector - margin, 22f);
+                    if((pTrack.valueType == PropertyTrack.ValueType.Integer) || (pTrack.valueType == PropertyTrack.ValueType.Long)) {
+                        int val = Convert.ToInt32(pKey.val);
+                        int nval = EditorGUI.IntField(rectField, propertyLabel, val);
+                        if(val != nval) {
+                            aData.RegisterTakesUndo("Change Property Value");
+                            pKey.val = nval;
+                            isChanged = true;
+                        }
+                    }
+                    else if((pTrack.valueType == PropertyTrack.ValueType.Float) || (pTrack.valueType == PropertyTrack.ValueType.Double)) {
+                        float val = (float)pKey.val;
+                        float nval = EditorGUI.FloatField(rectField, propertyLabel, val);
+                        if(val != nval) {
+                            aData.RegisterTakesUndo("Change Property Value");
+                            pKey.val = nval;
+                            isChanged = true;
+                        }
+                    }
+                    else if(pTrack.valueType == PropertyTrack.ValueType.Bool) {
+                        bool val = pKey.val > 0.0;
+                        bool nval = EditorGUI.Toggle(rectField, propertyLabel, val);
+                        if(val != nval) {
+                            aData.RegisterTakesUndo("Change Property Value");
+                            pKey.valb = nval;
+                            isChanged = true;
+                        }
+                    }
+                    else if(pTrack.valueType == PropertyTrack.ValueType.String) {
+                        string val = pKey.valString;
+                        string nval = EditorGUI.TextField(rectField, propertyLabel, val);
+                        if(val != nval) {
+                            aData.RegisterTakesUndo("Change Property Value");
+                            pKey.valString = nval;
+                            isChanged = true;
+                        }
+                    }
+                    else if(pTrack.valueType == PropertyTrack.ValueType.Vector2) {
+                        rectField.height = 40f;
+                        Vector2 nval = EditorGUI.Vector2Field(rectField, propertyLabel, pKey.vect2);
+                        if(pKey.vect2 != nval) {
+                            aData.RegisterTakesUndo("Change Property Value");
+                            pKey.vect2 = nval;
+                            isChanged = true;
+                        }
+                    }
+                    else if(pTrack.valueType == PropertyTrack.ValueType.Vector3) {
+                        rectField.height = 40f;
+                        Vector3 nval = EditorGUI.Vector3Field(rectField, propertyLabel, pKey.vect3);
+                        if(pKey.vect3 != nval) {
+                            aData.RegisterTakesUndo("Change Property Value");
+                            pKey.vect3 = nval;
+                            isChanged = true;
+                        }
+                    }
+                    else if(pTrack.valueType == PropertyTrack.ValueType.Color) {
+                        var nclr = RenderColorProperty(rectField, propertyLabel, pKey.color);
+                        if(pKey.color != nclr) {
+                            aData.RegisterTakesUndo("Change Property Value");
+                            pKey.color = nclr;
+                            isChanged = true;
+                        }
+                    }
+                    else if(pTrack.valueType == PropertyTrack.ValueType.Rect) {
+                        rectField.height = 60f;
+                        Rect nrect = EditorGUI.RectField(rectField, propertyLabel, pKey.rect);
+                        if(pKey.rect != nrect) {
+                            aData.RegisterTakesUndo("Change Property Value");
+                            pKey.rect = nrect;
+                            isChanged = true;
+                        }
+                    }
+                    else if(pTrack.valueType == PropertyTrack.ValueType.Vector4
+                        || pTrack.valueType == PropertyTrack.ValueType.Quaternion) {
+                        rectField.height = 40f;
+                        Vector4 nvec = EditorGUI.Vector4Field(rectField, propertyLabel, pKey.vect4);
+                        if(pKey.vect4 != nvec) {
+                            aData.RegisterTakesUndo("Change Property Value");
+                            pKey.vect4 = nvec;
+                            isChanged = true;
+                        }
+                    }
+                    else if(pTrack.valueType == PropertyTrack.ValueType.Sprite) {
+                        UnityEngine.Object val = pKey.valObj;
+                        GUI.skin = null; EditorUtility.ResetDisplayControls();
+                        rectField.height = 16.0f;
+                        UnityEngine.Object nval = EditorGUI.ObjectField(rectField, val, typeof(Sprite), false);
+                        GUI.skin = skin; EditorUtility.ResetDisplayControls();
+                        if(val != nval) {
+                            aData.RegisterTakesUndo("Change Property Value");
+                            pKey.valObj = nval;
+                            isChanged = true;
+                        }
+                    }
+                    else if(pTrack.valueType == PropertyTrack.ValueType.Enum) {
+                        rectField.height = 20.0f;
+                        GUI.Label(rectField, propertyLabel);
+                        rectField.y += rectField.height + 4.0f;
+                        rectField.height = 16f;
+                        Enum curEnum = Enum.ToObject(pTrack.GetCachedInfoType(aData.target), (int)pKey.val) as Enum;
+                        Enum newEnum = EditorGUI.EnumPopup(rectField, curEnum);
+                        if(curEnum != newEnum) {
+                            aData.RegisterTakesUndo("Change Property Value");
+                            pKey.val = Convert.ToDouble(newEnum);
+                            isChanged = true;
+                        }
+                    }
+
+                    start_y = rectField.yMax + height_inspector_space;
+                }
+                #endregion
+                #region event set go active
+                else if(sTrack is GOSetActiveTrack) {
+                    GOSetActiveTrack goActiveTrack = sTrack as GOSetActiveTrack;
+                    GOSetActiveKey pKey = (GOSetActiveKey)key;
+
+                    bool newStartVal;
+
+                    // value
+                    if(sTrack.keys[0] == pKey) {
+                        Rect rectStartField = new Rect(0f, start_y, width_inspector - margin, 22f);
+
+                        newStartVal = EditorGUI.Toggle(rectStartField, "Default Active", goActiveTrack.startActive);
+
+                        start_y += rectStartField.height + 4.0f;
+                    }
+                    else
+                        newStartVal = goActiveTrack.startActive;
+
+                    Rect rectField = new Rect(0f, start_y, width_inspector - margin, 22f);
+
+                    bool newVal = EditorGUI.Toggle(rectField, sTrack.getTrackType(), pKey.setActive);
+
+                    if(newStartVal != goActiveTrack.startActive) {
+                        aData.RegisterTakesUndo("Set GameObject Start Active");
+                        goActiveTrack.startActive = newStartVal;
+                        aData.RecordTakesChanged();
+                    }
+
+                    if(newVal != pKey.setActive) {
+                        aData.RegisterTakesUndo("Set GameObject Active");
+                        pKey.setActive = newVal;
+                        isChanged = true;
+                    }
+
+                    start_y = rectField.yMax + height_inspector_space;
+                }
+                #endregion
+                #region event inspector
+                else if(sTrack is EventTrack) {
+                    var obj = sTrack.GetTarget(aData.target);
+                    EventKey eKey = (EventKey)(sTrack as EventTrack).getKeyOnFrame(_frame);
+                    var comp = eKey.getComponentFromTarget(obj);
+                    var tgt = comp ? comp : obj;
+
+                    //component selection
+                    if(obj is GameObject && cachedComponentNames.Length > 1) {
+                        Rect rectCompPopup = new Rect(0f, start_y, width_inspector - margin, 22f);
+                        int curIndexComp = cachedIndexComponent;
+                        cachedIndexComponent = EditorGUI.Popup(rectCompPopup, curIndexComp, cachedComponentNames);
+                        if(cachedIndexComponent != curIndexComp || string.IsNullOrEmpty(eKey.methodName)) {
+                            eKey.SetComponentType(cachedIndexComponent == 0 ? "" : cachedComponentNames[cachedIndexComponent]);
+
+                            // update methodinfo cache
+                            comp = eKey.getComponentFromTarget(obj);
+
+                            tgt = comp ? comp : obj;
+
+                            updateCachedMethodInfoFromObject(tgt);
+
+                            //reset index method to 0
+                            if(cachedMethodInfo.Length <= 0)
+                                indexMethodInfo = -1;
+                            else {
+                                cachedIndexMethodInfo = 0;
+                                cacheSelectedMethodParameterInfos();
+
+                                eKey.setMethodInfo(comp, cachedMethodInfo[indexMethodInfo], cachedParameterInfos, false, null);
+                            }
+
+                            aData.SetTakesDirty(); //don't really want to undo this
+                        }
+
+                        start_y += 26f;
+                    }
+
+                    // value
+                    if(indexMethodInfo == -1 || cachedMethodInfo.Length <= 0) {
+                        Rect rectLabel = new Rect(0f, start_y, width_inspector - margin * 2f - 20f, 22f);
+                        GUI.Label(rectLabel, "No usable methods found.");
+                        Rect rectButton = new Rect(width_inspector - 20f - margin, start_y + 1f, 20f, 20f);
+                        if(GUI.Button(rectButton, "?")) {
+                            UnityEditor.EditorUtility.DisplayDialog("Usable Methods", "Methods should be made public and be placed in scripts that are not directly derived from Component or Behaviour to be used in the Event Track (MonoBehaviour is fine).", "Okay");
+                        }
+                        return;
+                    }
+
+                    bool sendMessageToggleEnabled = true;
+                    Rect rectPopup = new Rect(0f, start_y, width_inspector - margin, 22f);
+                    int curIndexMethod = indexMethodInfo;
+                    indexMethodInfo = EditorGUI.Popup(rectPopup, curIndexMethod, cachedMethodNames);
+
+                    bool showObjectMessage = false;
+                    Type showObjectType = null;
+                    foreach(ParameterInfo p in cachedParameterInfos) {
+                        Type elemType = p.ParameterType.GetElementType();
+                        if(elemType != null && (elemType.BaseType == typeof(UnityEngine.Object) || elemType.BaseType == typeof(UnityEngine.Behaviour))) {
+                            showObjectMessage = true;
+                            showObjectType = elemType;
+                            break;
+                        }
+                    }
+                    Rect rectLabelObjectMessage = new Rect(0f, rectPopup.y + rectPopup.height, width_inspector - margin * 2f - 20f, 0f);
+                    if(showObjectMessage) {
+                        rectLabelObjectMessage.height = 22f;
+                        Rect rectButton = new Rect(width_inspector - 20f - margin, rectLabelObjectMessage.y + 1f, 20f, 20f);
+                        GUI.color = Color.red;
+                        GUI.Label(rectLabelObjectMessage, "* Use Object[] instead!");
+                        GUI.color = Color.white;
+                        if(GUI.Button(rectButton, "?")) {
+                            UnityEditor.EditorUtility.DisplayDialog("Use Object[] Parameter Instead", "Array types derived from Object, such as GameObject[], cannot be cast correctly on runtime.\n\nUse UnityEngine.Object[] as a parameter type and then cast to (GameObject[]) in your method.\n\nIf you're trying to pass components" + (showObjectType != typeof(GameObject) ? " (such as " + showObjectType.ToString() + ")" : "") + ", you should get them from the casted GameObjects on runtime.\n\nPlease see the documentation for more information.", "Okay");
+                        }
+                        return;
+                    }
+
+                    // changed, if index out of range, if no method and there's only one on the list
+                    bool paramMatched = eKey.isMatch(cachedParameterInfos);
+                    if((indexMethodInfo != curIndexMethod && indexMethodInfo < cachedMethodInfo.Length) || !paramMatched || string.IsNullOrEmpty(eKey.methodName)) {
+                        // process change
+                        // update cache when modifying varaibles
+                        if(eKey.setMethodInfo(tgt, cachedMethodInfo[indexMethodInfo], cachedParameterInfos, !paramMatched, null)) {
+                            aData.SetTakesDirty(); //don't really want to undo this
+
+                            // deselect fields
+                            GUIUtility.keyboardControl = 0;
+                        }
+                    }
+                    if(cachedParameterInfos.Length > 1 || !(tgt is Component)) {
+                        // if method has more than 1 parameter, set sendmessage to false, and disable toggle
+                        if(eKey.setUseSendMessage(false, null))
+                            aData.SetTakesDirty(); //don't really want to undo this
+
+                        sendMessageToggleEnabled = false;   // disable sendmessage toggle
+                    }
+
+                    GUI.enabled = sendMessageToggleEnabled;
+                    Rect rectLabelSendMessage = new Rect(0f, rectLabelObjectMessage.y + rectLabelObjectMessage.height + height_inspector_space, 150f, 20f);
+                    GUI.Label(rectLabelSendMessage, "Use SendMessage");
+                    Rect rectToggleSendMessage = new Rect(rectLabelSendMessage.x + rectLabelSendMessage.width + margin, rectLabelSendMessage.y, 20f, 20f);
+                    if(eKey.setUseSendMessage(GUI.Toggle(rectToggleSendMessage, eKey.useSendMessage, ""), delegate (EventKey k) { aData.RegisterTakesUndo("Set Event Key Method Mode"); })) {
+                        sTrack.updateCache(aData.target);
+                        aData.RecordTakesChanged();
+                    }
+
+                    GUI.enabled = !isPlaying;
+                    Rect rectButtonSendMessageInfo = new Rect(width_inspector - 20f - margin, rectLabelSendMessage.y, 20f, 20f);
+                    if(GUI.Button(rectButtonSendMessageInfo, "?")) {
+                        UnityEditor.EditorUtility.DisplayDialog("SendMessage vs. Invoke", "SendMessage can only be used with methods that have no more than one parameter (which can be an array).\n\nAnimator will use Invoke when SendMessage is disabled, which is slightly faster but requires caching when the take is played. Use SendMessage if caching is a problem.", "Okay");
+                    }
+                    if(cachedParameterInfos.Length > 0) {
+                        // show method parameters
+                        float scrollview_y = rectLabelSendMessage.y + rectLabelSendMessage.height + height_inspector_space;
+                        Rect rectScrollView = new Rect(0f, scrollview_y, width_inspector - margin, rect.height - scrollview_y);
+                        float width_view = width_inspector - margin - (height_event_parameters > rectScrollView.height ? 20f + margin : 0f);
+                        Rect rectView = new Rect(0f, 0f, width_view, height_event_parameters);
+                        inspectorScrollView = GUI.BeginScrollView(rectScrollView, inspectorScrollView, rectView);
+                        Rect rectField = new Rect(0f, 0f, width_view, 20f);
+                        float height_all_fields = 0f;
+                        // there are parameters
+                        for(int i = 0; i < cachedParameterInfos.Length; i++) {
+                            rectField.y += height_inspector_space;
+                            if(i > 0) height_all_fields += height_inspector_space;
+                            // show field for each parameter
+                            float height_field = 0f;
+                            showFieldFor(aData.target, eKey, rectField, i.ToString(), cachedParameterInfos[i].Name, eKey.parameters[i], cachedParameterInfos[i].ParameterType, 0, ref height_field);
+                            rectField.y += height_field;
+                            height_all_fields += height_field;
+                        }
+                        GUI.EndScrollView();
+                        height_all_fields += height_inspector_space;
+                        if(height_event_parameters != height_all_fields) height_event_parameters = height_all_fields;
+                    }
+                    return;
+                }
+                #endregion
+                #region material inspector
+                else if(sTrack is MaterialTrack) {
+                    MaterialTrack aTrack = sTrack as MaterialTrack;
+                    MaterialKey aKey = (MaterialKey)aTrack.getKeyOnFrame(_frame);
+                    // value
+                    string propertyLabel = aTrack.getTrackType();
+                    Rect rectField = new Rect(0f, start_y, width_inspector - margin, 22f);
+                    if(aTrack.propertyType == MaterialTrack.ValueType.Float) {
+                        float fval = EditorGUI.FloatField(rectField, propertyLabel, aKey.val);
+                        if(aKey.val != fval) {
+                            aData.RegisterTakesUndo("Change Material Property Value");
+                            aKey.val = fval;
+                            isChanged = true;
+                        }
+                    }
+                    else if(aTrack.propertyType == MaterialTrack.ValueType.Range) {
+                        //grab limiters
+                        Material mat = aTrack.GetMaterial(aData.target);
+                        Shader shader = mat.shader;
+                        for(int i = 0; i < ShaderUtil.GetPropertyCount(shader); i++) { //grab the proper index and get the limiters
+                            if(aTrack.property == ShaderUtil.GetPropertyName(shader, i)) {
+                                float valMin = ShaderUtil.GetRangeLimits(shader, i, 1);
+                                float valMax = ShaderUtil.GetRangeLimits(shader, i, 2);
+
+                                //slider
+                                float fval = EditorGUI.Slider(rectField, propertyLabel, aKey.val, valMin, valMax);
+                                if(aKey.val != fval) {
+                                    aData.RegisterTakesUndo("Change Material Property Value");
+                                    aKey.val = fval;
+                                    isChanged = true;
+                                }
+                                break;
+                            }
+                        }
+                    }
+                    else if(aTrack.propertyType == MaterialTrack.ValueType.Vector) {
+                        rectField.height = 40f;
+                        Vector4 nvec = EditorGUI.Vector4Field(rectField, propertyLabel, aKey.vector);
+                        if(aKey.vector != nvec) {
+                            aData.RegisterTakesUndo("Change Material Property Value");
+                            aKey.vector = nvec;
+                            isChanged = true;
+                        }
+                    }
+                    else if(aTrack.propertyType == MaterialTrack.ValueType.Color) {
+                        var nclr = RenderColorProperty(rectField, propertyLabel, aKey.color);
+                        if(aKey.color != nclr) {
+                            aData.RegisterTakesUndo("Change Material Property Value");
+                            aKey.color = nclr;
+                            isChanged = true;
+                        }
+                    }
+                    else if(aTrack.propertyType == MaterialTrack.ValueType.TexEnv) {
+                        //texture
+                        GUI.skin = null; EditorUtility.ResetDisplayControls();
+                        rectField.height = 16.0f;
+                        Texture nval = EditorGUI.ObjectField(rectField, aKey.texture, typeof(Texture), false) as Texture;
+                        GUI.skin = skin; EditorUtility.ResetDisplayControls();
+
+                        if(aKey.texture != nval) {
+                            aData.RegisterTakesUndo("Change Material Property Value");
+                            aKey.texture = nval;
+                            isChanged = true;
+                        }
+                    }
+                    else if(aTrack.propertyType == MaterialTrack.ValueType.TexOfs) {
+                        rectField.height = 40f;
+                        Vector2 nvec = EditorGUI.Vector2Field(rectField, propertyLabel, aKey.texOfs);
+                        if(aKey.texOfs != nvec) {
+                            aData.RegisterTakesUndo("Change Material Property Value");
+                            aKey.texOfs = nvec;
+                            isChanged = true;
+                        }
+                    }
+                    else if(aTrack.propertyType == MaterialTrack.ValueType.TexScale) {
+                        rectField.height = 40f;
+                        Vector2 nvec = EditorGUI.Vector2Field(rectField, propertyLabel, aKey.texScale);
+                        if(aKey.texScale != nvec) {
+                            aData.RegisterTakesUndo("Change Material Property Value");
+                            aKey.texScale = nvec;
+                            isChanged = true;
+                        }
+                    }
+
+                    start_y = rectField.yMax + height_inspector_space;
+                }
+                #endregion
+                #region camera switcher inspector
+                else if(sTrack is CameraSwitcherTrack) {
+                    CameraSwitcherKey cKey = (CameraSwitcherKey)(sTrack as CameraSwitcherTrack).getKeyOnFrame(_frame);
+                    bool showExtras = false;
+                    bool notLastKey = cKey != (sTrack as CameraSwitcherTrack).keys[(sTrack as CameraSwitcherTrack).keys.Count - 1];
+                    if(notLastKey) {
+                        int cActionIndex = (sTrack as CameraSwitcherTrack).getKeyIndexForFrame(_frame);
+                        showExtras = cActionIndex > -1 && !(sTrack.keys[cActionIndex] as CameraSwitcherKey).targetsAreEqual(aData.target);
+                    }
+                    float height_cs = 44f + height_inspector_space + (showExtras ? 22f * 3f + height_inspector_space * 3f : 0f);
+                    Rect rectScrollView = new Rect(0f, start_y, width_inspector - margin, rect.height - start_y);
+                    Rect rectView = new Rect(0f, 0f, rectScrollView.width - (height_cs > rectScrollView.height ? 20f : 0f), height_cs);
+                    inspectorScrollView = GUI.BeginScrollView(rectScrollView, inspectorScrollView, rectView);
+                    Rect rectLabelType = new Rect(0f, 0f, 56f, 22f);
+                    GUI.Label(rectLabelType, "Type");
+                    Rect rectSelGridType = new Rect(rectLabelType.x + rectLabelType.width + margin, rectLabelType.y, rectView.width - margin - rectLabelType.width, 22f);
+                    int newType = GUI.SelectionGrid(rectSelGridType, cKey.type, new string[] { "Camera", "Color" }, 2);
+                    if(cKey.type != newType) {
+                        aData.RegisterTakesUndo("Set Camera Track Type");
+                        cKey.type = newType;
+
+                        _dirtyTrackUpdate(ctake, sTrack);
+                        aData.RecordTakesChanged();
+                    }
+                    // camera
+                    Rect rectLabelCameraColor = new Rect(0f, rectLabelType.y + rectLabelType.height + height_inspector_space, 56f, 22f);
+                    GUI.Label(rectLabelCameraColor, (cKey.type == 0 ? "Camera" : "Color"));
+                    Rect rectCameraColor = new Rect(rectLabelCameraColor.x + rectLabelCameraColor.width + margin, rectLabelCameraColor.y + 3f, rectView.width - rectLabelCameraColor.width - margin, 16f);
+                    if(cKey.type == 0) {
+                        Camera newCam = (Camera)EditorGUI.ObjectField(rectCameraColor, cKey.GetCamera(aData.target), typeof(Camera), true);
+                        if(cKey.GetCamera(aData.target) != newCam) {
+                            aData.RegisterTakesUndo("Set Camera Track Camera");
+                            cKey.SetCamera(aData.target, newCam);
+
+                            _dirtyTrackUpdate(ctake, sTrack);
+                            aData.RecordTakesChanged();
+                        }
+                    }
+                    else {
+                        Color newColor = EditorGUI.ColorField(rectCameraColor, cKey.color);
+                        if(cKey.color != newColor) {
+                            aData.RegisterTakesUndo("Set Camera Track Color");
+                            cKey.color = newColor;
+
+                            _dirtyTrackUpdate(ctake, sTrack);
+                            aData.RecordTakesChanged();
+                        }
+                    }
+                    GUI.enabled = true;
+                    // if not last key, show transition and ease
+                    if(key.canTween && notLastKey && showExtras) {
+                        // transition picker
+                        Rect rectTransitionPicker = new Rect(0f, rectLabelCameraColor.y + rectLabelCameraColor.height + height_inspector_space, rectView.width, 22f);
+                        showTransitionPicker(sTrack, cKey, rectTransitionPicker.x, rectTransitionPicker.y, rectTransitionPicker.width);
+                        if(cKey.cameraFadeType != (int)CameraSwitcherKey.Fade.None) {
+                            // ease picker
+                            Rect rectEasePicker = new Rect(0f, rectTransitionPicker.y + rectTransitionPicker.height + height_inspector_space, rectView.width, 22f);
+                            showEasePicker(sTrack, cKey, keyInd, aData, rectEasePicker.x, rectEasePicker.y, rectEasePicker.width);
+                            // render texture
+                            Rect rectLabelRenderTexture = new Rect(0f, rectEasePicker.y + rectEasePicker.height + height_inspector_space + 55.0f, 175f, 22f);
+                            GUI.Label(rectLabelRenderTexture, "Render Texture (Pro Only)");
+                            Rect rectToggleRenderTexture = new Rect(rectView.width - 22f, rectLabelRenderTexture.y, 22f, 22f);
+                            bool newStill = !GUI.Toggle(rectToggleRenderTexture, !cKey.still, "");
+                            if(cKey.still != newStill) {
+                                aData.RegisterTakesUndo("Set Camera Track Still");
+                                cKey.still = newStill;
+
+                                _dirtyTrackUpdate(ctake, sTrack);
+                                aData.RecordTakesChanged();
+                            }
+                        }
+                    }
+                    GUI.EndScrollView();
+                    return;
+                }
+                #endregion
+
+                if(isChanged) {
+                    _dirtyKeyUpdate(ctake, sTrack, keyUpdate, keyUpdateInd, key.frame);
+                    aData.RecordTakesChanged();
+                }
+            }
+
+            //tween fields
+            if(sTrack.canTween) {
+                if(key != null) {
+                    Rect rectLabelInterp = new Rect(0f, start_y + 15f, 50f, 20f);
+                    GUI.Label(rectLabelInterp, "Interpl.");
+                    Rect rectSelGrid = new Rect(rectLabelInterp.x + rectLabelInterp.width + margin, rectLabelInterp.y, width_inspector - rectLabelInterp.width - margin * 2f, rectLabelInterp.height);
+
+                    int interp = (int)key.interp;
+                    int nInterp = sTrack.interpCount == 3 ?
+                        GUI.SelectionGrid(rectSelGrid, interp, texInterpl3, 3, GUI.skin.GetStyle("ButtonImage")) :
+                        GUI.SelectionGrid(rectSelGrid, interp > 0 ? interp - 1 : 0, texInterpl2, 3, GUI.skin.GetStyle("ButtonImage")) + 1;
+
+                    if(interp != nInterp) {
+                        aData.RegisterTakesUndo("Change Interpolation");
+
+                        key.interp = (Key.Interpolation)nInterp;
+
+                        _dirtyTrackUpdate(ctake, sTrack);
+
+                        aData.RecordTakesChanged();
+
+                        return;
+                    }
+
+                    start_y = rectLabelInterp.max.y + height_inspector_space;
+                }
+
+                if(keyTweenStart != null) {
+                    //curve config, only for path key
+                    if(keyTweenStart.interp == Key.Interpolation.Curve && keyTweenStart is PathKeyBase) {
+                        var pathKey = (PathKeyBase)keyTweenStart;
+
+                        var rectConstSpeed = new Rect(0f, start_y, width_inspector - margin, 20.0f);
+                        bool isConstSpeed = EditorGUI.Toggle(rectConstSpeed, "Constant Speed", pathKey.isConstSpeed);
+                        if(pathKey.isConstSpeed != isConstSpeed) {
+                            aData.RegisterTakesUndo("Change Constant Speed");
+
+                            pathKey.isConstSpeed = isConstSpeed;
+
+                            _dirtyKeyUpdate(ctake, sTrack, pathKey, keyTweenStartInd);
+
+                            aData.RecordTakesChanged();
+                        }
+
+                        start_y = rectConstSpeed.max.y + height_inspector_space;
+                    }
+
+                    //edit ease
+                    if(_frame <= keyTweenStart.frame || keyTweenStartInd < sTrack.keys.Count - 1) {
+                        showEasePicker(sTrack, keyTweenStart, keyTweenStartInd, aData, 0f, start_y, width_inspector - margin);
+                        start_y += 80f + height_inspector_space;
+                    }
+                }
+                else
+                    start_y += 15f;
+            }
+
+            //track related fields
+            #region translation inspector
+            if(sTrack is TranslationTrack) {
+                var tTrack = (TranslationTrack)sTrack;
 
                 //display pixel snap option
-                rectPosition = new Rect(0f, rectPosition.y + rectPosition.height + height_inspector_space, width_inspector - margin, 20.0f);
+                var rectPosition = new Rect(0f, start_y, width_inspector - margin, 20.0f);
                 bool nPixelSnap = EditorGUI.Toggle(rectPosition, "Pixel-Snap", tTrack.pixelSnap);
                 if(nPixelSnap != tTrack.pixelSnap) {
                     aData.RegisterTakesUndo("Set Pixel-Snap");
                     tTrack.pixelSnap = nPixelSnap;
                     aData.RecordTakesChanged();
                 }
+
+                start_y = rectPosition.yMax + height_inspector_space;
+
                 //display pixel-per-unit
                 if(tTrack.pixelSnap) {
-                    rectPosition = new Rect(0f, rectPosition.y + rectPosition.height + height_inspector_space, width_inspector - margin, 20.0f);
+                    rectPosition = new Rect(0f, start_y, width_inspector - margin, 20.0f);
                     float nppu = EditorGUI.FloatField(rectPosition, "Pixel/Unit", tTrack.pixelPerUnit);
 
-                    rectPosition = new Rect(5f, rectPosition.y + rectPosition.height + height_inspector_space, width_inspector - margin - 10f, 20.0f);
+                    rectPosition = new Rect(5f, rectPosition.yMax + height_inspector_space, width_inspector - margin - 10f, 20.0f);
                     if(GUI.Button(rectPosition, "Pixel/Unit Default"))
                         nppu = OptionsFile.instance.pixelPerUnitDefault;
 
@@ -3193,685 +3869,9 @@ namespace M8.Animator.Edit {
                         tTrack.pixelPerUnit = nppu;
                         aData.RecordTakesChanged();
                     }
-                }
-                return;
-            }
-            #endregion
-            #region rotation inspector
-            if(sTrack is RotationTrack) {
-                RotationKey rKey = (RotationKey)key;
-                Rect rectQuaternion = new Rect(0f, start_y, width_inspector - margin, 40f);
-                // quaternion
-                Vector3 rot = rKey.rotation.eulerAngles;
-                Vector3 nrot = EditorGUI.Vector3Field(rectQuaternion, "Rotation", rot);
-                if(rot != nrot) {
-                    aData.RegisterTakesUndo("Change Rotation");
-                    rKey.rotation = Quaternion.Euler(nrot);
 
-                    _dirtyTrackUpdate(ctake, sTrack);
-
-                    aData.RecordTakesChanged();
+                    start_y = rectPosition.yMax + height_inspector_space;
                 }
-                // if not last key, show ease
-                if(key.canTween && rKey != (sTrack as RotationTrack).keys[(sTrack as RotationTrack).keys.Count - 1]) {
-                    Rect recEasePicker = new Rect(0f, rectQuaternion.y + rectQuaternion.height + height_inspector_space, width_inspector - margin, 0f);
-                    if((sTrack as RotationTrack).getKeyIndexForFrame(_frame) > -1) {
-                        showEasePicker(sTrack, rKey, aData, recEasePicker.x, recEasePicker.y, recEasePicker.width);
-                    }
-                }
-                return;
-            }
-            #endregion
-            #region rotation euler inspector
-            if(sTrack is RotationEulerTrack) {
-                RotationEulerKey rKey = (RotationEulerKey)key;
-                Rect rectQuaternion = new Rect(0f, start_y, width_inspector - margin, 40f);
-                // euler
-                Vector3 nrot = EditorGUI.Vector3Field(rectQuaternion, "Rotation", rKey.rotation);
-                if(rKey.rotation != nrot) {
-                    aData.RegisterTakesUndo("Change Rotation");
-                    rKey.rotation = nrot;
-
-                    _dirtyTrackUpdate(ctake, sTrack);
-
-                    aData.RecordTakesChanged();
-                }
-                // if not last key, show ease
-                if(key.canTween && rKey != ((RotationEulerTrack)sTrack).keys[((RotationEulerTrack)sTrack).keys.Count - 1]) {
-                    Rect recEasePicker = new Rect(0f, rectQuaternion.y + rectQuaternion.height + height_inspector_space, width_inspector - margin, 0f);
-                    if(sTrack.getKeyIndexForFrame(_frame) > -1) {
-                        showEasePicker(sTrack, rKey, aData, recEasePicker.x, recEasePicker.y, recEasePicker.width);
-                    }
-                }
-                return;
-            }
-            #endregion
-            #region scale inspector
-            if(sTrack is ScaleTrack) {
-                var sKey = (ScaleKey)key;
-                Rect rectScale = new Rect(0f, start_y, width_inspector - margin, 40f);
-                // euler
-                var nscale = EditorGUI.Vector3Field(rectScale, "Scale", sKey.scale);
-                if(sKey.scale != nscale) {
-                    aData.RegisterTakesUndo("Change Scale");
-                    sKey.scale = nscale;
-
-                    _dirtyTrackUpdate(ctake, sTrack);
-
-                    aData.RecordTakesChanged();
-                }
-                // if not last key, show ease
-                if(key.canTween && sKey != ((ScaleTrack)sTrack).keys[((ScaleTrack)sTrack).keys.Count - 1]) {
-                    Rect recEasePicker = new Rect(0f, rectScale.y + rectScale.height + height_inspector_space, width_inspector - margin, 0f);
-                    if(sTrack.getKeyIndexForFrame(_frame) > -1) {
-                        showEasePicker(sTrack, sKey, aData, recEasePicker.x, recEasePicker.y, recEasePicker.width);
-                    }
-                }
-                return;
-            }
-            #endregion
-            #region orientation inspector
-            if(sTrack is OrientationTrack) {
-                OrientationKey oKey = (OrientationKey)(sTrack as OrientationTrack).getKeyOnFrame(_frame);
-                // target
-                Rect rectLabelTarget = new Rect(0f, start_y, 50f, 22f);
-                GUI.Label(rectLabelTarget, "Target");
-                Rect rectObjectTarget = new Rect(rectLabelTarget.x + rectLabelTarget.width + 3f, rectLabelTarget.y + 3f, width_inspector - rectLabelTarget.width - 3f - margin - width_button_delete, 16f);
-                Transform ntgt = (Transform)EditorGUI.ObjectField(rectObjectTarget, oKey.GetTarget(aData.target), typeof(Transform), true);
-                if(oKey.GetTarget(aData.target) != ntgt) {
-                    aData.RegisterTakesUndo("Change Target");
-                    oKey.SetTarget(aData.target, ntgt, false);
-
-                    _dirtyTrackUpdate(ctake, sTrack);
-
-                    aData.RecordTakesChanged();
-                }
-                Rect rectNewTarget = new Rect(width_inspector - width_button_delete - margin, rectLabelTarget.y, width_button_delete, width_button_delete);
-                if(GUI.Button(rectNewTarget, "+")) {
-                    GenericMenu addTargetMenu = new GenericMenu();
-                    addTargetMenu.AddItem(new GUIContent("With Translation"), false, addTargetWithTranslationTrack, oKey);
-                    addTargetMenu.AddItem(new GUIContent("Without Translation"), false, addTargetWithoutTranslationTrack, oKey);
-                    addTargetMenu.ShowAsContext();
-                }
-                // if not last key, show ease
-                if(key.canTween && oKey != (sTrack as OrientationTrack).keys[(sTrack as OrientationTrack).keys.Count - 1]) {
-                    int oActionIndex = (sTrack as OrientationTrack).getKeyIndexForFrame(_frame);
-                    if(oActionIndex > -1 && oActionIndex + 1 < sTrack.keys.Count && (sTrack.keys[oActionIndex] as OrientationKey).GetTarget(aData.target) != (sTrack.keys[oActionIndex + 1] as OrientationKey).GetTarget(aData.target)) {
-                        Rect recEasePicker = new Rect(0f, rectNewTarget.y + rectNewTarget.height + height_inspector_space, width_inspector - margin, 0f);
-                        showEasePicker(sTrack, oKey, aData, recEasePicker.x, recEasePicker.y, recEasePicker.width);
-                    }
-                }
-                return;
-            }
-            #endregion
-            #region animation inspector
-            if(sTrack is UnityAnimationTrack) {
-                UnityAnimationKey aKey = (UnityAnimationKey)(sTrack as UnityAnimationTrack).getKeyOnFrame(_frame);
-                // animation clip
-                Rect rectLabelAnimClip = new Rect(0f, start_y, 100f, 22f);
-                GUI.Label(rectLabelAnimClip, "Animation Clip");
-                Rect rectObjectField = new Rect(rectLabelAnimClip.x + rectLabelAnimClip.width + 2f, rectLabelAnimClip.y + 3f, width_inspector - rectLabelAnimClip.width - margin, 16f);
-                AnimationClip nclip = (AnimationClip)EditorGUI.ObjectField(rectObjectField, aKey.amClip, typeof(AnimationClip), false);
-                if(aKey.amClip != nclip) {
-                    aData.RegisterTakesUndo("Change Animation Clip");
-                    aKey.amClip = nclip;
-                    // preview new position
-                    ctake.previewFrame(aData.target, ctake.selectedFrame);
-                    aData.RecordTakesChanged();
-                }
-                // wrap mode
-                Rect rectLabelWrapMode = new Rect(0f, rectLabelAnimClip.y + rectLabelAnimClip.height + height_inspector_space, 85f, 22f);
-                GUI.Label(rectLabelWrapMode, "Wrap Mode");
-                Rect rectPopupWrapMode = new Rect(rectLabelWrapMode.x + rectLabelWrapMode.width, rectLabelWrapMode.y + 3f, 120f, 22f);
-                WrapMode nwrapmode = indexToWrapMode(EditorGUI.Popup(rectPopupWrapMode, wrapModeToIndex(aKey.wrapMode), wrapModeNames));
-                if(aKey.wrapMode != nwrapmode) {
-                    aData.RegisterTakesUndo("Wrap Mode");
-                    aKey.wrapMode = nwrapmode;
-                    // preview new position
-                    ctake.previewFrame(aData.target, ctake.selectedFrame);
-                    aData.RecordTakesChanged();
-                }
-                // crossfade
-                Rect rectLabelCrossfade = new Rect(0f, rectLabelWrapMode.y + rectPopupWrapMode.height + height_inspector_space, 85f, 22f);
-                GUI.Label(rectLabelCrossfade, "Crossfade");
-                Rect rectToggleCrossfade = new Rect(rectLabelCrossfade.x + rectLabelCrossfade.width, rectLabelCrossfade.y + 2f, 20f, rectLabelCrossfade.height);
-                bool ncrossfade = EditorGUI.Toggle(rectToggleCrossfade, aKey.crossfade);
-                if(aKey.crossfade != ncrossfade) {
-                    aData.RegisterTakesUndo("Cross Fade");
-                    aKey.crossfade = ncrossfade;
-                    // preview new position
-                    ctake.previewFrame(aData.target, ctake.selectedFrame);
-                    aData.RecordTakesChanged();
-                }
-                Rect rectLabelCrossFadeTime = new Rect(rectToggleCrossfade.x + rectToggleCrossfade.width + 10f, rectLabelCrossfade.y, 35f, rectToggleCrossfade.height);
-                if(!aKey.crossfade) GUI.enabled = false;
-                GUI.Label(rectLabelCrossFadeTime, "Time");
-                Rect rectFloatFieldCrossFade = new Rect(rectLabelCrossFadeTime.x + rectLabelCrossFadeTime.width + margin, rectLabelCrossFadeTime.y + 3f, 40f, rectLabelCrossFadeTime.height);
-                float ncrossfadet = EditorGUI.FloatField(rectFloatFieldCrossFade, aKey.crossfadeTime);
-                if(aKey.crossfadeTime != ncrossfadet) {
-                    aData.RegisterTakesUndo("Cross Fade Time");
-                    aKey.crossfadeTime = ncrossfadet;
-                    aData.RecordTakesChanged();
-                }
-                Rect rectLabelSeconds = new Rect(rectFloatFieldCrossFade.x + rectFloatFieldCrossFade.width + margin, rectLabelCrossFadeTime.y, 20f, rectLabelCrossFadeTime.height);
-                GUI.Label(rectLabelSeconds, "s");
-                GUI.enabled = true;
-                return;
-            }
-            #endregion
-            #region audio inspector
-            if(sTrack is AudioTrack) {
-                AudioKey auKey = (AudioKey)(sTrack as AudioTrack).getKeyOnFrame(_frame);
-                // audio clip
-                Rect rectLabelAudioClip = new Rect(0f, start_y, 80f, 22f);
-                GUI.Label(rectLabelAudioClip, "Audio Clip");
-                Rect rectObjectField = new Rect(rectLabelAudioClip.x + rectLabelAudioClip.width + margin, rectLabelAudioClip.y + 3f, width_inspector - rectLabelAudioClip.width - margin, 16f);
-                AudioClip nclip = (AudioClip)EditorGUI.ObjectField(rectObjectField, auKey.audioClip, typeof(AudioClip), false);
-                if(auKey.audioClip != nclip) {
-                    aData.RegisterTakesUndo("Set Audio Clip");
-                    auKey.audioClip = nclip;
-                    aData.RecordTakesChanged();
-                }
-                Rect rectLabelLoop = new Rect(0f, rectLabelAudioClip.y + rectLabelAudioClip.height + height_inspector_space, 80f, 22f);
-                // loop audio
-                GUI.Label(rectLabelLoop, "Loop");
-                Rect rectToggleLoop = new Rect(rectLabelLoop.x + rectLabelLoop.width + margin, rectLabelLoop.y + 2f, 22f, 22f);
-                bool nloop = EditorGUI.Toggle(rectToggleLoop, auKey.loop);
-                if(auKey.loop != nloop) {
-                    aData.RegisterTakesUndo("Set Audio Loop");
-                    auKey.loop = nloop;
-                    aData.RecordTakesChanged();
-                }
-
-                // One Shot?
-                Rect rectLabelOneShot = new Rect(0f, rectLabelLoop.y + rectLabelLoop.height, 80f, 22f);
-                GUI.Label(rectLabelOneShot, "One Shot");
-                Rect rectToggleOneShot = new Rect(rectLabelOneShot.x + rectLabelOneShot.width + margin, rectLabelOneShot.y + 2f, 22f, 22f);
-                bool nOneShot = EditorGUI.Toggle(rectToggleOneShot, auKey.oneShot);
-                if(auKey.oneShot != nOneShot) {
-                    aData.RegisterTakesUndo("Set Audio One Shot");
-                    auKey.oneShot = nOneShot;
-                    aData.RecordTakesChanged();
-                }
-                return;
-            }
-            #endregion
-            #region property inspector
-            if(sTrack is PropertyTrack) {
-                PropertyTrack pTrack = sTrack as PropertyTrack;
-                PropertyKey pKey = (PropertyKey)pTrack.getKeyOnFrame(_frame);
-                // value
-                string propertyLabel = pTrack.getTrackType();
-                Rect rectField = new Rect(0f, start_y, width_inspector - margin, 22f);
-                bool isUpdated = false;
-                if((pTrack.valueType == PropertyTrack.ValueType.Integer) || (pTrack.valueType == PropertyTrack.ValueType.Long)) {
-                    int val = Convert.ToInt32(pKey.val);
-                    int nval = EditorGUI.IntField(rectField, propertyLabel, val);
-                    if(val != nval) {
-                        aData.RegisterTakesUndo("Change Property Value");
-                        pKey.val = nval;
-                        isUpdated = true;
-                    }
-                }
-                else if((pTrack.valueType == PropertyTrack.ValueType.Float) || (pTrack.valueType == PropertyTrack.ValueType.Double)) {
-                    float val = (float)pKey.val;
-                    float nval = EditorGUI.FloatField(rectField, propertyLabel, val);
-                    if(val != nval) {
-                        aData.RegisterTakesUndo("Change Property Value");
-                        pKey.val = nval;
-                        isUpdated = true;
-                    }
-                }
-                else if(pTrack.valueType == PropertyTrack.ValueType.Bool) {
-                    bool val = pKey.val > 0.0;
-                    bool nval = EditorGUI.Toggle(rectField, propertyLabel, val);
-                    if(val != nval) {
-                        aData.RegisterTakesUndo("Change Property Value");
-                        pKey.valb = nval;
-                        isUpdated = true;
-                    }
-                }
-                else if(pTrack.valueType == PropertyTrack.ValueType.String) {
-                    string val = pKey.valString;
-                    string nval = EditorGUI.TextField(rectField, propertyLabel, val);
-                    if(val != nval) {
-                        aData.RegisterTakesUndo("Change Property Value");
-                        pKey.valString = nval;
-                        isUpdated = true;
-                    }
-                }
-                else if(pTrack.valueType == PropertyTrack.ValueType.Vector2) {
-                    rectField.height = 40f;
-                    Vector2 nval = EditorGUI.Vector2Field(rectField, propertyLabel, pKey.vect2);
-                    if(pKey.vect2 != nval) {
-                        aData.RegisterTakesUndo("Change Property Value");
-                        pKey.vect2 = nval;
-                        isUpdated = true;
-                    }
-                }
-                else if(pTrack.valueType == PropertyTrack.ValueType.Vector3) {
-                    rectField.height = 40f;
-                    Vector3 nval = EditorGUI.Vector3Field(rectField, propertyLabel, pKey.vect3);
-                    if(pKey.vect3 != nval) {
-                        aData.RegisterTakesUndo("Change Property Value");
-                        pKey.vect3 = nval;
-                        isUpdated = true;
-                    }
-                }
-                else if(pTrack.valueType == PropertyTrack.ValueType.Color) {
-                    var nclr = RenderColorProperty(rectField, propertyLabel, pKey.color);
-                    if(pKey.color != nclr) {
-                        aData.RegisterTakesUndo("Change Property Value");
-                        pKey.color = nclr;
-                        isUpdated = true;
-                    }
-                }
-                else if(pTrack.valueType == PropertyTrack.ValueType.Rect) {
-                    rectField.height = 60f;
-                    Rect nrect = EditorGUI.RectField(rectField, propertyLabel, pKey.rect);
-                    if(pKey.rect != nrect) {
-                        aData.RegisterTakesUndo("Change Property Value");
-                        pKey.rect = nrect;
-                        isUpdated = true;
-                    }
-                }
-                else if(pTrack.valueType == PropertyTrack.ValueType.Vector4
-                    || pTrack.valueType == PropertyTrack.ValueType.Quaternion) {
-                    rectField.height = 40f;
-                    Vector4 nvec = EditorGUI.Vector4Field(rectField, propertyLabel, pKey.vect4);
-                    if(pKey.vect4 != nvec) {
-                        aData.RegisterTakesUndo("Change Property Value");
-                        pKey.vect4 = nvec;
-                        isUpdated = true;
-                    }
-                }
-                else if(pTrack.valueType == PropertyTrack.ValueType.Sprite) {
-                    UnityEngine.Object val = pKey.valObj;
-                    GUI.skin = null; EditorUtility.ResetDisplayControls();
-                    rectField.height = 16.0f;
-                    UnityEngine.Object nval = EditorGUI.ObjectField(rectField, val, typeof(Sprite), false);
-                    GUI.skin = skin; EditorUtility.ResetDisplayControls();
-                    if(val != nval) {
-                        aData.RegisterTakesUndo("Change Property Value");
-                        pKey.valObj = nval;
-                        isUpdated = true;
-                    }
-                }
-                else if(pTrack.valueType == PropertyTrack.ValueType.Enum) {
-                    rectField.height = 20.0f;
-                    GUI.Label(rectField, propertyLabel);
-                    rectField.y += rectField.height + 4.0f;
-                    rectField.height = 16f;
-                    Enum curEnum = Enum.ToObject(pTrack.GetCachedInfoType(aData.target), (int)pKey.val) as Enum;
-                    Enum newEnum = EditorGUI.EnumPopup(rectField, curEnum);
-                    if(curEnum != newEnum) {
-                        aData.RegisterTakesUndo("Change Property Value");
-                        pKey.val = Convert.ToDouble(newEnum);
-                        isUpdated = true;
-                    }
-                }
-                if(isUpdated) {
-                    _dirtyTrackUpdate(ctake, sTrack);
-                    aData.RecordTakesChanged();
-                }
-
-                // property ease, show if not last key (check for action; there is no rotation action for last key). do not show for morph channels, because it is shown before the parameters
-                // don't show on non-tweenable
-                if(pTrack.canTween && key.canTween && pKey != pTrack.keys[pTrack.keys.Count - 1]) {
-                    Rect rectEasePicker = new Rect(0f, rectField.y + rectField.height + height_inspector_space, width_inspector - margin, 0f);
-                    showEasePicker(sTrack, pKey, aData, rectEasePicker.x, rectEasePicker.y, rectEasePicker.width);
-                }
-                return;
-            }
-            #endregion
-            #region event set go active
-            if(sTrack is GOSetActiveTrack) {
-                GOSetActiveTrack goActiveTrack = sTrack as GOSetActiveTrack;
-                GOSetActiveKey pKey = (GOSetActiveKey)goActiveTrack.getKeyOnFrame(_frame);
-
-                bool newStartVal;
-
-                // value
-                if(sTrack.keys[0] == pKey) {
-                    Rect rectStartField = new Rect(0f, start_y, width_inspector - margin, 22f);
-
-                    newStartVal = EditorGUI.Toggle(rectStartField, "Default Active", goActiveTrack.startActive);
-
-                    start_y += rectStartField.height + 4.0f;
-                }
-                else
-                    newStartVal = goActiveTrack.startActive;
-
-                Rect rectField = new Rect(0f, start_y, width_inspector - margin, 22f);
-
-                bool newVal = EditorGUI.Toggle(rectField, sTrack.getTrackType(), pKey.setActive);
-
-                if(newStartVal != goActiveTrack.startActive) {
-                    aData.RegisterTakesUndo("Set GameObject Start Active");
-                    goActiveTrack.startActive = newStartVal;
-                    aData.RecordTakesChanged();
-                }
-
-                if(newVal != pKey.setActive) {
-                    aData.RegisterTakesUndo("Set GameObject Active");
-                    pKey.setActive = newVal;
-
-                    _dirtyTrackUpdate(ctake, sTrack);
-                    aData.RecordTakesChanged();
-                }
-                return;
-            }
-            #endregion
-            #region event inspector
-            if(sTrack is EventTrack) {
-                var obj = sTrack.GetTarget(aData.target);                
-                EventKey eKey = (EventKey)(sTrack as EventTrack).getKeyOnFrame(_frame);
-                var comp = eKey.getComponentFromTarget(obj);
-                var tgt = comp ? comp : obj;
-
-                //component selection
-                if(obj is GameObject && cachedComponentNames.Length > 1) {
-                    Rect rectCompPopup = new Rect(0f, start_y, width_inspector - margin, 22f);
-                    int curIndexComp = cachedIndexComponent;
-                    cachedIndexComponent = EditorGUI.Popup(rectCompPopup, curIndexComp, cachedComponentNames);
-                    if(cachedIndexComponent != curIndexComp || string.IsNullOrEmpty(eKey.methodName)) {
-                        eKey.SetComponentType(cachedIndexComponent == 0 ? "" : cachedComponentNames[cachedIndexComponent]);
-
-                        // update methodinfo cache
-                        comp = eKey.getComponentFromTarget(obj);
-
-                        tgt = comp ? comp : obj;
-
-                        updateCachedMethodInfoFromObject(tgt);
-
-                        //reset index method to 0
-                        if(cachedMethodInfo.Length <= 0)
-                            indexMethodInfo = -1;
-                        else {
-                            cachedIndexMethodInfo = 0;
-                            cacheSelectedMethodParameterInfos();
-
-                            eKey.setMethodInfo(comp, cachedMethodInfo[indexMethodInfo], cachedParameterInfos, false, null);
-                        }
-                                                
-                        aData.SetTakesDirty(); //don't really want to undo this
-                    }
-
-                    start_y += 26f;
-                }
-
-                // value
-                if(indexMethodInfo == -1 || cachedMethodInfo.Length <= 0) {
-                    Rect rectLabel = new Rect(0f, start_y, width_inspector - margin * 2f - 20f, 22f);
-                    GUI.Label(rectLabel, "No usable methods found.");
-                    Rect rectButton = new Rect(width_inspector - 20f - margin, start_y + 1f, 20f, 20f);
-                    if(GUI.Button(rectButton, "?")) {
-                        UnityEditor.EditorUtility.DisplayDialog("Usable Methods", "Methods should be made public and be placed in scripts that are not directly derived from Component or Behaviour to be used in the Event Track (MonoBehaviour is fine).", "Okay");
-                    }
-                    return;
-                }
-
-                bool sendMessageToggleEnabled = true;
-                Rect rectPopup = new Rect(0f, start_y, width_inspector - margin, 22f);
-                int curIndexMethod = indexMethodInfo;
-                indexMethodInfo = EditorGUI.Popup(rectPopup, curIndexMethod, cachedMethodNames);
-
-                bool showObjectMessage = false;
-                Type showObjectType = null;
-                foreach(ParameterInfo p in cachedParameterInfos) {
-                    Type elemType = p.ParameterType.GetElementType();
-                    if(elemType != null && (elemType.BaseType == typeof(UnityEngine.Object) || elemType.BaseType == typeof(UnityEngine.Behaviour))) {
-                        showObjectMessage = true;
-                        showObjectType = elemType;
-                        break;
-                    }
-                }
-                Rect rectLabelObjectMessage = new Rect(0f, rectPopup.y + rectPopup.height, width_inspector - margin * 2f - 20f, 0f);
-                if(showObjectMessage) {
-                    rectLabelObjectMessage.height = 22f;
-                    Rect rectButton = new Rect(width_inspector - 20f - margin, rectLabelObjectMessage.y + 1f, 20f, 20f);
-                    GUI.color = Color.red;
-                    GUI.Label(rectLabelObjectMessage, "* Use Object[] instead!");
-                    GUI.color = Color.white;
-                    if(GUI.Button(rectButton, "?")) {
-                        UnityEditor.EditorUtility.DisplayDialog("Use Object[] Parameter Instead", "Array types derived from Object, such as GameObject[], cannot be cast correctly on runtime.\n\nUse UnityEngine.Object[] as a parameter type and then cast to (GameObject[]) in your method.\n\nIf you're trying to pass components" + (showObjectType != typeof(GameObject) ? " (such as " + showObjectType.ToString() + ")" : "") + ", you should get them from the casted GameObjects on runtime.\n\nPlease see the documentation for more information.", "Okay");
-                    }
-                    return;
-                }
-
-                // changed, if index out of range, if no method and there's only one on the list
-                bool paramMatched = eKey.isMatch(cachedParameterInfos);
-                if((indexMethodInfo != curIndexMethod && indexMethodInfo < cachedMethodInfo.Length) || !paramMatched || string.IsNullOrEmpty(eKey.methodName)) {
-                    // process change
-                    // update cache when modifying varaibles
-                    if(eKey.setMethodInfo(tgt, cachedMethodInfo[indexMethodInfo], cachedParameterInfos, !paramMatched, null)) {
-                        aData.SetTakesDirty(); //don't really want to undo this
-
-                        // deselect fields
-                        GUIUtility.keyboardControl = 0;
-                    }
-                }
-                if(cachedParameterInfos.Length > 1 || !(tgt is Component)) {
-                    // if method has more than 1 parameter, set sendmessage to false, and disable toggle
-                    if(eKey.setUseSendMessage(false, null))
-                        aData.SetTakesDirty(); //don't really want to undo this
-
-                    sendMessageToggleEnabled = false;   // disable sendmessage toggle
-                }
-
-                GUI.enabled = sendMessageToggleEnabled;
-                Rect rectLabelSendMessage = new Rect(0f, rectLabelObjectMessage.y + rectLabelObjectMessage.height + height_inspector_space, 150f, 20f);
-                GUI.Label(rectLabelSendMessage, "Use SendMessage");
-                Rect rectToggleSendMessage = new Rect(rectLabelSendMessage.x + rectLabelSendMessage.width + margin, rectLabelSendMessage.y, 20f, 20f);
-                if(eKey.setUseSendMessage(GUI.Toggle(rectToggleSendMessage, eKey.useSendMessage, ""), delegate (EventKey k) { aData.RegisterTakesUndo("Set Event Key Method Mode"); })) {
-                    sTrack.updateCache(aData.target);
-                    aData.RecordTakesChanged();
-                }
-
-                GUI.enabled = !isPlaying;
-                Rect rectButtonSendMessageInfo = new Rect(width_inspector - 20f - margin, rectLabelSendMessage.y, 20f, 20f);
-                if(GUI.Button(rectButtonSendMessageInfo, "?")) {
-                    UnityEditor.EditorUtility.DisplayDialog("SendMessage vs. Invoke", "SendMessage can only be used with methods that have no more than one parameter (which can be an array).\n\nAnimator will use Invoke when SendMessage is disabled, which is slightly faster but requires caching when the take is played. Use SendMessage if caching is a problem.", "Okay");
-                }
-                if(cachedParameterInfos.Length > 0) {
-                    // show method parameters
-                    float scrollview_y = rectLabelSendMessage.y + rectLabelSendMessage.height + height_inspector_space;
-                    Rect rectScrollView = new Rect(0f, scrollview_y, width_inspector - margin, rect.height - scrollview_y);
-                    float width_view = width_inspector - margin - (height_event_parameters > rectScrollView.height ? 20f + margin : 0f);
-                    Rect rectView = new Rect(0f, 0f, width_view, height_event_parameters);
-                    inspectorScrollView = GUI.BeginScrollView(rectScrollView, inspectorScrollView, rectView);
-                    Rect rectField = new Rect(0f, 0f, width_view, 20f);
-                    float height_all_fields = 0f;
-                    // there are parameters
-                    for(int i = 0; i < cachedParameterInfos.Length; i++) {
-                        rectField.y += height_inspector_space;
-                        if(i > 0) height_all_fields += height_inspector_space;
-                        // show field for each parameter
-                        float height_field = 0f;
-                        showFieldFor(aData.target, eKey, rectField, i.ToString(), cachedParameterInfos[i].Name, eKey.parameters[i], cachedParameterInfos[i].ParameterType, 0, ref height_field);
-                        rectField.y += height_field;
-                        height_all_fields += height_field;
-                    }
-                    GUI.EndScrollView();
-                    height_all_fields += height_inspector_space;
-                    if(height_event_parameters != height_all_fields) height_event_parameters = height_all_fields;
-                }
-                return;
-            }
-            #endregion
-            #region camerea switcher inspector
-            if(sTrack is CameraSwitcherTrack) {
-                CameraSwitcherKey cKey = (CameraSwitcherKey)(sTrack as CameraSwitcherTrack).getKeyOnFrame(_frame);
-                bool showExtras = false;
-                bool notLastKey = cKey != (sTrack as CameraSwitcherTrack).keys[(sTrack as CameraSwitcherTrack).keys.Count - 1];
-                if(notLastKey) {
-                    int cActionIndex = (sTrack as CameraSwitcherTrack).getKeyIndexForFrame(_frame);
-                    showExtras = cActionIndex > -1 && !(sTrack.keys[cActionIndex] as CameraSwitcherKey).targetsAreEqual(aData.target);
-                }
-                float height_cs = 44f + height_inspector_space + (showExtras ? 22f * 3f + height_inspector_space * 3f : 0f);
-                Rect rectScrollView = new Rect(0f, start_y, width_inspector - margin, rect.height - start_y);
-                Rect rectView = new Rect(0f, 0f, rectScrollView.width - (height_cs > rectScrollView.height ? 20f : 0f), height_cs);
-                inspectorScrollView = GUI.BeginScrollView(rectScrollView, inspectorScrollView, rectView);
-                Rect rectLabelType = new Rect(0f, 0f, 56f, 22f);
-                GUI.Label(rectLabelType, "Type");
-                Rect rectSelGridType = new Rect(rectLabelType.x + rectLabelType.width + margin, rectLabelType.y, rectView.width - margin - rectLabelType.width, 22f);
-                int newType = GUI.SelectionGrid(rectSelGridType, cKey.type, new string[] { "Camera", "Color" }, 2);
-                if(cKey.type != newType) {
-                    aData.RegisterTakesUndo("Set Camera Track Type");
-                    cKey.type = newType;
-
-                    _dirtyTrackUpdate(ctake, sTrack);
-                    aData.RecordTakesChanged();
-                }
-                // camera
-                Rect rectLabelCameraColor = new Rect(0f, rectLabelType.y + rectLabelType.height + height_inspector_space, 56f, 22f);
-                GUI.Label(rectLabelCameraColor, (cKey.type == 0 ? "Camera" : "Color"));
-                Rect rectCameraColor = new Rect(rectLabelCameraColor.x + rectLabelCameraColor.width + margin, rectLabelCameraColor.y + 3f, rectView.width - rectLabelCameraColor.width - margin, 16f);
-                if(cKey.type == 0) {
-                    Camera newCam = (Camera)EditorGUI.ObjectField(rectCameraColor, cKey.GetCamera(aData.target), typeof(Camera), true);
-                    if(cKey.GetCamera(aData.target) != newCam) {
-                        aData.RegisterTakesUndo("Set Camera Track Camera");
-                        cKey.SetCamera(aData.target, newCam);
-
-                        _dirtyTrackUpdate(ctake, sTrack);
-                        aData.RecordTakesChanged();
-                    }
-                }
-                else {
-                    Color newColor = EditorGUI.ColorField(rectCameraColor, cKey.color);
-                    if(cKey.color != newColor) {
-                        aData.RegisterTakesUndo("Set Camera Track Color");
-                        cKey.color = newColor;
-
-                        _dirtyTrackUpdate(ctake, sTrack);
-                        aData.RecordTakesChanged();
-                    }
-                }
-                GUI.enabled = true;
-                // if not last key, show transition and ease
-                if(key.canTween && notLastKey && showExtras) {
-                    // transition picker
-                    Rect rectTransitionPicker = new Rect(0f, rectLabelCameraColor.y + rectLabelCameraColor.height + height_inspector_space, rectView.width, 22f);
-                    showTransitionPicker(sTrack, cKey, rectTransitionPicker.x, rectTransitionPicker.y, rectTransitionPicker.width);
-                    if(cKey.cameraFadeType != (int)CameraSwitcherKey.Fade.None) {
-                        // ease picker
-                        Rect rectEasePicker = new Rect(0f, rectTransitionPicker.y + rectTransitionPicker.height + height_inspector_space, rectView.width, 22f);
-                        showEasePicker(sTrack, cKey, aData, rectEasePicker.x, rectEasePicker.y, rectEasePicker.width);
-                        // render texture
-                        Rect rectLabelRenderTexture = new Rect(0f, rectEasePicker.y + rectEasePicker.height + height_inspector_space + 55.0f, 175f, 22f);
-                        GUI.Label(rectLabelRenderTexture, "Render Texture (Pro Only)");
-                        Rect rectToggleRenderTexture = new Rect(rectView.width - 22f, rectLabelRenderTexture.y, 22f, 22f);
-                        bool newStill = !GUI.Toggle(rectToggleRenderTexture, !cKey.still, "");
-                        if(cKey.still != newStill) {
-                            aData.RegisterTakesUndo("Set Camera Track Still");
-                            cKey.still = newStill;
-
-                            _dirtyTrackUpdate(ctake, sTrack);
-                            aData.RecordTakesChanged();
-                        }
-                    }
-                }
-                GUI.EndScrollView();
-                return;
-            }
-            #endregion            
-            #region material inspector
-            if(sTrack is MaterialTrack) {
-                MaterialTrack aTrack = sTrack as MaterialTrack;
-                MaterialKey aKey = (MaterialKey)aTrack.getKeyOnFrame(_frame);
-                // value
-                string propertyLabel = aTrack.getTrackType();
-                Rect rectField = new Rect(0f, start_y, width_inspector - margin, 22f);
-                bool isUpdated = false;
-                if(aTrack.propertyType == MaterialTrack.ValueType.Float) {
-                    float fval = EditorGUI.FloatField(rectField, propertyLabel, aKey.val);
-                    if(aKey.val != fval) {
-                        aData.RegisterTakesUndo("Change Material Property Value");
-                        aKey.val = fval;
-                        isUpdated = true;
-                    }
-                }
-                else if(aTrack.propertyType == MaterialTrack.ValueType.Range) {
-                    //grab limiters
-                    Material mat = aTrack.GetMaterial(aData.target);
-                    Shader shader = mat.shader;
-                    for(int i = 0; i < ShaderUtil.GetPropertyCount(shader); i++) { //grab the proper index and get the limiters
-                        if(aTrack.property == ShaderUtil.GetPropertyName(shader, i)) {
-                            float valMin = ShaderUtil.GetRangeLimits(shader, i, 1);
-                            float valMax = ShaderUtil.GetRangeLimits(shader, i, 2);
-
-                            //slider
-                            float fval = EditorGUI.Slider(rectField, propertyLabel, aKey.val, valMin, valMax);
-                            if(aKey.val != fval) {
-                                aData.RegisterTakesUndo("Change Material Property Value");
-                                aKey.val = fval;
-                                isUpdated = true;
-                            }
-                            break;
-                        }
-                    }
-                }
-                else if(aTrack.propertyType == MaterialTrack.ValueType.Vector) {
-                    rectField.height = 40f;
-                    Vector4 nvec = EditorGUI.Vector4Field(rectField, propertyLabel, aKey.vector);
-                    if(aKey.vector != nvec) {
-                        aData.RegisterTakesUndo("Change Material Property Value");
-                        aKey.vector = nvec;
-                        isUpdated = true;
-                    }
-                }
-                else if(aTrack.propertyType == MaterialTrack.ValueType.Color) {
-                    var nclr = RenderColorProperty(rectField, propertyLabel, aKey.color);
-                    if(aKey.color != nclr) {
-                        aData.RegisterTakesUndo("Change Material Property Value");
-                        aKey.color = nclr;
-                        isUpdated = true;
-                    }
-                }
-                else if(aTrack.propertyType == MaterialTrack.ValueType.TexEnv) {
-                    //texture
-                    GUI.skin = null; EditorUtility.ResetDisplayControls();
-                    rectField.height = 16.0f;
-                    Texture nval = EditorGUI.ObjectField(rectField, aKey.texture, typeof(Texture), false) as Texture;
-                    GUI.skin = skin; EditorUtility.ResetDisplayControls();
-
-                    if(aKey.texture != nval) {
-                        aData.RegisterTakesUndo("Change Material Property Value");
-                        aKey.texture = nval;
-                        isUpdated = true;
-                    }
-                }
-                else if(aTrack.propertyType == MaterialTrack.ValueType.TexOfs) {
-                    rectField.height = 40f;
-                    Vector2 nvec = EditorGUI.Vector2Field(rectField, propertyLabel, aKey.texOfs);
-                    if(aKey.texOfs != nvec) {
-                        aData.RegisterTakesUndo("Change Material Property Value");
-                        aKey.texOfs = nvec;
-                        isUpdated = true;
-                    }
-                }
-                else if(aTrack.propertyType == MaterialTrack.ValueType.TexScale) {
-                    rectField.height = 40f;
-                    Vector2 nvec = EditorGUI.Vector2Field(rectField, propertyLabel, aKey.texScale);
-                    if(aKey.texScale != nvec) {
-                        aData.RegisterTakesUndo("Change Material Property Value");
-                        aKey.texScale = nvec;
-                        isUpdated = true;
-                    }
-                }
-
-                if(isUpdated) {
-                    _dirtyTrackUpdate(ctake, sTrack);
-                    aData.RecordTakesChanged();
-                }
-
-                // property ease, show if not last key (check for action; there is no rotation action for last key). do not show for morph channels, because it is shown before the parameters
-                // don't show on non-tweenable
-                if(sTrack.canTween && key.canTween && key != sTrack.keys[sTrack.keys.Count - 1]) {
-                    Rect rectEasePicker = new Rect(0f, rectField.y + rectField.height + height_inspector_space, width_inspector - margin, 0f);
-                    showEasePicker(sTrack, key, aData, rectEasePicker.x, rectEasePicker.y, rectEasePicker.width);
-                }
-                return;
             }
             #endregion
         }
@@ -4314,7 +4314,7 @@ namespace M8.Animator.Edit {
                 GUILayout.EndHorizontal();
             }
         }
-        public static bool showEasePicker(Track track, Key key, AnimateEditControl aData, float x = -1f, float y = -1f, float width = -1f) {
+        public static bool showEasePicker(Track track, Key key, int keyInd, AnimateEditControl aData, float x = -1f, float y = -1f, float width = -1f) {
             bool didUpdate = false;
             if(x >= 0f && y >= 0f && width >= 0f) {
                 width--;
@@ -4329,9 +4329,7 @@ namespace M8.Animator.Edit {
                     aData.RegisterTakesUndo("Change Ease");
                     key.setEaseType((Ease)nease);
                     // update cache when modifying varaibles
-                    track.updateCache(aData.target);
-                    // preview new position
-                    window.aData.currentTake.previewFrame(aData.target, window.aData.currentTake.selectedFrame);
+                    window._dirtyKeyUpdate(window.aData.currentTake, track, key, keyInd);
                     // refresh component
                     didUpdate = true;
                     // refresh values
@@ -4382,7 +4380,8 @@ namespace M8.Animator.Edit {
                     aData.RegisterTakesUndo("Change Ease");
                     key.setEaseType((Ease)nease);
 
-                    window._dirtyTrackUpdate(window.aData.currentTake, track);
+                    // update cache when modifying varaibles
+                    window._dirtyKeyUpdate(window.aData.currentTake, track, key, keyInd);
 
                     // refresh component
                     didUpdate = true;
@@ -4401,9 +4400,19 @@ namespace M8.Animator.Edit {
                 //display specific variable for certain tweens
                 //TODO: only show this for specific tweens
                 if(!key.hasCustomEase()) {
-                    key.amplitude = EditorGUILayout.FloatField("Amplitude", key.amplitude);
+                    float namp = EditorGUILayout.FloatField("Amplitude", key.amplitude);
+                    if(key.amplitude != namp) {
+                        aData.RegisterTakesUndo("Change Amplitude");
+                        key.amplitude = namp;
+                        aData.RecordTakesChanged();
+                    }
 
-                    key.period = EditorGUILayout.FloatField("Period", key.period);
+                    float nperiod = EditorGUILayout.FloatField("Period", key.period);
+                    if(key.period != nperiod) {
+                        aData.RegisterTakesUndo("Change Period");
+                        key.period = nperiod;
+                        aData.RecordTakesChanged();
+                    }
                 }
             }
             return didUpdate;
