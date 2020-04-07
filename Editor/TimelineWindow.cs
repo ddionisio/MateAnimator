@@ -6097,6 +6097,7 @@ namespace M8.Animator.Edit {
             if(selectionHasKeys) {
                 contextMenu.AddSeparator("");
                 contextMenu.AddItem(new GUIContent("Reverse Key Order"), false, invokeContextMenuItem, 6);
+                contextMenu.AddItem(new GUIContent("Equalize Distances"), false, invokeContextMenuItem, 7);
             }
         }
         void invokeContextMenuItem(object _index) {
@@ -6112,6 +6113,48 @@ namespace M8.Animator.Edit {
             else if(index == 4) deleteSelectedKeys(true);
             else if(index == 5) contextSelectAllFrames();
             else if(index == 6) contextReverseKeys();
+            else if(index == 7) contextEqualizeDistances();
+        }
+        void contextEqualizeDistances() {
+            bool isChanged = false;
+
+            TakeEditControl takeEdit = TakeEditCurrent();
+            Take take = aData.currentTake;
+            foreach(int track_id in takeEdit.contextSelectionTrackIds) {
+                Track track = take.getTrack(track_id);
+
+                bool isKeysUpdated = false;
+
+                var keyGroups = takeEdit.getContextSelectionKeyGroupsForTrack(track);
+                for(int i = 0; i < keyGroups.Length; i++) {
+                    //only equalize if it's more than 2 keys
+                    var keys = keyGroups[i];
+                    if(keys.Length > 2) {
+                        if(!isChanged) {
+                            aData.RegisterTakesUndo("Equalize Key Distances");
+                            isChanged = true;
+                        }
+
+                        float frameLen = keys[keys.Length - 1].frame - keys[0].frame;
+                        float frameInc = frameLen / (keys.Length - 1);
+                        if(frameInc > 1f) { //ensure frames can be incremented in wholes
+                            float frameCur = keys[0].frame;
+                            for(int j = 1; j < keys.Length - 1; j++) {
+                                frameCur += frameInc;
+                                keys[j].frame = Mathf.RoundToInt(frameCur);
+                            }
+
+                            isKeysUpdated = true;
+                        }
+                    }
+                }
+
+                if(isKeysUpdated)
+                    track.updateCache(aData.target);
+            }
+
+            if(isChanged)
+                aData.RecordTakesChanged();
         }
         void contextReverseKeys() {
             aData.RegisterTakesUndo("Reverse Key Order");
@@ -6121,7 +6164,7 @@ namespace M8.Animator.Edit {
             foreach(int track_id in takeEdit.contextSelectionTrackIds) {
                 Track track = take.getTrack(track_id);
 
-                Key[] keys = takeEdit.getContextSelectionKeysForTrack(take.getTrack(track_id));
+                Key[] keys = takeEdit.getContextSelectionKeysForTrack(track);
                 for(int i = 0; i < keys.Length / 2; i++) {
                     Key key = keys[i];
                     Key rkey = keys[keys.Length - 1 - i];

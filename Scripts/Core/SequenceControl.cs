@@ -104,9 +104,13 @@ namespace M8.Animator {
 
                     track.buildSequenceStart(this);
 
-                    for(int keyInd = 0; keyInd < track.keys.Count; keyInd++) {
+                    for(int keyInd = 0; keyInd < track.keys.Count;) {
                         Key key = track.keys[keyInd];
                         key.build(this, track, keyInd, tgt);
+
+                        //skip some keys (e.g. paths)
+                        var c = key.keyCount;
+                        keyInd += c > 1 ? c - 1 : 1;
                     }
                 }
             }

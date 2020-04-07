@@ -376,6 +376,26 @@ namespace M8.Animator.Edit {
             return false;
         }
 
+        public Key[][] getContextSelectionKeyGroupsForTrack(Track track) {
+            if(contextSelection.Count == 0)
+                return new Key[0][];
+
+            var keyGroups = new Key[contextSelection.Count / 2][];
+
+            for(int i = 0; i < contextSelection.Count; i += 2) {
+                var keys = new List<Key>();
+
+                foreach(Key key in track.keys) {
+                    if(contextSelection[i] <= key.frame && contextSelection[i + 1] >= key.frame)
+                        keys.Add(key);
+                }
+
+                keyGroups[i / 2] = keys.ToArray();
+            }
+
+            return keyGroups;
+        }
+
         public Key[] getContextSelectionKeysForTrack(Track track) {
             List<Key> keys = new List<Key>();
 
@@ -384,7 +404,7 @@ namespace M8.Animator.Edit {
                     for(int i = 0; i < contextSelection.Count; i += 2) {
                         // if selection start frame > frame, break out of sorted list
                         if(contextSelection[i] > key.frame) break;
-                        if(contextSelection[i] <= key.frame && contextSelection[i + 1] >= key.frame) keys.Add(key);
+                        if(contextSelection[i] <= key.frame && contextSelection[i + 1] >= key.frame) { keys.Add(key); break; }
                     }
                 }
             }
