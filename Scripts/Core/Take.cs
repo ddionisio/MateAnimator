@@ -879,6 +879,11 @@ namespace M8.Animator {
             }
             return didKey;
         }
+
+        public void ClearEditCache() {
+            foreach(Track track in trackValues)
+                track.ClearEditCache();
+        }
 #endregion
 
 #region Other Fns

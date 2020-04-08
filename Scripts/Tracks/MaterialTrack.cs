@@ -247,99 +247,110 @@ namespace M8.Animator {
             }
         }
 
+        public override void ClearEditCache() {
+            mMat = null;
+            mMats = null;
+
+            if(mMatCtrl) {
+                mMatCtrl.Deinit();
+                mMatCtrl = null;
+            }
+            materialInstance = null;
+            mIsInit = false;
+        }
+
         public override void previewFrame(ITarget target, float frame, int frameRate, bool play, float playSpeed) {
             if(keys == null || keys.Count <= 0) {
                 return;
             }
 
-            //TODO: figure out how to preview frame during edit
-            if(Application.isPlaying) {
-                if(!mIsInit)
-                    Init(target);
+            if(!mIsInit) {
+                Init(target);
+                mMatCtrl.Apply(_matInd, GetMaterial(target));
+            }
 
-                int keyCount = keys.Count;
-                if(keyCount <= 0) return;
+            int keyCount = keys.Count;
+            if(keyCount <= 0) return;
 
-                int iFrame = Mathf.RoundToInt(frame);
+            int iFrame = Mathf.RoundToInt(frame);
 
-                var firstKey = keys[0] as MaterialKey;
+            var firstKey = keys[0] as MaterialKey;
 
-                //check if only key or behind first key
-                if(keyCount == 1 || iFrame <= firstKey.frame) {
-                    firstKey.ApplyValue(_propertyType, _property, mPropId, materialInstance);
-                    return;
-                }
+            //check if only key or behind first key
+            if(keyCount == 1 || iFrame <= firstKey.frame) {
+                firstKey.ApplyValue(_propertyType, _property, mPropId, materialInstance);
+                return;
+            }
 
-                // if lies on property action
-                for(int i = 0; i < keys.Count; i++) {
-                    MaterialKey key = keys[i] as MaterialKey;
+            // if lies on property action
+            for(int i = 0; i < keys.Count; i++) {
+                MaterialKey key = keys[i] as MaterialKey;
 
-                    if(key.endFrame == -1) //invalid
-                        continue;
+                if(key.endFrame == -1) //invalid
+                    continue;
 
-                    //end of last path in track?
-                    if(iFrame >= key.endFrame) {
-                        MaterialKey toKey = null;
-
-                        if(key.interp == Key.Interpolation.None) {
-                            if(i + 1 == keyCount)
-                                toKey = key;
-                        }
-                        else if(key.interp == Key.Interpolation.Linear || key.path == null) {
-                            if(i + 1 == keyCount - 1)
-                                toKey = (MaterialKey)keys[i + 1];
-                        }
-                        else if(key.interp == Key.Interpolation.Curve) {
-                            if(i + key.keyCount == keyCount) //end of last path in track?
-                                toKey = (MaterialKey)keys[i + key.keyCount - 1];
-                        }
-
-                        if(toKey != null) {
-                            toKey.ApplyValue(_propertyType, _property, mPropId, materialInstance);
-                            return;
-                        }
-
-                        continue;
-                    }
+                //end of last path in track?
+                if(iFrame >= key.endFrame) {
+                    MaterialKey toKey = null;
 
                     if(key.interp == Key.Interpolation.None) {
-                        key.ApplyValue(_propertyType, _property, mPropId, materialInstance);
+                        if(i + 1 == keyCount)
+                            toKey = key;
                     }
                     else if(key.interp == Key.Interpolation.Linear || key.path == null) {
-                        MaterialKey keyNext = i + 1 < keys.Count ? keys[i + 1] as MaterialKey : null;
-
-                        if(frame >= (float)key.endFrame && keyNext != null && (!keyNext.canTween || keyNext.endFrame != -1)) continue;
-                        // if no ease
-                        if(!key.canTween || keyNext == null) {
-                            key.ApplyValue(_propertyType, _property, mPropId, materialInstance);
-                            return;
-                        }
-                        // else find value using easing function
-
-                        float numFrames = (float)key.getNumberOfFrames(frameRate);
-
-                        float framePositionInAction = Mathf.Clamp(frame - (float)key.frame, 0f, numFrames);
-
-                        float t;
-
-                        if(key.hasCustomEase()) {
-                            t = Utility.EaseCustom(0.0f, 1.0f, framePositionInAction / key.getNumberOfFrames(frameRate), key.easeCurve);
-                        }
-                        else {
-                            var ease = Utility.GetEasingFunction((Ease)key.easeType);
-                            t = ease(framePositionInAction, key.getNumberOfFrames(frameRate), key.amplitude, key.period);
-                        }
-
-                        MaterialKey.ApplyValueLerp(_propertyType, _property, mPropId, materialInstance, key, keyNext, t);
+                        if(i + 1 == keyCount - 1)
+                            toKey = (MaterialKey)keys[i + 1];
                     }
                     else if(key.interp == Key.Interpolation.Curve) {
-                        float t = Mathf.Clamp01((frame - key.frame) / key.getNumberOfFrames(frameRate));
-
-                        MaterialKey.ApplyValuePath(_propertyType, _property, mPropId, materialInstance, key, t);
+                        if(i + key.keyCount == keyCount) //end of last path in track?
+                            toKey = (MaterialKey)keys[i + key.keyCount - 1];
                     }
 
-                    return;
+                    if(toKey != null) {
+                        toKey.ApplyValue(_propertyType, _property, mPropId, materialInstance);
+                        return;
+                    }
+
+                    continue;
                 }
+
+                if(key.interp == Key.Interpolation.None) {
+                    key.ApplyValue(_propertyType, _property, mPropId, materialInstance);
+                }
+                else if(key.interp == Key.Interpolation.Linear || key.path == null) {
+                    MaterialKey keyNext = i + 1 < keys.Count ? keys[i + 1] as MaterialKey : null;
+
+                    if(frame >= (float)key.endFrame && keyNext != null && (!keyNext.canTween || keyNext.endFrame != -1)) continue;
+                    // if no ease
+                    if(!key.canTween || keyNext == null) {
+                        key.ApplyValue(_propertyType, _property, mPropId, materialInstance);
+                        return;
+                    }
+                    // else find value using easing function
+
+                    float numFrames = (float)key.getNumberOfFrames(frameRate);
+
+                    float framePositionInAction = Mathf.Clamp(frame - (float)key.frame, 0f, numFrames);
+
+                    float t;
+
+                    if(key.hasCustomEase()) {
+                        t = Utility.EaseCustom(0.0f, 1.0f, framePositionInAction / key.getNumberOfFrames(frameRate), key.easeCurve);
+                    }
+                    else {
+                        var ease = Utility.GetEasingFunction((Ease)key.easeType);
+                        t = ease(framePositionInAction, key.getNumberOfFrames(frameRate), key.amplitude, key.period);
+                    }
+
+                    MaterialKey.ApplyValueLerp(_propertyType, _property, mPropId, materialInstance, key, keyNext, t);
+                }
+                else if(key.interp == Key.Interpolation.Curve) {
+                    float t = Mathf.Clamp01((frame - key.frame) / key.getNumberOfFrames(frameRate));
+
+                    MaterialKey.ApplyValuePath(_propertyType, _property, mPropId, materialInstance, key, t);
+                }
+
+                return;
             }
         }
 
@@ -411,7 +422,10 @@ namespace M8.Animator {
                 Material mat = GetMaterial(r);
                 if(mat) {
                     mMatCtrl = r.GetComponent<MaterialController>();
-                    if(!mMatCtrl) mMatCtrl = r.gameObject.AddComponent<MaterialController>();
+                    if(!mMatCtrl) {
+                        mMatCtrl = r.gameObject.AddComponent<MaterialController>();
+                        mMatCtrl.hideFlags = HideFlags.HideAndDontSave;
+                    }
                     materialInstance = mMatCtrl.Instance(_matInd, mat);
                 }
                 else

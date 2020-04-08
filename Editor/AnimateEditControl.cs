@@ -112,8 +112,24 @@ namespace M8.Animator.Edit {
             }
         }
 
+        public void ClearEditCache() {
+            if(mDataTarget == null)
+                return;
+
+            foreach(var take in takes)
+                take.ClearEditCache();
+        }
+
         public bool IsDataMatch(Animate aData) {
             return aData == mData;
+        }
+
+        /// <summary>
+        /// Preivew frame from current take.
+        /// </summary>
+        public void PreviewFrame(float _frame, bool orientationOnly = false, bool renderStill = true, bool play = false, float playSpeed = 1.0f) {
+            currentTake.previewFrame(target, _frame, orientationOnly, renderStill, play, playSpeed);
+            UnityEditorInternal.InternalEditorUtility.RepaintAllViews(); //TODO: figure out what repaints game view
         }
 
         public void RegisterUndo(string label, bool complete) {

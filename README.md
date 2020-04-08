@@ -15,10 +15,14 @@ Mega Morph has been removed.
 Import/Export, Code Generator are currently disabled. 
 
 ## Dependencies
-* DOTween v1.2.283
+* DOTween v1.2.335
 
 
 ## Updates
+### 4-8-20
+* All tracks with tweens can now use curved path.
+* Constant speed flag available for curved path. This is now defaulted to false, set it to true for the old version.
+* Material track now previews material tweens. Materials are reverted when saving, or closing the animator window. This is to avoid unwanted changes due to previewing.
 ### 1-30-20
 * Seems like using SerializeReference is screwing with object references with prefabs (I suspect that Unity doesn't seem to know how to properly update the object references in SerializeReference when instantiating a prefab). Serialization is reverted back to the old way.
 ### 1-28-20
@@ -47,14 +51,12 @@ Grab [MateAnimatorUpgrade](https://github.com/ddionisio/MateAnimatorUpgrade) and
 ## TODO
 * Package installation via Unity 2019.3's Package Manager through Github.
 * Track duplicate interface.
-* Unify pathing of position track to all other tracks.
 * Alternate Meta by using ID component (easier, less human error, but with a little bit more overhead)
 * Allow typing of function for SendMessage event key.
 * Import/Export - AnimateMeta sort of does this already, but adding a JSON format wouldn't hurt.
 * Add a way to make this tool extensive - will help with implementing tk2d, etc.
 * Work with MechAnim. - allow change state, etc. and preview.
 * Work with Particles - allow play/pause/stop and preview.
-* Scene preview for Material property track.
 * Camera transition fixes (too glitchy, maybe do something like UE4's director)
 
 ## DEBUG

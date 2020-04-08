@@ -457,7 +457,7 @@ namespace M8.Animator.Edit {
                 track.updateCache(aData.target);
                 aData.RecordTakesChanged();
                 // preview frame
-                aData.currentTake.previewFrame(aData.target, aData.currentTake.selectedFrame);
+                aData.PreviewFrame(aData.currentTake.selectedFrame);
                 if(TimelineWindow.window) TimelineWindow.window.Repaint();
                 this.Close();
             }

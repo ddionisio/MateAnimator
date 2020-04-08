@@ -33,7 +33,9 @@ namespace M8.Animator {
 
             Material matInst;
 	        if(!mMaterialInstances[matInd].TryGetValue(mat, out matInst)) {
-	            mMaterialInstances[matInd].Add(mat, matInst = new Material(mat));
+				matInst = new Material(mat);
+				matInst.hideFlags = HideFlags.DontSaveInBuild | HideFlags.DontSaveInEditor;
+				mMaterialInstances[matInd].Add(mat, matInst);
 	        }
 	        return matInst;
 	    }
@@ -51,25 +53,52 @@ namespace M8.Animator {
 	        return matInst;
 	    }
 
-	    void OnDestroy() {
-            if(mIsInit) {
-                for(int i = 0; i < mMaterialsCurrent.Length; i++) {
-                    foreach(var pair in mMaterialInstances[i]) {
-                        var mat = pair.Value;
-                        if(mat)
-                            Destroy(mat);
-                    }
+		public void DestroyInstances() {
+			if(!mIsInit)
+				return;
 
-                    mMaterialInstances[i].Clear();
-                }
-            }
-	    }
+			//revert materials
+			System.Array.Copy(mMaterialsDefault, mMaterialsCurrent, mMaterialsDefault.Length);
+			if(mRenderer)
+				mRenderer.sharedMaterials = mMaterialsCurrent;
+
+			//destroy instances
+			if(mMaterialInstances != null) {
+				for(int i = 0; i < mMaterialInstances.Length; i++) {
+					foreach(var pair in mMaterialInstances[i]) {
+						var mat = pair.Value;
+						if(mat) {
+							if(Application.isPlaying)
+								Destroy(mat);
+							else
+								DestroyImmediate(mat);
+						}
+					}
+
+					mMaterialInstances[i].Clear();
+				}
+			}
+		}
+
+		public void Deinit() {
+			DestroyInstances();
+
+			mMaterialsDefault = null;
+			mMaterialsCurrent = null;
+			mMaterialInstances = null;
+			mIsInit = false;
+		}
+
+	    void OnDestroy() {
+			DestroyInstances();
+		}
 
 	    void Init() {
             if(!mIsInit) {
                 mIsInit = true;
 
-                mRenderer = GetComponent<Renderer>();
+				if(!mRenderer)
+					mRenderer = GetComponent<Renderer>();
 
                 mMaterialsDefault = mRenderer.sharedMaterials;
 

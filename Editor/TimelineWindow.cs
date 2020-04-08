@@ -34,7 +34,9 @@ namespace M8.Animator.Edit {
                     if(_aData != null) {
                         //Debug.Log("previous data: " + _aData.name + " hash: " + _aData.GetHashCode());
 
-                        if(!_aData.isValid)
+                        if(_aData.isValid)
+                            _aData.ClearEditCache();
+                        else//if(!_aData.isValid)
                             EditDataCleanUp();
                     }
 
@@ -457,7 +459,7 @@ namespace M8.Animator.Edit {
 
                     if(OptionsFile.instance.resetTakeOnClose) {
                         // preview first frame
-                        aData.currentTake.previewFrame(aData.target, 1f);
+                        aData.PreviewFrame(1f);
                     }
                 }
 
@@ -701,7 +703,7 @@ namespace M8.Animator.Edit {
                     TakeEditCurrent().selectFrame(currentTake, TakeEditCurrent().selectedTrack, Mathf.FloorToInt(curFrame), numFramesToRender, false, false);
                     this.Repaint();
                 }
-                currentTake.previewFrame(aData.target, curFrame, false, true, play, playbackSpeedValue[playbackSpeedIndex]);
+                aData.PreviewFrame(curFrame, false, true, play, playbackSpeedValue[playbackSpeedIndex]);
             }
             else {
                 // autokey
@@ -712,7 +714,7 @@ namespace M8.Animator.Edit {
 
                     if(autoKeyMade) {
                         // preview frame, update orientation only
-                        currentTake.previewFrame(aData.target, currentTake.selectedFrame, true, false);
+                        aData.PreviewFrame(currentTake.selectedFrame, true, false);
 
                         aData.RecordTakesChanged();
 
@@ -3086,12 +3088,12 @@ namespace M8.Animator.Edit {
                 sTrack.updateCache(aData.target);
 
             // preview new position
-            ctake.previewFrame(aData.target, selectFrame);
+            aData.PreviewFrame(selectFrame);
         }
         void _dirtyTrackUpdate(Take ctake, Track sTrack) {
             sTrack.updateCache(aData.target);
             // preview new position
-            ctake.previewFrame(aData.target, ctake.selectedFrame);
+            aData.PreviewFrame(ctake.selectedFrame);
         }
         void showInspectorPropertiesFor(Rect rect, int _track, int _frame, Event e) {
             Take ctake = aData.currentTake;
@@ -3242,7 +3244,7 @@ namespace M8.Animator.Edit {
                         aData.RegisterTakesUndo("Change Animation Clip");
                         aKey.amClip = nclip;
                         // preview new position
-                        ctake.previewFrame(aData.target, ctake.selectedFrame);
+                        aData.PreviewFrame(ctake.selectedFrame);
                         aData.RecordTakesChanged();
                     }
                     // wrap mode
@@ -3254,7 +3256,7 @@ namespace M8.Animator.Edit {
                         aData.RegisterTakesUndo("Wrap Mode");
                         aKey.wrapMode = nwrapmode;
                         // preview new position
-                        ctake.previewFrame(aData.target, ctake.selectedFrame);
+                        aData.PreviewFrame(ctake.selectedFrame);
                         aData.RecordTakesChanged();
                     }
                     // crossfade
@@ -3266,7 +3268,7 @@ namespace M8.Animator.Edit {
                         aData.RegisterTakesUndo("Cross Fade");
                         aKey.crossfade = ncrossfade;
                         // preview new position
-                        ctake.previewFrame(aData.target, ctake.selectedFrame);
+                        aData.PreviewFrame(ctake.selectedFrame);
                         aData.RecordTakesChanged();
                     }
                     Rect rectLabelCrossFadeTime = new Rect(rectToggleCrossfade.x + rectToggleCrossfade.width + 10f, rectLabelCrossfade.y, 35f, rectToggleCrossfade.height);
@@ -4264,7 +4266,7 @@ namespace M8.Animator.Edit {
                     // update cache when modifying variables
                     track.updateCache(aData.target);
                     // preview current frame
-                    aData.currentTake.previewFrame(aData.target, aData.currentTake.selectedFrame);
+                    aData.PreviewFrame(aData.currentTake.selectedFrame);
                     // refresh values
                     TransitionPicker.refreshValues();
                     aData.RecordTakesChanged();
@@ -4299,7 +4301,7 @@ namespace M8.Animator.Edit {
                     // update cache when modifying variables
                     track.updateCache(aData.target);
                     // preview current frame
-                    aData.currentTake.previewFrame(aData.target, aData.currentTake.selectedFrame);
+                    aData.PreviewFrame(aData.currentTake.selectedFrame);
                     // refresh values
                     TransitionPicker.refreshValues();
                     aData.RecordTakesChanged();
@@ -4570,7 +4572,7 @@ namespace M8.Animator.Edit {
                     TakeEdit(take).offsetContextSelectionFramesBy(take, aData.target, endDragFrame - startDragFrame);
 
                     // preview selected frame
-                    take.previewFrame(aData.target, take.selectedFrame);
+                    aData.PreviewFrame(take.selectedFrame);
 
                     TakeEdit(take).ghostSelection.Clear();
                     aData.RecordTakesChanged();
@@ -4593,9 +4595,9 @@ namespace M8.Animator.Edit {
                     Track _track = TakeEditCurrent().getSelectedTrack(aData.currentTake);
                     //Key[] dKeys = 
                     _track.removeDuplicateKeys();
-                    
+
                     // preview selected frame
-                    aData.currentTake.previewFrame(aData.target, aData.currentTake.selectedFrame);
+                    aData.PreviewFrame(aData.currentTake.selectedFrame);
                     aData.RecordTakesChanged();
                 }
                 else if(dragType == (int)DragType.CursorZoom) {
@@ -5208,7 +5210,7 @@ namespace M8.Animator.Edit {
             // select frame
             TakeEditCurrent().selectFrame(aData.currentTake, _track, _frame, numFramesToRender, isShiftDown, isControlDown);
             // preview frame
-            aData.currentTake.previewFrame(aData.target, _frame);
+            aData.PreviewFrame(_frame);
             // set active object
             if(_track > -1) timelineSelectObjectFor(aData.currentTake.getTrack(_track));
             // deselect keyboard focus
@@ -5562,7 +5564,7 @@ namespace M8.Animator.Edit {
                         _addTrack<CameraSwitcherTrack>(object_window);
                         // preview selected frame
                         if(object_window != null)
-                            aData.currentTake.previewFrame(aData.target, TakeEditCurrent().selectedFrame);
+                            aData.PreviewFrame(TakeEditCurrent().selectedFrame);
                     }
                     break;
                 case SerializeType.GOSetActive:
@@ -5705,7 +5707,7 @@ namespace M8.Animator.Edit {
                 // add a key
                 addKey(TakeEditCurrent().selectedTrack, aData.currentTake.selectedFrame);
                 // preview current frame
-                aData.currentTake.previewFrame(aData.target, aData.currentTake.selectedFrame);
+                aData.PreviewFrame(aData.currentTake.selectedFrame);
             }
             timelineSelectFrame(TakeEditCurrent().selectedTrack, aData.currentTake.selectedFrame, false);
         }
@@ -6485,7 +6487,7 @@ namespace M8.Animator.Edit {
 
         void resetPreview() {
             // reset all object transforms to frame 1
-            aData.currentTake.previewFrame(aData.target, 1f);
+            aData.PreviewFrame(1f);
         }
         bool isTextEditting() {
             return isRenamingTrack != -1 || isRenamingTake || isRenamingGroup != 0;
