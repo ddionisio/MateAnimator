@@ -3845,6 +3845,40 @@ namespace M8.Animator.Edit {
             if(sTrack is TranslationTrack) {
                 var tTrack = (TranslationTrack)sTrack;
 
+                //display orient settings
+                if(keyTweenStart != null) {
+                    var tKey = (TranslationKey)keyTweenStart;
+
+                    var rectLabel = new Rect(0f, start_y - 1f, 40f, 22f);
+                    GUI.Label(rectLabel, "Orient");
+
+                    var rectPopup = new Rect(rectLabel.x + rectLabel.width + 2f, start_y + 3f, width_inspector - margin - rectLabel.width - 3f, 22f);
+                    OrientMode orientMode = (OrientMode)EditorGUI.EnumPopup(rectPopup, tKey.orientMode);
+                    if(orientMode != tKey.orientMode) {
+                        aData.RegisterTakesUndo("Set Orient Mode");
+                        tKey.orientMode = orientMode;
+                        aData.RecordTakesChanged();
+                    }
+
+                    start_y = rectPopup.yMax + height_inspector_space;
+
+                    //display lock axis settings
+                    if(orientMode == OrientMode.ThreeDimension) {
+                        rectLabel = new Rect(0f, start_y - 1f, 65f, 22f);
+                        GUI.Label(rectLabel, "Lock Axis");
+
+                        rectPopup = new Rect(rectLabel.x + rectLabel.width + 2f, start_y + 3f, width_inspector - margin - rectLabel.width - 3f, 22f);
+                        AxisFlags lockAxis = (AxisFlags)EditorGUI.EnumFlagsField(rectPopup, tKey.orientLockAxis);
+                        if(lockAxis != tKey.orientLockAxis) {
+                            aData.RegisterTakesUndo("Set Orient Lock Axis");
+                            tKey.orientLockAxis = lockAxis;
+                            aData.RecordTakesChanged();
+                        }
+
+                        start_y = rectPopup.yMax + height_inspector_space;
+                    }
+                }
+
                 //display pixel snap option
                 var rectPosition = new Rect(0f, start_y, width_inspector - margin, 20.0f);
                 bool nPixelSnap = EditorGUI.Toggle(rectPosition, "Pixel-Snap", tTrack.pixelSnap);

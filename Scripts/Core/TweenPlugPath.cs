@@ -11,15 +11,6 @@ using DG.Tweening.Plugins.Core;
 using DG.Tweening.Plugins.Options;
 
 namespace M8.Animator {
-    public struct TweenPlugPathOptions : IPlugOptions {
-        //ensure these are set to the same as tween (they are not accessible for some reason)
-        public LoopType loopType;
-
-        public void Reset() {
-            loopType = LoopType.Restart;
-        }
-    }
-
     [System.Serializable]
     public struct TweenPlugPathPoint {
         public float[] vals;
@@ -213,7 +204,7 @@ namespace M8.Animator {
         }
         ITweenPlugPathDecoder _decoder;
 
-        private TweenPlugPathPoint cachePoint {
+        public TweenPlugPathPoint cachePoint {
             get {
                 if(!_cachePoint.HasValue)
                     _cachePoint = new TweenPlugPathPoint(pathPointCount);
@@ -551,8 +542,8 @@ namespace M8.Animator {
             p.lengthsTable = null;
         }
     }
-
-    public abstract class TweenPlugPathBase<T> : ABSTweenPlugin<T, TweenPlugPath, TweenPlugPathOptions> {
+    //TweenPlugPathOptions
+    public abstract class TweenPlugPathBase<T, TOptions> : ABSTweenPlugin<T, TweenPlugPath, TOptions> where TOptions : struct, IPlugOptions {
         public const float MinLookAhead = 0.0001f;
 
         protected abstract bool ApproximatelyEqual(TweenPlugPathPoint pt, T curVal);
@@ -560,35 +551,36 @@ namespace M8.Animator {
         protected abstract TweenPlugPathPoint CreatePoint(T src);
         protected abstract T GetValue(TweenPlugPathPoint pt);
 
-        public override void Reset(TweenerCore<T, TweenPlugPath, TweenPlugPathOptions> t) {
+        public override void Reset(TweenerCore<T, TweenPlugPath, TOptions> t) {
             t.startValue = t.endValue = t.changeValue = null;
         }
 
-        public override void SetFrom(TweenerCore<T, TweenPlugPath, TweenPlugPathOptions> t, bool isRelative) { }
-        public override void SetFrom(TweenerCore<T, TweenPlugPath, TweenPlugPathOptions> t, TweenPlugPath fromValue, bool setImmediately) { }
+        public override void SetFrom(TweenerCore<T, TweenPlugPath, TOptions> t, bool isRelative) { }
+        public override void SetFrom(TweenerCore<T, TweenPlugPath, TOptions> t, TweenPlugPath fromValue, bool setImmediately) { }
 
-        public override void SetRelativeEndValue(TweenerCore<T, TweenPlugPath, TweenPlugPathOptions> t) { }
+        public override void SetRelativeEndValue(TweenerCore<T, TweenPlugPath, TOptions> t) { }
 
-        public override TweenPlugPath ConvertToStartValue(TweenerCore<T, TweenPlugPath, TweenPlugPathOptions> t, T value) {
+        public override TweenPlugPath ConvertToStartValue(TweenerCore<T, TweenPlugPath, TOptions> t, T value) {
             // Simply sets the same path as start and endValue
             return t.endValue;
         }
 
         // Simply setup change value, paths will always be finalized via serialization from animator editor
-        public override void SetChangeValue(TweenerCore<T, TweenPlugPath, TweenPlugPathOptions> t) {
+        public override void SetChangeValue(TweenerCore<T, TweenPlugPath, TOptions> t) {
             // Set changeValue as a reference to endValue
             t.changeValue = t.endValue;
         }
 
-        public override float GetSpeedBasedDuration(TweenPlugPathOptions options, float unitsXSecond, TweenPlugPath changeValue) {
+        public override float GetSpeedBasedDuration(TOptions options, float unitsXSecond, TweenPlugPath changeValue) {
             return changeValue.length / unitsXSecond;
         }
 
-        public override void EvaluateAndApply(TweenPlugPathOptions options, Tween t, bool isRelative, DOGetter<T> getter, DOSetter<T> setter, float elapsed, TweenPlugPath startValue, TweenPlugPath changeValue, float duration, bool usingInversePosition, UpdateNotice updateNotice) {
-            if(options.loopType == LoopType.Incremental && !changeValue.isClosed) {
+        public override void EvaluateAndApply(TOptions options, Tween t, bool isRelative, DOGetter<T> getter, DOSetter<T> setter, float elapsed, TweenPlugPath startValue, TweenPlugPath changeValue, float duration, bool usingInversePosition, UpdateNotice updateNotice) {            
+            //TODO: figure out how to access tween's loopType
+            /*if(t.loopType == LoopType.Incremental && !changeValue.isClosed) {
                 int increment = (t.IsComplete() ? t.CompletedLoops() - 1 : t.CompletedLoops());
                 if(increment > 0) changeValue = changeValue.CloneIncremental(increment);
-            }
+            }*/
 
             float pathPerc = EaseManager.Evaluate(t, elapsed, duration, t.easeOvershootOrAmplitude, t.easePeriod);
 
@@ -598,130 +590,130 @@ namespace M8.Animator {
         }
     }
 
-    public class TweenPlugPathFloat : TweenPlugPathBase<float> {
+    public class TweenPlugPathFloat : TweenPlugPathBase<float, TWeenPlugNoneOptions> {
         protected override bool ApproximatelyEqual(TweenPlugPathPoint pt, float curVal) { return pt.Approximately(curVal); }
         protected override bool Equal(TweenPlugPathPoint pt, float curVal) { return pt.valueFloat == curVal; }
         protected override TweenPlugPathPoint CreatePoint(float src) { return new TweenPlugPathPoint(src); }
         protected override float GetValue(TweenPlugPathPoint pt) { return pt.valueFloat; }
 
-        public static ABSTweenPlugin<float, TweenPlugPath, TweenPlugPathOptions> Get() {
+        public static TweenPlugPathFloat Get() {
             if(mInstance == null) mInstance = new TweenPlugPathFloat();
             return mInstance;
         }
         private static TweenPlugPathFloat mInstance;
     }
 
-    public class TweenPlugPathVector2 : TweenPlugPathBase<Vector2> {
+    public class TweenPlugPathVector2 : TweenPlugPathBase<Vector2, TWeenPlugNoneOptions> {
         protected override bool ApproximatelyEqual(TweenPlugPathPoint pt, Vector2 curVal) { return pt.Approximately(curVal); }
         protected override bool Equal(TweenPlugPathPoint pt, Vector2 curVal) { return pt.valueVector2 == curVal; }
         protected override TweenPlugPathPoint CreatePoint(Vector2 src) { return new TweenPlugPathPoint(src); }
         protected override Vector2 GetValue(TweenPlugPathPoint pt) { return pt.valueVector2; }
 
-        public static ABSTweenPlugin<Vector2, TweenPlugPath, TweenPlugPathOptions> Get() {
+        public static TweenPlugPathVector2 Get() {
             if(mInstance == null) mInstance = new TweenPlugPathVector2();
             return mInstance;
         }
         private static TweenPlugPathVector2 mInstance;
     }
 
-    public class TweenPlugPathVector3 : TweenPlugPathBase<Vector3> {
+    public class TweenPlugPathVector3 : TweenPlugPathBase<Vector3, TWeenPlugNoneOptions> {
         protected override bool ApproximatelyEqual(TweenPlugPathPoint pt, Vector3 curVal) { return pt.Approximately(curVal); }
         protected override bool Equal(TweenPlugPathPoint pt, Vector3 curVal) { return pt.valueVector3 == curVal; }
         protected override TweenPlugPathPoint CreatePoint(Vector3 src) { return new TweenPlugPathPoint(src); }
         protected override Vector3 GetValue(TweenPlugPathPoint pt) { return pt.valueVector3; }
 
-        public static ABSTweenPlugin<Vector3, TweenPlugPath, TweenPlugPathOptions> Get() {
+        public static TweenPlugPathVector3 Get() {
             if(mInstance == null) mInstance = new TweenPlugPathVector3();
             return mInstance;
         }
         private static TweenPlugPathVector3 mInstance;
     }
 
-    public class TweenPlugPathVector4 : TweenPlugPathBase<Vector4> {
+    public class TweenPlugPathVector4 : TweenPlugPathBase<Vector4, TWeenPlugNoneOptions> {
         protected override bool ApproximatelyEqual(TweenPlugPathPoint pt, Vector4 curVal) { return pt.Approximately(curVal); }
         protected override bool Equal(TweenPlugPathPoint pt, Vector4 curVal) { return pt.valueVector4 == curVal; }
         protected override TweenPlugPathPoint CreatePoint(Vector4 src) { return new TweenPlugPathPoint(src); }
         protected override Vector4 GetValue(TweenPlugPathPoint pt) { return pt.valueVector4; }
 
-        public static ABSTweenPlugin<Vector4, TweenPlugPath, TweenPlugPathOptions> Get() {
+        public static TweenPlugPathVector4 Get() {
             if(mInstance == null) mInstance = new TweenPlugPathVector4();
             return mInstance;
         }
         private static TweenPlugPathVector4 mInstance;
     }
 
-    public class TweenPlugPathColor : TweenPlugPathBase<Color> {
+    public class TweenPlugPathColor : TweenPlugPathBase<Color, TWeenPlugNoneOptions> {
         protected override bool ApproximatelyEqual(TweenPlugPathPoint pt, Color curVal) { return pt.Approximately(curVal); }
         protected override bool Equal(TweenPlugPathPoint pt, Color curVal) { return pt.valueColor == curVal; }
         protected override TweenPlugPathPoint CreatePoint(Color src) { return new TweenPlugPathPoint(src); }
         protected override Color GetValue(TweenPlugPathPoint pt) { return pt.valueVector4; }
 
-        public static ABSTweenPlugin<Color, TweenPlugPath, TweenPlugPathOptions> Get() {
+        public static TweenPlugPathColor Get() {
             if(mInstance == null) mInstance = new TweenPlugPathColor();
             return mInstance;
         }
         private static TweenPlugPathColor mInstance;
     }
 
-    public class TweenPlugPathRect : TweenPlugPathBase<Rect> {
+    public class TweenPlugPathRect : TweenPlugPathBase<Rect, TWeenPlugNoneOptions> {
         protected override bool ApproximatelyEqual(TweenPlugPathPoint pt, Rect curVal) { return pt.Approximately(curVal); }
         protected override bool Equal(TweenPlugPathPoint pt, Rect curVal) { return pt.valueRect == curVal; }
         protected override TweenPlugPathPoint CreatePoint(Rect src) { return new TweenPlugPathPoint(src); }
         protected override Rect GetValue(TweenPlugPathPoint pt) { return pt.valueRect; }
 
-        public static ABSTweenPlugin<Rect, TweenPlugPath, TweenPlugPathOptions> Get() {
+        public static TweenPlugPathRect Get() {
             if(mInstance == null) mInstance = new TweenPlugPathRect();
             return mInstance;
         }
         private static TweenPlugPathRect mInstance;
     }
 
-    public class TweenPlugPathInt : TweenPlugPathBase<int> {
+    public class TweenPlugPathInt : TweenPlugPathBase<int, TWeenPlugNoneOptions> {
         protected override bool ApproximatelyEqual(TweenPlugPathPoint pt, int curVal) { return pt.Approximately(curVal); }
         protected override bool Equal(TweenPlugPathPoint pt, int curVal) { return pt.valueFloat == curVal; }
         protected override TweenPlugPathPoint CreatePoint(int src) { return new TweenPlugPathPoint(src); }
         protected override int GetValue(TweenPlugPathPoint pt) { return Mathf.RoundToInt(pt.valueFloat); }
 
-        public static ABSTweenPlugin<int, TweenPlugPath, TweenPlugPathOptions> Get() {
+        public static TweenPlugPathInt Get() {
             if(mInstance == null) mInstance = new TweenPlugPathInt();
             return mInstance;
         }
         private static TweenPlugPathInt mInstance;
     }
 
-    public class TweenPlugPathLong : TweenPlugPathBase<long> {
+    public class TweenPlugPathLong : TweenPlugPathBase<long, TWeenPlugNoneOptions> {
         protected override bool ApproximatelyEqual(TweenPlugPathPoint pt, long curVal) { return pt.Approximately(curVal); }
         protected override bool Equal(TweenPlugPathPoint pt, long curVal) { return pt.valueFloat == curVal; }
         protected override TweenPlugPathPoint CreatePoint(long src) { return new TweenPlugPathPoint(src); }
         protected override long GetValue(TweenPlugPathPoint pt) { return Mathf.RoundToInt(pt.valueFloat); }
 
-        public static ABSTweenPlugin<long, TweenPlugPath, TweenPlugPathOptions> Get() {
+        public static TweenPlugPathLong Get() {
             if(mInstance == null) mInstance = new TweenPlugPathLong();
             return mInstance;
         }
         private static TweenPlugPathLong mInstance;
     }
 
-    public class TweenPlugPathDouble : TweenPlugPathBase<double> {
+    public class TweenPlugPathDouble : TweenPlugPathBase<double, TWeenPlugNoneOptions> {
         protected override bool ApproximatelyEqual(TweenPlugPathPoint pt, double curVal) { return pt.Approximately((float)curVal); }
         protected override bool Equal(TweenPlugPathPoint pt, double curVal) { return pt.valueFloat == curVal; }
         protected override TweenPlugPathPoint CreatePoint(double src) { return new TweenPlugPathPoint((float)src); }
         protected override double GetValue(TweenPlugPathPoint pt) { return pt.valueFloat; }
 
-        public static ABSTweenPlugin<double, TweenPlugPath, TweenPlugPathOptions> Get() {
+        public static TweenPlugPathDouble Get() {
             if(mInstance == null) mInstance = new TweenPlugPathDouble();
             return mInstance;
         }
         private static TweenPlugPathDouble mInstance;
     }
 
-    public class TweenPlugPathEuler : TweenPlugPathBase<Quaternion> {
+    public class TweenPlugPathEuler : TweenPlugPathBase<Quaternion, TWeenPlugNoneOptions> {
         protected override bool ApproximatelyEqual(TweenPlugPathPoint pt, Quaternion curVal) { return pt.Approximately(curVal.eulerAngles); }
         protected override bool Equal(TweenPlugPathPoint pt, Quaternion curVal) { return pt.valueVector3 == curVal.eulerAngles; }
         protected override TweenPlugPathPoint CreatePoint(Quaternion src) { return new TweenPlugPathPoint(src.eulerAngles); }
         protected override Quaternion GetValue(TweenPlugPathPoint pt) { return Quaternion.Euler(pt.valueVector3); }
 
-        public static ABSTweenPlugin<Quaternion, TweenPlugPath, TweenPlugPathOptions> Get() {
+        public static TweenPlugPathEuler Get() {
             if(mInstance == null) mInstance = new TweenPlugPathEuler();
             return mInstance;
         }

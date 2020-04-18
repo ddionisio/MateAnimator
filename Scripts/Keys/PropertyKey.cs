@@ -167,80 +167,80 @@ namespace M8.Animator {
         Tweener GenerateSingleValueTweener(SequenceControl seq, PropertyTrack propTrack, float time, Component comp) {
             switch(propTrack.valueType) {
                 case PropertyTrack.ValueType.Integer: {
-                        int _val = System.Convert.ToInt32(val);
-                        var tween = DOTween.To(TweenPlugValueSet<int>.Get(), GenerateGetter<int>(propTrack, comp), GenerateSetter<int>(propTrack, comp), _val, time);
-                        return tween;
-                    }
+                    int _val = System.Convert.ToInt32(val);
+                    var tween = DOTween.To(TweenPlugValueSet<int>.Get(), GenerateGetter<int>(propTrack, comp), GenerateSetter<int>(propTrack, comp), _val, time);
+                    return tween;
+                }
                 case PropertyTrack.ValueType.Float: {
-                        float _val = System.Convert.ToSingle(val);
-                        var tween = DOTween.To(TweenPlugValueSet<float>.Get(), GenerateGetter<float>(propTrack, comp), GenerateSetter<float>(propTrack, comp), _val, time);
-                        return tween;
-                    }
+                    float _val = System.Convert.ToSingle(val);
+                    var tween = DOTween.To(TweenPlugValueSet<float>.Get(), GenerateGetter<float>(propTrack, comp), GenerateSetter<float>(propTrack, comp), _val, time);
+                    return tween;
+                }
                 case PropertyTrack.ValueType.Double: {
-                        var tween = DOTween.To(TweenPlugValueSet<double>.Get(), GenerateGetter<double>(propTrack, comp), GenerateSetter<double>(propTrack, comp), val, time);
-                        return tween;
-                    }
+                    var tween = DOTween.To(TweenPlugValueSet<double>.Get(), GenerateGetter<double>(propTrack, comp), GenerateSetter<double>(propTrack, comp), val, time);
+                    return tween;
+                }
                 case PropertyTrack.ValueType.Long: {
-                        long _val = System.Convert.ToInt64(val);
-                        var tween = DOTween.To(TweenPlugValueSet<long>.Get(), GenerateGetter<long>(propTrack, comp), GenerateSetter<long>(propTrack, comp), _val, time);
-                        return tween;
-                    }
+                    long _val = System.Convert.ToInt64(val);
+                    var tween = DOTween.To(TweenPlugValueSet<long>.Get(), GenerateGetter<long>(propTrack, comp), GenerateSetter<long>(propTrack, comp), _val, time);
+                    return tween;
+                }
                 case PropertyTrack.ValueType.Vector2: {
-                        Vector2 _val = vect2;
-                        var tween = DOTween.To(TweenPlugValueSet<Vector2>.Get(), GenerateGetter<Vector2>(propTrack, comp), GenerateSetter<Vector2>(propTrack, comp), _val, time);
-                        return tween;
-                    }
+                    Vector2 _val = vect2;
+                    var tween = DOTween.To(TweenPlugValueSet<Vector2>.Get(), GenerateGetter<Vector2>(propTrack, comp), GenerateSetter<Vector2>(propTrack, comp), _val, time);
+                    return tween;
+                }
                 case PropertyTrack.ValueType.Vector3: {
-                        Vector3 _val = vect3;
-                        var tween = DOTween.To(TweenPlugValueSet<Vector3>.Get(), GenerateGetter<Vector3>(propTrack, comp), GenerateSetter<Vector3>(propTrack, comp), _val, time);
-                        return tween;
-                    }
+                    Vector3 _val = vect3;
+                    var tween = DOTween.To(TweenPlugValueSet<Vector3>.Get(), GenerateGetter<Vector3>(propTrack, comp), GenerateSetter<Vector3>(propTrack, comp), _val, time);
+                    return tween;
+                }
                 case PropertyTrack.ValueType.Color: {
-                        Color _val = color;
-                        var tween = DOTween.To(TweenPlugValueSet<Color>.Get(), GenerateGetter<Color>(propTrack, comp), GenerateSetter<Color>(propTrack, comp), _val, time);
-                        return tween;
-                    }
+                    Color _val = color;
+                    var tween = DOTween.To(TweenPlugValueSet<Color>.Get(), GenerateGetter<Color>(propTrack, comp), GenerateSetter<Color>(propTrack, comp), _val, time);
+                    return tween;
+                }
                 case PropertyTrack.ValueType.Rect: {
-                        Rect _val = rect;
-                        var tween = DOTween.To(TweenPlugValueSet<Rect>.Get(), GenerateGetter<Rect>(propTrack, comp), GenerateSetter<Rect>(propTrack, comp), _val, time);
-                        return tween;
-                    }
+                    Rect _val = rect;
+                    var tween = DOTween.To(TweenPlugValueSet<Rect>.Get(), GenerateGetter<Rect>(propTrack, comp), GenerateSetter<Rect>(propTrack, comp), _val, time);
+                    return tween;
+                }
                 case PropertyTrack.ValueType.Vector4: {
-                        var tween = DOTween.To(TweenPlugValueSet<Vector4>.Get(), GenerateGetter<Vector4>(propTrack, comp), GenerateSetter<Vector4>(propTrack, comp), vect4, time);
-                        return tween;
-                    }
+                    var tween = DOTween.To(TweenPlugValueSet<Vector4>.Get(), GenerateGetter<Vector4>(propTrack, comp), GenerateSetter<Vector4>(propTrack, comp), vect4, time);
+                    return tween;
+                }
                 case PropertyTrack.ValueType.Quaternion: {
-                        Quaternion _val = quat;
-                        var tween = DOTween.To(TweenPlugValueSet<Quaternion>.Get(), GenerateGetter<Quaternion>(propTrack, comp), GenerateSetter<Quaternion>(propTrack, comp), _val, time);
-                        return tween;
-                    }
+                    Quaternion _val = quat;
+                    var tween = DOTween.To(TweenPlugValueSet<Quaternion>.Get(), GenerateGetter<Quaternion>(propTrack, comp), GenerateSetter<Quaternion>(propTrack, comp), _val, time);
+                    return tween;
+                }
                 case PropertyTrack.ValueType.Bool: {
-                        bool _val = valb;
-                        var tween = DOTween.To(TweenPlugValueSet<bool>.Get(), GenerateGetter<bool>(propTrack, comp), GenerateSetter<bool>(propTrack, comp), _val, time);
-                        return tween;
-                    }
+                    bool _val = valb;
+                    var tween = DOTween.To(TweenPlugValueSet<bool>.Get(), GenerateGetter<bool>(propTrack, comp), GenerateSetter<bool>(propTrack, comp), _val, time);
+                    return tween;
+                }
                 case PropertyTrack.ValueType.String: {
-                        var tween = DOTween.To(TweenPlugValueSet<string>.Get(), GenerateGetter<string>(propTrack, comp), GenerateSetter<string>(propTrack, comp), valString, time);
-                        return tween;
-                    }
+                    var tween = DOTween.To(TweenPlugValueSet<string>.Get(), GenerateGetter<string>(propTrack, comp), GenerateSetter<string>(propTrack, comp), valString, time);
+                    return tween;
+                }
                 case PropertyTrack.ValueType.Sprite: {
-                        var spriteRenderer = comp as SpriteRenderer;
-                        var _val = valObj as Sprite;
-                        var tween = DOTween.To(TweenPlugValueSet<Sprite>.Get(), () => spriteRenderer.sprite, (x) => spriteRenderer.sprite = x, _val, time);
+                    var spriteRenderer = comp as SpriteRenderer;
+                    var _val = valObj as Sprite;
+                    var tween = DOTween.To(TweenPlugValueSet<Sprite>.Get(), () => spriteRenderer.sprite, (x) => spriteRenderer.sprite = x, _val, time);
+                    return tween;
+                }
+                case PropertyTrack.ValueType.Enum: {
+                    System.Type infType = propTrack.GetCachedInfoType(seq.target);
+                    object enumVal = infType != null ? System.Enum.ToObject(infType, (int)val) : null;
+                    if(enumVal != null) {
+                        var tween = DOTween.To(TweenPlugValueSet<object>.Get(), GenerateGetter<object>(propTrack, comp), GenerateSetter<object>(propTrack, comp), enumVal, time);
                         return tween;
                     }
-                case PropertyTrack.ValueType.Enum: {
-                        System.Type infType = propTrack.GetCachedInfoType(seq.target);
-                        object enumVal = infType != null ? System.Enum.ToObject(infType, (int)val) : null;
-                        if(enumVal != null) {
-                            var tween = DOTween.To(TweenPlugValueSet<object>.Get(), GenerateGetter<object>(propTrack, comp), GenerateSetter<object>(propTrack, comp), enumVal, time);
-                            return tween;
-                        }
-                        else {
-                            Debug.LogError("Invalid enum value.");
-                            break;
-                        }
+                    else {
+                        Debug.LogError("Invalid enum value.");
+                        break;
                     }
+                }
             }
             return null; //no type match
         }
@@ -302,69 +302,27 @@ namespace M8.Animator {
                 }
             }
             else {
-                //options
-                var options = new TweenPlugPathOptions { loopType = LoopType.Restart };
-
                 switch(valueType) {
-                    case PropertyTrack.ValueType.Integer: {
-                        var tweenPath = DOTween.To(TweenPlugPathInt.Get(), () => System.Convert.ToInt32(val), GenerateSetter<int>(propTrack, comp), path, time);
-                        tweenPath.plugOptions = options; tween = tweenPath;
-                    }
-                    break;
-
-                    case PropertyTrack.ValueType.Float: {
-                        var tweenPath = DOTween.To(TweenPlugPathFloat.Get(), () => System.Convert.ToSingle(val), GenerateSetter<float>(propTrack, comp), path, time);
-                        tweenPath.plugOptions = options; tween = tweenPath;
-                    }
-                    break;
-
-                    case PropertyTrack.ValueType.Double: {
-                        var tweenPath = DOTween.To(TweenPlugPathDouble.Get(), () => val, GenerateSetter<double>(propTrack, comp), path, time);
-                        tweenPath.plugOptions = options; tween = tweenPath;
-                    }
-                    break;
-
-                    case PropertyTrack.ValueType.Long: {
-                        var tweenPath = DOTween.To(TweenPlugPathLong.Get(), () => System.Convert.ToInt64(val), GenerateSetter<long>(propTrack, comp), path, time);
-                        tweenPath.plugOptions = options; tween = tweenPath;
-                    }
-                    break;
-
-                    case PropertyTrack.ValueType.Vector2: {
-                        var tweenPath = DOTween.To(TweenPlugPathVector2.Get(), () => vect2, GenerateSetter<Vector2>(propTrack, comp), path, time);
-                        tweenPath.plugOptions = options; tween = tweenPath;
-                    }
-                    break;
-
-                    case PropertyTrack.ValueType.Vector3: {
-                        var tweenPath = DOTween.To(TweenPlugPathVector3.Get(), () => vect3, GenerateSetter<Vector3>(propTrack, comp), path, time);
-                        tweenPath.plugOptions = options; tween = tweenPath;
-                    }
-                    break;
-
-                    case PropertyTrack.ValueType.Color: {
-                        var tweenPath = DOTween.To(TweenPlugPathColor.Get(), () => color, GenerateSetter<Color>(propTrack, comp), path, time);
-                        tweenPath.plugOptions = options; tween = tweenPath;
-                    }
-                    break;
-
-                    case PropertyTrack.ValueType.Rect: {
-                        var tweenPath = DOTween.To(TweenPlugPathRect.Get(), () => rect, GenerateSetter<Rect>(propTrack, comp), path, time);
-                        tweenPath.plugOptions = options; tween = tweenPath;
-                    }
-                    break;
-
-                    case PropertyTrack.ValueType.Vector4: {
-                        var tweenPath = DOTween.To(TweenPlugPathVector4.Get(), () => vect4, GenerateSetter<Vector4>(propTrack, comp), path, time);
-                        tweenPath.plugOptions = options; tween = tweenPath;
-                    }
-                    break;
-
-                    case PropertyTrack.ValueType.Quaternion: {
-                        var tweenPath = DOTween.To(TweenPlugPathEuler.Get(), () => quat, GenerateSetter<Quaternion>(propTrack, comp), path, time);
-                        tweenPath.plugOptions = options; tween = tweenPath;
-                    }
-                    break;
+                    case PropertyTrack.ValueType.Integer:
+                        tween = DOTween.To(TweenPlugPathInt.Get(), () => System.Convert.ToInt32(val), GenerateSetter<int>(propTrack, comp), path, time); break;
+                    case PropertyTrack.ValueType.Float:
+                        tween = DOTween.To(TweenPlugPathFloat.Get(), () => System.Convert.ToSingle(val), GenerateSetter<float>(propTrack, comp), path, time); break;
+                    case PropertyTrack.ValueType.Double:
+                        tween = DOTween.To(TweenPlugPathDouble.Get(), () => val, GenerateSetter<double>(propTrack, comp), path, time); break;
+                    case PropertyTrack.ValueType.Long:
+                        tween = DOTween.To(TweenPlugPathLong.Get(), () => System.Convert.ToInt64(val), GenerateSetter<long>(propTrack, comp), path, time); break;
+                    case PropertyTrack.ValueType.Vector2:
+                        tween = DOTween.To(TweenPlugPathVector2.Get(), () => vect2, GenerateSetter<Vector2>(propTrack, comp), path, time); break;
+                    case PropertyTrack.ValueType.Vector3:
+                        tween = DOTween.To(TweenPlugPathVector3.Get(), () => vect3, GenerateSetter<Vector3>(propTrack, comp), path, time); break;
+                    case PropertyTrack.ValueType.Color:
+                        tween = DOTween.To(TweenPlugPathColor.Get(), () => color, GenerateSetter<Color>(propTrack, comp), path, time); break;
+                    case PropertyTrack.ValueType.Rect:
+                        tween = DOTween.To(TweenPlugPathRect.Get(), () => rect, GenerateSetter<Rect>(propTrack, comp), path, time); break;
+                    case PropertyTrack.ValueType.Vector4:
+                        tween = DOTween.To(TweenPlugPathVector4.Get(), () => vect4, GenerateSetter<Vector4>(propTrack, comp), path, time); break;
+                    case PropertyTrack.ValueType.Quaternion:
+                        tween = DOTween.To(TweenPlugPathEuler.Get(), () => quat, GenerateSetter<Quaternion>(propTrack, comp), path, time); break;
                 }
             }
 

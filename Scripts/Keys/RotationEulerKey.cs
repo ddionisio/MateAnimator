@@ -358,8 +358,6 @@ namespace M8.Animator {
                 }
             }
             else if(interp == Interpolation.Curve) {
-                var options = new TweenPlugPathOptions { loopType = LoopType.Restart };
-
                 DOSetter<Vector3> setter;
                 if(axis == AxisFlags.X) {
                     if(body) 
@@ -471,7 +469,6 @@ namespace M8.Animator {
                 }
 
                 var tweenPath = DOTween.To(TweenPlugPathVector3.Get(), () => rotation, setter, path, timeLength);
-                tweenPath.plugOptions = options;
 
                 if(hasCustomEase())
                     tweenPath.SetEase(easeCurve);

@@ -135,8 +135,6 @@ namespace M8.Animator {
                 seq.Insert(this, linearTween);
             }
             else if(interp == Interpolation.Curve) {
-                var options = new TweenPlugPathOptions { loopType = LoopType.Restart };
-
                 DOSetter<Quaternion> setter;
                 if(body2D)
                     setter = x => {
@@ -158,7 +156,6 @@ namespace M8.Animator {
                     setter = x => trans.localRotation = x;
 
                 var pathTween = DOTween.To(TweenPlugPathEuler.Get(), () => rotation, setter, path, time);
-                pathTween.plugOptions = options;
 
                 if(hasCustomEase())
                     pathTween.SetEase(easeCurve);

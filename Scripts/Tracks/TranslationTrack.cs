@@ -9,6 +9,8 @@ namespace M8.Animator {
     public class TranslationTrack : Track {
         public override SerializeType serializeType { get { return SerializeType.Translation; } }
 
+        public override int order { get { return 1; } } //allow orientation to do its rotation before rotation tracks
+
         [SerializeField]
         private Transform _obj;
 
@@ -72,6 +74,9 @@ namespace M8.Animator {
                 a.easeType = prevKey.easeType;
                 a.easeCurve = prevKey.easeCurve;
                 a.isConstSpeed = prevKey.isConstSpeed;
+
+                a.orientMode = prevKey.orientMode;
+                a.orientLockAxis = prevKey.orientLockAxis;
             }
 
             // add a new key
@@ -85,9 +90,135 @@ namespace M8.Animator {
             Transform t = GetTarget(itarget) as Transform;
             if(!t) return;
 
-            var lpos = getPositionAtFrame(t, frame, frameRate, false);
+            int keyCount = keys.Count;
 
-            t.localPosition = lpos;
+            if(keyCount <= 0) return;
+
+            int iFrame = Mathf.RoundToInt(frame);
+
+            TranslationKey firstKey = keys[0] as TranslationKey;
+
+            //check if only key or behind first key
+            if(keyCount == 1 || iFrame < firstKey.frame) {
+                t.localPosition = convertPosition(t, firstKey.position, false);
+                return;
+            }
+            else if(iFrame == firstKey.frame) {
+                if(firstKey.interp == Key.Interpolation.Linear || firstKey.path == null) { //apply orientation
+                    t.localPosition = convertPosition(t, firstKey.position, false);
+
+                    if(firstKey.orientMode != OrientMode.None) {
+                        var nextPt = ((TranslationKey)keys[1]).position;
+                        if(t.parent)
+                            nextPt = t.parent.TransformPoint(nextPt);
+
+                        t.rotation = firstKey.GetOrientation(t, nextPt);
+                    }
+                }
+                else if(firstKey.interp == Key.Interpolation.Curve) { //apply orientation
+                    t.localPosition = convertPosition(t, firstKey.position, false);
+
+                    if(firstKey.orientMode != OrientMode.None)
+                        t.rotation = firstKey.GetOrientation(t, 0f);
+                }
+                else
+                    t.localPosition = convertPosition(t, firstKey.position, false);
+
+                return;
+            }
+
+            //check in-between
+            for(int i = 0; i < keyCount; i++) {
+                TranslationKey key = keys[i] as TranslationKey;
+
+                if(key.endFrame == -1) //invalid
+                    continue;
+
+                //end of last path in track?
+                if(iFrame >= key.endFrame) {
+                    if(key.interp == Key.Interpolation.None) {
+                        if(i + 1 == keyCount) {
+                            t.localPosition = convertPosition(t, key.position, false);
+                            return;
+                        }
+                    }
+                    else if(key.interp == Key.Interpolation.Linear || key.path == null) {
+                        if(i + 1 == keyCount - 1) {
+                            var pt = ((TranslationKey)keys[i + 1]).position;
+
+                            t.localPosition = convertPosition(t, pt, false);
+
+                            if(key.orientMode != OrientMode.None && iFrame == key.endFrame) {//only apply rotation if we are at end of frame
+                                Vector3 ptW, prevPtW;
+                                if(t.parent) {
+                                    ptW = t.parent.TransformPoint(pt);
+                                    prevPtW = t.parent.TransformPoint(key.position);
+                                }
+                                else {
+                                    ptW = pt;
+                                    prevPtW = key.position;
+                                }
+                                var dir = (ptW - prevPtW).normalized;
+
+                                t.rotation = key.GetOrientation(t, ptW + dir);
+                            }
+
+                            return;
+                        }
+                    }
+                    else if(key.interp == Key.Interpolation.Curve) {
+                        if(i + key.keyCount == keyCount) {//end of last path in track?
+                            t.localPosition = convertPosition(t, ((TranslationKey)keys[i + key.keyCount - 1]).position, false);
+
+                            if(key.orientMode != OrientMode.None && iFrame == key.endFrame) //only apply rotation if we are at end of frame
+                                t.rotation = key.GetOrientation(t, 1f);
+
+                            return;
+                        }
+                    }
+
+                    continue;
+                }
+
+                if(key.interp == Key.Interpolation.None)
+                    t.localPosition = convertPosition(t, key.position, false);
+                else if(key.interp == Key.Interpolation.Linear || key.path == null) {
+                    var keyNext = keys[i + 1] as TranslationKey;
+
+                    float numFrames = (float)key.getNumberOfFrames(frameRate);
+
+                    float framePositionInAction = Mathf.Clamp(frame - (float)key.frame, 0f, numFrames);
+
+                    var start = key.position;
+                    var end = keyNext.position;
+
+                    if(key.hasCustomEase()) {
+                        t.localPosition = convertPosition(t, Vector3.Lerp(start, end, Utility.EaseCustom(0.0f, 1.0f, framePositionInAction / numFrames, key.easeCurve)), false);
+                    }
+                    else {
+                        var ease = Utility.GetEasingFunction((Ease)key.easeType);
+                        t.localPosition = convertPosition(t, Vector3.Lerp(start, end, ease(framePositionInAction, numFrames, key.amplitude, key.period)), false);
+                    }
+
+                    if(key.orientMode != OrientMode.None)
+                        t.rotation = key.GetOrientation(t, t.parent ? t.parent.TransformPoint(end) : end);
+                }
+                else {
+                    float _value = Mathf.Clamp01((frame - key.frame) / key.getNumberOfFrames(frameRate));
+
+                    var pt = key.GetPoint(_value);
+                    t.localPosition = convertPosition(t, pt, false);
+
+                    if(key.orientMode != OrientMode.None)
+                        t.rotation = key.GetOrientation(t, _value);
+                }
+
+                return;
+            }
+
+            //var lpos = getPositionAtFrame(t, frame, frameRate, false);
+
+            //t.localPosition = lpos;
         }
 
         // returns true if autoKey successful
@@ -148,12 +279,15 @@ namespace M8.Animator {
                             return convertPosition(t, key.position, forceWorld);
                     }
                     else if(key.interp == Key.Interpolation.Linear || key.path == null) {
-                        if(i + 1 == keyCount - 1)
-                            return convertPosition(t, ((TranslationKey)keys[i + 1]).position, forceWorld);
+                        if(i + 1 == keyCount - 1) {
+                            var pt = ((TranslationKey)keys[i + 1]).position;
+                            return convertPosition(t, pt, forceWorld);
+                        }
                     }
                     else if(key.interp == Key.Interpolation.Curve) {
-                        if(i + key.keyCount == keyCount) //end of last path in track?
+                        if(i + key.keyCount == keyCount) {//end of last path in track?
                             return convertPosition(t, ((TranslationKey)keys[i + key.keyCount - 1]).position, forceWorld);
+                        }
                     }
 
                     continue;
@@ -217,6 +351,8 @@ namespace M8.Animator {
                 var interp = key.interp;
                 var easeType = key.easeType;
                 var isConstSpeed = key.isConstSpeed;
+                var orientMode = key.orientMode;
+                var lockAxis = key.orientLockAxis;
 
                 key.GeneratePath(this, i);
 
@@ -232,6 +368,8 @@ namespace M8.Animator {
                         _key.interp = interp;
                         _key.easeType = easeType;
                         _key.isConstSpeed = isConstSpeed;
+                        _key.orientMode = orientMode;
+                        _key.orientLockAxis = lockAxis;
                         _key.Invalidate();
                     }
 

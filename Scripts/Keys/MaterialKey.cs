@@ -231,35 +231,22 @@ namespace M8.Animator {
                 }
             }
             else {
-                //options
-                var options = new TweenPlugPathOptions { loopType = LoopType.Restart };
-
                 switch(propType) {
                     case MaterialTrack.ValueType.Float:
-                    case MaterialTrack.ValueType.Range: {
-                            var tweenPath = DOTween.To(TweenPlugPathFloat.Get(), () => val, (x) => matInst.SetFloat(propId, x), path, time);
-                            tweenPath.plugOptions = options; tween = tweenPath;
-                        }
+                    case MaterialTrack.ValueType.Range:
+                        tween = DOTween.To(TweenPlugPathFloat.Get(), () => val, (x) => matInst.SetFloat(propId, x), path, time);
                         break;
-                    case MaterialTrack.ValueType.Vector: {
-                            var tweenPath = DOTween.To(TweenPlugPathVector4.Get(), () => vector, (x) => matInst.SetVector(propId, x), path, time);
-                            tweenPath.plugOptions = options; tween = tweenPath;
-                        }
+                    case MaterialTrack.ValueType.Vector:
+                        tween = DOTween.To(TweenPlugPathVector4.Get(), () => vector, (x) => matInst.SetVector(propId, x), path, time);
                         break;
-                    case MaterialTrack.ValueType.Color: {
-                            var tweenPath = DOTween.To(TweenPlugPathColor.Get(), () => color, (x) => matInst.SetColor(propId, x), path, time);
-                            tweenPath.plugOptions = options; tween = tweenPath;
-                        }
+                    case MaterialTrack.ValueType.Color:
+                        tween = DOTween.To(TweenPlugPathColor.Get(), () => color, (x) => matInst.SetColor(propId, x), path, time);
                         break;
-                    case MaterialTrack.ValueType.TexOfs: {
-                            var tweenPath = DOTween.To(TweenPlugPathVector2.Get(), () => texOfs, (x) => matInst.SetTextureOffset(propId, x), path, time);
-                            tweenPath.plugOptions = options; tween = tweenPath;
-                        }
+                    case MaterialTrack.ValueType.TexOfs:
+                        tween = DOTween.To(TweenPlugPathVector2.Get(), () => texOfs, (x) => matInst.SetTextureOffset(propId, x), path, time);
                         break;
-                    case MaterialTrack.ValueType.TexScale: {
-                            var tweenPath = DOTween.To(TweenPlugPathVector2.Get(), () => texScale, (x) => matInst.SetTextureScale(propId, x), path, time);
-                            tweenPath.plugOptions = options; tween = tweenPath;
-                        }
+                    case MaterialTrack.ValueType.TexScale:
+                        tween = DOTween.To(TweenPlugPathVector2.Get(), () => texScale, (x) => matInst.SetTextureScale(propId, x), path, time);
                         break;
                 }
             }

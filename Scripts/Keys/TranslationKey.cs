@@ -17,7 +17,10 @@ namespace M8.Animator {
         public override SerializeType serializeType { get { return SerializeType.Translation; } }
 
         public Vector3 position;
-                
+
+        public OrientMode orientMode;
+        public AxisFlags orientLockAxis;
+
         /// <summary>
         /// Grab position within t = [0, 1]. keyInd is the index of this key in the track.
         /// </summary>
@@ -25,6 +28,34 @@ namespace M8.Animator {
             if(path == null) //not tweenable
                 return position;
 
+            float finalT = GetFinalT(t);
+            if(float.IsNaN(finalT))
+                return position;
+
+            var pt = path.GetPoint(finalT);
+
+            return pt.valueVector3;
+        }
+
+        /// <summary>
+        /// Grab orientation by direction torwards lookatPt (world space), returns rotation in world space.
+        /// </summary>
+        public Quaternion GetOrientation(Transform trans, Vector3 lookatPt) {
+            return TweenPlugOrient.GetOrientation(orientMode, orientLockAxis, trans, lookatPt);
+        }
+
+        /// <summary>
+        /// Grab orientation by looking ahead of path, returns rotation in world space.
+        /// </summary>
+        public Quaternion GetOrientation(Transform trans, float t) {
+            float finalT = GetFinalT(t);
+            if(float.IsNaN(finalT))
+                return trans.rotation;
+
+            return TweenPlugOrient.GetOrientation(orientMode, orientLockAxis, trans, path, finalT);
+        }
+
+        private float GetFinalT(float t) {
             float finalT;
 
             if(hasCustomEase())
@@ -32,13 +63,9 @@ namespace M8.Animator {
             else {
                 var ease = Utility.GetEasingFunction(easeType);
                 finalT = ease(t, 1f, amplitude, period);
-                if(float.IsNaN(finalT)) //this really shouldn't happen...
-                    return position;
             }
 
-            var pt = path.GetPoint(finalT);
-
-            return pt.valueVector3;
+            return finalT;
         }
 
         public void DrawGizmos(TranslationKey nextKey, Transform transform, float ptSize) {
@@ -94,6 +121,8 @@ namespace M8.Animator {
             TranslationKey a = (TranslationKey)key;
 
             a.position = position;
+            a.orientMode = orientMode;
+            a.orientLockAxis = orientLockAxis;
         }
 
         protected override TweenPlugPathPoint GeneratePathPoint(Track track) {
@@ -123,14 +152,14 @@ namespace M8.Animator {
             int frameRate = seq.take.frameRate;
             float time = getTime(frameRate);
 
+            Tweener tween = null;
+
             if(interp == Interpolation.None) {
                 //TODO: world position
                 Vector3 pos = pixelSnap ? new Vector3(Mathf.Round(position.x * ppu) / ppu, Mathf.Round(position.y * ppu) / ppu, Mathf.Round(position.z * ppu) / ppu) : position;
 
-                TweenerCore<Vector3, Vector3, TWeenPlugNoneOptions> tweener;
-
                 if(body2D)
-                    tweener = DOTween.To(TweenPlugValueSet<Vector3>.Get(), () => trans.localPosition, (x) => {
+                    tween = DOTween.To(TweenPlugValueSet<Vector3>.Get(), () => trans.localPosition, (x) => {
                         var parent = trans.parent;
                         if(parent)
                             body2D.position = parent.TransformPoint(x);
@@ -138,7 +167,7 @@ namespace M8.Animator {
                             body2D.position = x;
                     }, pos, time); //1.0f / frameRate
                 else if(body)
-                    tweener = DOTween.To(TweenPlugValueSet<Vector3>.Get(), () => trans.localPosition, (x) => {
+                    tween = DOTween.To(TweenPlugValueSet<Vector3>.Get(), () => trans.localPosition, (x) => {
                         var parent = trans.parent;
                         if(parent)
                             body.position = parent.TransformPoint(x); 
@@ -146,9 +175,7 @@ namespace M8.Animator {
                             body.position = x;
                     }, pos, time); //1.0f / frameRate
                 else
-                    tweener = DOTween.To(TweenPlugValueSet<Vector3>.Get(), () => trans.localPosition, (x) => trans.localPosition = x, pos, time); //1.0f / frameRate
-
-                seq.Insert(this, tweener);
+                    tween = DOTween.To(TweenPlugValueSet<Vector3>.Get(), () => trans.localPosition, (x) => trans.localPosition = x, pos, time); //1.0f / frameRate
             }
             else if(interp == Interpolation.Linear || path == null) {
                 Vector3 endPos = (track.keys[index + 1] as TranslationKey).position;
@@ -197,18 +224,29 @@ namespace M8.Animator {
                         setter = x => trans.localPosition = x;
                 }
 
-                var linearTween = DOTween.To(TweenPluginFactory.CreateVector3(), () => position, setter, endPos, time);
+                if(orientMode == OrientMode.None)
+                    tween = DOTween.To(TweenPluginFactory.CreateVector3(), () => position, setter, endPos, time);
+                else {
+                    TweenerCore<Vector3, Vector3, TweenPlugVector3LookAtOptions> tweenOrient;
 
-                if(hasCustomEase())
-                    linearTween.SetEase(easeCurve);
-                else
-                    linearTween.SetEase(easeType, amplitude, period);
+                    if(body) {
+                        tweenOrient = DOTween.To(TweenPlugVector3LookAtRigidbody.Get(), () => position, setter, endPos, time);                        
+                        tweenOrient.target = body;
+                    }
+                    else if(body2D) {
+                        tweenOrient = DOTween.To(TweenPlugVector3LookAtRigidbody2D.Get(), () => position, setter, endPos, time);
+                        tweenOrient.target = body2D;
+                    }
+                    else {
+                        tweenOrient = DOTween.To(TweenPlugVector3LookAtTransform.Get(), () => position, setter, endPos, time);
+                        tweenOrient.target = trans;
+                    }
 
-                seq.Insert(this, linearTween);
+                    tweenOrient.plugOptions = new TweenPlugVector3LookAtOptions() { orientMode = orientMode, lockAxis = orientLockAxis, lookAtPt = endPos, lookAtIsLocal = true };
+                    tween = tweenOrient;
+                }
             }
             else if(interp == Interpolation.Curve) {
-                var options = new TweenPlugPathOptions { loopType = LoopType.Restart };
-
                 DOSetter<Vector3> setter;
                 if(body2D) {
                     if(pixelSnap)
@@ -253,15 +291,38 @@ namespace M8.Animator {
                         setter = x => trans.localPosition = x;
                 }
 
-                var pathTween = DOTween.To(TweenPlugPathVector3.Get(), () => position, setter, path, time);
-                pathTween.plugOptions = options;
+                if(orientMode == OrientMode.None)
+                    tween = DOTween.To(TweenPlugPathVector3.Get(), () => position, setter, path, time);
+                else {
+                    TweenerCore<Vector3, TweenPlugPath, TweenPlugPathOrientOptions> tweenOrient;
 
-                if(hasCustomEase())
-                    pathTween.SetEase(easeCurve);
-                else
-                    pathTween.SetEase(easeType, amplitude, period);
+                    if(body) {
+                        tweenOrient = DOTween.To(TweenPlugPathOrientRigidbody.Get(), () => position, setter, path, time);
+                        tweenOrient.target = body;
+                    }
+                    else if(body2D) {
+                        tweenOrient = DOTween.To(TweenPlugPathOrientRigidbody2D.Get(), () => position, setter, path, time);
+                        tweenOrient.target = body2D;
+                    }
+                    else {
+                        tweenOrient = DOTween.To(TweenPlugPathOrientTransform.Get(), () => position, setter, path, time);
+                        tweenOrient.target = trans;
+                    }
 
-                seq.Insert(this, pathTween);
+                    tweenOrient.plugOptions = new TweenPlugPathOrientOptions { orientMode = orientMode, lockAxis = orientLockAxis };
+                    tween = tweenOrient;
+                }
+            }
+
+            if(tween != null) {
+                if(canTween) {
+                    if(hasCustomEase())
+                        tween.SetEase(easeCurve);
+                    else
+                        tween.SetEase(easeType, amplitude, period);
+                }
+
+                seq.Insert(this, tween);
             }
         }
         #endregion

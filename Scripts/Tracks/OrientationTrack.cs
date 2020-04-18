@@ -9,7 +9,7 @@ namespace M8.Animator {
     public class OrientationTrack : Track {
         public override SerializeType serializeType { get { return SerializeType.Orientation; } }
 
-        public override int order { get { return 1; } }
+        public override int order { get { return 2; } } //override translate orientation
 
         [SerializeField]
         Transform obj;
