@@ -47,7 +47,7 @@ namespace M8.Animator {
         public override void Reset(TweenerCore<T, T, TWeenPlugNoneOptions> t) { }
         public override void SetChangeValue(TweenerCore<T, T, TWeenPlugNoneOptions> t) { }
         public override void SetFrom(TweenerCore<T, T, TWeenPlugNoneOptions> t, bool isRelative) { }
-        public override void SetFrom(TweenerCore<T, T, TWeenPlugNoneOptions> t, T fromValue, bool setImmediately) { }
+        public override void SetFrom(TweenerCore<T, T, TWeenPlugNoneOptions> t, T fromValue, bool setImmediately, bool isRelative) { }
         public override void SetRelativeEndValue(TweenerCore<T, T, TWeenPlugNoneOptions> t) { }
     }
 }

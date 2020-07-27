@@ -273,7 +273,12 @@ namespace M8.Animator {
             Vector3 to = t.startValue;
             t.setter(to);
         }
-        public override void SetFrom(TweenerCore<Vector3, Vector3, TweenPlugVector3LookAtOptions> t, Vector3 fromValue, bool setImmediately) {
+        public override void SetFrom(TweenerCore<Vector3, Vector3, TweenPlugVector3LookAtOptions> t, Vector3 fromValue, bool setImmediately, bool isRelative) {
+            if(isRelative) {
+                var currVal = t.getter();
+                t.endValue += currVal;
+                fromValue += currVal;
+            }
             t.startValue = fromValue;
             if(setImmediately) {
                 Vector3 to = fromValue;
@@ -293,7 +298,7 @@ namespace M8.Animator {
                     * (t.sequenceParent.isComplete ? t.sequenceParent.completedLoops - 1 : t.sequenceParent.completedLoops);
             }*/
 
-            float easeVal = EaseManager.Evaluate(t, elapsed, duration, t.easeOvershootOrAmplitude, t.easePeriod);
+        float easeVal = EaseManager.Evaluate(t, elapsed, duration, t.easeOvershootOrAmplitude, t.easePeriod);
 
             startValue.x += changeValue.x * easeVal;
             startValue.y += changeValue.y * easeVal;

@@ -556,7 +556,7 @@ namespace M8.Animator {
         }
 
         public override void SetFrom(TweenerCore<T, TweenPlugPath, TOptions> t, bool isRelative) { }
-        public override void SetFrom(TweenerCore<T, TweenPlugPath, TOptions> t, TweenPlugPath fromValue, bool setImmediately) { }
+        public override void SetFrom(TweenerCore<T, TweenPlugPath, TOptions> t, TweenPlugPath fromValue, bool setImmediately, bool isRelative) { }
 
         public override void SetRelativeEndValue(TweenerCore<T, TweenPlugPath, TOptions> t) { }
 

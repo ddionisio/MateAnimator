@@ -79,7 +79,7 @@ namespace M8.Animator {
         public override void SetChangeValue(TweenerCore<float, float, TweenPlugElapsedOptions> t) { }
 
         public override void SetFrom(TweenerCore<float, float, TweenPlugElapsedOptions> t, bool isRelative) { }
-        public override void SetFrom(TweenerCore<float, float, TweenPlugElapsedOptions> t, float fromValue, bool setImmediately) { }
+        public override void SetFrom(TweenerCore<float, float, TweenPlugElapsedOptions> t, float fromValue, bool setImmediately, bool isRelative) { }
 
         public override void SetRelativeEndValue(TweenerCore<float, float, TweenPlugElapsedOptions> t) { }
     }
