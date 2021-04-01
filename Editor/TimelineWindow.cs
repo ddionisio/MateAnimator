@@ -19,7 +19,7 @@ namespace M8.Animator.Edit {
 
         public static TimelineWindow window = null;
 
-        const BindingFlags methodFlags = BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly;
+        const BindingFlags methodFlags = BindingFlags.Public | BindingFlags.Instance;// | BindingFlags.DeclaredOnly;
         private AnimateEditControl _aData;
         public AnimateEditControl aData {
             get {
