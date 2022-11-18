@@ -15,7 +15,7 @@ Mega Morph has been removed.
 Import/Export, Code Generator are currently disabled. 
 
 ## Dependencies
-* DOTween v1.2.420
+* DOTween v1.2.705
 
 
 ## Updates

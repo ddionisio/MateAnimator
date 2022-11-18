@@ -174,7 +174,7 @@ namespace M8.Animator {
         protected override TweenPlugPathPoint CreatePoint(Vector3 src) { return new TweenPlugPathPoint(src); }
         protected override Vector3 GetValue(TweenPlugPathPoint pt) { return pt.valueVector3; }
 
-        public override void EvaluateAndApply(TweenPlugPathOrientOptions options, Tween t, bool isRelative, DOGetter<Vector3> getter, DOSetter<Vector3> setter, float elapsed, TweenPlugPath startValue, TweenPlugPath changeValue, float duration, bool usingInversePosition, UpdateNotice updateNotice) {
+        public override void EvaluateAndApply(TweenPlugPathOrientOptions options, Tween t, bool isRelative, DOGetter<Vector3> getter, DOSetter<Vector3> setter, float elapsed, TweenPlugPath startValue, TweenPlugPath changeValue, float duration, bool usingInversePosition, int newCompletedSteps, UpdateNotice updateNotice) {
             var path = changeValue;
 
             float pathPerc = EaseManager.Evaluate(t, elapsed, duration, t.easeOvershootOrAmplitude, t.easePeriod);
@@ -291,7 +291,7 @@ namespace M8.Animator {
         public override void SetChangeValue(TweenerCore<Vector3, Vector3, TweenPlugVector3LookAtOptions> t) { t.changeValue = t.endValue - t.startValue; }
         public override float GetSpeedBasedDuration(TweenPlugVector3LookAtOptions options, float unitsXSecond, Vector3 changeValue) { return changeValue.magnitude / unitsXSecond; }
 
-        public override void EvaluateAndApply(TweenPlugVector3LookAtOptions options, Tween t, bool isRelative, DOGetter<Vector3> getter, DOSetter<Vector3> setter, float elapsed, Vector3 startValue, Vector3 changeValue, float duration, bool usingInversePosition, UpdateNotice updateNotice) {
+        public override void EvaluateAndApply(TweenPlugVector3LookAtOptions options, Tween t, bool isRelative, DOGetter<Vector3> getter, DOSetter<Vector3> setter, float elapsed, Vector3 startValue, Vector3 changeValue, float duration, bool usingInversePosition, int newCompletedSteps, UpdateNotice updateNotice) {
             /*if(t.loopType == LoopType.Incremental) startValue += changeValue * (t.isComplete ? t.completedLoops - 1 : t.completedLoops);
             if(t.isSequenced && t.sequenceParent.loopType == LoopType.Incremental) {
                 startValue += changeValue * (t.loopType == LoopType.Incremental ? t.loops : 1)

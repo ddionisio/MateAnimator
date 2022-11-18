@@ -62,7 +62,7 @@ namespace M8.Animator {
             return value;
         }
 
-        public override void EvaluateAndApply(TweenPlugElapsedOptions options, Tween t, bool isRelative, DOGetter<float> getter, DOSetter<float> setter, float elapsed, float startValue, float changeValue, float duration, bool usingInversePosition, UpdateNotice updateNotice) {
+        public override void EvaluateAndApply(TweenPlugElapsedOptions options, Tween t, bool isRelative, DOGetter<float> getter, DOSetter<float> setter, float elapsed, float startValue, float changeValue, float duration, bool usingInversePosition, int newCompletedSteps, UpdateNotice updateNotice) {
             if(updateNotice == UpdateNotice.RewindStep)
                 options.Reset();
             else if(options.Refresh())

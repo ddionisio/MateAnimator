@@ -21,7 +21,6 @@ namespace M8.Animator {
     /// </summary>
     /// <typeparam name="T"></typeparam>
     public class TweenPlugValueSet<T> : ABSTweenPlugin<T, T, TWeenPlugNoneOptions> {
-
         public static TweenPlugValueSet<T> Get() {
             if(mInstance == null)
                 mInstance = new TweenPlugValueSet<T>();
@@ -33,7 +32,7 @@ namespace M8.Animator {
             return t.endValue; //start value is the same as the end value
         }
 
-        public override void EvaluateAndApply(TWeenPlugNoneOptions options, Tween t, bool isRelative, DOGetter<T> getter, DOSetter<T> setter, float elapsed, T startValue, T changeValue, float duration, bool usingInversePosition, UpdateNotice updateNotice) {            
+        public override void EvaluateAndApply(TWeenPlugNoneOptions options, Tween t, bool isRelative, DOGetter<T> getter, DOSetter<T> setter, float elapsed, T startValue, T changeValue, float duration, bool usingInversePosition, int newCompletedSteps, UpdateNotice updateNotice) {            
             var curVal = getter();
             if(!curVal.Equals(startValue)) {
                 setter(startValue);

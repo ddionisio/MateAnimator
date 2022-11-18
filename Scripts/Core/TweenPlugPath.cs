@@ -575,7 +575,7 @@ namespace M8.Animator {
             return changeValue.length / unitsXSecond;
         }
 
-        public override void EvaluateAndApply(TOptions options, Tween t, bool isRelative, DOGetter<T> getter, DOSetter<T> setter, float elapsed, TweenPlugPath startValue, TweenPlugPath changeValue, float duration, bool usingInversePosition, UpdateNotice updateNotice) {            
+        public override void EvaluateAndApply(TOptions options, Tween t, bool isRelative, DOGetter<T> getter, DOSetter<T> setter, float elapsed, TweenPlugPath startValue, TweenPlugPath changeValue, float duration, bool usingInversePosition, int newCompletedSteps, UpdateNotice updateNotice) {            
             //TODO: figure out how to access tween's loopType
             /*if(t.loopType == LoopType.Incremental && !changeValue.isClosed) {
                 int increment = (t.IsComplete() ? t.CompletedLoops() - 1 : t.CompletedLoops());
