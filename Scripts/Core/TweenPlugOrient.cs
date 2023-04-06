@@ -212,11 +212,13 @@ namespace M8.Animator {
     /// </summary>
     public class TweenPlugPathOrientRigidbody : TweenPlugPathOrient {
         protected override void SetOrientation(object target, TweenPlugPathOrientOptions options, TweenPlugPath path, float pathPerc) {
+#if !M8_PHYSICS_DISABLED
             var body = (Rigidbody)target;
             var trans = body.transform;
 
             var rot = TweenPlugOrient.GetOrientation(options.orientMode, options.lockAxis, trans, path, pathPerc);
             body.MoveRotation(rot);
+#endif
         }
 
         public static TweenPlugPathOrientRigidbody Get() {
@@ -338,6 +340,7 @@ namespace M8.Animator {
     /// </summary>
     public class TweenPlugVector3LookAtRigidbody : TweenPlugVector3LookAt {
         protected override void SetOrientation(object target, TweenPlugVector3LookAtOptions options) {
+#if !M8_PHYSICS_DISABLED
             var body = (Rigidbody)target;
             var trans = body.transform;
 
@@ -347,6 +350,7 @@ namespace M8.Animator {
 
             var rot = TweenPlugOrient.GetOrientation(options.orientMode, options.lockAxis, trans, lookAtPt);
             body.MoveRotation(rot);
+#endif
         }
 
         public static TweenPlugVector3LookAtRigidbody Get() {

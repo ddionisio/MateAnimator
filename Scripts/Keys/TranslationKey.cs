@@ -141,9 +141,13 @@ namespace M8.Animator {
             }
 
             var trans = obj as Transform;
-            
+
+#if !M8_PHYSICS_DISABLED
             Rigidbody body = trans.GetComponent<Rigidbody>();
             Rigidbody2D body2D = !body ? trans.GetComponent<Rigidbody2D>() : null;
+#else
+            Rigidbody2D body2D = trans.GetComponent<Rigidbody2D>();
+#endif
 
             var tTrack = track as TranslationTrack;
             bool pixelSnap = tTrack.pixelSnap;
@@ -166,6 +170,7 @@ namespace M8.Animator {
                         else
                             body2D.position = x;
                     }, pos, time); //1.0f / frameRate
+#if !M8_PHYSICS_DISABLED
                 else if(body)
                     tween = DOTween.To(TweenPlugValueSet<Vector3>.Get(), () => trans.localPosition, (x) => {
                         var parent = trans.parent;
@@ -174,6 +179,7 @@ namespace M8.Animator {
                         else
                             body.position = x;
                     }, pos, time); //1.0f / frameRate
+#endif
                 else
                     tween = DOTween.To(TweenPlugValueSet<Vector3>.Get(), () => trans.localPosition, (x) => trans.localPosition = x, pos, time); //1.0f / frameRate
             }
@@ -199,6 +205,7 @@ namespace M8.Animator {
                                 body2D.MovePosition(x);
                         };
                 }
+#if !M8_PHYSICS_DISABLED
                 else if(body) {
                     if(pixelSnap)
                         setter = x => {
@@ -217,6 +224,7 @@ namespace M8.Animator {
                                 body.MovePosition(x);
                         };
                 }
+#endif
                 else {
                     if(pixelSnap)
                         setter = x => trans.localPosition = new Vector3(Mathf.Round(x.x * ppu) / ppu, Mathf.Round(x.y * ppu) / ppu, Mathf.Round(x.z * ppu) / ppu);
@@ -229,14 +237,16 @@ namespace M8.Animator {
                 else {
                     TweenerCore<Vector3, Vector3, TweenPlugVector3LookAtOptions> tweenOrient;
 
-                    if(body) {
-                        tweenOrient = DOTween.To(TweenPlugVector3LookAtRigidbody.Get(), () => position, setter, endPos, time);                        
-                        tweenOrient.target = body;
-                    }
-                    else if(body2D) {
+                    if(body2D) {
                         tweenOrient = DOTween.To(TweenPlugVector3LookAtRigidbody2D.Get(), () => position, setter, endPos, time);
                         tweenOrient.target = body2D;
                     }
+#if !M8_PHYSICS_DISABLED
+                    else if(body) {
+                        tweenOrient = DOTween.To(TweenPlugVector3LookAtRigidbody.Get(), () => position, setter, endPos, time);
+                        tweenOrient.target = body;
+                    }
+#endif
                     else {
                         tweenOrient = DOTween.To(TweenPlugVector3LookAtTransform.Get(), () => position, setter, endPos, time);
                         tweenOrient.target = trans;
@@ -266,6 +276,7 @@ namespace M8.Animator {
                                 body2D.MovePosition(x);
                         };
                 }
+#if !M8_PHYSICS_DISABLED
                 else if(body) {
                     if(pixelSnap)
                         setter = x => {
@@ -284,6 +295,7 @@ namespace M8.Animator {
                                 body.MovePosition(x);
                         };
                 }
+#endif
                 else {
                     if(pixelSnap)
                         setter = x => trans.localPosition = new Vector3(Mathf.Round(x.x * ppu) / ppu, Mathf.Round(x.y * ppu) / ppu, Mathf.Round(x.z * ppu) / ppu);
@@ -296,14 +308,16 @@ namespace M8.Animator {
                 else {
                     TweenerCore<Vector3, TweenPlugPath, TweenPlugPathOrientOptions> tweenOrient;
 
-                    if(body) {
-                        tweenOrient = DOTween.To(TweenPlugPathOrientRigidbody.Get(), () => position, setter, path, time);
-                        tweenOrient.target = body;
-                    }
-                    else if(body2D) {
+                    if(body2D) {
                         tweenOrient = DOTween.To(TweenPlugPathOrientRigidbody2D.Get(), () => position, setter, path, time);
                         tweenOrient.target = body2D;
                     }
+#if !M8_PHYSICS_DISABLED
+                    else if(body) {
+                        tweenOrient = DOTween.To(TweenPlugPathOrientRigidbody.Get(), () => position, setter, path, time);
+                        tweenOrient.target = body;
+                    }
+#endif
                     else {
                         tweenOrient = DOTween.To(TweenPlugPathOrientTransform.Get(), () => position, setter, path, time);
                         tweenOrient.target = trans;
@@ -325,6 +339,6 @@ namespace M8.Animator {
                 seq.Insert(this, tween);
             }
         }
-        #endregion
+#endregion
     }
 }

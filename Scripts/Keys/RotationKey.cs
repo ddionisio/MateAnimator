@@ -73,8 +73,12 @@ namespace M8.Animator {
 
             Transform trans = obj as Transform;
 
+#if !M8_PHYSICS_DISABLED
             Rigidbody body = trans.GetComponent<Rigidbody>();
             Rigidbody2D body2D = !body ? trans.GetComponent<Rigidbody2D>() : null;
+#else
+            Rigidbody2D body2D = trans.GetComponent<Rigidbody2D>();
+#endif
 
             int frameRate = seq.take.frameRate;
             float time = getTime(frameRate);
@@ -90,6 +94,7 @@ namespace M8.Animator {
                         else
                             body2D.rotation = x.eulerAngles.z;
                     }, rotation, time);
+#if !M8_PHYSICS_DISABLED
                 else if(body)
                     valueTween = DOTween.To(TweenPlugValueSet<Quaternion>.Get(), () => trans.localRotation, (x) => {
                         var parent = trans.parent;
@@ -98,6 +103,7 @@ namespace M8.Animator {
                         else
                             body.rotation = x;
                     }, rotation, time);
+#endif
                 else
                     valueTween = DOTween.To(TweenPlugValueSet<Quaternion>.Get(), () => trans.localRotation, (x) => trans.localRotation = x, rotation, time);
 
@@ -116,6 +122,7 @@ namespace M8.Animator {
                         else
                             body2D.MoveRotation(x.eulerAngles.z);
                     }, endRotation, time);
+#if !M8_PHYSICS_DISABLED
                 else if(body)
                     linearTween = DOTween.To(TweenPluginFactory.CreateQuaternion(), () => rotation, (x) => {
                         var parent = trans.parent;
@@ -124,6 +131,7 @@ namespace M8.Animator {
                         else
                             body.MoveRotation(x);
                     }, endRotation, time);
+#endif
                 else
                     linearTween = DOTween.To(TweenPluginFactory.CreateQuaternion(), () => rotation, (x) => trans.localRotation = x, endRotation, time);
 
@@ -144,6 +152,7 @@ namespace M8.Animator {
                         else
                             body2D.MoveRotation(x.eulerAngles.z);
                     };
+#if !M8_PHYSICS_DISABLED
                 else if(body)
                     setter = x => {
                         var parent = trans.parent;
@@ -152,6 +161,7 @@ namespace M8.Animator {
                         else
                             body.MoveRotation(x);
                     };
+#endif
                 else
                     setter = x => trans.localRotation = x;
 
@@ -165,7 +175,7 @@ namespace M8.Animator {
                 seq.Insert(this, pathTween);
             }
         }
-        #endregion
+#endregion
     }
 }
  
