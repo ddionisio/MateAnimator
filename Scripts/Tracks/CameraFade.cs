@@ -396,7 +396,11 @@ namespace M8.Animator {
             cam.Render();
             // readpixels from render texture
             if(_screenTex) {
+#if UNITY_2022
+                _screenTex.Reinitialize(width, height);
+#else
                 _screenTex.Resize(width, height);
+#endif
             }
             else {
                 _screenTex = new Texture2D(renderTexture.width, renderTexture.height, TextureFormat.RGB24, false);
@@ -444,7 +448,7 @@ namespace M8.Animator {
                     return false;
             }
         }
-        #endregion
+#endregion
 
         #region Process
         public static void processAlpha(Rect rect, Texture tex, float value) {
