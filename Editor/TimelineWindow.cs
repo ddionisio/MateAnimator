@@ -4,7 +4,6 @@ using System.Reflection;
 using System.Collections;
 using System.Collections.Generic;
 using System;
-using System.Linq;
 
 using DG.Tweening;
 
@@ -391,13 +390,17 @@ namespace M8.Animator.Edit {
 
         public static void EditDataCleanUp() {
             Dictionary<Animate, AnimateEditControl> newAnimEdits = new Dictionary<Animate, AnimateEditControl>(mAnimEdits.Count);
-            foreach(var pair in mAnimEdits.Where(pair => pair.Key != null))
-                newAnimEdits.Add(pair.Key, pair.Value);
+            foreach(var pair in mAnimEdits) {
+                if(pair.Key != null)
+                    newAnimEdits.Add(pair.Key, pair.Value);
+            }
             mAnimEdits = newAnimEdits;
 
             Dictionary<Take, TakeEditControl> newTakeEdits = new Dictionary<Take, TakeEditControl>(mTakeEdits.Count);
-            foreach(var pair in mTakeEdits.Where(pair => pair.Key != null))
-                newTakeEdits.Add(pair.Key, pair.Value);
+            foreach(var pair in mTakeEdits) {
+                if(pair.Key != null)
+                    newTakeEdits.Add(pair.Key, pair.Value);
+            }
             mTakeEdits = newTakeEdits;
         }
 
@@ -2134,13 +2137,13 @@ namespace M8.Animator.Edit {
         public static void loadSkin(ref GUISkin _skin, ref string skinName, Rect position) {
             string newSkinName = EditorGUIUtility.isProSkin ? "am_skin_dark" : "am_skin_light";
             if(_skin == null || newSkinName != skinName) {
-                _skin = (GUISkin)EditorResource.LoadSkin(newSkinName); /*global_skin*/
+                _skin = EditorResource.LoadSkin(newSkinName); /*global_skin*/
                 skinName = newSkinName;
                 TransitionPicker.texLoaded = false;
                 texLoaded = false;
-            }
+			}
 
-            GUI.skin = _skin;
+			GUI.skin = _skin;
             GUI.color = GUI.skin.window.normal.textColor;
             GUI.DrawTexture(new Rect(0f, 0f, position.width, position.height), EditorGUIUtility.whiteTexture);
             GUI.color = Color.white;
@@ -2441,6 +2444,7 @@ namespace M8.Animator.Edit {
                         GUI.enabled = !isPlaying;
                     }
                     else if(_track is RotationEulerTrack) { //show axis selection
+                        GUI.skin = null;
                         var rTrack = (RotationEulerTrack)_track;
                         var nAxis = (AxisFlags)EditorGUI.EnumFlagsField(new Rect(width_track - 48f - width_subtrack_space * group_level - 4f, height_track - 38f, 48f, 15f), rTrack.axis);
                         if(rTrack.axis != nAxis) {
@@ -2448,16 +2452,19 @@ namespace M8.Animator.Edit {
                             rTrack.axis = nAxis;
                             aData.RecordTakesChanged();
                         }
+                        GUI.skin = skin;
                     }
                     else if(_track is ScaleTrack) { //show axis selection
-                        var sTrack = (ScaleTrack)_track;
+						GUI.skin = null;
+						var sTrack = (ScaleTrack)_track;
                         var nAxis = (AxisFlags)EditorGUI.EnumFlagsField(new Rect(width_track - 48f - width_subtrack_space * group_level - 4f, height_track - 38f, 48f, 15f), sTrack.axis);
                         if(sTrack.axis != nAxis) {
                             aData.RegisterTakesUndo("Change Scale Axis");
                             sTrack.axis = nAxis;
                             aData.RecordTakesChanged();
                         }
-                    }
+						GUI.skin = skin;
+					}
                     // track object
                     float width_object_field = width_track - track_x;
                     showObjectFieldFor(_track, width_object_field, new Rect(padding_track, 39f, width_track - width_subtrack_space * group_level - padding_track * 2, 16f));
@@ -3867,7 +3874,9 @@ namespace M8.Animator.Edit {
                         rectLabel = new Rect(0f, start_y - 1f, 65f, 22f);
                         GUI.Label(rectLabel, "Lock Axis");
 
-                        rectPopup = new Rect(rectLabel.x + rectLabel.width + 2f, start_y + 3f, width_inspector - margin - rectLabel.width - 3f, 22f);
+						GUI.skin = null;
+
+						rectPopup = new Rect(rectLabel.x + rectLabel.width + 2f, start_y + 3f, width_inspector - margin - rectLabel.width - 3f, 22f);
                         AxisFlags lockAxis = (AxisFlags)EditorGUI.EnumFlagsField(rectPopup, tKey.orientLockAxis);
                         if(lockAxis != tKey.orientLockAxis) {
                             aData.RegisterTakesUndo("Set Orient Lock Axis");
@@ -3875,7 +3884,9 @@ namespace M8.Animator.Edit {
                             aData.RecordTakesChanged();
                         }
 
-                        start_y = rectPopup.yMax + height_inspector_space;
+						GUI.skin = skin;
+
+						start_y = rectPopup.yMax + height_inspector_space;
                     }
                 }
 
