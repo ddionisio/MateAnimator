@@ -8,6 +8,7 @@ using DG.Tweening.Plugins;
 using DG.Tweening.Plugins.Core.PathCore;
 using DG.Tweening.Plugins.Options;
 using DG.Tweening.CustomPlugins;
+using UnityEngine.ProBuilder.MeshOperations;
 
 namespace M8.Animator {
     [System.Serializable]
@@ -75,8 +76,10 @@ namespace M8.Animator {
 
 #if !M8_PHYSICS_DISABLED
             Rigidbody body = trans.GetComponent<Rigidbody>();
+#if !M8_PHYSICS2D_DISABLED
             Rigidbody2D body2D = !body ? trans.GetComponent<Rigidbody2D>() : null;
-#else
+#endif
+#elif !M8_PHYSICS2D_DISABLED
             Rigidbody2D body2D = trans.GetComponent<Rigidbody2D>();
 #endif
 
@@ -86,6 +89,7 @@ namespace M8.Animator {
             if(interp == Interpolation.None) {
                 TweenerCore<Quaternion, Quaternion, TWeenPlugNoneOptions> valueTween;
 
+#if !M8_PHYSICS2D_DISABLED
                 if(body2D)
                     valueTween = DOTween.To(TweenPlugValueSet<Quaternion>.Get(), () => trans.localRotation, (x) => {
                         var parent = trans.parent;
@@ -94,6 +98,9 @@ namespace M8.Animator {
                         else
                             body2D.rotation = x.eulerAngles.z;
                     }, rotation, time);
+#else
+                if(false) { }
+#endif
 #if !M8_PHYSICS_DISABLED
                 else if(body)
                     valueTween = DOTween.To(TweenPlugValueSet<Quaternion>.Get(), () => trans.localRotation, (x) => {
@@ -114,6 +121,7 @@ namespace M8.Animator {
 
                 TweenerCore<Quaternion, Quaternion, NoOptions> linearTween;
 
+#if !M8_PHYSICS2D_DISABLED
                 if(body2D)
                     linearTween = DOTween.To(TweenPluginFactory.CreateQuaternion(), () => rotation, (x) => {
                         var parent = trans.parent;
@@ -122,6 +130,9 @@ namespace M8.Animator {
                         else
                             body2D.MoveRotation(x.eulerAngles.z);
                     }, endRotation, time);
+#else
+                if(false) { }
+#endif
 #if !M8_PHYSICS_DISABLED
                 else if(body)
                     linearTween = DOTween.To(TweenPluginFactory.CreateQuaternion(), () => rotation, (x) => {
@@ -144,6 +155,7 @@ namespace M8.Animator {
             }
             else if(interp == Interpolation.Curve) {
                 DOSetter<Quaternion> setter;
+#if !M8_PHYSICS2D_DISABLED
                 if(body2D)
                     setter = x => {
                         var parent = trans.parent;
@@ -152,6 +164,9 @@ namespace M8.Animator {
                         else
                             body2D.MoveRotation(x.eulerAngles.z);
                     };
+#else
+                if(false) { }
+#endif
 #if !M8_PHYSICS_DISABLED
                 else if(body)
                     setter = x => {

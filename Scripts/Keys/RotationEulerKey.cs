@@ -7,6 +7,7 @@ using DG.Tweening.Core;
 using DG.Tweening.Plugins;
 using DG.Tweening.Plugins.Core.PathCore;
 using DG.Tweening.Plugins.Options;
+using UnityEngine.ProBuilder.MeshOperations;
 
 namespace M8.Animator {
     [System.Serializable]
@@ -72,9 +73,11 @@ namespace M8.Animator {
 
 #if !M8_PHYSICS_DISABLED
             Rigidbody body = target.GetComponent<Rigidbody>();
+#if !M8_PHYSICS2D_DISABLED
             Rigidbody2D body2D = !body ? target.GetComponent<Rigidbody2D>() : null;
-#else
-            Rigidbody2D body2D = target.GetComponent<Rigidbody2D>();
+#endif
+#elif !M8_PHYSICS2D_DISABLED
+			Rigidbody2D body2D = target.GetComponent<Rigidbody2D>();
 #endif
 
             int frameRate = seq.take.frameRate;
@@ -131,6 +134,7 @@ namespace M8.Animator {
                     float _z = rotation.z;
                     TweenerCore<float, float, TWeenPlugNoneOptions> tweenZ;
 
+#if !M8_PHYSICS2D_DISABLED
                     if(body2D)
                         tweenZ = DOTween.To(TweenPlugValueSet<float>.Get(), () => target.localEulerAngles.z, 
                             (z) => {
@@ -140,14 +144,17 @@ namespace M8.Animator {
                                 else
                                     body2D.rotation = z;
                             }, _z, timeLength);
+#else
+                    if(false) { }
+#endif
 #if !M8_PHYSICS_DISABLED
                     else if(body)
-                        tweenZ = DOTween.To(TweenPlugValueSet<float>.Get(), () => target.localEulerAngles.z, 
-                            (z) => { 
+                        tweenZ = DOTween.To(TweenPlugValueSet<float>.Get(), () => target.localEulerAngles.z,
+                            (z) => {
                                 var a = target.localEulerAngles;
                                 var parent = target.parent;
                                 if(parent)
-                                    body.rotation = Quaternion.Euler(a.x, a.y, z) * parent.rotation; 
+                                    body.rotation = Quaternion.Euler(a.x, a.y, z) * parent.rotation;
                                 else
                                     body.rotation = Quaternion.Euler(a.x, a.y, z);
                             }, _z, timeLength);
@@ -160,6 +167,7 @@ namespace M8.Animator {
                 else if(axis == AxisFlags.All) {
                     TweenerCore<Vector3, Vector3, TWeenPlugNoneOptions> tweenV;
 
+#if !M8_PHYSICS2D_DISABLED
                     if(body2D)
                         tweenV = DOTween.To(TweenPlugValueSet<Vector3>.Get(), () => target.localEulerAngles, 
                             (r) => {
@@ -169,9 +177,12 @@ namespace M8.Animator {
                                 else
                                     body2D.rotation = r.z;
                             }, rotation, timeLength);
+#else
+                    if(false) { }
+#endif
 #if !M8_PHYSICS_DISABLED
                     else if(body)
-                        tweenV = DOTween.To(TweenPlugValueSet<Vector3>.Get(), () => target.localEulerAngles, 
+                        tweenV = DOTween.To(TweenPlugValueSet<Vector3>.Get(), () => target.localEulerAngles,
                             (r) => {
                                 var parent = target.parent;
                                 if(parent)
@@ -200,6 +211,7 @@ namespace M8.Animator {
                         return ret;
                     };
 
+#if !M8_PHYSICS2D_DISABLED
                     if(body2D) {
                         tweenV = DOTween.To(TweenPlugValueSet<Vector3>.Get(), getter, (r) => {
                             if((axis & AxisFlags.Z) != AxisFlags.None) {
@@ -211,6 +223,9 @@ namespace M8.Animator {
                             }
                         }, rotation, timeLength);
                     }
+#else
+                    if(false) { }
+#endif
 #if !M8_PHYSICS_DISABLED
                     else if(body) {
                         tweenV = DOTween.To(TweenPlugValueSet<Vector3>.Get(), getter, (r) => {
@@ -282,6 +297,7 @@ namespace M8.Animator {
                         tween = DOTween.To(TweenPluginFactory.CreateFloat(), () => rotation.y, (y) => { var a = target.localEulerAngles; a.y = y; target.localEulerAngles = a; }, endRotation.y, timeLength);
                 }
                 else if(axis == AxisFlags.Z) {
+#if !M8_PHYSICS2D_DISABLED
                     if(body2D)
                         tween = DOTween.To(TweenPluginFactory.CreateFloat(), () => rotation.z, (z) => {
                             var parent = target.parent;
@@ -290,13 +306,16 @@ namespace M8.Animator {
                             else
                                 body2D.MoveRotation(z);
                         }, endRotation.z, timeLength);
+#else
+                    if(false) { }
+#endif
 #if !M8_PHYSICS_DISABLED
                     else if(body)
-                        tween = DOTween.To(TweenPluginFactory.CreateFloat(), () => rotation.z, (z) => { 
+                        tween = DOTween.To(TweenPluginFactory.CreateFloat(), () => rotation.z, (z) => {
                             var a = target.localEulerAngles;
                             var parent = target.parent;
                             if(parent)
-                                body.MoveRotation(Quaternion.Euler(a.x, a.y, z) * parent.rotation); 
+                                body.MoveRotation(Quaternion.Euler(a.x, a.y, z) * parent.rotation);
                             else
                                 body.MoveRotation(Quaternion.Euler(a.x, a.y, z));
                         }, endRotation.z, timeLength);
@@ -305,6 +324,7 @@ namespace M8.Animator {
                         tween = DOTween.To(TweenPluginFactory.CreateFloat(), () => rotation.z, (z) => { var a = target.localEulerAngles; a.z = z; target.localEulerAngles = a; }, endRotation.z, timeLength);
                 }
                 else if(axis == AxisFlags.All) {
+#if !M8_PHYSICS2D_DISABLED
                     if(body2D)
                         tween = DOTween.To(TweenPluginFactory.CreateVector3(), () => rotation, (r) => {
                             var parent = target.parent;
@@ -313,6 +333,9 @@ namespace M8.Animator {
                             else
                                 body2D.MoveRotation(r.z);
                         }, endRotation, timeLength);
+#else
+                    if(false) { }
+#endif
 #if !M8_PHYSICS_DISABLED
                     else if(body)
                         tween = DOTween.To(TweenPluginFactory.CreateVector3(), () => rotation, (r) => {
@@ -327,6 +350,7 @@ namespace M8.Animator {
                         tween = DOTween.To(TweenPluginFactory.CreateVector3(), () => rotation, (r) => target.localEulerAngles = r, endRotation, timeLength);
                 }
                 else {
+#if !M8_PHYSICS2D_DISABLED
                     if(body2D) {
                         if((axis & AxisFlags.Z) != AxisFlags.None) {
                             tween = DOTween.To(TweenPluginFactory.CreateVector3(), () => rotation, (r) => {
@@ -340,6 +364,9 @@ namespace M8.Animator {
                         else
                             tween = null;
                     }
+#else
+                    if(false) { }
+#endif
 #if !M8_PHYSICS_DISABLED
                     else if(body) {
                         tween = DOTween.To(TweenPluginFactory.CreateVector3(), () => rotation, (r) => {
@@ -414,6 +441,7 @@ namespace M8.Animator {
                         setter = (x) => { var a = target.localEulerAngles; a.y = x.y; target.localEulerAngles = a; };
                 }
                 else if(axis == AxisFlags.Z) {
+#if !M8_PHYSICS2D_DISABLED
                     if(body2D)
                         setter = (x) => {
                             var parent = target.parent;
@@ -422,13 +450,16 @@ namespace M8.Animator {
                             else
                                 body2D.MoveRotation(x.z);
                         };
+#else
+                    if(false) { }
+#endif
 #if !M8_PHYSICS_DISABLED
                     else if(body)
-                        setter = (x) => { 
+                        setter = (x) => {
                             var a = target.localEulerAngles;
                             var parent = target.parent;
                             if(parent)
-                                body.MoveRotation(Quaternion.Euler(a.x, a.y, x.z) * parent.rotation); 
+                                body.MoveRotation(Quaternion.Euler(a.x, a.y, x.z) * parent.rotation);
                             else
                                 body.MoveRotation(Quaternion.Euler(a.x, a.y, x.z));
                         };
@@ -437,6 +468,7 @@ namespace M8.Animator {
                         setter = (x) => { var a = target.localEulerAngles; a.z = x.z; target.localEulerAngles = a; };
                 }
                 else if(axis == AxisFlags.All) {
+#if !M8_PHYSICS2D_DISABLED
                     if(body2D)
                         setter = (r) => {
                             var parent = target.parent;
@@ -445,6 +477,9 @@ namespace M8.Animator {
                             else
                                 body2D.MoveRotation(r.z);
                         };
+#else
+                    if(false) { }
+#endif
 #if !M8_PHYSICS_DISABLED
                     else if(body)
                         setter = (r) => {
@@ -459,6 +494,7 @@ namespace M8.Animator {
                         setter = (r) => target.localEulerAngles = r;
                 }
                 else {
+#if !M8_PHYSICS2D_DISABLED
                     if(body2D) {
                         if((axis & AxisFlags.Z) != AxisFlags.None)
                             setter = (r) => {
@@ -471,6 +507,9 @@ namespace M8.Animator {
                         else
                             return;
                     }
+#else
+                    if(false) { }
+#endif
 #if !M8_PHYSICS_DISABLED
                     else if(body)
                         setter = (r) => {
