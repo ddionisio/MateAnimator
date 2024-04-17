@@ -4,10 +4,6 @@ using System.Collections.Generic;
 
 using DG.Tweening;
 using DG.Tweening.Core;
-using DG.Tweening.Plugins;
-using DG.Tweening.Plugins.Core.PathCore;
-using DG.Tweening.Plugins.Options;
-using UnityEngine.ProBuilder.MeshOperations;
 
 namespace M8.Animator {
     [System.Serializable]
